@@ -11,7 +11,7 @@ import {
   getModelShort,
   getModelColor,
 } from "./shared";
-import type { PromptScanData, UsageData } from "./PromptTimeline";
+import type { PromptScan, UsageLogEntry } from "../../types";
 
 type PromptScanViewProps = {
   onBack: () => void;
@@ -19,8 +19,8 @@ type PromptScanViewProps = {
 };
 
 type MessageItem = {
-  scan: PromptScanData;
-  usage: UsageData | null;
+  scan: PromptScan;
+  usage: UsageLogEntry | null;
 };
 
 export const PromptScanView = ({
@@ -32,8 +32,8 @@ export const PromptScanView = ({
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
 
-  const [selectedScan, setSelectedScan] = useState<PromptScanData | null>(null);
-  const [selectedUsage, setSelectedUsage] = useState<UsageData | null>(null);
+  const [selectedScan, setSelectedScan] = useState<PromptScan | null>(null);
+  const [selectedUsage, setSelectedUsage] = useState<UsageLogEntry | null>(null);
 
   // File preview
   const [previewFile, setPreviewFile] = useState<string | null>(null);
@@ -66,8 +66,8 @@ export const PromptScanView = ({
               scan.request_id,
             );
             return {
-              scan: scan as unknown as PromptScanData,
-              usage: (detail?.usage as unknown as UsageData) ?? null,
+              scan,
+              usage: detail?.usage ?? null,
             };
           }),
         );
@@ -87,8 +87,8 @@ export const PromptScanView = ({
   useEffect(() => {
     const cleanup = window.api.onNewPromptScan(({ scan, usage }) => {
       const newItem: MessageItem = {
-        scan: scan as unknown as PromptScanData,
-        usage: usage as unknown as UsageData,
+        scan,
+        usage,
       };
       setMessages((prev) => [...prev, newItem]);
 
@@ -104,7 +104,7 @@ export const PromptScanView = ({
   }, []);
 
   const handleSelectScan = useCallback(
-    (scan: PromptScanData, usage: UsageData | null) => {
+    (scan: PromptScan, usage: UsageLogEntry | null) => {
       setSelectedScan(scan);
       setSelectedUsage(usage);
     },
@@ -122,8 +122,8 @@ export const PromptScanView = ({
           item.scan.request_id,
         );
         if (detail) {
-          setSelectedScan(detail.scan as unknown as PromptScanData);
-          setSelectedUsage((detail.usage as unknown as UsageData) ?? null);
+          setSelectedScan(detail.scan);
+          setSelectedUsage(detail.usage ?? null);
         }
       }
     } catch (err) {

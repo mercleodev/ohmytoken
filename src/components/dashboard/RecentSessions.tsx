@@ -253,7 +253,7 @@ export const RecentSessions = ({
   // Real-time: new scan events
   useEffect(() => {
     const cleanup = window.api.onNewPromptScan(({ scan }) => {
-      const s = scan as unknown as PromptScan;
+      const s = scan;
       scansRef.current = [s, ...scansRef.current].slice(0, 100);
       refresh();
     });
