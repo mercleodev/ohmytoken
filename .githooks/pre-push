@@ -44,3 +44,37 @@ if [ "${remote_url}" != "${EXPECTED_REMOTE}" ]; then
   echo "  git remote set-url origin ${EXPECTED_REMOTE}"
   exit 1
 fi
+
+# --- CI Gate: typecheck + lint + test ---
+# Block push if validation commands fail.
+
+echo "[ci-gate] Running typecheck..."
+if ! npm run typecheck >/dev/null 2>&1; then
+  echo "[ci-gate] Push blocked: typecheck failed."
+  echo "[ci-gate] Run 'npm run typecheck' to see errors."
+  exit 1
+fi
+echo "[ci-gate] PASS: typecheck"
+
+echo "[ci-gate] Running lint (changed files only)..."
+changed_files="$(git diff --name-only --diff-filter=d HEAD~1 HEAD -- '*.ts' '*.tsx' 2>/dev/null || true)"
+if [ -n "${changed_files}" ]; then
+  # shellcheck disable=SC2086
+  if ! npx eslint ${changed_files} 2>/dev/null; then
+    echo "[ci-gate] Push blocked: lint errors in changed files."
+    echo "[ci-gate] Run 'npm run lint' to see errors."
+    exit 1
+  fi
+  echo "[ci-gate] PASS: lint"
+else
+  echo "[ci-gate] SKIP: lint (no TS/TSX files changed)"
+fi
+
+echo "[ci-gate] Running tests..."
+if ! npm test 2>/dev/null; then
+  echo "[ci-gate] Push blocked: tests failed."
+  echo "[ci-gate] Run 'npm test' to see failures."
+  exit 1
+fi
+echo "[ci-gate] PASS: tests"
+echo "[ci-gate] All gates passed."
