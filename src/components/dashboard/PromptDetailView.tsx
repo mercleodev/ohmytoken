@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 import {
   formatCost,
   formatTokens,
@@ -7,145 +7,24 @@ import {
   getGaugeColor,
   getModelShort,
   CATEGORY_COLORS,
-  ACTION_COLORS,
 } from "../scan/shared";
 import { ContextTreemap } from "./ContextTreemap";
 import { ActionFlowList } from "./ActionFlowList";
 import type { PromptScan, UsageLogEntry } from "../../types";
-
-const SyntaxHighlighter = lazy(() =>
-  import("react-syntax-highlighter/dist/esm/prism-async-light").then((mod) => ({
-    default: mod.default,
-  })),
-);
-const syntaxThemePromise =
-  import("react-syntax-highlighter/dist/esm/styles/prism/one-dark").then(
-    (mod) => mod.default,
-  );
-
-const getLanguage = (filePath: string): string => {
-  const ext = filePath.split(".").pop()?.toLowerCase() || "";
-  const map: Record<string, string> = {
-    ts: "typescript",
-    tsx: "tsx",
-    js: "javascript",
-    jsx: "jsx",
-    py: "python",
-    rs: "rust",
-    go: "go",
-    java: "java",
-    json: "json",
-    md: "markdown",
-    css: "css",
-    html: "html",
-    sh: "bash",
-    yml: "yaml",
-    yaml: "yaml",
-    toml: "toml",
-    xml: "xml",
-    sql: "sql",
-    rb: "ruby",
-    swift: "swift",
-  };
-  return map[ext] || "text";
-};
-
-const CONTINUATION_PROMPT_MARKER =
-  "This session is being continued from a previous conversation that ran out of context";
-const SESSION_SCAN_DEDUP_MS = 5_000;
-const COMPACTION_DROP_RATIO = 0.8;
-const MIN_COMPACTION_BASE_TOKENS = 30_000;
-const DIRECT_FILE_ACTIONS = new Set(["Read", "Write", "Edit"]);
-
-type EvidenceStatus = "confirmed" | "likely" | "unverified";
-
-type InjectedEvidenceItem = {
-  path: string;
-  category: "global" | "project" | "rules" | "memory" | "skill";
-  estimated_tokens: number;
-  status: EvidenceStatus;
-  reason: string;
-};
-
-const normalizeText = (value: string): string => value.trim().toLowerCase();
-
-const getFileName = (pathValue: string): string =>
-  pathValue.split("/").filter(Boolean).pop() ?? pathValue;
-
-const buildInjectedEvidence = (scan: PromptScan): Record<
-  EvidenceStatus,
-  InjectedEvidenceItem[]
-> => {
-  const injectedFiles = scan.injected_files ?? [];
-  const toolCalls = scan.tool_calls ?? [];
-  const userPromptLower = normalizeText(scan.user_prompt ?? "");
-  const responseLower = normalizeText(scan.assistant_response ?? "");
-
-  const classified: InjectedEvidenceItem[] = injectedFiles.map((file) => {
-    const filePathLower = normalizeText(file.path);
-    const fileName = getFileName(file.path);
-    const fileNameLower = normalizeText(fileName);
-
-    const directAction = toolCalls.find((toolCall) => {
-      if (!DIRECT_FILE_ACTIONS.has(toolCall.name)) return false;
-      const inputLower = normalizeText(toolCall.input_summary ?? "");
-      return (
-        inputLower.includes(filePathLower) ||
-        (fileNameLower.length >= 4 && inputLower.includes(fileNameLower))
-      );
-    });
-
-    if (directAction) {
-      return {
-        ...file,
-        status: "confirmed",
-        reason: `${directAction.name} referenced this file directly`,
-      };
-    }
-
-    const mentionByTool = toolCalls.find((toolCall) => {
-      const inputLower = normalizeText(toolCall.input_summary ?? "");
-      return fileNameLower.length >= 4 && inputLower.includes(fileNameLower);
-    });
-    const mentionByResponse =
-      fileNameLower.length >= 4 && responseLower.includes(fileNameLower);
-    const mentionByPrompt =
-      fileNameLower.length >= 4 && userPromptLower.includes(fileNameLower);
-
-    if (mentionByResponse || mentionByTool || mentionByPrompt) {
-      const reason = mentionByResponse
-        ? "Assistant response mentions this file"
-        : mentionByTool
-          ? `${mentionByTool.name} input references this file`
-          : "User prompt references this file";
-      return {
-        ...file,
-        status: "likely",
-        reason,
-      };
-    }
-
-    return {
-      ...file,
-      status: "unverified",
-      reason: "No direct reference found in actions or response",
-    };
-  });
-
-  const byStatus: Record<EvidenceStatus, InjectedEvidenceItem[]> = {
-    confirmed: [],
-    likely: [],
-    unverified: [],
-  };
-
-  for (const item of classified.sort(
-    (a, b) => b.estimated_tokens - a.estimated_tokens,
-  )) {
-    byStatus[item.status].push(item);
-  }
-
-  return byStatus;
-};
+import {
+  StatPill,
+  Section,
+  LegendDot,
+  TokenRow,
+  EvidenceGroup,
+  BreakdownPopover,
+  FilePreviewOverlay,
+  buildInjectedEvidence,
+  CONTINUATION_PROMPT_MARKER,
+  SESSION_SCAN_DEDUP_MS,
+  COMPACTION_DROP_RATIO,
+  MIN_COMPACTION_BASE_TOKENS,
+} from "./promptDetail";
 
 type PromptDetailViewProps = {
   scan: PromptScan;
@@ -276,7 +155,8 @@ export const PromptDetailView = ({
           if (prev) {
             const prevTimestampMs = new Date(prev.timestamp).getTime();
             const samePrompt =
-              (prev.user_prompt || "").trim() === (item.user_prompt || "").trim();
+              (prev.user_prompt || "").trim() ===
+              (item.user_prompt || "").trim();
             if (
               samePrompt &&
               Math.abs(itemTimestampMs - prevTimestampMs) < SESSION_SCAN_DEDUP_MS
@@ -295,7 +175,8 @@ export const PromptDetailView = ({
           const hasContinuationMarker = (current.user_prompt || "").includes(
             CONTINUATION_PROMPT_MARKER,
           );
-          const previousTokens = previous?.context_estimate?.total_tokens ?? 0;
+          const previousTokens =
+            previous?.context_estimate?.total_tokens ?? 0;
           const currentTokens = current.context_estimate?.total_tokens ?? 0;
           const hasSignificantDrop =
             previousTokens >= MIN_COMPACTION_BASE_TOKENS &&
@@ -460,15 +341,20 @@ export const PromptDetailView = ({
           <div className="journey-summary-card">
             <div className="journey-summary-label">Injected</div>
             <div className="journey-summary-value">
-              {injectedFiles.length} files · {formatTokens(scan.total_injected_tokens || 0)}
+              {injectedFiles.length} files ·{" "}
+              {formatTokens(scan.total_injected_tokens || 0)}
             </div>
           </div>
           <div className="journey-summary-card">
             <div className="journey-summary-label">Actions</div>
-            <div className="journey-summary-value">{toolCalls.length} calls</div>
+            <div className="journey-summary-value">
+              {toolCalls.length} calls
+            </div>
             {actionCounts.length > 0 && (
               <div className="journey-summary-sub">
-                {actionCounts.map(([name, cnt]) => `${name}×${cnt}`).join(" · ")}
+                {actionCounts
+                  .map(([name, cnt]) => `${name}×${cnt}`)
+                  .join(" · ")}
               </div>
             )}
           </div>
@@ -479,7 +365,8 @@ export const PromptDetailView = ({
                 {cacheHitPct !== null ? `${cacheHitPct.toFixed(1)}%` : "-"}
               </div>
               <div className="journey-summary-sub">
-                Read {formatTokens(usage.response.cache_read_input_tokens)} tokens
+                Read {formatTokens(usage.response.cache_read_input_tokens)}{" "}
+                tokens
               </div>
             </div>
           )}
@@ -569,7 +456,10 @@ export const PromptDetailView = ({
                 {assistantPct > 0 && (
                   <div
                     className="ctx-segment"
-                    style={{ width: `${assistantPct}%`, background: "#60a5fa" }}
+                    style={{
+                      width: `${assistantPct}%`,
+                      background: "#60a5fa",
+                    }}
                     onMouseEnter={() => setHoveredSegment("assistant")}
                     onMouseLeave={() => setHoveredSegment(null)}
                   />
@@ -578,7 +468,10 @@ export const PromptDetailView = ({
             ) : (
               <div
                 className="ctx-segment"
-                style={{ width: `${conversationPct}%`, background: "#3b82f6" }}
+                style={{
+                  width: `${conversationPct}%`,
+                  background: "#3b82f6",
+                }}
                 onMouseEnter={() => setHoveredSegment("messages")}
                 onMouseLeave={() => setHoveredSegment(null)}
               />
@@ -749,456 +642,5 @@ export const PromptDetailView = ({
         )}
       </AnimatePresence>
     </div>
-  );
-};
-
-// --- Sub Components (macOS style) ---
-
-const StatPill = ({ label, value }: { label: string; value: string }) => (
-  <div className="stat-pill">
-    <span className="stat-pill-value">{value}</span>
-    <span className="stat-pill-label">{label}</span>
-  </div>
-);
-
-type SectionProps = {
-  title: string;
-  id: string;
-  expanded: Set<string>;
-  onToggle: (id: string) => void;
-  children: React.ReactNode;
-};
-
-const Section = ({ title, id, expanded, onToggle, children }: SectionProps) => {
-  const isOpen = expanded.has(id);
-  return (
-    <div className="detail-section">
-      <button className="detail-section-header" onClick={() => onToggle(id)}>
-        <span>{title}</span>
-        <span className={`detail-section-chevron ${isOpen ? "expanded" : ""}`}>
-          ›
-        </span>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ overflow: "hidden" }}
-          >
-            <div className="detail-section-body">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
-const LegendDot = ({
-  color,
-  label,
-  value,
-}: {
-  color: string;
-  label: string;
-  value: string;
-}) => (
-  <div className="legend-dot-item">
-    <span className="legend-dot" style={{ background: color }} />
-    <span className="legend-label">{label}</span>
-    <span className="legend-value">{value}</span>
-  </div>
-);
-
-const TokenRow = ({ label, value }: { label: string; value: number }) => (
-  <div className="token-row">
-    <span className="token-row-label">{label}</span>
-    <span className="token-row-value">{value.toLocaleString()}</span>
-  </div>
-);
-
-const EvidenceGroup = ({
-  title,
-  status,
-  items,
-  onOpenFile,
-}: {
-  title: string;
-  status: EvidenceStatus;
-  items: InjectedEvidenceItem[];
-  onOpenFile: (path: string) => void;
-}) => {
-  if (items.length === 0) return null;
-  return (
-    <div className="injected-evidence-group">
-      <div className="injected-evidence-group-title">
-        <span className={`injected-evidence-dot ${status}`} />
-        <span>{title}</span>
-      </div>
-      <div className="injected-evidence-list">
-        {items.map((item) => (
-          <button
-            key={`${status}-${item.path}`}
-            className="injected-evidence-item"
-            onClick={() => onOpenFile(item.path)}
-          >
-            <span className="injected-evidence-item-main">
-              <span className="injected-evidence-item-path">
-                {item.path.split("/").slice(-2).join("/")}
-              </span>
-              <span className="injected-evidence-item-reason">{item.reason}</span>
-            </span>
-            <span className="injected-evidence-item-tokens">
-              {formatTokens(item.estimated_tokens)}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// --- Breakdown Popover ---
-
-type BreakdownPopoverProps = {
-  segment: string;
-  scan: PromptScan;
-  ctx: {
-    system_tokens: number;
-    messages_tokens: number;
-    tools_definition_tokens: number;
-    total_tokens: number;
-    messages_tokens_breakdown?: {
-      user_text_tokens: number;
-      assistant_tokens: number;
-      tool_result_tokens: number;
-    };
-  };
-  injectedFiles: Array<{
-    path: string;
-    estimated_tokens: number;
-    category: string;
-  }>;
-  toolCalls: Array<{
-    index: number;
-    name: string;
-    input_summary: string;
-    timestamp?: string;
-  }>;
-  userTextTokens: number;
-  assistantTokens: number;
-  conversationTokens: number;
-  toolResultTokens: number;
-  onFileClick: (path: string) => void;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-};
-
-const BreakdownPopover = ({
-  segment,
-  scan,
-  ctx,
-  injectedFiles,
-  toolCalls,
-  userTextTokens,
-  assistantTokens,
-  conversationTokens,
-  toolResultTokens,
-  onFileClick,
-  onMouseEnter,
-  onMouseLeave,
-}: BreakdownPopoverProps) => {
-  const fileToolCalls = toolCalls.filter(
-    (t) =>
-      ["Read", "Write", "Edit"].includes(t.name) &&
-      t.input_summary.startsWith("/"),
-  );
-
-  const renderContent = () => {
-    switch (segment) {
-      case "system":
-        return (
-          <>
-            <div className="breakdown-popover-header">
-              <span
-                className="breakdown-popover-dot"
-                style={{ background: "#8b5cf6" }}
-              />
-              System — {formatTokens(ctx.system_tokens)}
-            </div>
-            {injectedFiles.length > 0 ? (
-              <div className="breakdown-popover-list">
-                {injectedFiles.map((f, i) => (
-                  <button
-                    key={i}
-                    className="breakdown-popover-item breakdown-popover-item--clickable"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onFileClick(f.path);
-                    }}
-                  >
-                    <span
-                      className="breakdown-popover-file-dot"
-                      style={{
-                        background: CATEGORY_COLORS[f.category] || "#8e8e93",
-                      }}
-                    />
-                    <span className="breakdown-popover-file-path">
-                      {f.path.split("/").slice(-2).join("/")}
-                    </span>
-                    <span className="breakdown-popover-file-tokens">
-                      {formatTokens(f.estimated_tokens)}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="breakdown-popover-desc">No injected files</div>
-            )}
-          </>
-        );
-      case "userText":
-        return (
-          <>
-            <div className="breakdown-popover-header">
-              <span
-                className="breakdown-popover-dot"
-                style={{ background: "#3b82f6" }}
-              />
-              Your Prompts — {formatTokens(userTextTokens)}
-            </div>
-            <div className="breakdown-popover-desc">
-              Your text prompts in conversation
-            </div>
-          </>
-        );
-      case "assistant":
-        return (
-          <>
-            <div className="breakdown-popover-header">
-              <span
-                className="breakdown-popover-dot"
-                style={{ background: "#60a5fa" }}
-              />
-              Responses — {formatTokens(assistantTokens)}
-            </div>
-            {scan.assistant_response ? (
-              <div className="breakdown-popover-response">
-                {scan.assistant_response.length > 200
-                  ? scan.assistant_response.slice(0, 200) + "..."
-                  : scan.assistant_response}
-              </div>
-            ) : (
-              <div className="breakdown-popover-desc">
-                Claude&apos;s responses in conversation
-              </div>
-            )}
-          </>
-        );
-      case "messages":
-        return (
-          <>
-            <div className="breakdown-popover-header">
-              <span
-                className="breakdown-popover-dot"
-                style={{ background: "#3b82f6" }}
-              />
-              Messages — {formatTokens(conversationTokens)}
-            </div>
-            <div className="breakdown-popover-desc">
-              Conversation messages (prompts + responses)
-            </div>
-          </>
-        );
-      case "toolResult":
-        return (
-          <>
-            <div className="breakdown-popover-header">
-              <span
-                className="breakdown-popover-dot"
-                style={{ background: "#06b6d4" }}
-              />
-              Action Results — {formatTokens(toolResultTokens)}
-            </div>
-            {fileToolCalls.length > 0 ? (
-              <div className="breakdown-popover-list">
-                {fileToolCalls.slice(0, 10).map((t) => (
-                  <button
-                    key={t.index}
-                    className="breakdown-popover-item breakdown-popover-item--clickable"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onFileClick(t.input_summary);
-                    }}
-                  >
-                    <span
-                      className="breakdown-popover-file-dot"
-                      style={{
-                        background: ACTION_COLORS[t.name] || "#8e8e93",
-                      }}
-                    />
-                    <span className="breakdown-popover-badge">{t.name}</span>
-                    <span className="breakdown-popover-file-path">
-                      {t.input_summary.split("/").slice(-2).join("/")}
-                    </span>
-                  </button>
-                ))}
-                {fileToolCalls.length > 10 && (
-                  <div className="breakdown-popover-desc">
-                    +{fileToolCalls.length - 10} more
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="breakdown-popover-desc">
-                Tool execution results
-              </div>
-            )}
-          </>
-        );
-      case "toolsDef":
-        return (
-          <>
-            <div className="breakdown-popover-header">
-              <span
-                className="breakdown-popover-dot"
-                style={{ background: "#f59e0b" }}
-              />
-              Tools Def — {formatTokens(ctx.tools_definition_tokens)}
-            </div>
-            <div className="breakdown-popover-desc">
-              MCP tool definitions & schemas
-            </div>
-          </>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div
-      className="breakdown-popover"
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      {renderContent()}
-    </div>
-  );
-};
-
-// --- File Preview Overlay (macOS style) ---
-
-const FilePreviewOverlay = ({
-  filePath,
-  onClose,
-}: {
-  filePath: string;
-  onClose: () => void;
-}) => {
-  const [content, setContent] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [syntaxTheme, setSyntaxTheme] = useState<Record<
-    string,
-    React.CSSProperties
-  > | null>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const result = await window.api.readFileContent(filePath);
-        if (result.error) setError(result.error);
-        else setContent(result.content);
-      } catch (err) {
-        setError(String(err));
-      }
-    };
-    load();
-  }, [filePath]);
-
-  useEffect(() => {
-    syntaxThemePromise.then(setSyntaxTheme);
-  }, []);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  const shortName = filePath.split("/").slice(-2).join("/");
-  const language = getLanguage(filePath);
-
-  return (
-    <motion.div
-      className="file-preview-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      onClick={onClose}
-    >
-      <motion.div
-        className="file-preview-panel"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 20, opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={(e) => e.stopPropagation()}
-        ref={overlayRef}
-      >
-        <div className="file-preview-header">
-          <span className="file-preview-name">{shortName}</span>
-          <span className="file-preview-lang">{language}</span>
-          <button className="file-preview-close" onClick={onClose}>
-            ESC
-          </button>
-        </div>
-        <div className="file-preview-path">{filePath}</div>
-        <div className="file-preview-body">
-          {error ? (
-            <div style={{ color: "#ff3b30", fontSize: 13 }}>{error}</div>
-          ) : content === null ? (
-            <div
-              style={{ display: "flex", justifyContent: "center", padding: 20 }}
-            >
-              <div className="spinner" />
-            </div>
-          ) : syntaxTheme ? (
-            <Suspense
-              fallback={<pre className="file-preview-content">{content}</pre>}
-            >
-              <SyntaxHighlighter
-                language={language}
-                style={syntaxTheme}
-                showLineNumbers
-                customStyle={{
-                  margin: 0,
-                  fontSize: 12,
-                  lineHeight: 1.6,
-                  borderRadius: 0,
-                  background: "transparent",
-                }}
-                lineNumberStyle={{
-                  minWidth: "2.5em",
-                  paddingRight: "1em",
-                  color: "#636d83",
-                  userSelect: "none",
-                }}
-              >
-                {content}
-              </SyntaxHighlighter>
-            </Suspense>
-          ) : (
-            <pre className="file-preview-content">{content}</pre>
-          )}
-        </div>
-      </motion.div>
-    </motion.div>
   );
 };
