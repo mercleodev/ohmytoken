@@ -239,8 +239,7 @@ export const PromptDetailView = ({
   );
   const [enrichedScan, setEnrichedScan] = useState<PromptScan>(scan);
   const [showEvidenceSettings, setShowEvidenceSettings] = useState(false);
-  const [activeTools, setActiveTools] = useState<Set<string> | "all">(() => "all");
-  const initializedRef = useRef(false);
+  const [activeTools, setActiveTools] = useState<Set<string> | "all">("all");
 
   // Fetch evidence report if not already attached; auto-rescore if missing
   useEffect(() => {
@@ -359,16 +358,6 @@ export const PromptDetailView = ({
       .sort((a, b) => b[1] - a[1])
       .map(([name, count]) => ({ name, count }));
   }, [toolCalls]);
-
-  // Default: all tools active except Bash
-  useEffect(() => {
-    if (initializedRef.current || toolNameOptions.length === 0) return;
-    initializedRef.current = true;
-    const hasBash = toolNameOptions.some((o) => o.name === "Bash");
-    if (hasBash) {
-      setActiveTools(new Set(toolNameOptions.filter((o) => o.name !== "Bash").map((o) => o.name)));
-    }
-  }, [toolNameOptions]);
 
   const filteredToolCalls = useMemo(() => {
     if (activeTools === "all") return toolCalls;
