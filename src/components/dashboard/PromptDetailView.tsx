@@ -334,7 +334,6 @@ export const PromptDetailView = ({
 
   const filteredToolCalls = useMemo(() => {
     if (activeTools === "all") return toolCalls;
-    if (activeTools.size === 0) return toolCalls;
     return toolCalls.filter((tc) => activeTools.has(tc.name));
   }, [toolCalls, activeTools]);
 
@@ -717,7 +716,7 @@ export const PromptDetailView = ({
               activeTools={activeTools}
               onToggle={(name) => {
                 if (name === "all") {
-                  setActiveTools("all");
+                  setActiveTools((prev) => (prev === "all" ? new Set<string>() : "all"));
                   return;
                 }
                 setActiveTools((prev) => {
@@ -731,7 +730,6 @@ export const PromptDetailView = ({
                   if (next.has(name)) next.delete(name);
                   else next.add(name);
                   if (next.size === allNames.length) return "all";
-                  if (next.size === 0) return "all";
                   return next;
                 });
               }}
