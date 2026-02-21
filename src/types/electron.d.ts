@@ -188,6 +188,61 @@ export type ScanStats = {
   };
 };
 
+// Legacy scan types (used by TokenScanner/TokenTreemap — consolidate in #92)
+export type LegacyScanResult = {
+  breakdown: {
+    claudeMd: { global: number; project: number; total: number };
+    userInput: number;
+    cacheCreation: number;
+    cacheRead: number;
+    output: number;
+    total: number;
+  };
+  insights?: string[];
+  recentRequests?: Array<{
+    timestamp: string;
+    inputTokens: number;
+    outputTokens: number;
+    cacheCreation: number;
+    cacheRead: number;
+    total: number;
+  }>;
+  claudeMdSections?: Array<{ section: string; tokens: number; percentage: number }>;
+  cacheInfo?: {
+    claudeMdPreview: string;
+    recentCacheUsage: Array<{
+      timestamp: string;
+      prompt: string;
+      cacheRead: number;
+      cacheCreation: number;
+      inputTokens: number;
+    }>;
+    cacheHitRate: number;
+  };
+};
+
+export type LegacyPromptHistory = {
+  id: string;
+  timestamp: string;
+  content: string;
+  fullContent?: string;
+  tokens: number;
+};
+
+export type LegacyPromptAnalysis = {
+  promptId: string;
+  prompt: { content: string; tokens: number; timestamp: string };
+  response: {
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    cacheCreationTokens: number;
+    cacheReadTokens: number;
+    totalTokens: number;
+  } | null;
+  cost: { input: number; output: number; cache: number; total: number; saved: number };
+};
+
 export type ElectronApi = {
   saveConfig: (config: Config) => Promise<{ success: boolean }>;
   getConfig: () => Promise<Config>;
@@ -196,12 +251,9 @@ export type ElectronApi = {
   refreshUsage: () => Promise<{ success: boolean }>;
   getUsageData: () => Promise<CurrentUsageData & { settings: AppSettings }>;
   saveSettings: (settings: AppSettings) => Promise<{ success: boolean }>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy scan API, needs typed refactor
-  scanTokens: () => Promise<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy scan API, needs typed refactor
-  getPromptHistory: () => Promise<any[]>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy scan API, needs typed refactor
-  analyzePrompt: (promptId: string) => Promise<any>;
+  scanTokens: () => Promise<LegacyScanResult>;
+  getPromptHistory: () => Promise<LegacyPromptHistory[]>;
+  analyzePrompt: (promptId: string) => Promise<LegacyPromptAnalysis | null>;
   getContextLogs: (sessionId?: string) => Promise<ContextLogs>;
   startProxy: (
     port?: number,

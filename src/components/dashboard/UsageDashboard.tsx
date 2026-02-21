@@ -122,7 +122,7 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
   useEffect(() => {
     loadStatuses();
     loadUsage(selectedProvider);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: selectedProvider initial value only
+    // mount-only: selectedProvider initial value only
   }, [loadStatuses, loadUsage]);
 
   const handleProviderChange = useCallback((provider: UsageProviderType) => {
@@ -222,7 +222,9 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
       ? 'stats'
       : nav.screen === 'session'
         ? `session-${nav.sessionId}`
-        : `prompt-${(nav as any).scan?.request_id}`;
+        : nav.screen === 'prompt'
+          ? `prompt-${nav.scan.request_id}`
+          : 'unknown';
 
   const contentDirection = nav.screen !== 'main'
     ? navDirection

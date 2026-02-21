@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './App.css';
+import type { ElectronApi, EvidenceReport, HistoryEntry, PromptScan, UsageLogEntry } from './types/electron';
+import type { ProviderUsageSnapshot, UsageProviderType } from './types';
 
 // Dark mode removed - always use light theme only
 if (window.api) {
@@ -10,7 +12,7 @@ if (window.api) {
 
 // Mock API for web browser testing (without Electron)
 if (!window.api) {
-  (window as any).api = {
+  (window as unknown as { api: ElectronApi }).api = {
     getConfig: async () => ({
       providers: [{ id: 'mock-1', name: 'Claude', type: 'claude' }],
       settings: {
@@ -26,11 +28,17 @@ if (!window.api) {
     removeProvider: async () => ({ success: true }),
     refreshUsage: async () => ({ success: true }),
     getUsageData: async () => ({
-      currentUsage: 50000,
-      limit: 100000,
-      percentage: 50,
-      resetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      providerName: 'Claude'
+      usage: 50,
+      resetTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      sevenDay: { utilization: 18, resetsAt: new Date(Date.now() + 70 * 3600000).toISOString() },
+      providerName: 'Claude',
+      settings: {
+        colors: { low: '#4caf50', medium: '#ff9800', high: '#f44336' },
+        toggleInterval: 2000,
+        refreshInterval: 5,
+        shortcut: 'CommandOrControl+Shift+T',
+        proxyPort: 8780,
+      },
     }),
     saveSettings: async () => ({ success: true }),
     scanTokens: async () => ({
@@ -73,6 +81,7 @@ if (!window.api) {
     stopProxy: async () => ({ success: true }),
     getProxyStatus: async () => ({ running: true, port: 8780, upstream: 'api.anthropic.com', requests_total: 0, errors_total: 0 }),
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getPromptScans: async (_options?: { limit?: number; offset?: number; session_id?: string }) => {
       const models = ['claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'];
       const prompts = [
@@ -213,6 +222,7 @@ if (!window.api) {
     // Session-based real-time CT Scan Mock API
     getCurrentSessionId: async () => 'mock-session-' + Date.now().toString(36),
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getSessionScans: async (_sessionId: string) => {
       const models = ['claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'];
       const prompts = [
@@ -265,7 +275,7 @@ if (!window.api) {
       }));
     },
 
-    onNewPromptScan: (callback: (data: any) => void) => {
+    onNewPromptScan: (callback: (data: { scan: PromptScan; usage: UsageLogEntry }) => void) => {
       // Emit a fake scan every 5 seconds
       let counter = 100;
       const models = ['claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'];
@@ -290,8 +300,8 @@ if (!window.api) {
           user_prompt: mockPrompts[idx],
           user_prompt_tokens: 15,
           injected_files: [
-            { path: '~/.claude/CLAUDE.md', category: 'global', estimated_tokens: 3581 },
-            { path: '~/prj/checktoken/CLAUDE.md', category: 'project', estimated_tokens: 1994 },
+            { path: '~/.claude/CLAUDE.md', category: 'global' as const, estimated_tokens: 3581 },
+            { path: '~/prj/checktoken/CLAUDE.md', category: 'project' as const, estimated_tokens: 1994 },
           ],
           total_injected_tokens: 5575,
           tool_calls: [{ index: 0, name: 'Read', input_summary: 'src/App.tsx' }],
@@ -336,7 +346,7 @@ if (!window.api) {
 
     // === Usage Dashboard Mock API ===
     getProviderUsage: async (provider: string) => {
-      const mockData: Record<string, any> = {
+      const mockData: Record<string, ProviderUsageSnapshot | null> = {
         claude: {
           provider: 'claude',
           displayName: 'Claude',
@@ -375,11 +385,13 @@ if (!window.api) {
 
     refreshProviderUsage: async () => {},
 
-    onProviderTokenChanged: (_callback: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onProviderTokenChanged: (_callback: (provider: UsageProviderType) => void) => {
       return () => {};
     },
 
-    onProviderUsageUpdated: (_callback: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onProviderUsageUpdated: (_callback: (data: { provider: UsageProviderType; snapshot: ProviderUsageSnapshot | null }) => void) => {
       return () => {};
     },
 
@@ -396,6 +408,7 @@ if (!window.api) {
       return entries.slice(0, limit ?? 50);
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getHistoryPromptDetail: async (_sessionId: string, _timestamp: number) => null,
 
     getDailyStats: async () => ({
@@ -409,7 +422,8 @@ if (!window.api) {
       },
     }),
 
-    onNewHistoryEntry: (_callback: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onNewHistoryEntry: (_callback: (entry: HistoryEntry) => void) => {
       return () => {};
     },
 
@@ -422,6 +436,26 @@ if (!window.api) {
       };
       const content = mockContents[filePath] || `# ${filePath}\n\n(Mock content for preview)\n\nThis file would contain the actual content when running in Electron.`;
       return { content };
+    },
+
+    // Evidence Scoring Mock API
+    getEvidenceReport: async () => null,
+    getEvidenceConfig: async () => ({
+      version: '1.0.0',
+      enabled: true,
+      signals: {},
+      fusion_method: 'weighted_sum' as const,
+      thresholds: { confirmed_min: 0.7, likely_min: 0.4 },
+    }),
+    updateEvidenceConfig: async () => ({ success: true }),
+    rescoreEvidence: async () => null,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onEvidenceScored: (_callback: (data: { requestId: string; report: EvidenceReport }) => void) => {
+      return () => {};
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onNavigateTo: (_callback: (view: string) => void) => {
+      return () => {};
     },
   };
   console.log('🔧 Mock API loaded for browser testing');

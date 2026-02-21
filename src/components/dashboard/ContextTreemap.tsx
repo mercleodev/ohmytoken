@@ -144,15 +144,28 @@ const buildTreemapData = (scan: PromptScan): TreemapNode[] => {
 };
 
 // Custom cell renderer
-const CustomContent = (props: any) => {
+type ContextCellProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  name: string;
+  tokens: number;
+  color: string;
+  filePath?: string;
+  onHover?: (info: HoverInfo | null) => void;
+  onClick?: (filePath: string) => void;
+};
+
+const CustomContent = (props: Partial<ContextCellProps>) => {
   const {
-    x,
-    y,
-    width,
-    height,
-    name,
-    tokens,
-    color,
+    x = 0,
+    y = 0,
+    width = 0,
+    height = 0,
+    name = '',
+    tokens = 0,
+    color = '#8884d8',
     filePath,
     onHover,
     onClick,

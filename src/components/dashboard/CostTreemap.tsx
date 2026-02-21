@@ -39,8 +39,18 @@ const buildCostData = (prompts: PromptWithCost[]): TreemapNode[] => {
     });
 };
 
-const CustomContent = (props: any) => {
-  const { x, y, width, height, name, cost, color } = props;
+type CostCellProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  name: string;
+  cost: number;
+  color: string;
+};
+
+const CustomContent = (props: Partial<CostCellProps>) => {
+  const { x = 0, y = 0, width = 0, height = 0, name = '', cost = 0, color = '#8884d8' } = props;
   if (!width || !height || width < 20 || height < 20) return null;
 
   const showLabel = width > 45 && height > 28;

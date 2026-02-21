@@ -164,8 +164,20 @@ const MODEL_PRICING = {
 type ModelId = keyof typeof MODEL_PRICING;
 
 // Custom Treemap cell renderer
-const CustomTreemapContent = (props: any) => {
-  const { x, y, width, height, name, tokens, percentage, color, depth } = props;
+type TreemapCellProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  name: string;
+  tokens: number;
+  percentage: number;
+  color: string;
+  depth: number;
+};
+
+const CustomTreemapContent = (props: Partial<TreemapCellProps>) => {
+  const { x = 0, y = 0, width = 0, height = 0, name = '', tokens = 0, percentage = 0, color = '#8884d8', depth = 0 } = props;
 
   // Omit text for cells too small
   const showText = width > 60 && height > 40;
@@ -240,7 +252,12 @@ const CustomTreemapContent = (props: any) => {
 };
 
 // Custom tooltip (with cache details)
-const CustomTooltip = ({ active, payload }: any) => {
+type TreemapTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ payload: { name: string; tokens: number; percentage: number; color: string; cacheTokens?: number; cacheDetails?: CacheUsageItem[]; claudeMdPreview?: string } }>;
+};
+
+const CustomTooltip = ({ active, payload }: TreemapTooltipProps) => {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload;
@@ -299,6 +316,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
   const [totalTokens, setTotalTokens] = useState(0);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelId>('claude-sonnet-4-20250514');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_cacheInfo, setCacheInfo] = useState<ScanData['cacheInfo'] | null>(null);
 
   // Prompt history state
@@ -530,7 +548,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
       if (history && Array.isArray(history)) {
         setPromptHistory(history);
       }
-    } catch (error) {
+    } catch {
       // Demo data
       const demoHistory: PromptHistory[] = [
         {
