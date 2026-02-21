@@ -79,9 +79,10 @@ export const ActionFlowList = ({
                 key={`${toolCall.index}-${toolCall.timestamp ?? "no-ts"}`}
                 className="action-flow-entry"
                 role="listitem"
-                initial={showLiveFlow ? { opacity: 0, y: -8 } : false}
-                animate={{ opacity: 1, y: 0 }}
-                exit={showLiveFlow ? { opacity: 0, y: -8 } : undefined}
+                layout
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
                 transition={
                   showLiveFlow
                     ? {
@@ -89,8 +90,12 @@ export const ActionFlowList = ({
                         ease: [0.22, 1, 0.36, 1],
                         delay: idx * ACTION_STAGGER_SECONDS,
                       }
-                    : { duration: 0 }
+                    : {
+                        duration: 0.2,
+                        ease: [0.25, 0.1, 0.25, 1],
+                      }
                 }
+                style={{ overflow: "hidden" }}
               >
                 <button
                   className={`action-flow-item${hasFile ? " action-clickable" : ""}${canExpand ? " action-expandable" : ""}${isLiveTail ? " action-flow-item-live" : ""}`}
