@@ -1695,61 +1695,81 @@
 
 /* --- Action Filter Bar --- */
 
-.action-filter-bar {
+/* Action Filter Chips */
+.action-filter-chips {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
-.action-filter-select-wrap {
-  position: relative;
+.action-filter-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.action-filter-chip {
   display: inline-flex;
   align-items: center;
-}
-
-.action-filter-select {
-  appearance: none;
-  -webkit-appearance: none;
-  padding: 4px 22px 4px 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
   background: rgba(0, 0, 0, 0.03);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
-  color: #4e4f4f;
+  color: #6e6e73;
   cursor: pointer;
   outline: none;
   transition: all 0.15s;
   line-height: 1.4;
+  white-space: nowrap;
 }
 
-.action-filter-select:hover {
-  border-color: rgba(0, 0, 0, 0.18);
-  background: rgba(0, 0, 0, 0.05);
+.action-filter-chip:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.14);
 }
 
-.action-filter-select:focus {
-  border-color: #007aff;
-  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.15);
+.action-filter-chip.active {
+  background: var(--chip-color, #007aff);
+  border-color: var(--chip-color, #007aff);
+  color: #fff;
 }
 
-.action-filter-chevron {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 9px;
-  color: #9b9c9e;
-  pointer-events: none;
-  line-height: 1;
+.action-filter-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.action-filter-count {
+.action-filter-chip.active .action-filter-chip-dot {
+  background: rgba(255, 255, 255, 0.7) !important;
+}
+
+.action-filter-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.action-filter-chip.preset {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.action-filter-chips-count {
   font-size: 10px;
   font-weight: 500;
   color: #9b9c9e;
   font-variant-numeric: tabular-nums;
+  margin-left: 4px;
 }
 
 /* Action List (replaces Tool List) */
