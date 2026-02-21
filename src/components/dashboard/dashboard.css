@@ -860,7 +860,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .prompt-card-journey-chip {
@@ -879,17 +879,7 @@
   background: rgba(10, 93, 168, 0.12);
 }
 
-.prompt-card-journey-chip.delta.up {
-  color: #aa2e25;
-  background: rgba(170, 46, 37, 0.12);
-}
-
-.prompt-card-journey-chip.delta.down {
-  color: #1f7a57;
-  background: rgba(31, 122, 87, 0.14);
-}
-
-.prompt-card-journey-chip.delta.flat {
+.prompt-card-journey-chip.delta {
   color: #646b73;
   background: rgba(0, 0, 0, 0.06);
 }
@@ -910,18 +900,14 @@
 
 /* Injected Files overhead mini-bar */
 .prompt-card-injected {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  margin: 4px 0 6px;
 }
 
 .prompt-card-injected-bar {
-  width: 60%;
-  flex-shrink: 0;
+  width: 100%;
   display: flex;
-  height: 8px;
-  border-radius: 4px;
+  height: 6px;
+  border-radius: 3px;
   background: rgba(0, 0, 0, 0.06);
   overflow: visible;
 }
@@ -971,7 +957,7 @@
 }
 
 .prompt-card-injected-label {
-  font-size: 10px;
+  font-size: 11px;
   color: #9b9c9e;
   white-space: nowrap;
   overflow: hidden;
@@ -2218,6 +2204,11 @@
 .session-donut-row span:last-child {
   color: #595959;
   font-weight: 500;
+}
+
+.session-donut-row--cost span:last-child {
+  color: #f59e0b;
+  font-weight: 600;
 }
 
 /* === File Preview Overlay === */

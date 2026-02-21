@@ -15,15 +15,19 @@ export const weightedSumFusion: FusionStrategy = {
 
   combine({ signals, weights }) {
     let weightedScore = 0;
-    let weightedMax = 0;
+    let activeWeightedMax = 0;
 
     for (const s of signals) {
       const w = weights[s.signalId] ?? 1;
       weightedScore += s.score * w;
-      weightedMax += s.maxScore * w;
+      // Only count signals that contributed (score > 0) toward the denominator
+      // so inactive signals don't dilute the normalized score
+      if (s.score > 0) {
+        activeWeightedMax += s.maxScore * w;
+      }
     }
 
-    const normalizedScore = weightedMax > 0 ? weightedScore / weightedMax : 0;
+    const normalizedScore = activeWeightedMax > 0 ? weightedScore / activeWeightedMax : 0;
 
     return {
       rawScore: Math.round(weightedScore * 100) / 100,
