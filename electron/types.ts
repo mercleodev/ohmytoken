@@ -46,6 +46,7 @@ export type AppSettings = {
 export type StoreData = {
   providers: ProviderConfig[];
   settings?: AppSettings;
+  evidenceConfig?: import('./evidence/types').EvidenceEngineConfig;
 };
 
 export type ProxyStatus = {

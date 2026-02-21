@@ -70,6 +70,49 @@ export const parseSystemField = (system: unknown): InjectedFile[] => {
   return files;
 };
 
+/**
+ * Parse system field and return both InjectedFile list AND per-file content.
+ * Used by the evidence scoring engine for text-overlap and compliance analysis.
+ */
+export const parseSystemFieldWithContent = (
+  system: unknown,
+): { files: InjectedFile[]; contents: Record<string, string> } => {
+  const text = extractSystemText(system);
+  if (!text) return { files: [], contents: {} };
+
+  const files: InjectedFile[] = [];
+  const contents: Record<string, string> = {};
+  const matches = [...text.matchAll(CONTENTS_PATTERN)];
+
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const filePath = match[1].trim();
+    const startIdx = match.index! + match[0].length;
+    const endIdx = i + 1 < matches.length ? matches[i + 1].index! : text.length;
+    const content = text.slice(startIdx, endIdx).trim();
+
+    const fullMatch = match[0];
+    let category = classifyCategory(filePath);
+    if (category !== 'rules' && category !== 'memory' && category !== 'skill') {
+      if (fullMatch.includes("user's private global instructions")) {
+        category = 'global';
+      } else if (fullMatch.includes('project instructions')) {
+        category = 'project';
+      }
+    }
+
+    files.push({
+      path: filePath,
+      category,
+      estimated_tokens: countTokens(content),
+    });
+
+    contents[filePath] = content;
+  }
+
+  return { files, contents };
+};
+
 export const estimateSystemTokens = (system: unknown): number => {
   const text = extractSystemText(system);
   return countTokens(text);

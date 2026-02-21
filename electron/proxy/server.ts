@@ -17,6 +17,14 @@ type ProxyOptions = {
   upstream?: string; // 'host:port' (http) or 'api.anthropic.com' (https)
   resolveSessionId?: () => string;
   onScanComplete?: (scan: PromptScan, usage: UsageLogEntry) => void;
+  /** Called after evidence scoring is complete (async) */
+  onEvidenceScored?: (scan: PromptScan) => void;
+  /** Evidence engine instance (injected from main process) */
+  evidenceEngine?: import('../evidence/engine').EvidenceEngine;
+  /** System field content cache for evidence scoring */
+  getSystemContents?: (body: string) => Record<string, string>;
+  /** Previous evidence scores for session history signal */
+  getPreviousScores?: (sessionId: string) => Record<string, number[]>;
 };
 
 let proxyServer: http.Server | null = null;
@@ -163,6 +171,25 @@ const handleRequest = (
               console.log(
                 `[proxy] Scan written (${source}): ${scan.user_prompt.slice(0, 50)}...`,
               );
+
+              // Async evidence scoring (non-blocking)
+              if (options.evidenceEngine) {
+                try {
+                  const fileContents = options.getSystemContents?.(body) ?? {};
+                  const previousScores = options.getPreviousScores?.(scan.session_id) ?? {};
+                  const report = options.evidenceEngine.score(scan, {
+                    fileContents,
+                    previousScores,
+                  });
+                  scan.evidence_report = report;
+                  options.onEvidenceScored?.(scan);
+                  console.log(
+                    `[proxy] Evidence scored: ${report.files.length} files, method=${report.fusion_method}`,
+                  );
+                } catch (evidenceErr) {
+                  console.error("[proxy] Evidence scoring error:", evidenceErr);
+                }
+              }
             } else {
               console.warn("[proxy] buildPromptScan returned null");
             }

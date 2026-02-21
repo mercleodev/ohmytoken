@@ -130,6 +130,9 @@ export type PromptScan = {
   user_messages_count: number;
   assistant_messages_count: number;
   tool_result_count: number;
+
+  /** Evidence scoring report (attached asynchronously after scan completion) */
+  evidence_report?: import('../evidence/types').EvidenceReport;
 };
 
 export type ScanStats = {
