@@ -860,7 +860,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .prompt-card-journey-chip {
@@ -900,10 +900,7 @@
 
 /* Injected Files overhead mini-bar */
 .prompt-card-injected {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin-bottom: 4px;
+  margin: 4px 0 6px;
 }
 
 .prompt-card-injected-bar {
@@ -960,7 +957,7 @@
 }
 
 .prompt-card-injected-label {
-  font-size: 10px;
+  font-size: 11px;
   color: #9b9c9e;
   white-space: nowrap;
   overflow: hidden;

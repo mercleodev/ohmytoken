@@ -476,9 +476,6 @@ export const SessionDetailView = ({
                             />
                           )}
                         </div>
-                        <span className="prompt-card-injected-label">
-                          {formatTokens(ce.total_tokens)} context
-                        </span>
                       </div>
                     );
                   })()}
