@@ -1,0 +1,1834 @@
+import { app, BrowserWindow, ipcMain, globalShortcut } from "electron";
+import * as path from "path";
+import * as fs from "fs";
+import { homedir } from "os";
+import { TrayManager } from "./tray";
+import { Store } from "./store";
+import { ProviderConfig, AppSettings } from "./types";
+import { usageStore } from "./usageStore";
+import { countTokens, analyzeTextSections } from "./analyzer/tokenCounter";
+import { parseLogFile } from "./analyzer/logParser";
+import {
+  startProxyServer,
+  stopProxyServer,
+  getProxyStatus,
+  getSessionId,
+} from "./proxy/server";
+import {
+  readScanLogFiltered,
+  readScanByRequestId,
+  findScanByTimestamp,
+} from "./proxy/scanWriter";
+import { readUsageLog } from "./proxy/usageWriter";
+import { PromptScan, UsageLogEntry } from "./proxy/types";
+import {
+  startHistoryWatcher,
+  readRecentHistory,
+  getLastActiveSessionId,
+} from "./watcher/historyWatcher";
+import { readTodayStats } from "./watcher/statsCacheReader";
+import { initDatabase, closeDatabase } from "./db/index";
+import { onProxyScanComplete } from "./db/proxyAdapter";
+import { onHistoryPromptParsed } from "./db/historyAdapter";
+import { migrateJsonlToDb } from "./db/migrator";
+import * as dbReader from "./db/reader";
+import { calculateCost } from "./utils/costCalculator";
+import {
+  importHistorySessions,
+  importSinglePrompt,
+} from "./importer/historyImporter";
+
+// Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
+process.stdout?.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code !== "EPIPE") throw err;
+});
+process.stderr?.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code !== "EPIPE") throw err;
+});
+
+let mainWindow: BrowserWindow | null = null;
+let trayManager: TrayManager | null = null;
+let store: Store | null = null;
+let currentShortcut: string | null = null;
+let isQuitting = false;
+
+// injected files cache: file-based persistent storage
+const INJECTED_CACHE_PATH = path.join(
+  homedir(),
+  ".claude",
+  "context-state",
+  "injected-cache.json",
+);
+
+type InjectedCacheEntry = {
+  files: Array<{ path: string; category: string; estimated_tokens: number }>;
+  total: number;
+};
+let injectedCacheData: Record<string, InjectedCacheEntry> = {};
+
+const loadInjectedCache = () => {
+  try {
+    if (fs.existsSync(INJECTED_CACHE_PATH)) {
+      injectedCacheData = JSON.parse(
+        fs.readFileSync(INJECTED_CACHE_PATH, "utf-8"),
+      );
+    }
+  } catch {
+    injectedCacheData = {};
+  }
+};
+
+const saveInjectedCache = () => {
+  try {
+    const dir = path.dirname(INJECTED_CACHE_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      INJECTED_CACHE_PATH,
+      JSON.stringify(injectedCacheData),
+      "utf-8",
+    );
+  } catch {
+    /* skip */
+  }
+};
+
+loadInjectedCache();
+
+const isDev = !app.isPackaged;
+const isTest = process.env.NODE_ENV === "test";
+
+const DEFAULT_SHORTCUT = "CommandOrControl+Shift+T";
+
+const DEFAULT_PROXY_PORT = 8780;
+
+const createWindow = (): void => {
+  mainWindow = new BrowserWindow({
+    width: 400,
+    height: 640,
+    resizable: false,
+    show: isTest,
+    frame: isTest,
+    transparent: false,
+    skipTaskbar: !isTest,
+    backgroundColor: "#ffffff", // white background
+    roundedCorners: true,
+    hasShadow: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.js"),
+    },
+  });
+
+  if (isDev && !isTest) {
+    mainWindow.loadURL("http://localhost:5173");
+    mainWindow.webContents.openDevTools({ mode: "detach" });
+  } else if (isTest) {
+    // Test mode: load built files, no DevTools
+    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+  } else {
+    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+  }
+
+  // Safety net: renderer main.tsx sets body.dark synchronously,
+  // but this serves as a backup in case of timing issues
+  mainWindow.webContents.on("did-finish-load", () => {
+    mainWindow?.webContents.executeJavaScript(
+      `document.body.classList.add('dark', 'electron');`,
+    );
+  });
+
+  mainWindow.on("close", (event) => {
+    // Allow normal close in test mode or when quitting
+    if (!isTest && !isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+};
+
+const registerShortcut = (shortcut: string): boolean => {
+  // Unregister existing shortcut
+  if (currentShortcut) {
+    globalShortcut.unregister(currentShortcut);
+  }
+
+  if (!shortcut) return false;
+
+  try {
+    const success = globalShortcut.register(shortcut, () => {
+      if (mainWindow) {
+        if (mainWindow.isVisible()) {
+          mainWindow.hide();
+        } else {
+          // Show window relative to tray position
+          trayManager?.showWindowFromShortcut();
+        }
+      }
+    });
+
+    if (success) {
+      currentShortcut = shortcut;
+      console.log(`Shortcut registered: ${shortcut}`);
+    } else {
+      console.error(`Failed to register shortcut: ${shortcut}`);
+    }
+
+    return success;
+  } catch (error) {
+    console.error(`Error registering shortcut: ${error}`);
+    return false;
+  }
+};
+
+// NOTE: Do not modify the global ~/.claude/settings.json.
+// To use the proxy, apply project-local settings or environment variables individually.
+// ANTHROPIC_BASE_URL=http://localhost:8780 claude
+
+const initApp = async (): Promise<void> => {
+  // Initialize SQLite DB (creates tables if needed)
+  try {
+    initDatabase();
+    const migrated = migrateJsonlToDb();
+    if (migrated.scans > 0) {
+      console.log(
+        `[DB] Migrated ${migrated.scans} scans, ${migrated.usage} usage entries from JSONL`,
+      );
+    }
+    // Batch import history sessions (first-run only, skips if data exists)
+    const historyResult = importHistorySessions();
+    if (historyResult.imported > 0) {
+      console.log(
+        `[DB] Imported ${historyResult.imported} history prompts (${historyResult.durationMs}ms)`,
+      );
+    }
+  } catch (err) {
+    console.error("[DB] Failed to initialize:", err);
+  }
+
+  store = new Store();
+
+  createWindow();
+
+  trayManager = new TrayManager(mainWindow!, store);
+  trayManager.init();
+
+  // usageStore onChange -> update tray + renderer simultaneously
+  usageStore.onChange((provider, snapshot) => {
+    if (provider === "claude") {
+      trayManager?.onSnapshotChanged(provider, snapshot);
+    }
+    mainWindow?.webContents.send("provider-usage-updated", {
+      provider,
+      snapshot,
+    });
+  });
+
+  // Register saved shortcut or default shortcut
+  const settings = store.get("settings");
+  const shortcut = settings?.shortcut || DEFAULT_SHORTCUT;
+  registerShortcut(shortcut);
+
+  setupIPC();
+
+  // Start usageStore polling + initial fetch
+  const refreshInterval = settings?.refreshInterval || 5;
+  usageStore.startPolling(refreshInterval);
+  usageStore.refresh("claude");
+
+  // Start token file watcher (syncs dashboard + tray simultaneously)
+  try {
+    const {
+      startTokenFileWatcher,
+    } = require("./providers/usage/tokenFileWatcher");
+    startTokenFileWatcher({
+      getMainWindow: () => mainWindow,
+      onTokenChanged: () => usageStore.refresh("claude"),
+    });
+  } catch (err) {
+    console.error("[TokenWatcher] Failed to start:", err);
+  }
+
+  // Start history.jsonl watcher (passive session monitoring)
+  try {
+    startHistoryWatcher({
+      onNewEntry: (entry) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("new-history-entry", entry);
+        }
+        // Real-time DB import: parse session file and insert latest prompt
+        try {
+          importSinglePrompt(entry.sessionId, entry.timestamp);
+        } catch (e) {
+          console.error("[DB] history real-time import error:", e);
+        }
+      },
+    });
+  } catch (err) {
+    console.error("[HistoryWatcher] Failed to start:", err);
+  }
+
+  // Auto-start proxy server (saved port or default 8780)
+  const proxyPort = settings?.proxyPort || DEFAULT_PROXY_PORT;
+  const proxyUpstream = process.env.PROXY_UPSTREAM || "api.anthropic.com";
+  try {
+    startProxyServer({
+      port: proxyPort,
+      upstream: proxyUpstream,
+      resolveSessionId: () => getLastActiveSessionId(),
+      onScanComplete: (scan, usage) => {
+        mainWindow?.webContents.send("new-prompt-scan", { scan, usage });
+        // Dual-write: also persist to SQLite DB
+        try {
+          onProxyScanComplete(scan, usage);
+        } catch (e) {
+          console.error("[DB] proxy write error:", e);
+        }
+      },
+    });
+    console.log(`Proxy server auto-started on :${proxyPort}`);
+  } catch (err) {
+    console.error("Failed to auto-start proxy:", err);
+  }
+};
+
+const setupIPC = (): void => {
+  if (!store || !trayManager) return;
+
+  // Dark mode feature removed
+
+  // Save config
+  ipcMain.handle(
+    "save-config",
+    async (_event, config: { providers: ProviderConfig[] }) => {
+      store!.set("providers", config.providers || []);
+      trayManager!.refreshProviders();
+      return { success: true };
+    },
+  );
+
+  // Load config
+  ipcMain.handle("get-config", async () => {
+    return {
+      providers: store!.get("providers") || [],
+      settings: store!.get("settings") || null,
+    };
+  });
+
+  // Save app settings
+  ipcMain.handle("save-settings", async (_event, settings: AppSettings) => {
+    const prevSettings = store!.get("settings") as AppSettings | undefined;
+    store!.set("settings", settings);
+    trayManager!.updateSettings(settings);
+
+    // Re-register shortcut
+    if (settings.shortcut) {
+      registerShortcut(settings.shortcut);
+    }
+
+    // Restart polling if interval changed
+    const prevRefresh = prevSettings?.refreshInterval || 5;
+    const newRefresh = settings.refreshInterval || 5;
+    if (prevRefresh !== newRefresh) {
+      usageStore.startPolling(newRefresh);
+    }
+
+    // Detect proxy port change -> restart
+    const prevPort = prevSettings?.proxyPort || DEFAULT_PROXY_PORT;
+    const newPort = settings.proxyPort || DEFAULT_PROXY_PORT;
+    if (prevPort !== newPort) {
+      try {
+        await stopProxyServer();
+        startProxyServer({
+          port: newPort,
+          upstream: "api.anthropic.com",
+          resolveSessionId: () => getLastActiveSessionId(),
+          onScanComplete: (scan, usage) => {
+            mainWindow?.webContents.send("new-prompt-scan", { scan, usage });
+            try {
+              onProxyScanComplete(scan, usage);
+            } catch (e) {
+              console.error("[DB] proxy write error:", e);
+            }
+          },
+        });
+        console.log(`Proxy restarted on :${newPort}`);
+      } catch (err) {
+        console.error("Failed to restart proxy:", err);
+      }
+    }
+
+    return { success: true };
+  });
+
+  // Add provider
+  ipcMain.handle("add-provider", async (_event, provider: ProviderConfig) => {
+    const providers = store!.get("providers") || [];
+    providers.push(provider);
+    store!.set("providers", providers);
+    trayManager!.refreshProviders();
+    return { success: true };
+  });
+
+  // Remove provider
+  ipcMain.handle("remove-provider", async (_event, providerId: string) => {
+    const providers = store!.get("providers") || [];
+    const filtered = providers.filter(
+      (p: ProviderConfig) => p.id !== providerId,
+    );
+    store!.set("providers", filtered);
+    trayManager!.refreshProviders();
+    return { success: true };
+  });
+
+  // Manual refresh
+  ipcMain.handle("refresh-usage", async () => {
+    await usageStore.refresh("claude");
+    return { success: true };
+  });
+
+  // Get current usage data
+  ipcMain.handle("get-usage-data", async () => {
+    return trayManager!.getCurrentUsageData();
+  });
+
+  // Token scan
+  ipcMain.handle("scan-tokens", async () => {
+    try {
+      const claudeDir = path.join(homedir(), ".claude");
+      const projectsDir = path.join(claudeDir, "projects");
+
+      // Analyze CLAUDE.md files
+      let claudeMdGlobal = 0;
+      let claudeMdProject = 0;
+      const claudeMdSections: Array<{
+        section: string;
+        tokens: number;
+        percentage: number;
+      }> = [];
+
+      // Global CLAUDE.md
+      const globalClaudeMd = path.join(claudeDir, "CLAUDE.md");
+      if (fs.existsSync(globalClaudeMd)) {
+        const content = fs.readFileSync(globalClaudeMd, "utf-8");
+        claudeMdGlobal = countTokens(content);
+
+        // Analyze by section
+        const sections = analyzeTextSections(content);
+        claudeMdSections.push(
+          ...sections.map((s) => ({
+            section: s.section,
+            tokens: s.tokens,
+            percentage: s.percentage,
+          })),
+        );
+      }
+
+      // CLAUDE.md from the most recent project
+      if (fs.existsSync(projectsDir)) {
+        const projects = fs
+          .readdirSync(projectsDir)
+          .filter((f) => fs.statSync(path.join(projectsDir, f)).isDirectory())
+          .map((f) => ({
+            name: f,
+            mtime: fs.statSync(path.join(projectsDir, f)).mtime.getTime(),
+          }))
+          .sort((a, b) => b.mtime - a.mtime);
+
+        if (projects.length > 0) {
+          const projectClaudeMd = path.join(
+            projectsDir,
+            projects[0].name,
+            "CLAUDE.md",
+          );
+          if (fs.existsSync(projectClaudeMd)) {
+            const content = fs.readFileSync(projectClaudeMd, "utf-8");
+            claudeMdProject = countTokens(content);
+          }
+
+          // Analyze token usage from recent logs
+          const projectDir = path.join(projectsDir, projects[0].name);
+          const logFiles = fs
+            .readdirSync(projectDir)
+            .filter((f) => f.endsWith(".jsonl"))
+            .map((f) => path.join(projectDir, f));
+
+          let totalInput = 0;
+          let totalOutput = 0;
+          let totalCacheCreation = 0;
+          let totalCacheRead = 0;
+
+          // Collect cache usage details
+          const cacheDetails: Array<{
+            timestamp: string;
+            prompt: string;
+            cacheRead: number;
+            cacheCreation: number;
+            inputTokens: number;
+          }> = [];
+
+          for (const logFile of logFiles) {
+            const messages = await parseLogFile(logFile);
+            // Sum up usage from each message
+            let lastUserPrompt = "";
+            for (const msg of messages) {
+              if (msg.role === "user" && msg.content) {
+                // Strip system tags
+                lastUserPrompt = msg.content
+                  .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "")
+                  .replace(
+                    /<task-notification>[\s\S]*?<\/task-notification>/g,
+                    "",
+                  )
+                  .replace(/<[^>]+>/g, "")
+                  .trim()
+                  .slice(0, 100);
+              }
+              if (msg.usage) {
+                totalInput += msg.usage.inputTokens;
+                totalOutput += msg.usage.outputTokens;
+                totalCacheCreation += msg.usage.cacheCreationTokens;
+                totalCacheRead += msg.usage.cacheReadTokens;
+
+                // Only record entries with cache usage
+                if (
+                  msg.usage.cacheReadTokens > 0 ||
+                  msg.usage.cacheCreationTokens > 0
+                ) {
+                  cacheDetails.push({
+                    timestamp: msg.timestamp,
+                    prompt: lastUserPrompt || "(system request)",
+                    cacheRead: msg.usage.cacheReadTokens,
+                    cacheCreation: msg.usage.cacheCreationTokens,
+                    inputTokens: msg.usage.inputTokens,
+                  });
+                }
+              }
+            }
+          }
+
+          // Keep only last 10, sorted by time
+          const recentCacheDetails = cacheDetails
+            .sort(
+              (a, b) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime(),
+            )
+            .slice(0, 10);
+
+          const claudeMdTotal = claudeMdGlobal + claudeMdProject;
+          const total =
+            claudeMdTotal + totalInput + totalOutput + totalCacheCreation;
+
+          // Generate insights
+          const insights: string[] = [];
+
+          const claudeMdPercentage =
+            total > 0 ? (claudeMdTotal / total) * 100 : 0;
+          if (claudeMdPercentage > 50) {
+            insights.push(
+              `⚠️ CLAUDE.md accounts for ${claudeMdPercentage.toFixed(1)}% of total tokens`,
+            );
+          }
+
+          const cacheHitRate =
+            totalCacheCreation + totalCacheRead > 0
+              ? (totalCacheRead / (totalCacheCreation + totalCacheRead)) * 100
+              : 0;
+          insights.push(`💡 Cache hit rate: ${cacheHitRate.toFixed(1)}%`);
+
+          if (claudeMdTotal > 10000) {
+            const potentialSavings = Math.round(claudeMdTotal * 0.3);
+            insights.push(
+              `🔧 Optimizing CLAUDE.md could save ~${potentialSavings.toLocaleString()} tokens`,
+            );
+          }
+
+          // CLAUDE.md content preview (main cached content)
+          let claudeMdPreview = "";
+          const globalClaudeMdPath = path.join(claudeDir, "CLAUDE.md");
+          if (fs.existsSync(globalClaudeMdPath)) {
+            const content = fs.readFileSync(globalClaudeMdPath, "utf-8");
+            claudeMdPreview =
+              content.slice(0, 500) + (content.length > 500 ? "..." : "");
+          }
+
+          return {
+            breakdown: {
+              claudeMd: {
+                global: claudeMdGlobal,
+                project: claudeMdProject,
+                total: claudeMdTotal,
+              },
+              userInput: totalInput,
+              cacheCreation: totalCacheCreation,
+              cacheRead: totalCacheRead,
+              output: totalOutput,
+              total,
+            },
+            insights,
+            claudeMdSections,
+            // Cache details
+            cacheInfo: {
+              claudeMdPreview,
+              recentCacheUsage: recentCacheDetails,
+              cacheHitRate:
+                totalCacheCreation + totalCacheRead > 0
+                  ? (totalCacheRead / (totalCacheCreation + totalCacheRead)) *
+                    100
+                  : 0,
+            },
+          };
+        }
+      }
+
+      // Default response
+      return {
+        breakdown: {
+          claudeMd: {
+            global: claudeMdGlobal,
+            project: claudeMdProject,
+            total: claudeMdGlobal + claudeMdProject,
+          },
+          userInput: 0,
+          cacheCreation: 0,
+          cacheRead: 0,
+          output: 0,
+          total: claudeMdGlobal + claudeMdProject,
+        },
+        insights: [],
+        claudeMdSections,
+      };
+    } catch (error) {
+      console.error("Token scan error:", error);
+      return null;
+    }
+  });
+
+  // Get prompt history (real-time) - from all projects
+  ipcMain.handle("get-prompt-history", async () => {
+    try {
+      const projectsDir = path.join(homedir(), ".claude", "projects");
+
+      if (!fs.existsSync(projectsDir)) {
+        return [];
+      }
+
+      // Get all projects
+      const projects = fs
+        .readdirSync(projectsDir)
+        .filter((f) => fs.statSync(path.join(projectsDir, f)).isDirectory())
+        .map((f) => ({
+          name: f,
+          path: path.join(projectsDir, f),
+          mtime: fs.statSync(path.join(projectsDir, f)).mtime.getTime(),
+        }))
+        .sort((a, b) => b.mtime - a.mtime);
+
+      if (projects.length === 0) {
+        return [];
+      }
+
+      const prompts: Array<{
+        id: string;
+        timestamp: string;
+        content: string;
+        fullContent: string;
+        tokens: number;
+        logFile: string;
+        project: string;
+      }> = [];
+
+      // Collect recent log files from all projects
+      const allLogFiles: Array<{
+        path: string;
+        mtime: number;
+        project: string;
+      }> = [];
+
+      for (const project of projects) {
+        const logFiles = fs
+          .readdirSync(project.path)
+          .filter((f) => f.endsWith(".jsonl"))
+          .map((f) => ({
+            path: path.join(project.path, f),
+            mtime: fs.statSync(path.join(project.path, f)).mtime.getTime(),
+            project: project.name,
+          }));
+        allLogFiles.push(...logFiles);
+      }
+
+      // Sort all log files by most recent modification time and take top 10
+      const recentLogFiles = allLogFiles
+        .sort((a, b) => b.mtime - a.mtime)
+        .slice(0, 10);
+
+      // Extract prompts from each log file
+      for (const logFile of recentLogFiles) {
+        const messages = await parseLogFile(logFile.path);
+
+        for (const msg of messages) {
+          if (msg.role === "user" && msg.content) {
+            // Strip system tags (extract actual user input only)
+            let cleanContent = msg.content
+              .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "")
+              .replace(/<task-notification>[\s\S]*?<\/task-notification>/g, "")
+              .replace(/<[^>]+>/g, "") // Remove other tags
+              .trim();
+
+            // Skip empty or too-short content
+            if (!cleanContent || cleanContent.length < 3) continue;
+
+            prompts.push({
+              id: msg.uuid || `${Date.now()}-${Math.random()}`,
+              timestamp: msg.timestamp,
+              content:
+                cleanContent.slice(0, 100) +
+                (cleanContent.length > 100 ? "..." : ""),
+              fullContent: cleanContent,
+              tokens: countTokens(cleanContent),
+              logFile: logFile.path,
+              project: logFile.project,
+            });
+          }
+        }
+      }
+
+      // Sort by newest first and return only 20
+      return prompts
+        .sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        )
+        .slice(0, 20);
+    } catch (error) {
+      console.error("Get prompt history error:", error);
+      return [];
+    }
+  });
+
+  // Get context logs (list of referenced files)
+  ipcMain.handle("get-context-logs", async (_event, sessionId?: string) => {
+    try {
+      const contextLogsDir = path.join(homedir(), ".claude", "context-logs");
+
+      if (!fs.existsSync(contextLogsDir)) {
+        return {
+          autoInjected: [],
+          readFiles: [],
+          globSearches: [],
+          grepSearches: [],
+        };
+      }
+
+      // If no session ID, use the most recent log file (excluding test-)
+      let logFile: string;
+      if (sessionId) {
+        logFile = path.join(contextLogsDir, `${sessionId}.jsonl`);
+      } else {
+        const files = fs
+          .readdirSync(contextLogsDir)
+          .filter((f) => f.endsWith(".jsonl") && !f.startsWith("test-"))
+          .map((f) => ({
+            name: f,
+            path: path.join(contextLogsDir, f),
+            mtime: fs.statSync(path.join(contextLogsDir, f)).mtime.getTime(),
+          }))
+          .sort((a, b) => b.mtime - a.mtime);
+
+        if (files.length === 0) {
+          return {
+            autoInjected: [],
+            readFiles: [],
+            globSearches: [],
+            grepSearches: [],
+          };
+        }
+        logFile = files[0].path;
+      }
+
+      if (!fs.existsSync(logFile)) {
+        return {
+          autoInjected: [],
+          readFiles: [],
+          globSearches: [],
+          grepSearches: [],
+        };
+      }
+
+      // Parse JSONL
+      const content = fs.readFileSync(logFile, "utf-8");
+      const lines = content
+        .trim()
+        .split("\n")
+        .filter((line) => line.trim());
+
+      const autoInjected: string[] = [];
+      const readFiles: string[] = [];
+      const globSearches: Array<{ pattern: string; searchPath: string }> = [];
+      const grepSearches: Array<{ pattern: string; searchPath: string }> = [];
+
+      for (const line of lines) {
+        try {
+          const entry = JSON.parse(line);
+
+          if (entry.tool === "AutoInjected" && entry.file_path) {
+            if (!autoInjected.includes(entry.file_path)) {
+              autoInjected.push(entry.file_path);
+            }
+          } else if (entry.tool === "Read" && entry.file_path) {
+            if (!readFiles.includes(entry.file_path)) {
+              readFiles.push(entry.file_path);
+            }
+          } else if (entry.tool === "Glob" && entry.pattern) {
+            const exists = globSearches.some(
+              (g) =>
+                g.pattern === entry.pattern &&
+                g.searchPath === entry.search_path,
+            );
+            if (!exists) {
+              globSearches.push({
+                pattern: entry.pattern,
+                searchPath: entry.search_path || ".",
+              });
+            }
+          } else if (entry.tool === "Grep" && entry.pattern) {
+            const exists = grepSearches.some(
+              (g) =>
+                g.pattern === entry.pattern &&
+                g.searchPath === entry.search_path,
+            );
+            if (!exists) {
+              grepSearches.push({
+                pattern: entry.pattern,
+                searchPath: entry.search_path || ".",
+              });
+            }
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+      }
+
+      return {
+        autoInjected,
+        readFiles,
+        globSearches,
+        grepSearches,
+        sessionId: path.basename(logFile, ".jsonl"),
+      };
+    } catch (error) {
+      console.error("Get context logs error:", error);
+      return {
+        autoInjected: [],
+        readFiles: [],
+        globSearches: [],
+        grepSearches: [],
+      };
+    }
+  });
+
+  // Analyze specific prompt (cost calculation)
+  ipcMain.handle("analyze-prompt", async (_event, promptId: string) => {
+    try {
+      const projectsDir = path.join(homedir(), ".claude", "projects");
+
+      // Find the most recent project
+      const projects = fs
+        .readdirSync(projectsDir)
+        .filter((f) => fs.statSync(path.join(projectsDir, f)).isDirectory())
+        .map((f) => ({
+          name: f,
+          mtime: fs.statSync(path.join(projectsDir, f)).mtime.getTime(),
+        }))
+        .sort((a, b) => b.mtime - a.mtime);
+
+      if (projects.length === 0) {
+        return null;
+      }
+
+      const projectDir = path.join(projectsDir, projects[0].name);
+      const logFiles = fs
+        .readdirSync(projectDir)
+        .filter((f) => f.endsWith(".jsonl"))
+        .map((f) => path.join(projectDir, f));
+
+      // Find the matching prompt and its response across all log files
+      for (const logFile of logFiles) {
+        const messages = await parseLogFile(logFile);
+
+        // Find the prompt
+        const promptIndex = messages.findIndex((m) => m.uuid === promptId);
+        if (promptIndex === -1) continue;
+
+        const prompt = messages[promptIndex];
+
+        // Find the assistant response after this prompt
+        let response = null;
+        for (let i = promptIndex + 1; i < messages.length; i++) {
+          if (messages[i].role === "assistant" && messages[i].usage) {
+            response = messages[i];
+            break;
+          }
+        }
+
+        // Cost calculation (based on Claude 3.5 Sonnet pricing)
+        const inputCostPer1M = 3.0; // $3 per 1M input tokens
+        const outputCostPer1M = 15.0; // $15 per 1M output tokens
+        const cacheReadCostPer1M = 0.3; // $0.30 per 1M cache read tokens
+
+        const usage = response?.usage || {
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheCreationTokens: 0,
+        };
+        const promptTokens = countTokens(prompt.content || "");
+
+        const inputCost = (usage.inputTokens / 1000000) * inputCostPer1M;
+        const outputCost = (usage.outputTokens / 1000000) * outputCostPer1M;
+        const cacheCost =
+          (usage.cacheReadTokens / 1000000) * cacheReadCostPer1M;
+        const totalCost = inputCost + outputCost + cacheCost;
+
+        // Cost saved from cache
+        const savedCost =
+          (usage.cacheReadTokens / 1000000) * inputCostPer1M - cacheCost;
+
+        return {
+          promptId,
+          prompt: {
+            content: prompt.content,
+            tokens: promptTokens,
+            timestamp: prompt.timestamp,
+          },
+          response: response
+            ? {
+                model: response.model,
+                inputTokens: usage.inputTokens,
+                outputTokens: usage.outputTokens,
+                cacheCreationTokens: usage.cacheCreationTokens,
+                cacheReadTokens: usage.cacheReadTokens,
+                totalTokens: usage.inputTokens + usage.outputTokens,
+              }
+            : null,
+          cost: {
+            input: inputCost,
+            output: outputCost,
+            cache: cacheCost,
+            total: totalCost,
+            saved: savedCost,
+          },
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Analyze prompt error:", error);
+      return null;
+    }
+  });
+
+  // Start proxy server
+  ipcMain.handle(
+    "start-proxy",
+    async (_event, port?: number, upstream?: string) => {
+      try {
+        startProxyServer({
+          port,
+          upstream,
+          resolveSessionId: () => getLastActiveSessionId(),
+        });
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    },
+  );
+
+  // Stop proxy server
+  ipcMain.handle("stop-proxy", async () => {
+    try {
+      await stopProxyServer();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  });
+
+  // Get proxy status
+  ipcMain.handle("get-proxy-status", async () => {
+    return getProxyStatus();
+  });
+
+  // --- History (passive session monitoring) ---
+
+  ipcMain.handle("get-recent-history", async (_event, limit?: number) => {
+    try {
+      const entries = readRecentHistory(limit ?? 50);
+
+      // Enrich top entries: DB first, then JSONL fallback for unmatched
+      const toEnrich = entries.slice(0, 20);
+      for (const entry of toEnrich) {
+        try {
+          const dbMatch = dbReader.findPromptByTimestamp(
+            entry.sessionId,
+            entry.timestamp,
+          );
+          if (dbMatch && dbMatch.context_estimate.total_tokens > 0) {
+            entry.totalContextTokens = dbMatch.context_estimate.total_tokens;
+            entry.model = dbMatch.model;
+            continue;
+          }
+        } catch {
+          /* DB lookup failed, fall through to JSONL */
+        }
+      }
+
+      // JSONL fallback: enrich entries that DB didn't match
+      const needsJsonlEnrich = toEnrich.filter((e) => !e.totalContextTokens);
+      if (needsJsonlEnrich.length > 0) {
+        const projectsDir = path.join(homedir(), ".claude", "projects");
+        if (fs.existsSync(projectsDir)) {
+          const bySession = new Map<string, typeof needsJsonlEnrich>();
+          for (const e of needsJsonlEnrich) {
+            const arr = bySession.get(e.sessionId) ?? [];
+            arr.push(e);
+            bySession.set(e.sessionId, arr);
+          }
+
+          let projectDirs: string[] | null = null;
+          for (const [sid, sessionEntries] of bySession) {
+            try {
+              if (!projectDirs) {
+                projectDirs = fs.readdirSync(projectsDir).filter((f) => {
+                  try {
+                    return fs.statSync(path.join(projectsDir, f)).isDirectory();
+                  } catch {
+                    return false;
+                  }
+                });
+              }
+              let logFile: string | null = null;
+              for (const dir of projectDirs) {
+                const candidate = path.join(projectsDir, dir, `${sid}.jsonl`);
+                if (fs.existsSync(candidate)) {
+                  logFile = candidate;
+                  break;
+                }
+              }
+              if (!logFile) continue;
+
+              const content = fs.readFileSync(logFile, "utf-8");
+              const lines = content.trim().split("\n");
+              type UsageInfo = {
+                ts: number;
+                model: string;
+                input: number;
+                cacheRead: number;
+                cacheCreation: number;
+              };
+              const usages: UsageInfo[] = [];
+              for (
+                let i = lines.length - 1;
+                i >= 0 && usages.length < 50;
+                i--
+              ) {
+                try {
+                  const raw = JSON.parse(lines[i]);
+                  if (raw.type === "assistant" && raw.message?.usage) {
+                    const u = raw.message.usage;
+                    usages.push({
+                      ts: new Date(raw.timestamp).getTime(),
+                      model: raw.message.model || "unknown",
+                      input: u.input_tokens || 0,
+                      cacheRead: u.cache_read_input_tokens || 0,
+                      cacheCreation: u.cache_creation_input_tokens || 0,
+                    });
+                  }
+                } catch {
+                  /* skip */
+                }
+              }
+
+              for (const entry of sessionEntries) {
+                let bestDelta = Infinity;
+                let bestUsage: UsageInfo | undefined;
+                for (const u of usages) {
+                  const delta = u.ts - entry.timestamp;
+                  if (
+                    delta >= -2000 &&
+                    delta < 60000 &&
+                    Math.abs(delta) < bestDelta
+                  ) {
+                    bestDelta = Math.abs(delta);
+                    bestUsage = u;
+                  }
+                }
+                if (bestUsage) {
+                  entry.totalContextTokens =
+                    bestUsage.input +
+                    bestUsage.cacheRead +
+                    bestUsage.cacheCreation;
+                  entry.model = bestUsage.model;
+                }
+              }
+            } catch {
+              /* skip session */
+            }
+          }
+        }
+      }
+
+      return entries;
+    } catch (error) {
+      console.error("get-recent-history error:", error);
+      return [];
+    }
+  });
+
+  ipcMain.handle("get-daily-stats", async () => {
+    try {
+      const dbResult = dbReader.getDailyStats();
+      if (dbResult.length > 0) return dbResult;
+      return readTodayStats();
+    } catch (error) {
+      console.error("get-daily-stats error:", error);
+      return null;
+    }
+  });
+
+  // History-based prompt detail analysis (DB primary, JSONL fallback)
+  ipcMain.handle(
+    "get-history-prompt-detail",
+    async (_event, sessionId: string, timestamp: number) => {
+      try {
+        // DB primary: check if we already have this prompt (with complete data)
+        try {
+          const dbMatch = dbReader.findPromptByTimestamp(sessionId, timestamp);
+          if (
+            dbMatch &&
+            dbMatch.context_estimate.total_tokens > 0 &&
+            dbMatch.context_estimate.system_tokens > 0
+          ) {
+            const dbDetail = dbReader.getPromptDetail(dbMatch.request_id);
+            if (dbDetail) return dbDetail;
+          }
+        } catch {
+          /* DB lookup failed, fall through to JSONL */
+        }
+
+        // JSONL fallback (existing 450-line logic)
+        const projectsDir = path.join(homedir(), ".claude", "projects");
+        if (!fs.existsSync(projectsDir)) return null;
+
+        // Find sessionId.jsonl across all projects
+        const projectDirs = fs
+          .readdirSync(projectsDir)
+          .filter((f) => fs.statSync(path.join(projectsDir, f)).isDirectory());
+
+        let logFilePath: string | null = null;
+        let projectDirName = "";
+        for (const dir of projectDirs) {
+          const candidate = path.join(projectsDir, dir, `${sessionId}.jsonl`);
+          if (fs.existsSync(candidate)) {
+            logFilePath = candidate;
+            projectDirName = dir;
+            break;
+          }
+        }
+        if (!logFilePath) return null;
+
+        // Restore project path from dash-delimited directory name
+        const projectPath = projectDirName
+          .replace(/^-/, "/")
+          .replace(/-/g, "/");
+
+        const messages = await parseLogFile(logFilePath);
+        if (messages.length === 0) return null;
+
+        // Find the user message closest to the timestamp (ms)
+        const userMessages = messages.filter(
+          (m) => m.role === "user" && m.content,
+        );
+        let bestIdx = -1;
+        let bestDiff = Infinity;
+        for (let i = 0; i < userMessages.length; i++) {
+          const msgTime = new Date(userMessages[i].timestamp).getTime();
+          const diff = Math.abs(msgTime - timestamp);
+          if (diff < bestDiff) {
+            bestDiff = diff;
+            bestIdx = i;
+          }
+        }
+        if (bestIdx === -1) return null;
+
+        const userMsg = userMessages[bestIdx];
+        const userMsgGlobalIdx = messages.indexOf(userMsg);
+
+        // Find the first assistant response after this user message
+        let assistantMsg = null;
+        for (let i = userMsgGlobalIdx + 1; i < messages.length; i++) {
+          if (messages[i].role === "assistant" && messages[i].usage) {
+            assistantMsg = messages[i];
+            break;
+          }
+        }
+
+        // Extract tools from all assistant messages between this user message and the next
+        // Re-read JSONL raw entries to parse tool_use blocks
+        const rawLines = fs
+          .readFileSync(logFilePath, "utf-8")
+          .trim()
+          .split("\n");
+        const rawEntries: any[] = [];
+        for (const line of rawLines) {
+          try {
+            rawEntries.push(JSON.parse(line));
+          } catch {
+            /* skip */
+          }
+        }
+
+        // Match: find original position by userMsg.uuid or timestamp
+        let rawUserIdx = userMsg.uuid
+          ? rawEntries.findIndex((e) => e.uuid === userMsg.uuid)
+          : -1;
+        // Fallback to timestamp-based matching if uuid match fails
+        if (rawUserIdx === -1) {
+          const targetTime = new Date(userMsg.timestamp).getTime();
+          let bestDiff2 = Infinity;
+          for (let i = 0; i < rawEntries.length; i++) {
+            const e = rawEntries[i];
+            if (e.type !== "user" || !e.message?.content) continue;
+            const eTime = new Date(e.timestamp).getTime();
+            const diff2 = Math.abs(eTime - targetTime);
+            if (diff2 < bestDiff2) {
+              bestDiff2 = diff2;
+              rawUserIdx = i;
+            }
+          }
+        }
+
+        // Index of the next user message (for range bounding)
+        let nextUserRawIdx = rawEntries.length;
+        if (rawUserIdx < 0) rawUserIdx = -1; // safety
+        for (let i = rawUserIdx + 1; i < rawEntries.length; i++) {
+          if (rawEntries[i].type === "user" && rawEntries[i].message?.content) {
+            const content = rawEntries[i].message.content;
+            // Skip user messages that only contain tool_result
+            if (
+              typeof content === "string" ||
+              (Array.isArray(content) &&
+                content.some((c: any) => c.type === "text"))
+            ) {
+              nextUserRawIdx = i;
+              break;
+            }
+          }
+        }
+
+        // Extract tool_use (from assistant messages in this turn)
+        const toolCalls: Array<{
+          index: number;
+          name: string;
+          input_summary: string;
+          timestamp?: string;
+        }> = [];
+        const toolSummary: Record<string, number> = {};
+        const agentCalls: Array<{
+          index: number;
+          subagent_type: string;
+          description: string;
+        }> = [];
+        let toolResultCount = 0;
+        let toolResultTokensTotal = 0;
+        let toolIdx = 0;
+
+        if (rawUserIdx >= 0) {
+          for (let i = rawUserIdx + 1; i < nextUserRawIdx; i++) {
+            const entry = rawEntries[i];
+            if (
+              entry.type === "assistant" &&
+              entry.message?.content &&
+              Array.isArray(entry.message.content)
+            ) {
+              for (const block of entry.message.content) {
+                if (block.type === "tool_use") {
+                  const name = block.name || "Unknown";
+                  const inputObj =
+                    typeof block.input === "object" ? block.input : undefined;
+                  let inputStr = "";
+                  if (inputObj) {
+                    const summaryFields = [
+                      "file_path",
+                      "pattern",
+                      "command",
+                      "query",
+                      "prompt",
+                      "url",
+                      "selector",
+                      "description",
+                    ];
+                    for (const field of summaryFields) {
+                      if (
+                        inputObj[field] &&
+                        typeof inputObj[field] === "string"
+                      ) {
+                        inputStr = String(inputObj[field]).slice(0, 500);
+                        break;
+                      }
+                    }
+                    if (!inputStr)
+                      inputStr = JSON.stringify(inputObj).slice(0, 500);
+                  } else if (typeof block.input === "string") {
+                    inputStr = block.input.slice(0, 500);
+                  }
+                  toolCalls.push({
+                    index: toolIdx++,
+                    name,
+                    input_summary: inputStr,
+                    timestamp: entry.timestamp,
+                  });
+                  toolSummary[name] = (toolSummary[name] || 0) + 1;
+
+                  // Task tool → agent call
+                  if (name === "Task" && block.input) {
+                    agentCalls.push({
+                      index: agentCalls.length,
+                      subagent_type: block.input.subagent_type || "unknown",
+                      description: block.input.description || "",
+                    });
+                  }
+                }
+              }
+            }
+            // Count tool_result entries and their tokens
+            if (
+              entry.type === "user" &&
+              entry.message?.content &&
+              Array.isArray(entry.message.content)
+            ) {
+              for (const block of entry.message.content) {
+                if (block.type === "tool_result") {
+                  toolResultCount++;
+                  if (block.content) {
+                    const text =
+                      typeof block.content === "string"
+                        ? block.content
+                        : JSON.stringify(block.content);
+                    toolResultTokensTotal += countTokens(text);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Count user_text / assistant / tool_result tokens across entire conversation
+        let userTextTokensAll = 0;
+        let assistantTokensAll = 0;
+        let toolResultTokensAll = 0;
+        for (let i = 0; i < nextUserRawIdx; i++) {
+          const re = rawEntries[i];
+          if (re.type === "user" && re.message?.content) {
+            const c = re.message.content;
+            if (typeof c === "string") {
+              userTextTokensAll += countTokens(c);
+            } else if (Array.isArray(c)) {
+              for (const blk of c) {
+                if (blk.type === "tool_result") {
+                  toolResultTokensAll += countTokens(
+                    typeof blk.content === "string"
+                      ? blk.content
+                      : JSON.stringify(blk.content || ""),
+                  );
+                } else if (blk.type === "text") {
+                  userTextTokensAll += countTokens(String(blk.text || ""));
+                }
+              }
+            }
+          } else if (re.type === "assistant" && re.message?.content) {
+            const c = re.message.content;
+            if (typeof c === "string") {
+              assistantTokensAll += countTokens(c);
+            } else if (Array.isArray(c)) {
+              let txt = "";
+              for (const blk of c) {
+                if (blk.type === "text") txt += blk.text || "";
+              }
+              assistantTokensAll += countTokens(txt);
+            }
+          }
+        }
+
+        // Determine injected files: proxy scan -> cache -> disk fallback
+        const userMsgTime = new Date(userMsg.timestamp).getTime();
+        const proxyScan = findScanByTimestamp(userMsgTime);
+        const cacheKey = `${sessionId}:${timestamp}`;
+
+        let injectedFiles: Array<{
+          path: string;
+          category: string;
+          estimated_tokens: number;
+        }>;
+        let totalInjectedTokens: number;
+
+        if (proxyScan) {
+          // Priority 1: proxy scan (exact values at request time)
+          injectedFiles = proxyScan.injected_files;
+          totalInjectedTokens = proxyScan.total_injected_tokens;
+        } else if (injectedCacheData[cacheKey]) {
+          // Priority 2: file cache (persists across restarts)
+          injectedFiles = injectedCacheData[cacheKey].files;
+          totalInjectedTokens = injectedCacheData[cacheKey].total;
+        } else {
+          // Priority 3: read from current disk -> save to cache
+          injectedFiles = [];
+          totalInjectedTokens = 0;
+
+          const addInjectedFile = (fp: string, category: string) => {
+            try {
+              if (fs.existsSync(fp)) {
+                const content = fs.readFileSync(fp, "utf-8");
+                const tokens = countTokens(content);
+                injectedFiles.push({
+                  path: fp,
+                  category,
+                  estimated_tokens: tokens,
+                });
+                totalInjectedTokens += tokens;
+              }
+            } catch {
+              /* skip */
+            }
+          };
+
+          addInjectedFile(
+            path.join(homedir(), ".claude", "CLAUDE.md"),
+            "global",
+          );
+
+          const globalRulesDir = path.join(homedir(), ".claude", "rules");
+          if (fs.existsSync(globalRulesDir)) {
+            try {
+              for (const rf of fs
+                .readdirSync(globalRulesDir)
+                .filter((f) => f.endsWith(".md"))) {
+                addInjectedFile(path.join(globalRulesDir, rf), "rules");
+              }
+            } catch {
+              /* skip */
+            }
+          }
+
+          if (projectPath && fs.existsSync(projectPath)) {
+            addInjectedFile(path.join(projectPath, "CLAUDE.md"), "project");
+
+            const projRulesDir = path.join(projectPath, ".claude", "rules");
+            if (fs.existsSync(projRulesDir)) {
+              try {
+                for (const rf of fs
+                  .readdirSync(projRulesDir)
+                  .filter((f) => f.endsWith(".md"))) {
+                  addInjectedFile(path.join(projRulesDir, rf), "rules");
+                }
+              } catch {
+                /* skip */
+              }
+            }
+
+            const projMemoryDir = path.join(projectPath, ".claude", "memory");
+            if (fs.existsSync(projMemoryDir)) {
+              try {
+                for (const mf of fs
+                  .readdirSync(projMemoryDir)
+                  .filter((f) => f.endsWith(".md"))) {
+                  addInjectedFile(path.join(projMemoryDir, mf), "memory");
+                }
+              } catch {
+                /* skip */
+              }
+            }
+          }
+
+          const userMemoryFile = path.join(
+            homedir(),
+            ".claude",
+            "projects",
+            projectDirName,
+            "memory",
+            "MEMORY.md",
+          );
+          addInjectedFile(userMemoryFile, "memory");
+
+          // Persist to file cache
+          injectedCacheData[cacheKey] = {
+            files: injectedFiles,
+            total: totalInjectedTokens,
+          };
+          saveInjectedCache();
+        }
+
+        // Count conversation turns
+        let userCount = 0;
+        let assistantCount = 0;
+        for (let i = 0; i <= userMsgGlobalIdx; i++) {
+          if (messages[i].role === "user") userCount++;
+          if (messages[i].role === "assistant") assistantCount++;
+        }
+
+        const cleanContent = (userMsg.content || "")
+          .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "")
+          .replace(/<task-notification>[\s\S]*?<\/task-notification>/g, "")
+          .replace(/<[^>]+>/g, "")
+          .trim();
+
+        const model = assistantMsg?.model || "unknown";
+        const usage = assistantMsg?.usage;
+        const inputTokens = usage?.inputTokens ?? 0;
+        const outputTokens = usage?.outputTokens ?? 0;
+        const cacheRead = usage?.cacheReadTokens ?? 0;
+        const cacheCreation = usage?.cacheCreationTokens ?? 0;
+        // Total context = new input + cached read + cache creation
+        const totalContextTokens = inputTokens + cacheRead + cacheCreation;
+
+        // Extract assistant response text for preview
+        let assistantResponseText = "";
+        if (assistantMsg && assistantMsg.content) {
+          const ac = assistantMsg.content;
+          if (typeof ac === "string") {
+            assistantResponseText = ac;
+          } else if (Array.isArray(ac)) {
+            assistantResponseText = (ac as any[])
+              .filter(
+                (b: any) => b.type === "text" && typeof b.text === "string",
+              )
+              .map((b: any) => b.text)
+              .join("\n")
+              .trim();
+          }
+        }
+
+        // Construct PromptScan
+        const scan = {
+          request_id: userMsg.uuid || `history-${sessionId}-${timestamp}`,
+          session_id: sessionId,
+          timestamp: userMsg.timestamp,
+          user_prompt: cleanContent.slice(0, 500),
+          user_prompt_tokens: countTokens(cleanContent),
+          assistant_response: assistantResponseText
+            ? assistantResponseText.slice(0, 500)
+            : undefined,
+          injected_files: injectedFiles,
+          total_injected_tokens: totalInjectedTokens,
+          tool_calls: proxyScan?.tool_calls ?? toolCalls,
+          tool_summary: proxyScan?.tool_summary ?? toolSummary,
+          agent_calls: proxyScan?.agent_calls ?? agentCalls,
+          context_estimate: proxyScan
+            ? proxyScan.context_estimate
+            : (() => {
+                const msgTokens =
+                  totalContextTokens > totalInjectedTokens
+                    ? totalContextTokens - totalInjectedTokens
+                    : totalContextTokens;
+                const directTotal =
+                  userTextTokensAll + assistantTokensAll + toolResultTokensAll;
+                let bdResult:
+                  | {
+                      user_text_tokens: number;
+                      assistant_tokens: number;
+                      tool_result_tokens: number;
+                    }
+                  | undefined;
+                if (directTotal > 0) {
+                  const scale = msgTokens / directTotal;
+                  bdResult = {
+                    user_text_tokens: Math.round(userTextTokensAll * scale),
+                    assistant_tokens: Math.round(assistantTokensAll * scale),
+                    tool_result_tokens: Math.round(toolResultTokensAll * scale),
+                  };
+                }
+                return {
+                  system_tokens: totalInjectedTokens,
+                  messages_tokens: msgTokens,
+                  messages_tokens_breakdown: bdResult,
+                  tools_definition_tokens: 0,
+                  total_tokens: totalContextTokens,
+                };
+              })(),
+          model,
+          max_tokens: 16000,
+          conversation_turns: userCount,
+          user_messages_count: userCount,
+          assistant_messages_count: assistantCount,
+          tool_result_count: toolResultCount,
+        };
+
+        // Construct UsageLogEntry
+        const usageEntry = assistantMsg
+          ? {
+              timestamp: assistantMsg.timestamp,
+              request_id: scan.request_id,
+              session_id: sessionId,
+              model,
+              request: {
+                messages_count: userCount + assistantCount,
+                tools_count: 0,
+                has_system: true,
+                max_tokens: 16000,
+              },
+              response: {
+                input_tokens: inputTokens,
+                output_tokens: outputTokens,
+                cache_creation_input_tokens: cacheCreation,
+                cache_read_input_tokens: cacheRead,
+              },
+              cost_usd: calculateCost(
+                model,
+                inputTokens,
+                outputTokens,
+                cacheRead,
+                cacheCreation,
+              ),
+              duration_ms: 0,
+            }
+          : null;
+
+        // Opportunistic DB upsert: replace incomplete batch data with full detail
+        try {
+          const db = require("./db/index").getDatabase();
+          // Delete incomplete batch-imported row (system_tokens=0) so full data can be inserted
+          db.prepare(
+            "DELETE FROM prompts WHERE request_id = @rid AND source = 'history' AND system_tokens = 0",
+          ).run({ rid: scan.request_id });
+          onHistoryPromptParsed(scan as any, usageEntry);
+        } catch {
+          /* ignore — duplicate or DB error */
+        }
+
+        return { scan, usage: usageEntry };
+      } catch (error) {
+        console.error("get-history-prompt-detail error:", error);
+        return null;
+      }
+    },
+  );
+
+  // --- CT Scan IPC ---
+
+  // Get current session ID
+  ipcMain.handle("get-current-session-id", async () => {
+    return getSessionId();
+  });
+
+  // Get scan list by session (DB primary, JSONL fallback)
+  ipcMain.handle("get-session-scans", async (_event, sessionId: string) => {
+    try {
+      const dbResult = dbReader.getSessionPrompts(sessionId);
+      if (dbResult.length > 0) return dbResult;
+      return readScanLogFiltered({ session_id: sessionId, limit: 200 });
+    } catch (error) {
+      console.error("get-session-scans error:", error);
+      return [];
+    }
+  });
+
+  // Get scan list (DB primary, JSONL fallback)
+  ipcMain.handle(
+    "get-prompt-scans",
+    async (
+      _event,
+      options?: {
+        limit?: number;
+        offset?: number;
+        session_id?: string;
+      },
+    ) => {
+      try {
+        const dbResult = dbReader.getPrompts(options);
+        if (dbResult.length > 0) return dbResult;
+        return readScanLogFiltered(options);
+      } catch (error) {
+        console.error("get-prompt-scans error:", error);
+        return [];
+      }
+    },
+  );
+
+  // Scan detail + usage join (DB primary, JSONL fallback)
+  ipcMain.handle(
+    "get-prompt-scan-detail",
+    async (_event, requestId: string) => {
+      try {
+        const dbResult = dbReader.getPromptDetail(requestId);
+        if (dbResult) return dbResult;
+        // Fallback to JSONL
+        const scan = readScanByRequestId(requestId);
+        if (!scan) return null;
+        const usageLogs = readUsageLog();
+        const usage = usageLogs.find((u) => u.request_id === requestId) ?? null;
+        return { scan, usage };
+      } catch (error) {
+        console.error("get-prompt-scan-detail error:", error);
+        return null;
+      }
+    },
+  );
+
+  // Read file content (for previewing injected .md files)
+  ipcMain.handle("read-file-content", async (_event, filePath: string) => {
+    try {
+      // Expand ~ to home directory
+      const resolved = path.resolve(
+        filePath.startsWith("~")
+          ? path.join(homedir(), filePath.slice(1))
+          : filePath,
+      );
+
+      // Security: only allow safe text file extensions
+      const ALLOWED_EXTENSIONS = new Set([
+        ".md",
+        ".txt",
+        ".ts",
+        ".tsx",
+        ".js",
+        ".jsx",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".toml",
+        ".cfg",
+        ".conf",
+        ".ini",
+        ".css",
+        ".html",
+        ".xml",
+        ".csv",
+        ".log",
+        ".sh",
+      ]);
+      const ext = path.extname(resolved).toLowerCase();
+      if (!ALLOWED_EXTENSIONS.has(ext)) {
+        return { content: "", error: `File type not allowed: ${ext}` };
+      }
+
+      // Security: block sensitive paths
+      const BLOCKED_PATTERNS = [
+        "/.ssh/",
+        "/.gnupg/",
+        "/.aws/",
+        "/credentials",
+        "/.env",
+        "/secret",
+        "/private_key",
+        "/id_rsa",
+        "/id_ed25519",
+        "/.npmrc",
+        "/.pypirc",
+      ];
+      const lowerResolved = resolved.toLowerCase();
+      const blocked = BLOCKED_PATTERNS.some((p) => lowerResolved.includes(p));
+      if (blocked) {
+        return { content: "", error: "Access to sensitive file denied" };
+      }
+
+      if (!fs.existsSync(resolved)) {
+        return { content: "", error: `File not found: ${resolved}` };
+      }
+
+      const stat = fs.statSync(resolved);
+      // Reject files larger than 1MB
+      if (stat.size > 1024 * 1024) {
+        return { content: "", error: "File too large (>1MB)" };
+      }
+
+      const content = fs.readFileSync(resolved, "utf-8");
+      return { content };
+    } catch (error) {
+      return { content: "", error: String(error) };
+    }
+  });
+
+  // Aggregate statistics (DB query — replaced 120-line JSONL scan)
+  ipcMain.handle("get-scan-stats", async () => {
+    try {
+      return dbReader.getScanStats();
+    } catch (error) {
+      console.error("get-scan-stats error:", error);
+      return null;
+    }
+  });
+
+  // === Usage Dashboard IPC (real API connection) ===
+
+  ipcMain.handle("get-provider-usage", async (_event, provider: string) => {
+    try {
+      const cached = usageStore.getSnapshot(provider as any);
+      if (cached) return cached;
+      return await usageStore.refresh(provider as any);
+    } catch (err) {
+      console.error(`[Usage] Failed to fetch ${provider}:`, err);
+      return null;
+    }
+  });
+
+  ipcMain.handle("get-all-provider-status", async () => {
+    try {
+      const {
+        getAllProviderStatuses,
+      } = require("./providers/usage/credentialReader");
+      return getAllProviderStatuses();
+    } catch (err) {
+      console.error("[Usage] Failed to get provider statuses:", err);
+      return [];
+    }
+  });
+
+  ipcMain.handle(
+    "refresh-provider-usage",
+    async (_event, provider?: string) => {
+      console.log(`[Usage] Refresh requested for: ${provider ?? "all"}`);
+      if (provider) {
+        return await usageStore.refresh(provider as any);
+      }
+      await usageStore.refresh("claude");
+    },
+  );
+};
+
+app.whenReady().then(initApp);
+
+app.on("window-all-closed", () => {
+  // Do not quit — this is a macOS tray app
+});
+
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
+});
+
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
+  try {
+    closeDatabase();
+  } catch {
+    /* ignore */
+  }
+  try {
+    stopProxyServer();
+  } catch {
+    /* ignore */
+  }
+});
+
+app.on("before-quit", () => {
+  isQuitting = true;
+  if (mainWindow) {
+    mainWindow.close();
+  }
+  usageStore.stopPolling();
+  trayManager?.cleanup();
+  stopProxyServer().catch((err) => console.error("Proxy cleanup error:", err));
+});
