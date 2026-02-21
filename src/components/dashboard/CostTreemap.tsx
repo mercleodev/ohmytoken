@@ -1,5 +1,5 @@
 import { Treemap, ResponsiveContainer } from 'recharts';
-import { formatCost } from '../scan/shared';
+import { formatCost } from '../../utils/format';
 import type { PromptScan, UsageLogEntry } from '../../types';
 
 type PromptWithCost = {
