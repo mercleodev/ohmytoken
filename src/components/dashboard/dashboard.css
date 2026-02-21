@@ -879,17 +879,7 @@
   background: rgba(10, 93, 168, 0.12);
 }
 
-.prompt-card-journey-chip.delta.up {
-  color: #aa2e25;
-  background: rgba(170, 46, 37, 0.12);
-}
-
-.prompt-card-journey-chip.delta.down {
-  color: #1f7a57;
-  background: rgba(31, 122, 87, 0.14);
-}
-
-.prompt-card-journey-chip.delta.flat {
+.prompt-card-journey-chip.delta {
   color: #646b73;
   background: rgba(0, 0, 0, 0.06);
 }

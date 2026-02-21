@@ -437,16 +437,12 @@ export const SessionDetailView = ({
                       </span>
                     )}
                     {deltaCtx !== null && (
-                      <span
-                        className={`prompt-card-journey-chip delta ${deltaCtx > 0 ? "up" : deltaCtx < 0 ? "down" : "flat"}`}
-                      >
+                      <span className="prompt-card-journey-chip delta">
                         ΔCtx {formatSignedTokens(deltaCtx)}
                       </span>
                     )}
                     {deltaCost !== null && (
-                      <span
-                        className={`prompt-card-journey-chip delta ${deltaCost > 0 ? "up" : deltaCost < 0 ? "down" : "flat"}`}
-                      >
+                      <span className="prompt-card-journey-chip delta">
                         ΔCost {formatSignedCost(deltaCost)}
                       </span>
                     )}
