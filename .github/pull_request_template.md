@@ -30,8 +30,10 @@ Parity Evidence:
 
 - [ ] CONTRIBUTING.md §1-1 (reuse-first migration)
 - [ ] CONTRIBUTING.md §7 (testing policy) + §8 (PR checklist)
+- [ ] .claude/docs/test.md §7 (PR/CI gates)
 - [ ] OPEN-SOURCE-WORKFLOW.md §2-1 (reuse-first migration gate)
 - [ ] OPEN-SOURCE-WORKFLOW.md §11 (required CI gate pattern)
+- [ ] .claude/rules/e2e-test.md §1 (headless loop + headed final) or `N/A` with reason
 
 ## Scope
 
@@ -45,7 +47,8 @@ Parity Evidence:
 ## Validation
 
 - [ ] Unit/Component tests added or updated
-- [ ] Integration tests added or updated when applicable
+- [ ] Contract/Integration tests added or updated when applicable
+- [ ] E2E validation completed when applicable
 - [ ] Typecheck and lint passed
 
 ## Test Evidence

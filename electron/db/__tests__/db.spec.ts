@@ -1,12 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { initDatabase, getDatabase, closeDatabase } from "../index";
-import {
-  insertPrompt,
-  upsertDailyStats,
-  upsertSession,
-  clearStatementCache,
-} from "../writer";
+import { insertPrompt, clearStatementCache } from "../writer";
 import type { InsertPromptData } from "../writer";
+
+type DbRow = Record<string, unknown>;
 import {
   getPrompts,
   getPromptDetail,
@@ -159,10 +156,10 @@ describe("schema", () => {
     expect(names).toContain("sessions");
   });
 
-  it("sets user_version to 1", () => {
+  it("sets user_version to latest migration version", () => {
     const db = getDatabase();
     const ver = db.pragma("user_version", { simple: true });
-    expect(ver).toBe(1);
+    expect(ver).toBe(2);
   });
 
   it("sets WAL mode (memory DB reports 'memory')", () => {
@@ -195,7 +192,7 @@ describe("writer", () => {
       const db = getDatabase();
       const row = db
         .prepare("SELECT * FROM prompts WHERE request_id = ?")
-        .get("req-insert-001") as any;
+        .get("req-insert-001") as DbRow;
       expect(row).toBeDefined();
       expect(row.model).toBe("claude-opus-4-6");
       expect(row.total_context_tokens).toBe(9000);
@@ -203,19 +200,19 @@ describe("writer", () => {
 
       const files = db
         .prepare("SELECT * FROM injected_files WHERE prompt_id = ?")
-        .all(id!) as any[];
+        .all(id!) as DbRow[];
       expect(files).toHaveLength(2);
       expect(files[0].path).toBe("CLAUDE.md");
 
       const tools = db
         .prepare("SELECT * FROM tool_calls WHERE prompt_id = ?")
-        .all(id!) as any[];
+        .all(id!) as DbRow[];
       expect(tools).toHaveLength(2);
       expect(tools[0].name).toBe("Read");
 
       const agents = db
         .prepare("SELECT * FROM agent_calls WHERE prompt_id = ?")
-        .all(id!) as any[];
+        .all(id!) as DbRow[];
       expect(agents).toHaveLength(1);
       expect(agents[0].subagent_type).toBe("Explore");
     });
@@ -243,7 +240,7 @@ describe("writer", () => {
       const db = getDatabase();
       const files = db
         .prepare("SELECT * FROM injected_files WHERE prompt_id = ?")
-        .all(id!) as any[];
+        .all(id!) as DbRow[];
       expect(files).toHaveLength(0);
     });
 
@@ -258,7 +255,7 @@ describe("writer", () => {
       const db = getDatabase();
       const stat = db
         .prepare("SELECT * FROM daily_stats WHERE date = ?")
-        .get("2026-02-11") as any;
+        .get("2026-02-11") as DbRow;
 
       expect(stat).toBeDefined();
       expect(stat.request_count).toBe(1);
@@ -276,7 +273,7 @@ describe("writer", () => {
       const db = getDatabase();
       const sess = db
         .prepare("SELECT * FROM sessions WHERE session_id = ?")
-        .get("sess-test") as any;
+        .get("sess-test") as DbRow;
 
       expect(sess).toBeDefined();
       expect(sess.prompt_count).toBe(1);
@@ -303,7 +300,7 @@ describe("writer", () => {
       const db = getDatabase();
       const stat = db
         .prepare("SELECT * FROM daily_stats WHERE date = ?")
-        .get("2026-02-11") as any;
+        .get("2026-02-11") as DbRow;
 
       expect(stat.request_count).toBe(2);
       expect(stat.total_cost_usd).toBeCloseTo(0.3);
@@ -332,7 +329,7 @@ describe("writer", () => {
       const db = getDatabase();
       const sess = db
         .prepare("SELECT * FROM sessions WHERE session_id = ?")
-        .get("sess-track") as any;
+        .get("sess-track") as DbRow;
 
       expect(sess.prompt_count).toBe(2);
       expect(sess.total_cost_usd).toBeCloseTo(0.25);
@@ -618,14 +615,14 @@ describe("foreign key cascade", () => {
           .prepare(
             "SELECT COUNT(*) as c FROM injected_files WHERE prompt_id = ?",
           )
-          .get(id!) as any
+          .get(id!) as DbRow
       ).c,
     ).toBeGreaterThan(0);
     expect(
       (
         db
           .prepare("SELECT COUNT(*) as c FROM tool_calls WHERE prompt_id = ?")
-          .get(id!) as any
+          .get(id!) as DbRow
       ).c,
     ).toBeGreaterThan(0);
 
@@ -639,21 +636,21 @@ describe("foreign key cascade", () => {
           .prepare(
             "SELECT COUNT(*) as c FROM injected_files WHERE prompt_id = ?",
           )
-          .get(id!) as any
+          .get(id!) as DbRow
       ).c,
     ).toBe(0);
     expect(
       (
         db
           .prepare("SELECT COUNT(*) as c FROM tool_calls WHERE prompt_id = ?")
-          .get(id!) as any
+          .get(id!) as DbRow
       ).c,
     ).toBe(0);
     expect(
       (
         db
           .prepare("SELECT COUNT(*) as c FROM agent_calls WHERE prompt_id = ?")
-          .get(id!) as any
+          .get(id!) as DbRow
       ).c,
     ).toBe(0);
   });
