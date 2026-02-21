@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-electron/
+release/
+*.tsbuildinfo
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+.git-identity.local
+.githooks/*.local
+
+# Secrets / certificates
+*.pem
+*.key
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Agent-local instructions and automation configs
+AGENTS.md
+CLAUDE.md
+START-HERE.md
+test.md
+.claude/
+.codex/
+.policy/active-rules-ack.txt
+
+# Private decision records
+docs/decisions/
+
+# Public docs allowlist policy:
+# only the public docs are tracked; all other markdown files are ignored.
+**/*.md
+!README.md
+!CONTRIBUTING.md
+!OPEN-SOURCE-WORKFLOW.md
+!SECURITY.md
+!LICENSE
+!.github/**/*.md
