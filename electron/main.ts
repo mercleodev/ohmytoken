@@ -37,6 +37,11 @@ import {
   importHistorySessions,
   importSinglePrompt,
 } from "./importer/historyImporter";
+import { EvidenceEngine } from "./evidence/engine";
+import { mergeConfig } from "./evidence/config";
+import { parseSystemFieldWithContent } from "./proxy/systemParser";
+import { insertEvidenceReport } from "./db/writer";
+import type { EvidenceEngineConfig } from "./evidence/types";
 
 // Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
 process.stdout?.on("error", (err: NodeJS.ErrnoException) => {
@@ -51,6 +56,7 @@ let trayManager: TrayManager | null = null;
 let store: Store | null = null;
 let currentShortcut: string | null = null;
 let isQuitting = false;
+let evidenceEngine: EvidenceEngine | null = null;
 
 // injected files cache: file-based persistent storage
 const INJECTED_CACHE_PATH = path.join(
@@ -208,6 +214,11 @@ const initApp = async (): Promise<void> => {
 
   store = new Store();
 
+  // Initialize Evidence Scoring Engine
+  const savedEvidenceConfig = store.get('evidenceConfig');
+  evidenceEngine = new EvidenceEngine(savedEvidenceConfig ?? undefined);
+  console.log('[Evidence] Engine initialized, fusion:', evidenceEngine.getConfig().fusion_method);
+
   createWindow();
 
   trayManager = new TrayManager(mainWindow!, store);
@@ -283,6 +294,45 @@ const initApp = async (): Promise<void> => {
           onProxyScanComplete(scan, usage);
         } catch (e) {
           console.error("[DB] proxy write error:", e);
+        }
+      },
+      // Evidence scoring integration
+      evidenceEngine: evidenceEngine ?? undefined,
+      getSystemContents: (body: string) => {
+        try {
+          const parsed = JSON.parse(body);
+          if (parsed.system) {
+            return parseSystemFieldWithContent(parsed.system).contents;
+          }
+        } catch { /* ignore parse errors */ }
+        return {};
+      },
+      getPreviousScores: (sessionId: string) => {
+        try {
+          return dbReader.getSessionFileScores(sessionId);
+        } catch { return {}; }
+      },
+      onEvidenceScored: (scan) => {
+        if (scan.evidence_report) {
+          // Persist evidence report to DB
+          try {
+            const detail = dbReader.getPromptDetail(scan.request_id);
+            if (detail) {
+              const promptId = (detail as any).scan?.request_id ? undefined : undefined;
+              // Get prompt_id from DB by request_id
+              const db = require('./db/index').getDatabase();
+              const row = db.prepare('SELECT id FROM prompts WHERE request_id = ?').get(scan.request_id) as { id: number } | undefined;
+              if (row) {
+                insertEvidenceReport(row.id, scan.evidence_report);
+              }
+            }
+          } catch (e) {
+            console.error("[Evidence] DB write error:", e);
+          }
+          mainWindow?.webContents.send("evidence-scored", {
+            requestId: scan.request_id,
+            report: scan.evidence_report,
+          });
         }
       },
     });
@@ -1795,6 +1845,60 @@ const setupIPC = (): void => {
       await usageStore.refresh("claude");
     },
   );
+
+  // === Evidence Scoring IPC ===
+
+  ipcMain.handle("get-evidence-report", async (_event, requestId: string) => {
+    try {
+      return dbReader.getEvidenceReport(requestId);
+    } catch (err) {
+      console.error("[Evidence] get-evidence-report error:", err);
+      return null;
+    }
+  });
+
+  ipcMain.handle("get-evidence-config", async () => {
+    if (!evidenceEngine) return mergeConfig();
+    return evidenceEngine.getConfig();
+  });
+
+  ipcMain.handle(
+    "update-evidence-config",
+    async (_event, config: Partial<EvidenceEngineConfig>) => {
+      try {
+        if (evidenceEngine) {
+          evidenceEngine.updateConfig(config);
+        }
+        if (store) {
+          store.set("evidenceConfig", evidenceEngine?.getConfig() ?? mergeConfig(config));
+        }
+        return { success: true };
+      } catch (err) {
+        console.error("[Evidence] update-evidence-config error:", err);
+        return { success: false };
+      }
+    },
+  );
+
+  ipcMain.handle("rescore-evidence", async (_event, requestId: string) => {
+    try {
+      if (!evidenceEngine) return null;
+      const detail = dbReader.getPromptDetail(requestId);
+      if (!detail) return null;
+
+      const { scan } = detail;
+      const previousScores = dbReader.getSessionFileScores(scan.session_id);
+
+      // Try to get file contents from a dummy body (not available for re-score)
+      const report = evidenceEngine.score(scan, { previousScores });
+      scan.evidence_report = report;
+
+      return report;
+    } catch (err) {
+      console.error("[Evidence] rescore-evidence error:", err);
+      return null;
+    }
+  });
 };
 
 app.whenReady().then(initApp);

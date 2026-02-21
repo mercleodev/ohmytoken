@@ -156,6 +156,38 @@ const api = {
     };
   },
 
+  // Evidence Scoring API
+  getEvidenceReport: (
+    requestId: string,
+  ): Promise<import('./evidence/types').EvidenceReport | null> =>
+    ipcRenderer.invoke('get-evidence-report', requestId),
+
+  getEvidenceConfig: (): Promise<import('./evidence/types').EvidenceEngineConfig> =>
+    ipcRenderer.invoke('get-evidence-config'),
+
+  updateEvidenceConfig: (
+    config: Partial<import('./evidence/types').EvidenceEngineConfig>,
+  ): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('update-evidence-config', config),
+
+  rescoreEvidence: (
+    requestId: string,
+  ): Promise<import('./evidence/types').EvidenceReport | null> =>
+    ipcRenderer.invoke('rescore-evidence', requestId),
+
+  onEvidenceScored: (
+    callback: (data: { requestId: string; report: import('./evidence/types').EvidenceReport }) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: { requestId: string; report: import('./evidence/types').EvidenceReport },
+    ) => callback(data);
+    ipcRenderer.on('evidence-scored', handler);
+    return () => {
+      ipcRenderer.removeListener('evidence-scored', handler);
+    };
+  },
+
   onNavigateTo: (callback: (view: string) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, view: string) =>
       callback(view);

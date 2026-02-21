@@ -9,7 +9,7 @@ const migrations: Migration[] = [
   {
     version: 1,
     up: (db) => {
-      db.exec(`
+      db.exec(/* v1: core schema */ `
         CREATE TABLE prompts (
           id            INTEGER PRIMARY KEY AUTOINCREMENT,
           request_id    TEXT UNIQUE NOT NULL,
@@ -125,6 +125,42 @@ const migrations: Migration[] = [
           project         TEXT,
           updated_at      TEXT NOT NULL
         );
+      `);
+    },
+  },
+  {
+    version: 2,
+    up: (db) => {
+      db.exec(/* v2: evidence scoring tables */ `
+        CREATE TABLE evidence_reports (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          prompt_id     INTEGER NOT NULL REFERENCES prompts(id) ON DELETE CASCADE,
+          request_id    TEXT NOT NULL,
+          timestamp     TEXT NOT NULL,
+          engine_version TEXT NOT NULL,
+          fusion_method TEXT NOT NULL,
+          confirmed_min REAL NOT NULL,
+          likely_min    REAL NOT NULL,
+          UNIQUE(request_id)
+        );
+
+        CREATE INDEX idx_evidence_reports_prompt ON evidence_reports(prompt_id);
+        CREATE INDEX idx_evidence_reports_request ON evidence_reports(request_id);
+
+        CREATE TABLE file_evidence_scores (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          report_id     INTEGER NOT NULL REFERENCES evidence_reports(id) ON DELETE CASCADE,
+          file_path     TEXT NOT NULL,
+          category      TEXT NOT NULL,
+          raw_score     REAL NOT NULL DEFAULT 0,
+          normalized_score REAL NOT NULL DEFAULT 0,
+          classification TEXT NOT NULL DEFAULT 'unverified',
+          signals_json  TEXT NOT NULL DEFAULT '[]'
+        );
+
+        CREATE INDEX idx_file_evidence_report ON file_evidence_scores(report_id);
+        CREATE INDEX idx_file_evidence_path ON file_evidence_scores(file_path);
+        CREATE INDEX idx_file_evidence_classification ON file_evidence_scores(classification);
       `);
     },
   },

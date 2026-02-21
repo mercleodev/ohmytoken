@@ -438,6 +438,101 @@ export const getPromptCount = (): number => {
   return row.cnt;
 };
 
+// --- Evidence scoring queries ---
+
+import type {
+  EvidenceReport,
+  FileEvidenceScore,
+  SignalResult,
+} from '../evidence/types';
+
+type EvidenceReportRow = {
+  id: number;
+  prompt_id: number;
+  request_id: string;
+  timestamp: string;
+  engine_version: string;
+  fusion_method: string;
+  confirmed_min: number;
+  likely_min: number;
+};
+
+type FileEvidenceScoreRow = {
+  id: number;
+  report_id: number;
+  file_path: string;
+  category: string;
+  raw_score: number;
+  normalized_score: number;
+  classification: string;
+  signals_json: string;
+};
+
+export const getEvidenceReport = (requestId: string): EvidenceReport | null => {
+  const db = getDatabase();
+
+  const reportRow = db
+    .prepare('SELECT * FROM evidence_reports WHERE request_id = @request_id')
+    .get({ request_id: requestId }) as EvidenceReportRow | undefined;
+
+  if (!reportRow) return null;
+
+  const fileRows = db
+    .prepare('SELECT * FROM file_evidence_scores WHERE report_id = @report_id')
+    .all({ report_id: reportRow.id }) as FileEvidenceScoreRow[];
+
+  const files: FileEvidenceScore[] = fileRows.map((r) => ({
+    filePath: r.file_path,
+    category: r.category,
+    signals: JSON.parse(r.signals_json) as SignalResult[],
+    rawScore: r.raw_score,
+    normalizedScore: r.normalized_score,
+    classification: r.classification as FileEvidenceScore['classification'],
+  }));
+
+  return {
+    request_id: reportRow.request_id,
+    timestamp: reportRow.timestamp,
+    engine_version: reportRow.engine_version,
+    fusion_method: reportRow.fusion_method,
+    files,
+    thresholds: {
+      confirmed_min: reportRow.confirmed_min,
+      likely_min: reportRow.likely_min,
+    },
+  };
+};
+
+/**
+ * Get previous normalized scores for each file in a session.
+ * Used by the session-history signal.
+ */
+export const getSessionFileScores = (
+  sessionId: string,
+): Record<string, number[]> => {
+  const db = getDatabase();
+  const rows = db
+    .prepare(`
+      SELECT fes.file_path, fes.normalized_score
+      FROM file_evidence_scores fes
+      JOIN evidence_reports er ON er.id = fes.report_id
+      JOIN prompts p ON p.id = er.prompt_id
+      WHERE p.session_id = @session_id
+      ORDER BY p.timestamp ASC
+    `)
+    .all({ session_id: sessionId }) as Array<{
+    file_path: string;
+    normalized_score: number;
+  }>;
+
+  const result: Record<string, number[]> = {};
+  for (const r of rows) {
+    if (!result[r.file_path]) result[r.file_path] = [];
+    result[r.file_path].push(r.normalized_score);
+  }
+  return result;
+};
+
 export const findPromptByTimestamp = (
   sessionId: string,
   timestampMs: number,

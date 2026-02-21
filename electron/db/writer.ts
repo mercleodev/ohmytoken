@@ -279,6 +279,69 @@ export const upsertSession = (sessionId: string): void => {
   ).run({ session_id: sessionId });
 };
 
+// --- Evidence scoring persistence ---
+
+import type { EvidenceReport } from '../evidence/types';
+
+export const insertEvidenceReport = (
+  promptId: number,
+  report: EvidenceReport,
+): number | null => {
+  const db = getDatabase();
+
+  const insertReport = db.prepare(`
+    INSERT OR IGNORE INTO evidence_reports (
+      prompt_id, request_id, timestamp, engine_version,
+      fusion_method, confirmed_min, likely_min
+    ) VALUES (
+      @prompt_id, @request_id, @timestamp, @engine_version,
+      @fusion_method, @confirmed_min, @likely_min
+    )
+  `);
+
+  const insertFileScore = db.prepare(`
+    INSERT INTO file_evidence_scores (
+      report_id, file_path, category, raw_score,
+      normalized_score, classification, signals_json
+    ) VALUES (
+      @report_id, @file_path, @category, @raw_score,
+      @normalized_score, @classification, @signals_json
+    )
+  `);
+
+  let reportId: number | null = null;
+
+  const tx = db.transaction(() => {
+    const result = insertReport.run({
+      prompt_id: promptId,
+      request_id: report.request_id,
+      timestamp: report.timestamp,
+      engine_version: report.engine_version,
+      fusion_method: report.fusion_method,
+      confirmed_min: report.thresholds.confirmed_min,
+      likely_min: report.thresholds.likely_min,
+    });
+
+    if (result.changes === 0) return;
+    reportId = result.lastInsertRowid as number;
+
+    for (const f of report.files) {
+      insertFileScore.run({
+        report_id: reportId,
+        file_path: f.filePath,
+        category: f.category,
+        raw_score: f.rawScore,
+        normalized_score: f.normalizedScore,
+        classification: f.classification,
+        signals_json: JSON.stringify(f.signals),
+      });
+    }
+  });
+
+  tx();
+  return reportId;
+};
+
 export const clearStatementCache = (): void => {
   stmtCache = {};
 };
