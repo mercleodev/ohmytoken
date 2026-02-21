@@ -1,0 +1,504 @@
+import { getDatabase } from "./index";
+import type {
+  PromptScan,
+  ScanStats,
+  UsageLogEntry,
+  InjectedFile,
+  ToolCall,
+  AgentCall,
+} from "../proxy/types";
+
+// --- Query types ---
+
+type PromptQueryOptions = {
+  limit?: number;
+  offset?: number;
+  session_id?: string;
+  date?: string; // 'YYYY-MM-DD'
+  model?: string;
+  source?: "proxy" | "history";
+};
+
+type PromptDbRow = {
+  id: number;
+  request_id: string;
+  session_id: string;
+  timestamp: string;
+  source: string;
+  user_prompt: string | null;
+  user_prompt_tokens: number;
+  assistant_response: string | null;
+  model: string;
+  max_tokens: number;
+  conversation_turns: number;
+  user_messages_count: number;
+  assistant_messages_count: number;
+  tool_result_count: number;
+  system_tokens: number;
+  messages_tokens: number;
+  user_text_tokens: number;
+  assistant_tokens: number;
+  tool_result_tokens: number;
+  tools_definition_tokens: number;
+  total_context_tokens: number;
+  total_injected_tokens: number;
+  tool_summary: string;
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_input_tokens: number;
+  cache_read_input_tokens: number;
+  cost_usd: number;
+  duration_ms: number;
+  req_messages_count: number;
+  req_tools_count: number;
+  req_has_system: number;
+};
+
+type InjectedFileDbRow = {
+  path: string;
+  category: string;
+  estimated_tokens: number;
+};
+
+type ToolCallDbRow = {
+  call_index: number;
+  name: string;
+  input_summary: string | null;
+  timestamp: string | null;
+};
+
+type AgentCallDbRow = {
+  call_index: number;
+  subagent_type: string | null;
+  description: string | null;
+};
+
+// --- Row → PromptScan conversion ---
+
+const rowToPromptScan = (
+  row: PromptDbRow,
+  injectedFiles: InjectedFile[],
+  toolCalls: ToolCall[],
+  agentCalls: AgentCall[],
+): PromptScan => ({
+  request_id: row.request_id,
+  session_id: row.session_id,
+  timestamp: row.timestamp,
+  user_prompt: row.user_prompt ?? "",
+  user_prompt_tokens: row.user_prompt_tokens,
+  assistant_response: row.assistant_response ?? undefined,
+  injected_files: injectedFiles,
+  total_injected_tokens: row.total_injected_tokens,
+  tool_calls: toolCalls,
+  tool_summary: JSON.parse(row.tool_summary || "{}"),
+  agent_calls: agentCalls,
+  context_estimate: {
+    system_tokens: row.system_tokens,
+    messages_tokens: row.messages_tokens,
+    messages_tokens_breakdown: {
+      user_text_tokens: row.user_text_tokens,
+      assistant_tokens: row.assistant_tokens,
+      tool_result_tokens: row.tool_result_tokens,
+    },
+    tools_definition_tokens: row.tools_definition_tokens,
+    total_tokens: row.total_context_tokens,
+  },
+  model: row.model,
+  max_tokens: row.max_tokens,
+  conversation_turns: row.conversation_turns,
+  user_messages_count: row.user_messages_count,
+  assistant_messages_count: row.assistant_messages_count,
+  tool_result_count: row.tool_result_count,
+});
+
+const rowToUsageLogEntry = (row: PromptDbRow): UsageLogEntry => ({
+  timestamp: row.timestamp,
+  request_id: row.request_id,
+  session_id: row.session_id,
+  model: row.model,
+  request: {
+    messages_count: row.req_messages_count,
+    tools_count: row.req_tools_count,
+    has_system: row.req_has_system === 1,
+    max_tokens: row.max_tokens,
+  },
+  response: {
+    input_tokens: row.input_tokens,
+    output_tokens: row.output_tokens,
+    cache_creation_input_tokens: row.cache_creation_input_tokens,
+    cache_read_input_tokens: row.cache_read_input_tokens,
+  },
+  cost_usd: row.cost_usd,
+  duration_ms: row.duration_ms,
+});
+
+// --- Public API ---
+
+export const getPrompts = (options?: PromptQueryOptions): PromptScan[] => {
+  const db = getDatabase();
+  const conditions: string[] = [];
+  const params: Record<string, unknown> = {};
+
+  if (options?.session_id) {
+    conditions.push("session_id = @session_id");
+    params.session_id = options.session_id;
+  }
+  if (options?.date) {
+    conditions.push("substr(timestamp, 1, 10) = @date");
+    params.date = options.date;
+  }
+  if (options?.model) {
+    conditions.push("model = @model");
+    params.model = options.model;
+  }
+  if (options?.source) {
+    conditions.push("source = @source");
+    params.source = options.source;
+  }
+
+  const where =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const limit = options?.limit ?? 50;
+  const offset = options?.offset ?? 0;
+
+  const rows = db
+    .prepare(
+      `
+    SELECT * FROM prompts ${where}
+    ORDER BY timestamp DESC
+    LIMIT @limit OFFSET @offset
+  `,
+    )
+    .all({ ...params, limit, offset }) as PromptDbRow[];
+
+  return rows.map((row) => {
+    const files = db
+      .prepare(
+        "SELECT path, category, estimated_tokens FROM injected_files WHERE prompt_id = @pid",
+      )
+      .all({ pid: row.id }) as InjectedFileDbRow[];
+    const tools = db
+      .prepare(
+        "SELECT call_index, name, input_summary, timestamp FROM tool_calls WHERE prompt_id = @pid ORDER BY call_index",
+      )
+      .all({ pid: row.id }) as ToolCallDbRow[];
+    const agents = db
+      .prepare(
+        "SELECT call_index, subagent_type, description FROM agent_calls WHERE prompt_id = @pid ORDER BY call_index",
+      )
+      .all({ pid: row.id }) as AgentCallDbRow[];
+
+    return rowToPromptScan(
+      row,
+      files.map((f) => ({
+        path: f.path,
+        category: f.category as InjectedFile["category"],
+        estimated_tokens: f.estimated_tokens,
+      })),
+      tools.map((t) => ({
+        index: t.call_index,
+        name: t.name,
+        input_summary: t.input_summary ?? "",
+        timestamp: t.timestamp ?? undefined,
+      })),
+      agents.map((a) => ({
+        index: a.call_index,
+        subagent_type: a.subagent_type ?? "",
+        description: a.description ?? "",
+      })),
+    );
+  });
+};
+
+export const getPromptDetail = (
+  requestId: string,
+): { scan: PromptScan; usage: UsageLogEntry } | null => {
+  const db = getDatabase();
+  const row = db
+    .prepare("SELECT * FROM prompts WHERE request_id = @request_id")
+    .get({ request_id: requestId }) as PromptDbRow | undefined;
+
+  if (!row) return null;
+
+  const files = db
+    .prepare(
+      "SELECT path, category, estimated_tokens FROM injected_files WHERE prompt_id = @pid",
+    )
+    .all({ pid: row.id }) as InjectedFileDbRow[];
+  const tools = db
+    .prepare(
+      "SELECT call_index, name, input_summary, timestamp FROM tool_calls WHERE prompt_id = @pid ORDER BY call_index",
+    )
+    .all({ pid: row.id }) as ToolCallDbRow[];
+  const agents = db
+    .prepare(
+      "SELECT call_index, subagent_type, description FROM agent_calls WHERE prompt_id = @pid ORDER BY call_index",
+    )
+    .all({ pid: row.id }) as AgentCallDbRow[];
+
+  return {
+    scan: rowToPromptScan(
+      row,
+      files.map((f) => ({
+        path: f.path,
+        category: f.category as InjectedFile["category"],
+        estimated_tokens: f.estimated_tokens,
+      })),
+      tools.map((t) => ({
+        index: t.call_index,
+        name: t.name,
+        input_summary: t.input_summary ?? "",
+        timestamp: t.timestamp ?? undefined,
+      })),
+      agents.map((a) => ({
+        index: a.call_index,
+        subagent_type: a.subagent_type ?? "",
+        description: a.description ?? "",
+      })),
+    ),
+    usage: rowToUsageLogEntry(row),
+  };
+};
+
+export const getSessionPrompts = (sessionId: string): PromptScan[] =>
+  getPrompts({ session_id: sessionId, limit: 500 });
+
+export const getScanStats = (): ScanStats => {
+  const db = getDatabase();
+
+  // Cost by period (last 30 days)
+  const costByPeriod = db
+    .prepare(
+      `
+    SELECT substr(timestamp, 1, 10) as period, SUM(cost_usd) as cost_usd, COUNT(*) as request_count
+    FROM prompts
+    WHERE timestamp >= date('now', '-30 days')
+    GROUP BY substr(timestamp, 1, 10)
+    ORDER BY period
+  `,
+    )
+    .all() as Array<{
+    period: string;
+    cost_usd: number;
+    request_count: number;
+  }>;
+
+  // Cost by time (individual entries, last 500)
+  const costByTime = db
+    .prepare(
+      `
+    SELECT timestamp, model, cost_usd
+    FROM prompts
+    ORDER BY timestamp DESC
+    LIMIT 500
+  `,
+    )
+    .all() as Array<{ timestamp: string; model: string; cost_usd: number }>;
+
+  // Tool frequency
+  const toolRows = db
+    .prepare(
+      `
+    SELECT name, COUNT(*) as cnt
+    FROM tool_calls
+    GROUP BY name
+    ORDER BY cnt DESC
+  `,
+    )
+    .all() as Array<{ name: string; cnt: number }>;
+  const toolFrequency: Record<string, number> = {};
+  for (const t of toolRows) toolFrequency[t.name] = t.cnt;
+
+  // Injected file tokens
+  const injectedRows = db
+    .prepare(
+      `
+    SELECT path, SUM(estimated_tokens) as total_tokens
+    FROM injected_files
+    GROUP BY path
+    ORDER BY total_tokens DESC
+  `,
+    )
+    .all() as Array<{ path: string; total_tokens: number }>;
+  const totalInjected = injectedRows.reduce((s, r) => s + r.total_tokens, 0);
+  const injectedFileTokens = injectedRows.map((r) => ({
+    path: r.path,
+    total_tokens: r.total_tokens,
+    percentage: totalInjected > 0 ? (r.total_tokens / totalInjected) * 100 : 0,
+  }));
+
+  // Cache hit rate (last 500 entries)
+  const cacheRows = db
+    .prepare(
+      `
+    SELECT timestamp,
+      CASE WHEN (cache_read_input_tokens + cache_creation_input_tokens + input_tokens) > 0
+        THEN CAST(cache_read_input_tokens AS REAL) / (cache_read_input_tokens + cache_creation_input_tokens + input_tokens) * 100
+        ELSE 0
+      END as hit_rate
+    FROM prompts
+    ORDER BY timestamp DESC
+    LIMIT 500
+  `,
+    )
+    .all() as Array<{ timestamp: string; hit_rate: number }>;
+
+  // Summary
+  const summaryRow = db
+    .prepare(
+      `
+    SELECT
+      COUNT(*) as total_requests,
+      SUM(cost_usd) as total_cost_usd,
+      AVG(total_context_tokens) as avg_context_tokens,
+      CASE WHEN SUM(cache_read_input_tokens + cache_creation_input_tokens + input_tokens) > 0
+        THEN CAST(SUM(cache_read_input_tokens) AS REAL) / SUM(cache_read_input_tokens + cache_creation_input_tokens + input_tokens) * 100
+        ELSE 0
+      END as cache_hit_rate
+    FROM prompts
+  `,
+    )
+    .get() as
+    | {
+        total_requests: number;
+        total_cost_usd: number;
+        avg_context_tokens: number;
+        cache_hit_rate: number;
+      }
+    | undefined;
+
+  const topTool = toolRows[0]?.name ?? "N/A";
+
+  return {
+    cost_by_time: costByTime,
+    tool_frequency: toolFrequency,
+    injected_file_tokens: injectedFileTokens,
+    cache_hit_rate: cacheRows,
+    cost_by_period: costByPeriod,
+    summary: {
+      total_requests: summaryRow?.total_requests ?? 0,
+      total_cost_usd: summaryRow?.total_cost_usd ?? 0,
+      avg_context_tokens: Math.round(summaryRow?.avg_context_tokens ?? 0),
+      most_used_tool: topTool,
+      cache_hit_rate: Math.round((summaryRow?.cache_hit_rate ?? 0) * 10) / 10,
+    },
+  };
+};
+
+export const getDailyStats = (
+  date?: string,
+): Array<{
+  date: string;
+  request_count: number;
+  total_cost_usd: number;
+  total_context_tokens: number;
+  cache_hit_rate: number;
+}> => {
+  const db = getDatabase();
+  if (date) {
+    const row = db
+      .prepare("SELECT * FROM daily_stats WHERE date = @date")
+      .get({ date });
+    return row ? [row as any] : [];
+  }
+  return db
+    .prepare("SELECT * FROM daily_stats ORDER BY date DESC LIMIT 30")
+    .all() as any[];
+};
+
+export const getSessionList = (
+  limit = 20,
+): Array<{
+  session_id: string;
+  first_timestamp: string;
+  last_timestamp: string;
+  prompt_count: number;
+  total_cost_usd: number;
+  total_context_tokens: number;
+  project: string | null;
+}> => {
+  const db = getDatabase();
+  return db
+    .prepare(
+      `
+    SELECT session_id, first_timestamp, last_timestamp, prompt_count, total_cost_usd, total_context_tokens, project
+    FROM sessions
+    ORDER BY last_timestamp DESC
+    LIMIT @limit
+  `,
+    )
+    .all({ limit }) as any[];
+};
+
+export const getPromptCount = (): number => {
+  const db = getDatabase();
+  const row = db.prepare("SELECT COUNT(*) as cnt FROM prompts").get() as {
+    cnt: number;
+  };
+  return row.cnt;
+};
+
+export const findPromptByTimestamp = (
+  sessionId: string,
+  timestampMs: number,
+  toleranceMs = 30000,
+): PromptScan | null => {
+  const db = getDatabase();
+  // Convert timestamp range to ISO strings for comparison
+  const minTime = new Date(timestampMs - toleranceMs).toISOString();
+  const maxTime = new Date(timestampMs + toleranceMs).toISOString();
+
+  const row = db
+    .prepare(
+      `
+    SELECT * FROM prompts
+    WHERE session_id = @session_id AND timestamp >= @min_time AND timestamp <= @max_time
+    ORDER BY ABS(julianday(timestamp) - julianday(@target_time))
+    LIMIT 1
+  `,
+    )
+    .get({
+      session_id: sessionId,
+      min_time: minTime,
+      max_time: maxTime,
+      target_time: new Date(timestampMs).toISOString(),
+    }) as PromptDbRow | undefined;
+
+  if (!row) return null;
+
+  const files = db
+    .prepare(
+      "SELECT path, category, estimated_tokens FROM injected_files WHERE prompt_id = @pid",
+    )
+    .all({ pid: row.id }) as InjectedFileDbRow[];
+  const tools = db
+    .prepare(
+      "SELECT call_index, name, input_summary, timestamp FROM tool_calls WHERE prompt_id = @pid ORDER BY call_index",
+    )
+    .all({ pid: row.id }) as ToolCallDbRow[];
+  const agents = db
+    .prepare(
+      "SELECT call_index, subagent_type, description FROM agent_calls WHERE prompt_id = @pid ORDER BY call_index",
+    )
+    .all({ pid: row.id }) as AgentCallDbRow[];
+
+  return rowToPromptScan(
+    row,
+    files.map((f) => ({
+      path: f.path,
+      category: f.category as InjectedFile["category"],
+      estimated_tokens: f.estimated_tokens,
+    })),
+    tools.map((t) => ({
+      index: t.call_index,
+      name: t.name,
+      input_summary: t.input_summary ?? "",
+      timestamp: t.timestamp ?? undefined,
+    })),
+    agents.map((a) => ({
+      index: a.call_index,
+      subagent_type: a.subagent_type ?? "",
+      description: a.description ?? "",
+    })),
+  );
+};
