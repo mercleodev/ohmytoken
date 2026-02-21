@@ -1,0 +1,7 @@
+Compatibility alias:
+
+1. Default mode is STRICT.
+2. Canonical strict file: `policy/PR-REVIEW-COMMENT-STRICT.txt`
+3. Coaching mode file: `policy/PR-REVIEW-COMMENT-COACH.txt`
+
+If no mode is specified, use STRICT behavior.

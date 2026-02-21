@@ -1,0 +1,11 @@
+# OhMyToken Policy Rules Catalog
+# Format:
+# RULE_ID|PATH_PATTERNS(comma-separated)|REQUIRED_REFERENCES
+
+PROXY-ARCH-001|electron/proxy/*,electron/main.ts|CONTRIBUTING.md §6; OPEN-SOURCE-WORKFLOW.md §8
+DB-SCHEMA-001|electron/db/*|CONTRIBUTING.md §6
+TEST-GATE-001|src/*,electron/*,scripts/*,.githooks/*,package.json,eslint.config.mjs,tsconfig.json|CONTRIBUTING.md §7
+MIGRATION-REUSE-001|src/*,electron/*|CONTRIBUTING.md §1-1; OPEN-SOURCE-WORKFLOW.md §2-1
+MIGRATION-REFACTOR-001|src/*,electron/*|CONTRIBUTING.md §1-1; OPEN-SOURCE-WORKFLOW.md §2-1
+CI-POLICY-001|.github/workflows/*,scripts/*,.githooks/*,package.json|OPEN-SOURCE-WORKFLOW.md §11
+DOC-SYNC-001|src/*,electron/*|OPEN-SOURCE-WORKFLOW.md §8; OPEN-SOURCE-WORKFLOW.md §10
