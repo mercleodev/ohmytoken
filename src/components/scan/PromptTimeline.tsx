@@ -9,64 +9,23 @@ import {
   Cell,
 } from 'recharts';
 import { formatCost, getModelColor } from './shared';
-
-// Matches the window.api return type
-type PromptScanData = {
-  request_id: string;
-  session_id: string;
-  timestamp: string;
-  user_prompt: string;
-  user_prompt_tokens: number;
-  injected_files: Array<{ path: string; category: string; estimated_tokens: number }>;
-  total_injected_tokens: number;
-  tool_calls: Array<{ index: number; name: string; input_summary: string; timestamp?: string }>;
-  tool_summary: Record<string, number>;
-  agent_calls: Array<{ index: number; subagent_type: string; description: string }>;
-  context_estimate: {
-    system_tokens: number;
-    messages_tokens: number;
-    messages_tokens_breakdown?: {
-      user_text_tokens: number;
-      assistant_tokens: number;
-      tool_result_tokens: number;
-    };
-    tools_definition_tokens: number;
-    total_tokens: number;
-  };
-  model: string;
-  max_tokens: number;
-  conversation_turns: number;
-  user_messages_count: number;
-  assistant_messages_count: number;
-  tool_result_count: number;
-};
-
-type UsageData = {
-  timestamp: string;
-  request_id: string;
-  session_id: string;
-  model: string;
-  request: { messages_count: number; tools_count: number; has_system: boolean; max_tokens: number };
-  response: { input_tokens: number; output_tokens: number; cache_creation_input_tokens: number; cache_read_input_tokens: number };
-  cost_usd: number;
-  duration_ms: number;
-};
+import type { PromptScan, UsageLogEntry } from '../../types';
 
 type TimelineEntry = {
-  scan: PromptScanData;
-  usage: UsageData | null;
+  scan: PromptScan;
+  usage: UsageLogEntry | null;
   label: string;
   cost: number;
 };
 
 type MessageItem = {
-  scan: PromptScanData;
-  usage: UsageData | null;
+  scan: PromptScan;
+  usage: UsageLogEntry | null;
 };
 
 type PromptTimelineProps = {
   entries: MessageItem[];
-  onSelectScan: (scan: PromptScanData, usage: UsageData | null) => void;
+  onSelectScan: (scan: PromptScan, usage: UsageLogEntry | null) => void;
 };
 
 const formatTime = (ts: string): string => {
@@ -213,4 +172,5 @@ export const PromptTimeline = ({ entries: rawEntries, onSelectScan }: PromptTime
   );
 };
 
-export type { PromptScanData, UsageData };
+// Re-export shared types for backward compatibility
+export type { PromptScan as PromptScanData, UsageLogEntry as UsageData } from '../../types';

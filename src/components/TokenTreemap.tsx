@@ -10,40 +10,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Treemap, ResponsiveContainer, Tooltip } from 'recharts';
 import './TokenTreemap.css';
-
-// Prompt history type
-type PromptHistory = {
-  id: string;
-  timestamp: string;
-  content: string;
-  fullContent?: string;
-  tokens: number;
-};
-
-// Prompt analysis result type
-type PromptAnalysis = {
-  promptId: string;
-  prompt: {
-    content: string;
-    tokens: number;
-    timestamp: string;
-  };
-  response: {
-    model: string;
-    inputTokens: number;
-    outputTokens: number;
-    cacheCreationTokens: number;
-    cacheReadTokens: number;
-    totalTokens: number;
-  } | null;
-  cost: {
-    input: number;
-    output: number;
-    cache: number;
-    total: number;
-    saved: number;
-  };
-};
+import type { PromptHistoryItem, PromptAnalysisResult, CacheUsageItem, ScanTokensResult, ContextLogs } from '../types';
 
 // Treemap data type
 type TreemapNode = {
@@ -62,36 +29,6 @@ type TreemapNode = {
   statusBadge?: string;
 };
 
-// Cache usage item type
-type CacheUsageItem = {
-  timestamp: string;
-  prompt: string;
-  cacheRead: number;
-  cacheCreation: number;
-  inputTokens: number;
-};
-
-// API response type
-type ScanData = {
-  breakdown: {
-    claudeMd: { global: number; project: number; total: number };
-    userInput: number;
-    cacheCreation: number;
-    cacheRead: number;
-    output: number;
-    total: number;
-  };
-  claudeMdSections?: Array<{
-    section: string;
-    tokens: number;
-    percentage: number;
-  }>;
-  cacheInfo?: {
-    claudeMdPreview: string;
-    recentCacheUsage: CacheUsageItem[];
-    cacheHitRate: number;
-  };
-};
 
 type TokenTreemapProps = {
   onBack: () => void;
@@ -316,30 +253,23 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
   const [totalTokens, setTotalTokens] = useState(0);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelId>('claude-sonnet-4-20250514');
-  const [_cacheInfo, setCacheInfo] = useState<ScanData['cacheInfo'] | null>(null);
+  const [_cacheInfo, setCacheInfo] = useState<ScanTokensResult['cacheInfo'] | null>(null);
 
   // Prompt history state
-  const [promptHistory, setPromptHistory] = useState<PromptHistory[]>([]);
+  const [promptHistory, setPromptHistory] = useState<PromptHistoryItem[]>([]);
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
-  const [promptAnalysis, setPromptAnalysis] = useState<PromptAnalysis | null>(null);
+  const [promptAnalysis, setPromptAnalysis] = useState<PromptAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAllPrompts, setShowAllPrompts] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [showPromptModal, setShowPromptModal] = useState(false);
-  const [modalPrompt, setModalPrompt] = useState<PromptHistory | null>(null);
+  const [modalPrompt, setModalPrompt] = useState<PromptHistoryItem | null>(null);
   const PROMPTS_PER_PAGE = 20;
   const VISIBLE_PROMPTS = 3;
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const treemapPollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Context logs state (referenced file list)
-  type ContextLogs = {
-    autoInjected: string[];
-    readFiles: string[];
-    globSearches: Array<{ pattern: string; searchPath: string }>;
-    grepSearches: Array<{ pattern: string; searchPath: string }>;
-    sessionId?: string;
-  };
   const [contextLogs, setContextLogs] = useState<ContextLogs | null>(null);
   const [showContextLogs, setShowContextLogs] = useState(false);
 
@@ -354,7 +284,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
   } | null>(null);
 
   // Prompt click -> open modal
-  const handlePromptClick = useCallback((prompt: PromptHistory) => {
+  const handlePromptClick = useCallback((prompt: PromptHistoryItem) => {
     setModalPrompt(prompt);
     setShowPromptModal(true);
   }, []);
@@ -436,7 +366,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
       }
 
       // API call
-      const data: ScanData = await window.api.scanTokens();
+      const data: ScanTokensResult = await window.api.scanTokens();
 
       if (data?.breakdown) {
         const { breakdown } = data;
@@ -549,7 +479,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
       }
     } catch (error) {
       // Demo data
-      const demoHistory: PromptHistory[] = [
+      const demoHistory: PromptHistoryItem[] = [
         {
           id: '1',
           timestamp: new Date().toISOString(),
@@ -597,7 +527,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
     if (selectedPrompt || isAnalyzing) return;
 
     try {
-      const data: ScanData = await window.api.scanTokens();
+      const data: ScanTokensResult = await window.api.scanTokens();
 
       if (data?.breakdown) {
         const { breakdown } = data;
