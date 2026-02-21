@@ -164,7 +164,19 @@ const MODEL_PRICING = {
 type ModelId = keyof typeof MODEL_PRICING;
 
 // Custom Treemap cell renderer
-const CustomTreemapContent = (props: any) => {
+type TreemapCellProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  name?: string;
+  tokens?: number;
+  percentage?: number;
+  color?: string;
+  depth?: number;
+};
+
+const CustomTreemapContent = (props: TreemapCellProps) => {
   const { x, y, width, height, name, tokens, percentage, color, depth } = props;
 
   // Omit text for cells too small
@@ -240,7 +252,12 @@ const CustomTreemapContent = (props: any) => {
 };
 
 // Custom tooltip (with cache details)
-const CustomTooltip = ({ active, payload }: any) => {
+type TreemapTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ payload: TreemapNode }>;
+};
+
+const CustomTooltip = ({ active, payload }: TreemapTooltipProps) => {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload;
@@ -912,7 +929,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
                 dataKey="size"
                 aspectRatio={4 / 3}
                 stroke="#1a1a2e"
-                content={<CustomTreemapContent />}
+                content={((props: Record<string, unknown>) => <CustomTreemapContent {...(props as TreemapCellProps)} />) as unknown as React.ReactElement}
               >
                 <Tooltip content={<CustomTooltip />} />
               </Treemap>

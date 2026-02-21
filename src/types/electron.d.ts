@@ -136,6 +136,78 @@ export type ScanStats = {
   };
 };
 
+export type CacheUsageItem = {
+  timestamp: string;
+  prompt: string;
+  cacheRead: number;
+  cacheCreation: number;
+  inputTokens: number;
+};
+
+export type RecentRequestItem = {
+  timestamp: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheCreation: number;
+  cacheRead: number;
+  total: number;
+};
+
+export type ScanTokensResult = {
+  breakdown: {
+    claudeMd: { global: number; project: number; total: number };
+    userInput: number;
+    cacheCreation: number;
+    cacheRead: number;
+    output: number;
+    total: number;
+  };
+  insights: string[];
+  claudeMdSections: Array<{
+    section: string;
+    tokens: number;
+    percentage: number;
+  }>;
+  recentRequests?: RecentRequestItem[];
+  cacheInfo?: {
+    claudeMdPreview: string;
+    recentCacheUsage: CacheUsageItem[];
+    cacheHitRate: number;
+  };
+};
+
+export type PromptHistoryItem = {
+  id: string;
+  timestamp: string;
+  content: string;
+  fullContent?: string;
+  tokens: number;
+};
+
+export type PromptAnalysisResult = {
+  promptId: string;
+  prompt: {
+    content: string;
+    tokens: number;
+    timestamp: string;
+  };
+  response: {
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    cacheCreationTokens: number;
+    cacheReadTokens: number;
+    totalTokens: number;
+  } | null;
+  cost: {
+    input: number;
+    output: number;
+    cache: number;
+    total: number;
+    saved: number;
+  };
+};
+
 export type ElectronApi = {
   saveConfig: (config: Config) => Promise<{ success: boolean }>;
   getConfig: () => Promise<Config>;
@@ -144,9 +216,9 @@ export type ElectronApi = {
   refreshUsage: () => Promise<{ success: boolean }>;
   getUsageData: () => Promise<CurrentUsageData & { settings: AppSettings }>;
   saveSettings: (settings: AppSettings) => Promise<{ success: boolean }>;
-  scanTokens: () => Promise<any>;
-  getPromptHistory: () => Promise<any[]>;
-  analyzePrompt: (promptId: string) => Promise<any>;
+  scanTokens: () => Promise<ScanTokensResult>;
+  getPromptHistory: () => Promise<PromptHistoryItem[]>;
+  analyzePrompt: (promptId: string) => Promise<PromptAnalysisResult | null>;
   getContextLogs: (sessionId?: string) => Promise<ContextLogs>;
   startProxy: (
     port?: number,

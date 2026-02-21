@@ -221,7 +221,7 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
       ? 'stats'
       : nav.screen === 'session'
         ? `session-${nav.sessionId}`
-        : `prompt-${(nav as any).scan?.request_id}`;
+        : `prompt-${nav.screen === 'prompt' ? nav.scan.request_id : ''}`;
 
   const contentDirection = nav.screen !== 'main'
     ? navDirection

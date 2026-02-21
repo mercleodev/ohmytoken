@@ -144,7 +144,20 @@ const buildTreemapData = (scan: PromptScan): TreemapNode[] => {
 };
 
 // Custom cell renderer
-const CustomContent = (props: any) => {
+type ContextTreemapCellProps = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  name?: string;
+  tokens?: number;
+  color?: string;
+  filePath?: string;
+  onHover?: (info: HoverInfo | null) => void;
+  onClick?: (filePath: string) => void;
+};
+
+const CustomContent = (props: ContextTreemapCellProps) => {
   const {
     x,
     y,
@@ -157,10 +170,10 @@ const CustomContent = (props: any) => {
     onHover,
     onClick,
   } = props;
-  if (!width || !height || width < 4 || height < 4) return null;
+  if (!x || !y || !width || !height || width < 4 || height < 4) return null;
 
   const handleMouseEnter = (e: React.MouseEvent) => {
-    if (onHover) {
+    if (onHover && name != null && tokens != null) {
       const rect = (e.currentTarget as SVGElement).closest(
         ".context-treemap-chart",
       );
@@ -234,8 +247,8 @@ const CustomContent = (props: any) => {
           fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
           style={{ pointerEvents: "none" }}
         >
-          {name.length > width / 7
-            ? name.slice(0, Math.floor(width / 7)) + "…"
+          {(name?.length ?? 0) > width / 7
+            ? (name ?? "").slice(0, Math.floor(width / 7)) + "…"
             : name}
         </text>
       )}
@@ -291,10 +304,13 @@ export const ContextTreemap = ({ scan, onFileClick }: ContextTreemapProps) => {
             dataKey="size"
             stroke="none"
             content={
-              <CustomContent
-                onHover={setHoveredNode}
-                onClick={handleCellClick}
-              />
+              ((props: Record<string, unknown>) => (
+                <CustomContent
+                  {...(props as ContextTreemapCellProps)}
+                  onHover={setHoveredNode}
+                  onClick={handleCellClick}
+                />
+              )) as unknown as React.ReactElement
             }
             isAnimationActive={false}
           />

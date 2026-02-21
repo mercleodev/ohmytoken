@@ -45,7 +45,12 @@ const fillDailyData = (
 };
 
 // Custom tooltip for bar chart
-const CostTooltip = ({ active, payload }: any) => {
+type CostTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ payload: { period: string; cost_usd: number; request_count: number } }>;
+};
+
+const CostTooltip = ({ active, payload }: CostTooltipProps) => {
   if (!active || !payload?.[0]) return null;
   const data = payload[0].payload;
   return (

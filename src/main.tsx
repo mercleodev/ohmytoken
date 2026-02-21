@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './App.css';
+import type { ElectronApi } from './types/electron.d';
 
 // Dark mode removed - always use light theme only
 if (window.api) {
@@ -10,7 +11,7 @@ if (window.api) {
 
 // Mock API for web browser testing (without Electron)
 if (!window.api) {
-  (window as any).api = {
+  const mockApi: ElectronApi = {
     getConfig: async () => ({
       providers: [{ id: 'mock-1', name: 'Claude', type: 'claude' }],
       settings: {
@@ -26,11 +27,17 @@ if (!window.api) {
     removeProvider: async () => ({ success: true }),
     refreshUsage: async () => ({ success: true }),
     getUsageData: async () => ({
-      currentUsage: 50000,
-      limit: 100000,
-      percentage: 50,
-      resetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      providerName: 'Claude'
+      usage: 50,
+      resetTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      sevenDay: { utilization: 50, resetsAt: null },
+      providerName: 'Claude',
+      settings: {
+        colors: { low: '#4caf50', medium: '#ff9800', high: '#f44336' },
+        toggleInterval: 2000,
+        refreshInterval: 5,
+        shortcut: 'CommandOrControl+Shift+T',
+        proxyPort: 8780,
+      },
     }),
     saveSettings: async () => ({ success: true }),
     scanTokens: async () => ({
@@ -265,7 +272,7 @@ if (!window.api) {
       }));
     },
 
-    onNewPromptScan: (callback: (data: any) => void) => {
+    onNewPromptScan: (callback) => {
       // Emit a fake scan every 5 seconds
       let counter = 100;
       const models = ['claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'];
@@ -290,8 +297,8 @@ if (!window.api) {
           user_prompt: mockPrompts[idx],
           user_prompt_tokens: 15,
           injected_files: [
-            { path: '~/.claude/CLAUDE.md', category: 'global', estimated_tokens: 3581 },
-            { path: '~/prj/checktoken/CLAUDE.md', category: 'project', estimated_tokens: 1994 },
+            { path: '~/.claude/CLAUDE.md', category: 'global' as const, estimated_tokens: 3581 },
+            { path: '~/prj/checktoken/CLAUDE.md', category: 'project' as const, estimated_tokens: 1994 },
           ],
           total_injected_tokens: 5575,
           tool_calls: [{ index: 0, name: 'Read', input_summary: 'src/App.tsx' }],
@@ -335,8 +342,8 @@ if (!window.api) {
     },
 
     // === Usage Dashboard Mock API ===
-    getProviderUsage: async (provider: string) => {
-      const mockData: Record<string, any> = {
+    getProviderUsage: async (provider) => {
+      const mockData: Record<string, import('./types').ProviderUsageSnapshot | null> = {
         claude: {
           provider: 'claude',
           displayName: 'Claude',
@@ -375,11 +382,11 @@ if (!window.api) {
 
     refreshProviderUsage: async () => {},
 
-    onProviderTokenChanged: (_callback: any) => {
+    onProviderTokenChanged: (_callback) => {
       return () => {};
     },
 
-    onProviderUsageUpdated: (_callback: any) => {
+    onProviderUsageUpdated: (_callback) => {
       return () => {};
     },
 
@@ -409,7 +416,7 @@ if (!window.api) {
       },
     }),
 
-    onNewHistoryEntry: (_callback: any) => {
+    onNewHistoryEntry: (_callback) => {
       return () => {};
     },
 
@@ -423,7 +430,12 @@ if (!window.api) {
       const content = mockContents[filePath] || `# ${filePath}\n\n(Mock content for preview)\n\nThis file would contain the actual content when running in Electron.`;
       return { content };
     },
+
+    onNavigateTo: (_callback) => {
+      return () => {};
+    },
   };
+  window.api = mockApi;
   console.log('🔧 Mock API loaded for browser testing');
 }
 

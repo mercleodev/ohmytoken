@@ -39,7 +39,17 @@ const buildCostData = (prompts: PromptWithCost[]): TreemapNode[] => {
     });
 };
 
-const CustomContent = (props: any) => {
+type CostTreemapCellProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  name?: string;
+  cost?: number;
+  color?: string;
+};
+
+const CustomContent = (props: CostTreemapCellProps) => {
   const { x, y, width, height, name, cost, color } = props;
   if (!width || !height || width < 20 || height < 20) return null;
 
@@ -69,7 +79,7 @@ const CustomContent = (props: any) => {
           fontWeight={500}
           fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
         >
-          {name.length > width / 6 ? name.slice(0, Math.floor(width / 6)) + '…' : name}
+          {(name?.length ?? 0) > width / 6 ? (name ?? '').slice(0, Math.floor(width / 6)) + '…' : name}
         </text>
       )}
       {showCost && (
@@ -106,7 +116,7 @@ export const CostTreemap = ({ prompts }: CostTreemapProps) => {
             data={data}
             dataKey="size"
             stroke="none"
-            content={<CustomContent />}
+            content={((props: Record<string, unknown>) => <CustomContent {...(props as CostTreemapCellProps)} />) as unknown as React.ReactElement}
             isAnimationActive={false}
           />
         </ResponsiveContainer>
