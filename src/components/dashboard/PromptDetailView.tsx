@@ -337,6 +337,29 @@ export const PromptDetailView = ({
     return toolCalls.filter((tc) => activeTools.has(tc.name));
   }, [toolCalls, activeTools]);
 
+  const handleToolToggle = useCallback(
+    (name: string) => {
+      if (name === "all") {
+        setActiveTools((prev) => (prev === "all" ? new Set<string>() : "all"));
+        return;
+      }
+      setActiveTools((prev) => {
+        const allNames = toolNameOptions.map((o) => o.name);
+        let next: Set<string>;
+        if (prev === "all") {
+          next = new Set(allNames);
+        } else {
+          next = new Set(prev);
+        }
+        if (next.has(name)) next.delete(name);
+        else next.add(name);
+        if (next.size === allNames.length) return "all";
+        return next;
+      });
+    },
+    [toolNameOptions],
+  );
+
   const injectedEvidence = buildInjectedEvidence(enrichedScan);
   const cacheBaseTokens = usage
     ? usage.response.input_tokens +
@@ -714,25 +737,7 @@ export const PromptDetailView = ({
             <ActionFilterChips
               options={toolNameOptions}
               activeTools={activeTools}
-              onToggle={(name) => {
-                if (name === "all") {
-                  setActiveTools((prev) => (prev === "all" ? new Set<string>() : "all"));
-                  return;
-                }
-                setActiveTools((prev) => {
-                  const allNames = toolNameOptions.map((o) => o.name);
-                  let next: Set<string>;
-                  if (prev === "all") {
-                    next = new Set(allNames);
-                  } else {
-                    next = new Set(prev);
-                  }
-                  if (next.has(name)) next.delete(name);
-                  else next.add(name);
-                  if (next.size === allNames.length) return "all";
-                  return next;
-                });
-              }}
+              onToggle={handleToolToggle}
               totalCount={toolCalls.length}
               filteredCount={filteredToolCalls.length}
             />

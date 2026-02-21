@@ -283,90 +283,18 @@ export const SessionDetailView = ({
       </div>
 
       {/* Context Donut Gauge */}
-      {hasScanData &&
-        !loading &&
-        latestMsg &&
-        (() => {
-          const radius = 52;
-          const strokeWidth = 10;
-          const circumference = 2 * Math.PI * radius;
-          const filled = (latestCtxPct / 100) * circumference;
-          const svgSize = (radius + strokeWidth) * 2;
-          const center = svgSize / 2;
-          return (
-            <div className="session-donut-gauge">
-              <div className="session-donut-svg-wrap">
-                <svg
-                  width={svgSize}
-                  height={svgSize}
-                  viewBox={`0 0 ${svgSize} ${svgSize}`}
-                >
-                  <circle
-                    cx={center}
-                    cy={center}
-                    r={radius}
-                    fill="none"
-                    stroke="var(--gauge-track, rgba(0,0,0,0.06))"
-                    strokeWidth={strokeWidth}
-                  />
-                  <circle
-                    cx={center}
-                    cy={center}
-                    r={radius}
-                    fill="none"
-                    stroke={latestGaugeColor}
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={`${filled} ${circumference}`}
-                    strokeLinecap="round"
-                    transform={`rotate(-90 ${center} ${center})`}
-                    style={{ transition: "stroke-dasharray 0.4s ease" }}
-                  />
-                </svg>
-                <div className="session-donut-label">
-                  <span
-                    className="session-donut-pct"
-                    style={{ color: latestGaugeColor }}
-                  >
-                    {Math.round(latestCtxPct)}%
-                  </span>
-                  <span className="session-donut-sub">Context Used</span>
-                </div>
-              </div>
-              <div className="session-donut-info">
-                <div className="session-donut-row">
-                  <span>Used</span>
-                  <span>{formatTokens(latestCtxTokens)}</span>
-                </div>
-                <div className="session-donut-row">
-                  <span>Limit</span>
-                  <span>{formatTokens(latestCtxLimit)}</span>
-                </div>
-                <div className="session-donut-row">
-                  <span>Model</span>
-                  <span style={{ color: getModelColor(latestMsg.scan.model) }}>
-                    {getModelShort(latestMsg.scan.model)}
-                  </span>
-                </div>
-                <div className="session-donut-row">
-                  <span>Prompts</span>
-                  <span>{messages.length}</span>
-                </div>
-                {sessionTotalCost > 0 && (
-                  <div className="session-donut-row session-donut-row--cost">
-                    <span>Cost</span>
-                    <span>{formatCost(sessionTotalCost)}</span>
-                  </div>
-                )}
-                {latestCacheHitPct !== null && (
-                  <div className="session-donut-row">
-                    <span>Cache hit</span>
-                    <span>{latestCacheHitPct.toFixed(1)}%</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })()}
+      {hasScanData && !loading && latestMsg && (
+        <SessionDonutGauge
+          ctxPct={latestCtxPct}
+          gaugeColor={latestGaugeColor}
+          ctxTokens={latestCtxTokens}
+          ctxLimit={latestCtxLimit}
+          model={latestMsg.scan.model}
+          promptCount={messages.length}
+          totalCost={sessionTotalCost}
+          cacheHitPct={latestCacheHitPct}
+        />
+      )}
 
       {/* Prompt List */}
       <div className="prompt-list" ref={feedRef}>
@@ -635,6 +563,110 @@ export const SessionDetailView = ({
               </motion.button>
             );
           })
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- Sub Components ---
+
+const DONUT_RADIUS = 52;
+const DONUT_STROKE_WIDTH = 10;
+const DONUT_TRANSITION_SECONDS = 0.4;
+
+type SessionDonutGaugeProps = {
+  ctxPct: number;
+  gaugeColor: string;
+  ctxTokens: number;
+  ctxLimit: number;
+  model: string;
+  promptCount: number;
+  totalCost: number;
+  cacheHitPct: number | null;
+};
+
+const SessionDonutGauge = ({
+  ctxPct,
+  gaugeColor,
+  ctxTokens,
+  ctxLimit,
+  model,
+  promptCount,
+  totalCost,
+  cacheHitPct,
+}: SessionDonutGaugeProps) => {
+  const circumference = 2 * Math.PI * DONUT_RADIUS;
+  const filled = (ctxPct / 100) * circumference;
+  const svgSize = (DONUT_RADIUS + DONUT_STROKE_WIDTH) * 2;
+  const center = svgSize / 2;
+
+  return (
+    <div className="session-donut-gauge">
+      <div className="session-donut-svg-wrap">
+        <svg
+          width={svgSize}
+          height={svgSize}
+          viewBox={`0 0 ${svgSize} ${svgSize}`}
+        >
+          <circle
+            cx={center}
+            cy={center}
+            r={DONUT_RADIUS}
+            fill="none"
+            stroke="var(--gauge-track, rgba(0,0,0,0.06))"
+            strokeWidth={DONUT_STROKE_WIDTH}
+          />
+          <circle
+            cx={center}
+            cy={center}
+            r={DONUT_RADIUS}
+            fill="none"
+            stroke={gaugeColor}
+            strokeWidth={DONUT_STROKE_WIDTH}
+            strokeDasharray={`${filled} ${circumference}`}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${center} ${center})`}
+            style={{ transition: `stroke-dasharray ${DONUT_TRANSITION_SECONDS}s ease` }}
+          />
+        </svg>
+        <div className="session-donut-label">
+          <span className="session-donut-pct" style={{ color: gaugeColor }}>
+            {Math.round(ctxPct)}%
+          </span>
+          <span className="session-donut-sub">Context Used</span>
+        </div>
+      </div>
+      <div className="session-donut-info">
+        <div className="session-donut-row">
+          <span>Used</span>
+          <span>{formatTokens(ctxTokens)}</span>
+        </div>
+        <div className="session-donut-row">
+          <span>Limit</span>
+          <span>{formatTokens(ctxLimit)}</span>
+        </div>
+        <div className="session-donut-row">
+          <span>Model</span>
+          <span style={{ color: getModelColor(model) }}>
+            {getModelShort(model)}
+          </span>
+        </div>
+        <div className="session-donut-row">
+          <span>Prompts</span>
+          <span>{promptCount}</span>
+        </div>
+        {totalCost > 0 && (
+          <div className="session-donut-row session-donut-row--cost">
+            <span>Cost</span>
+            <span>{formatCost(totalCost)}</span>
+          </div>
+        )}
+        {cacheHitPct !== null && (
+          <div className="session-donut-row">
+            <span>Cache hit</span>
+            <span>{cacheHitPct.toFixed(1)}%</span>
+          </div>
         )}
       </div>
     </div>

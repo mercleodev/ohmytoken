@@ -9,6 +9,9 @@ import type { ToolCall } from "../../types";
 
 const ACTION_STAGGER_SECONDS = 0.05;
 const ACTION_ENTER_DURATION_SECONDS = 0.22;
+const FILTER_TRANSITION_SECONDS = 0.2;
+const FILTER_EASE: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
+const LIVE_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const LIVE_WINDOW_MS = 3 * 60 * 1000;
 
 type ActionFlowListProps = {
@@ -87,12 +90,12 @@ export const ActionFlowList = ({
                   showLiveFlow
                     ? {
                         duration: ACTION_ENTER_DURATION_SECONDS,
-                        ease: [0.22, 1, 0.36, 1],
+                        ease: LIVE_EASE,
                         delay: idx * ACTION_STAGGER_SECONDS,
                       }
                     : {
-                        duration: 0.2,
-                        ease: [0.25, 0.1, 0.25, 1],
+                        duration: FILTER_TRANSITION_SECONDS,
+                        ease: FILTER_EASE,
                       }
                 }
                 style={{ overflow: "hidden" }}
