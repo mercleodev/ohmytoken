@@ -90,15 +90,37 @@ export const getContextLimit = (model: string): number => {
 
 // Action (tool call) colors and helpers
 export const ACTION_COLORS: Record<string, string> = {
+  // File operations
   Read: '#3b82f6',
   Write: '#f59e0b',
   Edit: '#f59e0b',
   Glob: '#8b5cf6',
   Grep: '#8b5cf6',
+  // Shell & execution
   Bash: '#10b981',
   Task: '#6366f1',
+  // Web
   WebFetch: '#ec4899',
   WebSearch: '#ec4899',
+  // Planning & workflow
+  EnterPlanMode: '#0ea5e9',
+  ExitPlanMode: '#0ea5e9',
+  AskUserQuestion: '#14b8a6',
+  // Notebook
+  NotebookEdit: '#f97316',
+  // Todo & task management
+  TodoRead: '#a855f7',
+  TodoWrite: '#a855f7',
+  TaskCreate: '#6366f1',
+  TaskUpdate: '#6366f1',
+  TaskGet: '#6366f1',
+  TaskList: '#6366f1',
+  // Skills & MCP
+  Skill: '#06b6d4',
+  ListMcpResourcesTool: '#84cc16',
+  ReadMcpResourceTool: '#84cc16',
+  // Worktree
+  EnterWorktree: '#78716c',
 };
 
 const FILE_TOOLS = new Set(['Read', 'Write', 'Edit', 'Glob', 'Grep']);

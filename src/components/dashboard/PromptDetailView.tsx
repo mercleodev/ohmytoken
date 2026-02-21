@@ -239,7 +239,8 @@ export const PromptDetailView = ({
   );
   const [enrichedScan, setEnrichedScan] = useState<PromptScan>(scan);
   const [showEvidenceSettings, setShowEvidenceSettings] = useState(false);
-  const [actionFilter, setActionFilter] = useState("exclude-bash");
+  const [activeTools, setActiveTools] = useState<Set<string> | "all">(() => "all");
+  const initializedRef = useRef(false);
 
   // Fetch evidence report if not already attached; auto-rescore if missing
   useEffect(() => {
@@ -359,14 +360,21 @@ export const PromptDetailView = ({
       .map(([name, count]) => ({ name, count }));
   }, [toolCalls]);
 
-  const filteredToolCalls = useMemo(() => {
-    if (actionFilter === "all") return toolCalls;
-    if (actionFilter === "exclude-bash") {
-      return toolCalls.filter((tc) => tc.name !== "Bash");
+  // Default: all tools active except Bash
+  useEffect(() => {
+    if (initializedRef.current || toolNameOptions.length === 0) return;
+    initializedRef.current = true;
+    const hasBash = toolNameOptions.some((o) => o.name === "Bash");
+    if (hasBash) {
+      setActiveTools(new Set(toolNameOptions.filter((o) => o.name !== "Bash").map((o) => o.name)));
     }
-    // Single tool filter
-    return toolCalls.filter((tc) => tc.name === actionFilter);
-  }, [toolCalls, actionFilter]);
+  }, [toolNameOptions]);
+
+  const filteredToolCalls = useMemo(() => {
+    if (activeTools === "all") return toolCalls;
+    if (activeTools.size === 0) return toolCalls;
+    return toolCalls.filter((tc) => activeTools.has(tc.name));
+  }, [toolCalls, activeTools]);
 
   const injectedEvidence = buildInjectedEvidence(enrichedScan);
   const cacheBaseTokens = usage
@@ -861,10 +869,29 @@ export const PromptDetailView = ({
       >
         {toolCalls.length > 0 ? (
           <>
-            <ActionFilterBar
+            <ActionFilterChips
               options={toolNameOptions}
-              value={actionFilter}
-              onChange={setActionFilter}
+              activeTools={activeTools}
+              onToggle={(name) => {
+                if (name === "all") {
+                  setActiveTools("all");
+                  return;
+                }
+                setActiveTools((prev) => {
+                  const allNames = toolNameOptions.map((o) => o.name);
+                  let next: Set<string>;
+                  if (prev === "all") {
+                    next = new Set(allNames);
+                  } else {
+                    next = new Set(prev);
+                  }
+                  if (next.has(name)) next.delete(name);
+                  else next.add(name);
+                  if (next.size === allNames.length) return "all";
+                  if (next.size === 0) return "all";
+                  return next;
+                });
+              }}
               totalCount={toolCalls.length}
               filteredCount={filteredToolCalls.length}
             />
@@ -1146,45 +1173,57 @@ const EvidenceGroup = ({
   );
 };
 
-// --- Action Filter Bar ---
+// --- Action Filter Chips ---
 
-type ActionFilterBarProps = {
+type ActionFilterChipsProps = {
   options: Array<{ name: string; count: number }>;
-  value: string;
-  onChange: (value: string) => void;
+  activeTools: Set<string> | "all";
+  onToggle: (name: string) => void;
   totalCount: number;
   filteredCount: number;
 };
 
-const ActionFilterBar = ({
+const ActionFilterChips = ({
   options,
-  value,
-  onChange,
+  activeTools,
+  onToggle,
   totalCount,
   filteredCount,
-}: ActionFilterBarProps) => (
-  <div className="action-filter-bar">
-    <div className="action-filter-select-wrap">
-      <select
-        className="action-filter-select"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-label="Filter actions by tool"
+}: ActionFilterChipsProps) => (
+  <div className="action-filter-chips">
+    <div className="action-filter-chips-row">
+      <button
+        className={`action-filter-chip preset${activeTools === "all" ? " active" : ""}`}
+        style={{ "--chip-color": "#8e8e93" } as React.CSSProperties}
+        onClick={() => onToggle("all")}
+        aria-label="Show all tools"
       >
-        <option value="all">All tools ({totalCount})</option>
-        <option value="exclude-bash">Exclude Bash</option>
-        {options.map(({ name, count }) => (
-          <option key={name} value={name}>
+        All
+      </button>
+      <span className="action-filter-divider" />
+      {options.map(({ name, count }) => {
+        const active = activeTools === "all" || activeTools.has(name);
+        return (
+          <button
+            key={name}
+            className={`action-filter-chip${active ? " active" : ""}`}
+            style={{
+              "--chip-color": ACTION_COLORS[name] || "#8e8e93",
+            } as React.CSSProperties}
+            onClick={() => onToggle(name)}
+            aria-label={`Toggle ${name}`}
+          >
+            <span
+              className="action-filter-chip-dot"
+              style={{ background: ACTION_COLORS[name] || "#8e8e93" }}
+            />
             {name} ({count})
-          </option>
-        ))}
-      </select>
-      <span className="action-filter-chevron" aria-hidden="true">
-        &#x25BE;
-      </span>
+          </button>
+        );
+      })}
     </div>
-    {value !== "all" && (
-      <span className="action-filter-count">
+    {activeTools !== "all" && (
+      <span className="action-filter-chips-count">
         {filteredCount} / {totalCount}
       </span>
     )}
