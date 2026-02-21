@@ -9,6 +9,7 @@ import {
   Cell,
 } from 'recharts';
 import { formatCost, getModelColor } from './shared';
+import './scan.css';
 
 // Matches the window.api return type
 type PromptScanData = {
@@ -87,37 +88,29 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   const total = ctx.total_tokens;
 
   return (
-    <div style={{
-      background: 'rgba(15, 23, 42, 0.95)',
-      border: '1px solid rgba(255,255,255,0.15)',
-      borderRadius: 8,
-      padding: '10px 14px',
-      color: '#fff',
-      fontSize: 12,
-      maxWidth: 300,
-    }}>
-      <div style={{ fontWeight: 600, marginBottom: 4 }}>
+    <div className="timeline-tooltip">
+      <div className="timeline-tooltip-title">
         {scan.user_prompt.slice(0, 80) || '(system)'}
       </div>
-      <div style={{ color: '#94a3b8', marginBottom: 6 }}>
+      <div className="timeline-tooltip-meta">
         {formatTime(scan.timestamp)} | {scan.model.split('-').slice(-2).join('-')}
       </div>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 6 }}>
+      <div className="timeline-tooltip-stats">
         <span>Cost: {formatCost(entry.cost)}</span>
         <span>Tools: {scan.tool_calls.length}</span>
         <span>Files: {scan.injected_files.length}</span>
       </div>
       {total > 0 && (
         <div>
-          <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 3 }}>
+          <div className="timeline-tooltip-ctx-label">
             Context: {total.toLocaleString()} tokens
           </div>
-          <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', background: 'rgba(255,255,255,0.1)' }}>
+          <div className="timeline-tooltip-bar">
             <div style={{ width: `${(ctx.system_tokens / total) * 100}%`, background: '#8b5cf6' }} title="System" />
             <div style={{ width: `${(ctx.messages_tokens / total) * 100}%`, background: '#3b82f6' }} title="Messages" />
             <div style={{ width: `${(ctx.tools_definition_tokens / total) * 100}%`, background: '#f59e0b' }} title="Tools" />
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 3, fontSize: 9, color: '#94a3b8' }}>
+          <div className="timeline-tooltip-legend">
             <span>System {((ctx.system_tokens / total) * 100).toFixed(0)}%</span>
             <span>Msgs {((ctx.messages_tokens / total) * 100).toFixed(0)}%</span>
             <span>Tools {((ctx.tools_definition_tokens / total) * 100).toFixed(0)}%</span>
@@ -149,9 +142,9 @@ export const PromptTimeline = ({ entries: rawEntries, onSelectScan }: PromptTime
 
   if (entries.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>
-        <div style={{ fontSize: 16, marginBottom: 8 }}>No scan data yet</div>
-        <div style={{ fontSize: 12 }}>
+      <div className="prompt-timeline-empty">
+        <div className="prompt-timeline-empty-title">No scan data yet</div>
+        <div className="prompt-timeline-empty-desc">
           Start the proxy server and make API requests to see CT scan data.
         </div>
       </div>
@@ -159,17 +152,12 @@ export const PromptTimeline = ({ entries: rawEntries, onSelectScan }: PromptTime
   }
 
   return (
-    <div>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-      }}>
-        <div style={{ fontSize: 13, color: '#94a3b8' }}>
+    <div className="prompt-timeline">
+      <div className="prompt-timeline-header">
+        <div className="prompt-timeline-summary">
           {entries.length} requests | Total: {formatCost(entries.reduce((s, e) => s + e.cost, 0))}
         </div>
-        <div style={{ display: 'flex', gap: 12, fontSize: 11 }}>
+        <div className="prompt-timeline-legend">
           <span style={{ color: '#8b5cf6' }}>Opus</span>
           <span style={{ color: '#3b82f6' }}>Sonnet</span>
           <span style={{ color: '#10b981' }}>Haiku</span>

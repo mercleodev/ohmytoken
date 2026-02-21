@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { formatTokens, CATEGORY_COLORS } from '../scan/shared';
 import { FilePreviewPopup } from '../scan/FilePreviewPopup';
+import './context.css';
 
 type FileRankEntry = {
   path: string;
@@ -34,7 +35,7 @@ export const FileRankingTable = ({ files }: FileRankingTableProps) => {
 
   if (files.length === 0) {
     return (
-      <div style={{ padding: '16px 0', textAlign: 'center', color: '#8e8e93', fontSize: 12 }}>
+      <div className="file-ranking-empty">
         No injected files
       </div>
     );
@@ -43,24 +44,15 @@ export const FileRankingTable = ({ files }: FileRankingTableProps) => {
   const maxTokens = files[0]?.cumulativeTokens ?? 1;
 
   return (
-    <div style={{ padding: '8px 0' }}>
+    <div className="file-ranking-table">
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '0 8px 6px',
-        fontSize: 10,
-        fontWeight: 600,
-        color: '#8e8e93',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
-      }}>
-        <span style={{ width: 18, textAlign: 'center' }}>#</span>
-        <span style={{ flex: 1 }}>File</span>
-        <span style={{ width: 36, textAlign: 'center' }}>Cat</span>
-        <span style={{ width: 28, textAlign: 'right' }}>Inj</span>
-        <span style={{ width: 44, textAlign: 'right' }}>Tokens</span>
-        <span style={{ width: 80, textAlign: 'right' }}>Share</span>
+      <div className="file-ranking-header">
+        <span className="file-ranking-col-rank">#</span>
+        <span className="file-ranking-col-file">File</span>
+        <span className="file-ranking-col-cat">Cat</span>
+        <span className="file-ranking-col-inj">Inj</span>
+        <span className="file-ranking-col-tokens">Tokens</span>
+        <span className="file-ranking-col-share">Share</span>
       </div>
 
       {/* Rows */}
@@ -77,7 +69,7 @@ export const FileRankingTable = ({ files }: FileRankingTableProps) => {
               style={{ padding: '5px 8px' }}
             >
               {/* # */}
-              <span style={{ width: 18, textAlign: 'center', fontSize: 10, color: '#c7c7cc', flexShrink: 0 }}>
+              <span className="file-ranking-rank">
                 {idx + 1}
               </span>
 
@@ -87,22 +79,18 @@ export const FileRankingTable = ({ files }: FileRankingTableProps) => {
               </span>
 
               {/* Category badge */}
-              <span style={{
-                width: 36,
-                textAlign: 'center',
-                fontSize: 9,
-                fontWeight: 600,
-                color,
-                background: `${color}18`,
-                borderRadius: 4,
-                padding: '1px 4px',
-                flexShrink: 0,
-              }}>
+              <span
+                className="file-ranking-cat-badge"
+                style={{
+                  color,
+                  background: `${color}18`,
+                }}
+              >
                 {CATEGORY_SHORT[file.category] ?? file.category}
               </span>
 
               {/* Injection count */}
-              <span style={{ width: 28, textAlign: 'right', fontSize: 11, color: '#8e8e93', flexShrink: 0 }}>
+              <span className="file-ranking-inj-count">
                 {file.injectionCount}x
               </span>
 
@@ -112,24 +100,17 @@ export const FileRankingTable = ({ files }: FileRankingTableProps) => {
               </span>
 
               {/* Share bar */}
-              <span style={{ width: 80, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                <span style={{
-                  flex: 1,
-                  height: 4,
-                  borderRadius: 2,
-                  background: 'rgba(0,0,0,0.06)',
-                  overflow: 'hidden',
-                }}>
-                  <span style={{
-                    display: 'block',
-                    height: '100%',
-                    width: `${barWidth}%`,
-                    borderRadius: 2,
-                    background: color,
-                    transition: 'width 0.3s ease',
-                  }} />
+              <span className="file-ranking-share">
+                <span className="file-ranking-share-track">
+                  <span
+                    className="file-ranking-share-fill"
+                    style={{
+                      width: `${barWidth}%`,
+                      background: color,
+                    }}
+                  />
                 </span>
-                <span style={{ fontSize: 10, color: '#8e8e93', minWidth: 28, textAlign: 'right' }}>
+                <span className="file-ranking-share-pct">
                   {file.percentOfTotal.toFixed(1)}%
                 </span>
               </span>

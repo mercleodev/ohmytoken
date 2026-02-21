@@ -1,0 +1,260 @@
+/* ===================================
+   Context Analysis Components — Light Theme
+   =================================== */
+
+/* --- ContextAnalysisView --- */
+
+.context-analysis-view {
+  /* wrapper */
+}
+
+.context-analysis-loading {
+  padding: 24px;
+  text-align: center;
+  color: #8e8e93;
+  font-size: 13px;
+}
+
+.context-analysis-empty {
+  padding: 24px;
+  text-align: center;
+}
+
+.context-analysis-empty-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  opacity: 0.4;
+}
+
+.context-analysis-empty-title {
+  font-size: 13px;
+  color: #8e8e93;
+}
+
+.context-analysis-empty-desc {
+  font-size: 11px;
+  color: #c7c7cc;
+  margin-top: 4px;
+}
+
+.context-analysis-content {
+  padding: 0 0 16px;
+}
+
+.context-analysis-section {
+  padding: 0 16px;
+}
+
+.context-analysis-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0;
+}
+
+.context-analysis-file-section {
+  padding: 8px 16px 0;
+}
+
+.context-analysis-file-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+/* --- CategoryDonutChart --- */
+
+.category-donut {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.category-donut-empty {
+  padding: 16px 0;
+  text-align: center;
+  color: #8e8e93;
+  font-size: 12px;
+}
+
+.category-donut-chart {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.category-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.category-donut-total {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.category-donut-unit {
+  font-size: 9px;
+  color: #8e8e93;
+}
+
+.category-donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.category-donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.category-donut-legend-label {
+  color: #3c3c43;
+  flex: 1;
+}
+
+.category-donut-legend-tokens {
+  color: #8e8e93;
+  font-weight: 500;
+  min-width: 36px;
+  text-align: right;
+}
+
+.category-donut-legend-pct {
+  color: #c7c7cc;
+  font-size: 11px;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* --- FileRankingTable --- */
+
+.file-ranking-table {
+  padding: 8px 0;
+}
+
+.file-ranking-empty {
+  padding: 16px 0;
+  text-align: center;
+  color: #8e8e93;
+  font-size: 12px;
+}
+
+.file-ranking-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #8e8e93;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.file-ranking-col-rank {
+  width: 18px;
+  text-align: center;
+}
+
+.file-ranking-col-file {
+  flex: 1;
+}
+
+.file-ranking-col-cat {
+  width: 36px;
+  text-align: center;
+}
+
+.file-ranking-col-inj {
+  width: 28px;
+  text-align: right;
+}
+
+.file-ranking-col-tokens {
+  width: 44px;
+  text-align: right;
+}
+
+.file-ranking-col-share {
+  width: 80px;
+  text-align: right;
+}
+
+/* --- File Ranking Row --- */
+
+.file-ranking-rank {
+  width: 18px;
+  text-align: center;
+  font-size: 10px;
+  color: #c7c7cc;
+  flex-shrink: 0;
+}
+
+.file-ranking-cat-badge {
+  width: 36px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+}
+
+.file-ranking-inj-count {
+  width: 28px;
+  text-align: right;
+  font-size: 11px;
+  color: #8e8e93;
+  flex-shrink: 0;
+}
+
+.file-ranking-share {
+  width: 80px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.file-ranking-share-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.file-ranking-share-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.file-ranking-share-pct {
+  font-size: 10px;
+  color: #8e8e93;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* --- SummaryCards (sub label override) --- */
+
+.summary-card-sub {
+  font-size: 9px;
+  margin-top: 2px;
+  color: #8e8e93;
+}

@@ -4,6 +4,7 @@ import {
   getGaugeColor,
   getModelShort,
 } from "./shared";
+import './scan.css';
 
 type MessagesBreakdown = {
   user_text_tokens: number;
@@ -46,26 +47,13 @@ export const ContextWindowGauge = ({
 
   return (
     <div
+      className="ctx-gauge"
       style={{
-        padding: "14px 16px",
-        background: "rgba(255,255,255,0.04)",
         border: `1px solid ${pct > 75 ? "rgba(239, 68, 68, 0.3)" : "rgba(255,255,255,0.08)"}`,
-        borderRadius: 12,
-        marginBottom: 12,
-        display: "flex",
-        alignItems: "center",
-        gap: 16,
       }}
     >
       {/* Circular gauge */}
-      <div
-        style={{
-          position: "relative",
-          width: 90,
-          height: 90,
-          flexShrink: 0,
-        }}
-      >
+      <div className="ctx-gauge-circle">
         <svg
           width={90}
           height={90}
@@ -95,56 +83,31 @@ export const ContextWindowGauge = ({
             }}
           />
         </svg>
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <span style={{ fontSize: 20, fontWeight: 700, color, lineHeight: 1 }}>
+        <div className="ctx-gauge-circle-label">
+          <span className="ctx-gauge-pct" style={{ color }}>
             {pct.toFixed(0)}%
           </span>
-          <span style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}>
+          <span className="ctx-gauge-sub">
             used
           </span>
         </div>
       </div>
 
       {/* Right-side info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: "#e2e8f0",
-            marginBottom: 6,
-          }}
-        >
+      <div className="ctx-gauge-info">
+        <div className="ctx-gauge-title">
           Context Window
         </div>
 
-        <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>
-          <span style={{ fontWeight: 600, color }}>
+        <div className="ctx-gauge-total">
+          <span className="ctx-gauge-total-value" style={{ color }}>
             {formatTokens(totalTokens)}
           </span>
-          <span style={{ color: "#64748b" }}> / {formatTokens(limit)}</span>
+          <span className="ctx-gauge-total-limit"> / {formatTokens(limit)}</span>
         </div>
 
         {/* Horizontal ratio bar (6-color) */}
-        <div
-          style={{
-            display: "flex",
-            height: 6,
-            borderRadius: 3,
-            overflow: "hidden",
-            background: "rgba(255,255,255,0.08)",
-            marginBottom: 6,
-          }}
-        >
+        <div className="ctx-gauge-bar">
           <div
             style={{
               width: `${(systemTokens / limit) * 100}%`,
@@ -189,9 +152,7 @@ export const ContextWindowGauge = ({
         </div>
 
         {/* Legend */}
-        <div
-          style={{ display: "flex", gap: 10, fontSize: 10, color: "#94a3b8" }}
-        >
+        <div className="ctx-gauge-legend">
           <span>
             <span style={{ color: "#8b5cf6" }}>S</span>{" "}
             {formatTokens(systemTokens)}
@@ -223,7 +184,7 @@ export const ContextWindowGauge = ({
             <span style={{ color: "#f59e0b" }}>T</span>{" "}
             {formatTokens(toolsTokens)}
           </span>
-          <span style={{ marginLeft: "auto", color: "#64748b" }}>
+          <span className="ctx-gauge-legend-auto">
             {getModelShort(model)}
           </span>
         </div>

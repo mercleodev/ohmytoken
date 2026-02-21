@@ -4,6 +4,7 @@ import { SummaryCards } from './SummaryCards';
 import { CategoryDonutChart } from './CategoryDonutChart';
 import { FileRankingTable } from './FileRankingTable';
 import type { PromptScan, UsageLogEntry } from '../../types/electron.d';
+import './context.css';
 
 // --- Internal types ---
 
@@ -165,48 +166,47 @@ export const ContextAnalysisView = () => {
 
   if (loading) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: '#8e8e93', fontSize: 13 }}>
-        Loading...
+      <div className="context-analysis-view">
+        <div className="context-analysis-loading">Loading...</div>
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div style={{ padding: 24, textAlign: 'center' }}>
-        <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.4 }}>
-          {/* magnifying glass icon via text */}
-          {'( )'}
-        </div>
-        <div style={{ fontSize: 13, color: '#8e8e93' }}>
-          No scan data yet
-        </div>
-        <div style={{ fontSize: 11, color: '#c7c7cc', marginTop: 4 }}>
-          Send API requests through the proxy to start analysis
+      <div className="context-analysis-view">
+        <div className="context-analysis-empty">
+          <div className="context-analysis-empty-icon">{'( )'}</div>
+          <div className="context-analysis-empty-title">No scan data yet</div>
+          <div className="context-analysis-empty-desc">
+            Send API requests through the proxy to start analysis
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '0 0 16px' }}>
-      {/* Summary cards */}
-      <SummaryCards summary={summary} />
+    <div className="context-analysis-view">
+      <div className="context-analysis-content">
+        {/* Summary cards */}
+        <SummaryCards summary={summary} />
 
-      {/* Category donut chart + legend */}
-      <div style={{ padding: '0 16px' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginBottom: 0 }}>
-          Injection by Category
+        {/* Category donut chart + legend */}
+        <div className="context-analysis-section">
+          <div className="context-analysis-section-title">
+            Injection by Category
+          </div>
+          <CategoryDonutChart data={categories} totalTokens={summary.totalInjectedTokens} />
         </div>
-        <CategoryDonutChart data={categories} totalTokens={summary.totalInjectedTokens} />
-      </div>
 
-      {/* Cumulative token ranking by file */}
-      <div style={{ padding: '8px 16px 0' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginBottom: 4 }}>
-          File Token Ranking
+        {/* Cumulative token ranking by file */}
+        <div className="context-analysis-file-section">
+          <div className="context-analysis-file-title">
+            File Token Ranking
+          </div>
+          <FileRankingTable files={files} />
         </div>
-        <FileRankingTable files={files} />
       </div>
     </div>
   );
