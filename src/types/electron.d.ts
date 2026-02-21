@@ -196,8 +196,11 @@ export type ElectronApi = {
   refreshUsage: () => Promise<{ success: boolean }>;
   getUsageData: () => Promise<CurrentUsageData & { settings: AppSettings }>;
   saveSettings: (settings: AppSettings) => Promise<{ success: boolean }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy scan API, needs typed refactor
   scanTokens: () => Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy scan API, needs typed refactor
   getPromptHistory: () => Promise<any[]>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy scan API, needs typed refactor
   analyzePrompt: (promptId: string) => Promise<any>;
   getContextLogs: (sessionId?: string) => Promise<ContextLogs>;
   startProxy: (
