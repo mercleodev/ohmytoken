@@ -122,7 +122,8 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
   useEffect(() => {
     loadStatuses();
     loadUsage(selectedProvider);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: selectedProvider initial value only
+  }, [loadStatuses, loadUsage]);
 
   const handleProviderChange = useCallback((provider: UsageProviderType) => {
     const prevIdx = PROVIDER_ORDER.indexOf(selectedProvider);
