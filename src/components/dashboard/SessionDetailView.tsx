@@ -232,6 +232,12 @@ export const SessionDetailView = ({
     return cleanup;
   }, [sessionId]);
 
+  // Session total cost: sum of all prompt costs
+  const sessionTotalCost = messages.reduce(
+    (sum, m) => sum + (m.usage?.cost_usd ?? 0),
+    0,
+  );
+
   // Latest context usage (scan data) — messages sorted newest-first, so [0] = latest
   const latestMsg = messages.length > 0 ? messages[0] : null;
   const latestCtxLimit = latestMsg ? getContextLimit(latestMsg.scan.model) : 0;
@@ -345,6 +351,12 @@ export const SessionDetailView = ({
                   <span>Prompts</span>
                   <span>{messages.length}</span>
                 </div>
+                {sessionTotalCost > 0 && (
+                  <div className="session-donut-row session-donut-row--cost">
+                    <span>Cost</span>
+                    <span>{formatCost(sessionTotalCost)}</span>
+                  </div>
+                )}
                 {latestCacheHitPct !== null && (
                   <div className="session-donut-row">
                     <span>Cache hit</span>

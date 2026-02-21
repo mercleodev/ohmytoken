@@ -2220,6 +2220,11 @@
   font-weight: 500;
 }
 
+.session-donut-row--cost span:last-child {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
 /* === File Preview Overlay === */
 
 .file-preview-overlay {
