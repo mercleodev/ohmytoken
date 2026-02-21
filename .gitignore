@@ -37,7 +37,6 @@ npm-debug.log*
 coverage/
 
 # Agent-local instructions and automation configs
-AGENTS.md
 CLAUDE.md
 START-HERE.md
 test.md
