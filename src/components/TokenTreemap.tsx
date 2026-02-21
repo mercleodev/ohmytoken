@@ -707,9 +707,10 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
             ? promptHistory.slice(currentPage * PROMPTS_PER_PAGE, (currentPage + 1) * PROMPTS_PER_PAGE)
             : promptHistory.slice(0, VISIBLE_PROMPTS)
           ).map((prompt) => (
-            <div
+            <button
               key={prompt.id}
               className={`feed-item ${selectedPrompt === prompt.id ? 'selected' : ''}`}
+              aria-label={`Prompt: ${prompt.content.slice(0, 50)}`}
               onClick={() => handlePromptClick(prompt)}
             >
               <span className="feed-time">
@@ -720,7 +721,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
               </span>
               <span className="feed-content">{prompt.content}</span>
               <span className="feed-tokens">{prompt.tokens.toLocaleString()} tok</span>
-            </div>
+            </button>
           ))}
         </div>
 
@@ -929,9 +930,10 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
                 : 0;
 
               return (
-                <div
+                <button
                   key={node.name}
                   className={`legend-item ${selectedNode === node.name ? 'selected' : ''} status-${node.status || 'neutral'}`}
+                  aria-label={`Toggle details for ${node.originalName || node.name}`}
                   onClick={() => {
                     setSelectedNode(selectedNode === node.name ? null : node.name);
                     if (node.originalName && CATEGORY_INFO[node.originalName]) {
@@ -959,7 +961,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
                   <span className="legend-value">
                     {node.tokens?.toLocaleString()} ({node.percentage?.toFixed(1)}%)
                   </span>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -1028,8 +1030,10 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
       {/* Referenced context - always displayed independently of Treemap */}
       {contextLogs && !isScanning && (
         <div className="context-logs-section" style={{ marginTop: '20px' }}>
-          <div
+          <button
             className="context-logs-header"
+            aria-expanded={showContextLogs}
+            aria-label="Toggle referenced context"
             onClick={() => setShowContextLogs(!showContextLogs)}
           >
             <h3>📚 Referenced Context</h3>
@@ -1041,7 +1045,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
               Files: {contextLogs.readFiles.length} |
               Searches: {contextLogs.globSearches.length + contextLogs.grepSearches.length}
             </span>
-          </div>
+          </button>
 
           {showContextLogs && (
             <div className="context-logs-content">

@@ -131,9 +131,10 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
         {scan.injected_files.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {scan.injected_files.map((f, i) => (
-              <div
+              <button
                 key={i}
                 onClick={(e) => onFileClick(f.path, e)}
+                aria-label={`Preview file: ${f.path.split('/').slice(-2).join('/')}`}
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -144,6 +145,11 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
                   fontSize: 12,
                   cursor: 'pointer',
                   transition: 'background 0.15s',
+                  width: '100%',
+                  textAlign: 'left',
+                  border: 'none',
+                  font: 'inherit',
+                  color: 'inherit',
                 }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.background = 'rgba(139, 92, 246, 0.15)';
@@ -174,7 +180,7 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
                 <span style={{ color: '#94a3b8', fontSize: 11 }}>
                   {formatTokens(f.estimated_tokens)}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         ) : (

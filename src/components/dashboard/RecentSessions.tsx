@@ -326,6 +326,7 @@ export const RecentSessions = ({
                   key={p.key}
                   layout
                   className="session-card"
+                  aria-label={`Session: ${p.text.slice(0, 40)}`}
                   onClick={() => onSelectSession(p.sessionId)}
                   initial={{ opacity: 0, height: 0, marginBottom: 0 }}
                   animate={{ opacity: 1, height: "auto", marginBottom: 6 }}

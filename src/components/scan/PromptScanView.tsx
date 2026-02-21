@@ -291,8 +291,9 @@ export const PromptScanView = ({
               const isSelected = selectedScan?.request_id === scan.request_id;
 
               return (
-                <div
+                <button
                   key={scan.request_id}
+                  className="message-card"
                   style={{
                     padding: "8px 10px",
                     background: isSelected
@@ -302,7 +303,13 @@ export const PromptScanView = ({
                     borderLeft: `3px solid ${getModelColor(scan.model)}`,
                     cursor: "pointer",
                     transition: "background 0.15s",
+                    width: "100%",
+                    textAlign: "left",
+                    border: "none",
+                    font: "inherit",
+                    color: "inherit",
                   }}
+                  aria-label={`Prompt: ${(scan.user_prompt || "(system)").slice(0, 50)}`}
                   onClick={() => handleMessageClick(item)}
                 >
                   {/* Prompt text + time */}
@@ -435,7 +442,7 @@ export const PromptScanView = ({
                       %
                     </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
