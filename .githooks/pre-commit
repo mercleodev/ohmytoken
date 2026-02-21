@@ -1,0 +1,58 @@
+#!/usr/bin/env sh
+set -eu
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+# Source local extensions (not tracked in git)
+if [ -f "${repo_root}/.githooks/pre-commit.local" ]; then
+  . "${repo_root}/.githooks/pre-commit.local"
+fi
+
+config_file="${repo_root}/.git-identity.local"
+
+if [ ! -f "${config_file}" ]; then
+  echo "[identity-lock] Commit blocked: missing .git-identity.local"
+  echo "[identity-lock] Create it from template:"
+  echo "  cp .git-identity.local.example .git-identity.local"
+  exit 1
+fi
+
+# shellcheck disable=SC1090
+. "${config_file}"
+
+EXPECTED_NAME="${GIT_IDENTITY_NAME:-}"
+EXPECTED_EMAIL="${GIT_IDENTITY_EMAIL:-}"
+
+if [ -z "${EXPECTED_NAME}" ] || [ -z "${EXPECTED_EMAIL}" ]; then
+  echo "[identity-lock] Commit blocked: .git-identity.local has empty required keys."
+  exit 1
+fi
+
+actual_name="$(git config --local user.name || true)"
+actual_email="$(git config --local user.email || true)"
+
+if [ "${actual_name}" != "${EXPECTED_NAME}" ] || [ "${actual_email}" != "${EXPECTED_EMAIL}" ]; then
+  echo "[identity-lock] Commit blocked."
+  echo "[identity-lock] Required local identity:"
+  echo "  user.name  = ${EXPECTED_NAME}"
+  echo "  user.email = ${EXPECTED_EMAIL}"
+  echo "[identity-lock] Current:"
+  echo "  user.name  = ${actual_name:-<unset>}"
+  echo "  user.email = ${actual_email:-<unset>}"
+  echo "[identity-lock] Fix:"
+  echo "  git config --local user.name \"${EXPECTED_NAME}\""
+  echo "  git config --local user.email \"${EXPECTED_EMAIL}\""
+  exit 1
+fi
+
+if [ -x "${repo_root}/scripts/check-node-version.sh" ]; then
+  "${repo_root}/scripts/check-node-version.sh"
+fi
+
+if [ -x "${repo_root}/scripts/check-content-guard.sh" ]; then
+  "${repo_root}/scripts/check-content-guard.sh"
+fi
+
+if [ -x "${repo_root}/scripts/check-applicable-rules.sh" ]; then
+  "${repo_root}/scripts/check-applicable-rules.sh" --mode=staged
+fi
