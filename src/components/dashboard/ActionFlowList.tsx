@@ -7,7 +7,6 @@ import {
 } from "../scan/shared";
 import type { ToolCall } from "../../types";
 
-const MAX_VISIBLE_ACTIONS = 30;
 const ACTION_STAGGER_SECONDS = 0.05;
 const ACTION_ENTER_DURATION_SECONDS = 0.22;
 const LIVE_WINDOW_MS = 3 * 60 * 1000;
@@ -45,10 +44,7 @@ export const ActionFlowList = ({
   isCompleted,
 }: ActionFlowListProps) => {
   const visibleToolCalls = useMemo(
-    () =>
-      [...toolCalls]
-        .sort((a, b) => a.index - b.index)
-        .slice(0, MAX_VISIBLE_ACTIONS),
+    () => [...toolCalls].sort((a, b) => a.index - b.index),
     [toolCalls],
   );
 
@@ -140,11 +136,6 @@ export const ActionFlowList = ({
         </AnimatePresence>
       </div>
 
-      {toolCalls.length > MAX_VISIBLE_ACTIONS && (
-        <div className="section-empty">
-          +{toolCalls.length - MAX_VISIBLE_ACTIONS} more
-        </div>
-      )}
     </div>
   );
 };

@@ -90,6 +90,58 @@ export type PromptScan = {
   user_messages_count: number;
   assistant_messages_count: number;
   tool_result_count: number;
+  evidence_report?: EvidenceReport;
+};
+
+// --- Evidence Scoring Types ---
+
+export type EvidenceClassification = "confirmed" | "likely" | "unverified";
+
+export type SignalResult = {
+  signalId: string;
+  score: number;
+  maxScore: number;
+  confidence: number;
+  detail: string;
+};
+
+export type FileEvidenceScore = {
+  filePath: string;
+  category: string;
+  signals: SignalResult[];
+  rawScore: number;
+  normalizedScore: number;
+  classification: EvidenceClassification;
+};
+
+export type EvidenceReport = {
+  request_id: string;
+  timestamp: string;
+  engine_version: string;
+  fusion_method: string;
+  files: FileEvidenceScore[];
+  thresholds: {
+    confirmed_min: number;
+    likely_min: number;
+  };
+};
+
+export type SignalConfig = {
+  signalId: string;
+  enabled: boolean;
+  weight: number;
+  params: Record<string, number | string | boolean>;
+};
+
+export type EvidenceEngineConfig = {
+  version: string;
+  enabled: boolean;
+  signals: Record<string, SignalConfig>;
+  fusion_method: "weighted_sum" | "dempster_shafer";
+  thresholds: {
+    confirmed_min: number;
+    likely_min: number;
+  };
 };
 
 export type UsageLogEntry = {
@@ -194,6 +246,20 @@ export type ElectronApi = {
     callback: (data: {
       provider: UsageProviderType;
       snapshot: ProviderUsageSnapshot | null;
+    }) => void,
+  ) => () => void;
+
+  // Evidence Scoring API
+  getEvidenceReport: (requestId: string) => Promise<EvidenceReport | null>;
+  getEvidenceConfig: () => Promise<EvidenceEngineConfig>;
+  updateEvidenceConfig: (
+    config: Partial<EvidenceEngineConfig>,
+  ) => Promise<{ success: boolean }>;
+  rescoreEvidence: (requestId: string) => Promise<EvidenceReport | null>;
+  onEvidenceScored: (
+    callback: (data: {
+      requestId: string;
+      report: EvidenceReport;
     }) => void,
   ) => () => void;
 

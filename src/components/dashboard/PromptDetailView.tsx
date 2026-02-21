@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   formatCost,
@@ -11,7 +11,8 @@ import {
 } from "../scan/shared";
 import { ContextTreemap } from "./ContextTreemap";
 import { ActionFlowList } from "./ActionFlowList";
-import type { PromptScan, UsageLogEntry } from "../../types";
+import { EvidenceSettings } from "./EvidenceSettings";
+import type { PromptScan, UsageLogEntry, EvidenceReport, SignalResult } from "../../types";
 
 const SyntaxHighlighter = lazy(() =>
   import("react-syntax-highlighter/dist/esm/prism-async-light").then((mod) => ({
@@ -65,6 +66,8 @@ type InjectedEvidenceItem = {
   estimated_tokens: number;
   status: EvidenceStatus;
   reason: string;
+  normalizedScore?: number;
+  signals?: SignalResult[];
 };
 
 const normalizeText = (value: string): string => value.trim().toLowerCase();
@@ -72,7 +75,71 @@ const normalizeText = (value: string): string => value.trim().toLowerCase();
 const getFileName = (pathValue: string): string =>
   pathValue.split("/").filter(Boolean).pop() ?? pathValue;
 
+/**
+ * Build evidence classification from either:
+ * 1. EvidenceReport (scoring engine) — preferred, multi-signal analysis
+ * 2. Fallback: simple filename matching (legacy behavior)
+ */
 const buildInjectedEvidence = (scan: PromptScan): Record<
+  EvidenceStatus,
+  InjectedEvidenceItem[]
+> => {
+  // Use evidence scoring engine report if available
+  const report = scan.evidence_report;
+  if (report && report.files.length > 0) {
+    return buildFromEvidenceReport(report, scan);
+  }
+
+  // Fallback: legacy filename-matching classification
+  return buildLegacyEvidence(scan);
+};
+
+const buildFromEvidenceReport = (
+  report: EvidenceReport,
+  scan: PromptScan,
+): Record<EvidenceStatus, InjectedEvidenceItem[]> => {
+  const byStatus: Record<EvidenceStatus, InjectedEvidenceItem[]> = {
+    confirmed: [],
+    likely: [],
+    unverified: [],
+  };
+
+  for (const fileScore of report.files) {
+    // Find matching injected file for tokens
+    const injected = scan.injected_files?.find(
+      (f) => f.path === fileScore.filePath,
+    );
+
+    const topSignal = fileScore.signals
+      .filter((s: SignalResult) => s.score > 0)
+      .sort((a: SignalResult, b: SignalResult) => b.score - a.score)[0];
+
+    const reason = topSignal
+      ? `${topSignal.detail} (score: ${fileScore.normalizedScore.toFixed(2)})`
+      : `Score: ${fileScore.normalizedScore.toFixed(2)}`;
+
+    const item: InjectedEvidenceItem = {
+      path: fileScore.filePath,
+      category: (injected?.category ?? fileScore.category) as InjectedEvidenceItem["category"],
+      estimated_tokens: injected?.estimated_tokens ?? 0,
+      status: fileScore.classification,
+      reason,
+      normalizedScore: fileScore.normalizedScore,
+      signals: fileScore.signals,
+    };
+
+    byStatus[fileScore.classification as EvidenceStatus].push(item);
+  }
+
+  // Sort each group by tokens descending
+  for (const status of ["confirmed", "likely", "unverified"] as const) {
+    byStatus[status].sort((a, b) => b.estimated_tokens - a.estimated_tokens);
+  }
+
+  return byStatus;
+};
+
+const buildLegacyEvidence = (scan: PromptScan): Record<
   EvidenceStatus,
   InjectedEvidenceItem[]
 > => {
@@ -98,7 +165,7 @@ const buildInjectedEvidence = (scan: PromptScan): Record<
     if (directAction) {
       return {
         ...file,
-        status: "confirmed",
+        status: "confirmed" as const,
         reason: `${directAction.name} referenced this file directly`,
       };
     }
@@ -120,14 +187,14 @@ const buildInjectedEvidence = (scan: PromptScan): Record<
           : "User prompt references this file";
       return {
         ...file,
-        status: "likely",
+        status: "likely" as const,
         reason,
       };
     }
 
     return {
       ...file,
-      status: "unverified",
+      status: "unverified" as const,
       reason: "No direct reference found in actions or response",
     };
   });
@@ -170,6 +237,54 @@ export const PromptDetailView = ({
   const [sessionCompactions, setSessionCompactions] = useState<number | null>(
     null,
   );
+  const [enrichedScan, setEnrichedScan] = useState<PromptScan>(scan);
+  const [showEvidenceSettings, setShowEvidenceSettings] = useState(false);
+  const [actionFilter, setActionFilter] = useState("exclude-bash");
+
+  // Fetch evidence report if not already attached; auto-rescore if missing
+  useEffect(() => {
+    if (scan.evidence_report) {
+      setEnrichedScan(scan);
+      return;
+    }
+    let cancelled = false;
+
+    const loadOrRescore = async () => {
+      // 1. Try to load from DB
+      const existing = await window.api?.getEvidenceReport?.(scan.request_id).catch(() => null);
+      if (cancelled) return;
+      if (existing) {
+        setEnrichedScan({ ...scan, evidence_report: existing });
+        return;
+      }
+      // 2. Auto rescore if not in DB
+      const report = await window.api?.rescoreEvidence?.(scan.request_id).catch(() => null);
+      if (cancelled || !report) return;
+      setEnrichedScan({ ...scan, evidence_report: report });
+    };
+
+    loadOrRescore();
+
+    // Listen for real-time evidence scoring
+    const unsub = window.api?.onEvidenceScored?.((data) => {
+      if (data.requestId === scan.request_id) {
+        setEnrichedScan((prev) => ({ ...prev, evidence_report: data.report }));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
+  }, [scan.request_id, scan.evidence_report]);
+
+  const handleRescore = useCallback(async () => {
+    const report = await window.api?.rescoreEvidence?.(scan.request_id);
+    if (report) {
+      setEnrichedScan((prev) => ({ ...prev, evidence_report: report }));
+    }
+  }, [scan.request_id]);
+
   const toggleAction = (idx: number) =>
     setExpandedActions((prev) => {
       const next = new Set(prev);
@@ -233,7 +348,27 @@ export const PromptDetailView = ({
   const topInjectedFiles = [...injectedFiles]
     .sort((a, b) => b.estimated_tokens - a.estimated_tokens)
     .slice(0, 3);
-  const injectedEvidence = buildInjectedEvidence(scan);
+  // Tool filter: extract unique tool names sorted by frequency
+  const toolNameOptions = useMemo(() => {
+    const freq: Record<string, number> = {};
+    for (const tc of toolCalls) {
+      freq[tc.name] = (freq[tc.name] ?? 0) + 1;
+    }
+    return Object.entries(freq)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, count }));
+  }, [toolCalls]);
+
+  const filteredToolCalls = useMemo(() => {
+    if (actionFilter === "all") return toolCalls;
+    if (actionFilter === "exclude-bash") {
+      return toolCalls.filter((tc) => tc.name !== "Bash");
+    }
+    // Single tool filter
+    return toolCalls.filter((tc) => tc.name === actionFilter);
+  }, [toolCalls, actionFilter]);
+
+  const injectedEvidence = buildInjectedEvidence(enrichedScan);
   const cacheBaseTokens = usage
     ? usage.response.input_tokens +
       usage.response.cache_read_input_tokens +
@@ -509,6 +644,18 @@ export const PromptDetailView = ({
         id="injected-evidence"
         expanded={expandedSections}
         onToggle={toggle}
+        headerExtra={
+          <button
+            className="evidence-settings-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowEvidenceSettings(true);
+            }}
+            aria-label="Evidence scoring settings"
+          >
+            &#x2699;
+          </button>
+        }
       >
         <div className="injected-evidence-summary">
           <span className="injected-evidence-badge confirmed">
@@ -540,6 +687,16 @@ export const PromptDetailView = ({
           onOpenFile={setPreviewFile}
         />
       </Section>
+
+      {/* Evidence Settings Overlay */}
+      <AnimatePresence>
+        {showEvidenceSettings && (
+          <EvidenceSettings
+            onClose={() => setShowEvidenceSettings(false)}
+            onSave={handleRescore}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Context Breakdown Bar */}
       <Section
@@ -703,14 +860,23 @@ export const PromptDetailView = ({
         onToggle={toggle}
       >
         {toolCalls.length > 0 ? (
-          <ActionFlowList
-            toolCalls={toolCalls}
-            expandedActions={expandedActions}
-            onToggleAction={toggleAction}
-            onOpenFile={setPreviewFile}
-            scanTimestamp={scan.timestamp}
-            isCompleted={isPromptCompleted}
-          />
+          <>
+            <ActionFilterBar
+              options={toolNameOptions}
+              value={actionFilter}
+              onChange={setActionFilter}
+              totalCount={toolCalls.length}
+              filteredCount={filteredToolCalls.length}
+            />
+            <ActionFlowList
+              toolCalls={filteredToolCalls}
+              expandedActions={expandedActions}
+              onToggleAction={toggleAction}
+              onOpenFile={setPreviewFile}
+              scanTimestamp={scan.timestamp}
+              isCompleted={isPromptCompleted}
+            />
+          </>
         ) : (
           <div className="section-empty">No actions</div>
         )}
@@ -767,16 +933,20 @@ type SectionProps = {
   expanded: Set<string>;
   onToggle: (id: string) => void;
   children: React.ReactNode;
+  headerExtra?: React.ReactNode;
 };
 
-const Section = ({ title, id, expanded, onToggle, children }: SectionProps) => {
+const Section = ({ title, id, expanded, onToggle, children, headerExtra }: SectionProps) => {
   const isOpen = expanded.has(id);
   return (
     <div className="detail-section">
       <button className="detail-section-header" onClick={() => onToggle(id)}>
         <span>{title}</span>
-        <span className={`detail-section-chevron ${isOpen ? "expanded" : ""}`}>
-          ›
+        <span className="detail-section-header-right">
+          {headerExtra}
+          <span className={`detail-section-chevron ${isOpen ? "expanded" : ""}`}>
+            ›
+          </span>
         </span>
       </button>
       <AnimatePresence>
@@ -819,6 +989,69 @@ const TokenRow = ({ label, value }: { label: string; value: number }) => (
   </div>
 );
 
+const EVIDENCE_STATUS_COLORS: Record<EvidenceStatus, string> = {
+  confirmed: "#1f7a57",
+  likely: "#d18f1d",
+  unverified: "#9ca3af",
+};
+
+const SIGNAL_COLORS: Record<string, string> = {
+  "category-prior": "#8b5cf6",
+  "text-overlap": "#3b82f6",
+  "instruction-compliance": "#06b6d4",
+  "tool-reference": "#f59e0b",
+  "position-effect": "#ec4899",
+  "token-proportion": "#10b981",
+  "session-history": "#6366f1",
+};
+
+const CONFIDENCE_LEVELS = [
+  { min: 0.7, label: "High", color: "#1f7a57" },
+  { min: 0.4, label: "Med", color: "#d18f1d" },
+  { min: 0, label: "Low", color: "#9ca3af" },
+] as const;
+
+const getConfidenceInfo = (confidence: number) =>
+  CONFIDENCE_LEVELS.find((l) => confidence >= l.min) ?? CONFIDENCE_LEVELS[2];
+
+const SignalBreakdown = ({ signals }: { signals: SignalResult[] }) => (
+  <motion.div
+    className="signal-breakdown"
+    initial={{ height: 0, opacity: 0 }}
+    animate={{ height: "auto", opacity: 1 }}
+    exit={{ height: 0, opacity: 0 }}
+    transition={{ duration: 0.2 }}
+    style={{ overflow: "hidden" }}
+  >
+    {signals.map((signal) => {
+      const pct = signal.maxScore > 0 ? (signal.score / signal.maxScore) * 100 : 0;
+      const ci = getConfidenceInfo(signal.confidence);
+      return (
+        <div key={signal.signalId} className="signal-breakdown-row">
+          <span className="signal-breakdown-name">{signal.signalId}</span>
+          <span className="signal-breakdown-score">
+            {signal.score.toFixed(1)}/{signal.maxScore}
+          </span>
+          <span className="signal-bar-track">
+            <span
+              className="signal-bar-fill"
+              style={{
+                width: `${pct}%`,
+                background: SIGNAL_COLORS[signal.signalId] ?? "#6366f1",
+              }}
+            />
+          </span>
+          <span
+            className="signal-confidence-dot"
+            style={{ background: ci.color }}
+            title={`Confidence: ${ci.label} (${signal.confidence.toFixed(2)})`}
+          />
+        </div>
+      );
+    })}
+  </motion.div>
+);
+
 const EvidenceGroup = ({
   title,
   status,
@@ -830,7 +1063,24 @@ const EvidenceGroup = ({
   items: InjectedEvidenceItem[];
   onOpenFile: (path: string) => void;
 }) => {
+  const [expandedBreakdowns, setExpandedBreakdowns] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const toggleBreakdown = useCallback((path: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedBreakdowns((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
+
   if (items.length === 0) return null;
+
+  const barColor = EVIDENCE_STATUS_COLORS[status];
+
   return (
     <div className="injected-evidence-group">
       <div className="injected-evidence-group-title">
@@ -838,27 +1088,108 @@ const EvidenceGroup = ({
         <span>{title}</span>
       </div>
       <div className="injected-evidence-list">
-        {items.map((item) => (
-          <button
-            key={`${status}-${item.path}`}
-            className="injected-evidence-item"
-            onClick={() => onOpenFile(item.path)}
-          >
-            <span className="injected-evidence-item-main">
-              <span className="injected-evidence-item-path">
-                {item.path.split("/").slice(-2).join("/")}
-              </span>
-              <span className="injected-evidence-item-reason">{item.reason}</span>
-            </span>
-            <span className="injected-evidence-item-tokens">
-              {formatTokens(item.estimated_tokens)}
-            </span>
-          </button>
-        ))}
+        {items.map((item) => {
+          const hasSignals = item.signals && item.signals.length > 0;
+          const scorePct = item.normalizedScore != null
+            ? Math.round(item.normalizedScore * 100)
+            : null;
+          const isExpanded = expandedBreakdowns.has(item.path);
+
+          return (
+            <div key={`${status}-${item.path}`} className="injected-evidence-entry">
+              <button
+                className="injected-evidence-item"
+                onClick={() => onOpenFile(item.path)}
+              >
+                <span className="injected-evidence-item-main">
+                  <span className="injected-evidence-item-path">
+                    {item.path.split("/").slice(-2).join("/")}
+                  </span>
+                  <span className="injected-evidence-item-reason">{item.reason}</span>
+                </span>
+                <span className="injected-evidence-item-right">
+                  {scorePct !== null && (
+                    <span className="evidence-score-pct">{scorePct}%</span>
+                  )}
+                  <span className="injected-evidence-item-tokens">
+                    {formatTokens(item.estimated_tokens)}
+                  </span>
+                  {hasSignals && (
+                    <button
+                      className={`evidence-breakdown-toggle${isExpanded ? " expanded" : ""}`}
+                      onClick={(e) => toggleBreakdown(item.path, e)}
+                      aria-label={isExpanded ? "Hide signal breakdown" : "Show signal breakdown"}
+                    >
+                      {isExpanded ? "\u25B4" : "\u25BE"}
+                    </button>
+                  )}
+                </span>
+              </button>
+              {scorePct !== null && (
+                <div className="evidence-score-bar">
+                  <div
+                    className="evidence-score-fill"
+                    style={{ width: `${scorePct}%`, background: barColor }}
+                  />
+                </div>
+              )}
+              <AnimatePresence>
+                {isExpanded && item.signals && (
+                  <SignalBreakdown signals={item.signals} />
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
+
+// --- Action Filter Bar ---
+
+type ActionFilterBarProps = {
+  options: Array<{ name: string; count: number }>;
+  value: string;
+  onChange: (value: string) => void;
+  totalCount: number;
+  filteredCount: number;
+};
+
+const ActionFilterBar = ({
+  options,
+  value,
+  onChange,
+  totalCount,
+  filteredCount,
+}: ActionFilterBarProps) => (
+  <div className="action-filter-bar">
+    <div className="action-filter-select-wrap">
+      <select
+        className="action-filter-select"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label="Filter actions by tool"
+      >
+        <option value="all">All tools ({totalCount})</option>
+        <option value="exclude-bash">Exclude Bash</option>
+        {options.map(({ name, count }) => (
+          <option key={name} value={name}>
+            {name} ({count})
+          </option>
+        ))}
+      </select>
+      <span className="action-filter-chevron" aria-hidden="true">
+        &#x25BE;
+      </span>
+    </div>
+    {value !== "all" && (
+      <span className="action-filter-count">
+        {filteredCount} / {totalCount}
+      </span>
+    )}
+  </div>
+);
 
 // --- Breakdown Popover ---
 
