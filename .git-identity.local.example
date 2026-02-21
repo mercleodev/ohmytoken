@@ -1,0 +1,3 @@
+GIT_IDENTITY_NAME="your-local-name"
+GIT_IDENTITY_EMAIL="your-local-email@example.com"
+GIT_IDENTITY_REMOTE="git@github-your-alias:your-handle/your-repo.git"

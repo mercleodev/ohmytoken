@@ -1,0 +1,27 @@
+name: content-guard
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure ripgrep
+        run: |
+          if ! command -v rg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ripgrep
+          fi
+
+      - name: Content guard (all files)
+        run: bash scripts/check-content-guard.sh --mode=all
+
+      - name: Markdown allowlist guard
+        run: bash scripts/check-public-md-allowlist.sh
