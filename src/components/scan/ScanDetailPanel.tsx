@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { formatCost, formatTokens, CATEGORY_COLORS, ACTION_COLORS, formatActionDetail, formatActionTime } from './shared';
-import type { PromptScanData, UsageData } from './PromptTimeline';
+import type { PromptScan, UsageLogEntry } from '../../types';
 
 type ScanDetailPanelProps = {
-  scan: PromptScanData;
-  usage: UsageData | null;
+  scan: PromptScan;
+  usage: UsageLogEntry | null;
   onFileClick: (filePath: string, e: React.MouseEvent) => void;
 };
 

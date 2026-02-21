@@ -9,41 +9,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Treemap, ResponsiveContainer, Tooltip } from 'recharts';
+import type { LegacyPromptHistory, LegacyPromptAnalysis, LegacyScanResult, ContextLogs } from '../types';
 import './TokenTreemap.css';
-
-// Prompt history type
-type PromptHistory = {
-  id: string;
-  timestamp: string;
-  content: string;
-  fullContent?: string;
-  tokens: number;
-};
-
-// Prompt analysis result type
-type PromptAnalysis = {
-  promptId: string;
-  prompt: {
-    content: string;
-    tokens: number;
-    timestamp: string;
-  };
-  response: {
-    model: string;
-    inputTokens: number;
-    outputTokens: number;
-    cacheCreationTokens: number;
-    cacheReadTokens: number;
-    totalTokens: number;
-  } | null;
-  cost: {
-    input: number;
-    output: number;
-    cache: number;
-    total: number;
-    saved: number;
-  };
-};
 
 // Treemap data type
 type TreemapNode = {
@@ -69,28 +36,6 @@ type CacheUsageItem = {
   cacheRead: number;
   cacheCreation: number;
   inputTokens: number;
-};
-
-// API response type
-type ScanData = {
-  breakdown: {
-    claudeMd: { global: number; project: number; total: number };
-    userInput: number;
-    cacheCreation: number;
-    cacheRead: number;
-    output: number;
-    total: number;
-  };
-  claudeMdSections?: Array<{
-    section: string;
-    tokens: number;
-    percentage: number;
-  }>;
-  cacheInfo?: {
-    claudeMdPreview: string;
-    recentCacheUsage: CacheUsageItem[];
-    cacheHitRate: number;
-  };
 };
 
 type TokenTreemapProps = {
@@ -317,30 +262,23 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelId>('claude-sonnet-4-20250514');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_cacheInfo, setCacheInfo] = useState<ScanData['cacheInfo'] | null>(null);
+  const [_cacheInfo, setCacheInfo] = useState<LegacyScanResult['cacheInfo'] | null>(null);
 
   // Prompt history state
-  const [promptHistory, setPromptHistory] = useState<PromptHistory[]>([]);
+  const [promptHistory, setLegacyPromptHistory] = useState<LegacyPromptHistory[]>([]);
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
-  const [promptAnalysis, setPromptAnalysis] = useState<PromptAnalysis | null>(null);
+  const [promptAnalysis, setLegacyPromptAnalysis] = useState<LegacyPromptAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAllPrompts, setShowAllPrompts] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [showPromptModal, setShowPromptModal] = useState(false);
-  const [modalPrompt, setModalPrompt] = useState<PromptHistory | null>(null);
+  const [modalPrompt, setModalPrompt] = useState<LegacyPromptHistory | null>(null);
   const PROMPTS_PER_PAGE = 20;
   const VISIBLE_PROMPTS = 3;
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const treemapPollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Context logs state (referenced file list)
-  type ContextLogs = {
-    autoInjected: string[];
-    readFiles: string[];
-    globSearches: Array<{ pattern: string; searchPath: string }>;
-    grepSearches: Array<{ pattern: string; searchPath: string }>;
-    sessionId?: string;
-  };
   const [contextLogs, setContextLogs] = useState<ContextLogs | null>(null);
   const [showContextLogs, setShowContextLogs] = useState(false);
 
@@ -355,7 +293,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
   } | null>(null);
 
   // Prompt click -> open modal
-  const handlePromptClick = useCallback((prompt: PromptHistory) => {
+  const handlePromptClick = useCallback((prompt: LegacyPromptHistory) => {
     setModalPrompt(prompt);
     setShowPromptModal(true);
   }, []);
@@ -366,7 +304,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
     setSelectedPrompt(promptId);
     try {
       const analysis = await window.api.analyzePrompt?.(promptId);
-      setPromptAnalysis(analysis);
+      setLegacyPromptAnalysis(analysis);
 
       // Update Treemap data
       if (analysis?.response) {
@@ -410,7 +348,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
       }
     } catch (error) {
       console.error('Analyze error:', error);
-      setPromptAnalysis(null);
+      setLegacyPromptAnalysis(null);
     } finally {
       setIsAnalyzing(false);
     }
@@ -437,7 +375,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
       }
 
       // API call
-      const data: ScanData = await window.api.scanTokens();
+      const data: LegacyScanResult = await window.api.scanTokens();
 
       if (data?.breakdown) {
         const { breakdown } = data;
@@ -542,15 +480,15 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
   }, []);
 
   // Fetch prompt history
-  const fetchPromptHistory = useCallback(async () => {
+  const fetchLegacyPromptHistory = useCallback(async () => {
     try {
       const history = await window.api.getPromptHistory?.();
       if (history && Array.isArray(history)) {
-        setPromptHistory(history);
+        setLegacyPromptHistory(history);
       }
     } catch {
       // Demo data
-      const demoHistory: PromptHistory[] = [
+      const demoHistory: LegacyPromptHistory[] = [
         {
           id: '1',
           timestamp: new Date().toISOString(),
@@ -570,18 +508,18 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
           tokens: 456,
         },
       ];
-      setPromptHistory(demoHistory);
+      setLegacyPromptHistory(demoHistory);
     }
   }, []);
 
   // Real-time polling
   useEffect(() => {
-    fetchPromptHistory();
+    fetchLegacyPromptHistory();
     fetchContextLogs();
 
     // Check for new prompts every 1 second (real-time)
     pollingRef.current = setInterval(() => {
-      fetchPromptHistory();
+      fetchLegacyPromptHistory();
       fetchContextLogs();
     }, 1000);
 
@@ -590,7 +528,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
         clearInterval(pollingRef.current);
       }
     };
-  }, [fetchPromptHistory, fetchContextLogs]);
+  }, [fetchLegacyPromptHistory, fetchContextLogs]);
 
   // Silently update Treemap data (without animation)
   const silentScan = useCallback(async () => {
@@ -598,7 +536,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
     if (selectedPrompt || isAnalyzing) return;
 
     try {
-      const data: ScanData = await window.api.scanTokens();
+      const data: LegacyScanResult = await window.api.scanTokens();
 
       if (data?.breakdown) {
         const { breakdown } = data;
@@ -772,7 +710,7 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
             <button
               className="analysis-close"
               onClick={() => {
-                setPromptAnalysis(null);
+                setLegacyPromptAnalysis(null);
                 setSelectedPrompt(null);
               }}
             >
