@@ -1,0 +1,116 @@
+import { ProviderUsageSnapshot, UsageProviderType } from './providers/usage/types';
+
+type OnChangeCallback = (provider: UsageProviderType, snapshot: ProviderUsageSnapshot | null) => void;
+
+const snapshotCache: Record<string, ProviderUsageSnapshot | null> = {};
+const listeners: OnChangeCallback[] = [];
+let pollingTimer: NodeJS.Timeout | null = null;
+let resetTimer: NodeJS.Timeout | null = null;
+
+const getSnapshot = (provider: UsageProviderType): ProviderUsageSnapshot | null =>
+  snapshotCache[provider] ?? null;
+
+const emitChange = (provider: UsageProviderType, snapshot: ProviderUsageSnapshot | null): void => {
+  for (const cb of listeners) {
+    try { cb(provider, snapshot); } catch (err) {
+      console.error('[UsageStore] onChange callback error:', err);
+    }
+  }
+};
+
+const fetchByProvider = async (provider: UsageProviderType): Promise<ProviderUsageSnapshot | null> => {
+  if (provider === 'claude') {
+    const { fetchClaudeUsage } = require('./providers/usage/claude/usageFetcher');
+    return await fetchClaudeUsage();
+  }
+  if (provider === 'codex') {
+    const { fetchCodexUsage } = require('./providers/usage/codex/usageFetcher');
+    return await fetchCodexUsage();
+  }
+  if (provider === 'gemini') {
+    const { fetchGeminiUsage } = require('./providers/usage/gemini/usageFetcher');
+    return await fetchGeminiUsage();
+  }
+  return null;
+};
+
+// Schedule timer to re-fetch immediately when reset time arrives
+const scheduleResetRefresh = (provider: UsageProviderType, snapshot: ProviderUsageSnapshot | null): void => {
+  if (resetTimer) {
+    clearTimeout(resetTimer);
+    resetTimer = null;
+  }
+  if (!snapshot?.windows.length) return;
+
+  const now = Date.now();
+  let earliest = Infinity;
+  for (const w of snapshot.windows) {
+    if (!w.resetsAt) continue;
+    const resetMs = new Date(w.resetsAt).getTime();
+    if (resetMs > now && resetMs < earliest) earliest = resetMs;
+  }
+
+  if (earliest === Infinity) return;
+
+  // Auto re-fetch 3 seconds after reset time (wait for API to reflect)
+  const delay = earliest - now + 3000;
+  console.log(`[UsageStore] Reset refresh scheduled in ${Math.round(delay / 1000)}s`);
+  resetTimer = setTimeout(() => {
+    resetTimer = null;
+    refresh(provider);
+  }, delay);
+};
+
+const refresh = async (provider: UsageProviderType): Promise<ProviderUsageSnapshot | null> => {
+  try {
+    const snapshot = await fetchByProvider(provider);
+    snapshotCache[provider] = snapshot;
+    emitChange(provider, snapshot);
+    scheduleResetRefresh(provider, snapshot);
+    return snapshot;
+  } catch (err) {
+    console.error(`[UsageStore] refresh(${provider}) failed:`, err);
+    return snapshotCache[provider] ?? null;
+  }
+};
+
+const refreshAll = async (): Promise<void> => {
+  const providers: UsageProviderType[] = ['claude', 'codex', 'gemini'];
+  await Promise.allSettled(providers.map((p) => refresh(p)));
+};
+
+const startPolling = (intervalMin: number): void => {
+  stopPolling();
+  const ms = intervalMin * 60 * 1000;
+  pollingTimer = setInterval(() => {
+    refresh('claude');
+  }, ms);
+};
+
+const stopPolling = (): void => {
+  if (pollingTimer) {
+    clearInterval(pollingTimer);
+    pollingTimer = null;
+  }
+  if (resetTimer) {
+    clearTimeout(resetTimer);
+    resetTimer = null;
+  }
+};
+
+const onChange = (callback: OnChangeCallback): (() => void) => {
+  listeners.push(callback);
+  return () => {
+    const idx = listeners.indexOf(callback);
+    if (idx >= 0) listeners.splice(idx, 1);
+  };
+};
+
+export const usageStore = {
+  getSnapshot,
+  refresh,
+  refreshAll,
+  startPolling,
+  stopPolling,
+  onChange,
+};
