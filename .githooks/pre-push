@@ -1,0 +1,46 @@
+#!/usr/bin/env sh
+set -eu
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+config_file="${repo_root}/.git-identity.local"
+
+if [ ! -f "${config_file}" ]; then
+  echo "[identity-lock] Push blocked: missing .git-identity.local"
+  echo "[identity-lock] Create it from template:"
+  echo "  cp .git-identity.local.example .git-identity.local"
+  exit 1
+fi
+
+# shellcheck disable=SC1090
+. "${config_file}"
+
+EXPECTED_REMOTE="${GIT_IDENTITY_REMOTE:-}"
+if [ -z "${EXPECTED_REMOTE}" ]; then
+  echo "[identity-lock] Push blocked: .git-identity.local has empty GIT_IDENTITY_REMOTE."
+  exit 1
+fi
+
+remote_name="${1:-}"
+remote_url="${2:-}"
+
+if [ -z "${remote_name}" ] || [ -z "${remote_url}" ]; then
+  echo "[identity-lock] Push blocked: missing remote metadata."
+  exit 1
+fi
+
+if [ "${remote_name}" != "origin" ]; then
+  echo "[identity-lock] Push blocked: only 'origin' remote is allowed in this repository."
+  echo "[identity-lock] Received remote: ${remote_name} (${remote_url})"
+  exit 1
+fi
+
+if [ "${remote_url}" != "${EXPECTED_REMOTE}" ]; then
+  echo "[identity-lock] Push blocked."
+  echo "[identity-lock] Required origin URL:"
+  echo "  ${EXPECTED_REMOTE}"
+  echo "[identity-lock] Current push target:"
+  echo "  ${remote_url}"
+  echo "[identity-lock] Fix:"
+  echo "  git remote set-url origin ${EXPECTED_REMOTE}"
+  exit 1
+fi
