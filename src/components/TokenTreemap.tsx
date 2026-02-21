@@ -342,14 +342,6 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
     setShowPromptModal(true);
   }, []);
 
-  // Start analysis from modal
-  const handleAnalyzeFromModal = useCallback(() => {
-    if (modalPrompt) {
-      setShowPromptModal(false);
-      analyzePrompt(modalPrompt.id);
-    }
-  }, [modalPrompt]);
-
   // Prompt analysis and Treemap update
   const analyzePrompt = useCallback(async (promptId: string) => {
     setIsAnalyzing(true);
@@ -405,6 +397,14 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
       setIsAnalyzing(false);
     }
   }, [selectedModel]);
+
+  // Start analysis from modal
+  const handleAnalyzeFromModal = useCallback(() => {
+    if (modalPrompt) {
+      setShowPromptModal(false);
+      analyzePrompt(modalPrompt.id);
+    }
+  }, [modalPrompt, analyzePrompt]);
 
   // Start scan
   const startScan = useCallback(async () => {

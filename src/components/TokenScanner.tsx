@@ -60,7 +60,7 @@ export const TokenScanner = ({ onBack }: TokenScannerProps) => {
   // Auto-scan on component mount
   useEffect(() => {
     startScan();
-  }, []);
+  }, [startScan]);
 
   // Token bar calculation
   const getBarWidth = (tokens: number, total: number) => {
