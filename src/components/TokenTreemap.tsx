@@ -222,15 +222,21 @@ export const TokenTreemap = ({ onBack }: TokenTreemapProps) => {
               const cost = ((node.tokens || 0) / 1000000) * pricing.input;
               const savedCost = node.originalName === 'Cache Read' ? ((node.tokens || 0) / 1000000) * (pricing.input - pricing.cacheRead) : 0;
 
-              return (
-                <div key={node.name}
-                  className={`legend-item ${selectedNode === node.name ? 'selected' : ''} status-${node.status || 'neutral'}`}
-                  onClick={() => {
+              const handleLegendClick = () => {
                     setSelectedNode(selectedNode === node.name ? null : node.name);
                     if (node.originalName && CATEGORY_INFO[node.originalName]) {
                       setDetailPanel({ isOpen: true, category: node.originalName, tokens: node.tokens || 0, percentage: node.percentage || 0, cost, savedCost: savedCost > 0 ? savedCost : undefined });
                     }
-                  }}
+                  };
+
+              return (
+                <div key={node.name}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${node.name} - ${node.tokens?.toLocaleString()} tokens (${node.percentage?.toFixed(1)}%)`}
+                  className={`legend-item ${selectedNode === node.name ? 'selected' : ''} status-${node.status || 'neutral'}`}
+                  onClick={handleLegendClick}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLegendClick(); } }}
                 >
                   <span className="legend-color" style={{ backgroundColor: node.color }} />
                   <span className="legend-name">{node.name}</span>

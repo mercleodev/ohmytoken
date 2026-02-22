@@ -128,6 +128,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
             <div className="color-input-wrap">
               <input
                 type="color"
+                aria-label="Color for below 50% usage"
                 value={colorLow}
                 onChange={(e) => setColorLow(e.target.value)}
               />
@@ -142,6 +143,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
             <div className="color-input-wrap">
               <input
                 type="color"
+                aria-label="Color for 50-80% usage"
                 value={colorMedium}
                 onChange={(e) => setColorMedium(e.target.value)}
               />
@@ -156,6 +158,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
             <div className="color-input-wrap">
               <input
                 type="color"
+                aria-label="Color for above 80% usage"
                 value={colorHigh}
                 onChange={(e) => setColorHigh(e.target.value)}
               />
