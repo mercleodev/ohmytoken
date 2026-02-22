@@ -228,9 +228,13 @@ export const PromptScanView = ({
               return (
                 <div
                   key={scan.request_id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${scan.user_prompt || 'system'} - ${getModelShort(scan.model)} ${formatTokens(ctx.total_tokens)} tokens`}
                   className={`scan-view__message${isSelected ? ' scan-view__message--selected' : ''}`}
                   style={{ borderLeft: `3px solid ${getModelColor(scan.model)}` }}
                   onClick={() => handleMessageClick(item)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMessageClick(item); } }}
                 >
                   {/* Prompt text + time */}
                   <div className="scan-view__message-row">

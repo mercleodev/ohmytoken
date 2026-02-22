@@ -132,7 +132,11 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
             {scan.injected_files.map((f, i) => (
               <div
                 key={i}
+                role="button"
+                tabIndex={0}
+                aria-label={`Preview ${f.path.split('/').pop()} - ${formatTokens(f.estimated_tokens)} tokens`}
                 onClick={(e) => onFileClick(f.path, e)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onFileClick(f.path, e as unknown as React.MouseEvent); } }}
                 className="scan-detail__file-item"
               >
                 <div className="scan-detail__file-left">
