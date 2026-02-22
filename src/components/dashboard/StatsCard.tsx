@@ -1,15 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 import type { ScanStats } from '../../types';
+import { formatCost } from '../../utils/format';
 
 type StatsCardProps = {
   onSelectStats: (stats: ScanStats) => void;
   scanRevision?: number;
-};
-
-const formatCost = (usd: number): string => {
-  if (usd < 0.01) return '< $0.01';
-  return `$${usd.toFixed(2)}`;
 };
 
 // Build last 7 days of data (fill empty days with 0)

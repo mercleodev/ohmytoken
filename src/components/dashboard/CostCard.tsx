@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCost, formatTokens } from '../../utils/format';
 
 type CostData = {
   todayCostUSD: number;
@@ -10,17 +11,6 @@ type CostData = {
 
 type CostCardProps = {
   cost: CostData | null;
-};
-
-const formatTokens = (n: number): string => {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return String(n);
-};
-
-const formatCost = (usd: number): string => {
-  if (usd < 0.01) return '< $0.01';
-  return `$ ${usd.toFixed(2)}`;
 };
 
 export const CostCard = ({ cost }: CostCardProps) => {
