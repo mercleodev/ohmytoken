@@ -1,16 +1,11 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { ScanStats } from '../../types';
-import { formatTokens } from '../scan/shared';
+import { formatCost, formatTokens } from '../../utils/format';
 
 type StatsDetailViewProps = {
   stats: ScanStats;
   onBack: () => void;
-};
-
-const formatCost = (usd: number): string => {
-  if (usd < 0.01) return '< $0.01';
-  return `$${usd.toFixed(2)}`;
 };
 
 const formatShortDate = (period: string): string => {

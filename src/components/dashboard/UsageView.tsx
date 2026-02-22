@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ProviderUsageSnapshot, ProviderTokenStatus, CreditBalance } from '../../types';
 import type { ScanStats } from '../../types';
 import { UsageGaugeCard } from './UsageGaugeCard';
+import { formatTimeAgo } from '../../utils/format';
 import { CostCard } from './CostCard';
 import { StatsCard } from './StatsCard';
 import { SetupGuide } from './SetupGuide';
@@ -62,17 +63,6 @@ const CreditBalanceCard = ({ creditBalance }: { creditBalance: CreditBalance }) 
       )}
     </div>
   );
-};
-
-const formatTimeAgo = (ts: string): string => {
-  const diff = Date.now() - new Date(ts).getTime();
-  const secs = Math.floor(diff / 1000);
-  if (secs < 10) return 'just now';
-  if (secs < 60) return `${secs}s ago`;
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  return `${hrs}h ago`;
 };
 
 const LastUpdatedLabel = ({ updatedAt }: { updatedAt: string }) => {
