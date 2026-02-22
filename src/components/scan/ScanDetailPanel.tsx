@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatCost, formatTokens, CATEGORY_COLORS, ACTION_COLORS, formatActionDetail, formatActionTime } from './shared';
 import type { PromptScan, UsageLogEntry } from '../../types';
+import './scan.css';
 
 type ScanDetailPanelProps = {
   scan: PromptScan;
@@ -34,34 +35,14 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
   const toolsPct = (ctx.tools_definition_tokens / total) * 100;
 
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.05)',
-      borderRadius: 10,
-      padding: 14,
-    }}>
+    <div className="scan-detail">
       {/* Prompt */}
-      <div style={{
-        fontSize: 13,
-        color: '#e2e8f0',
-        marginBottom: 12,
-        padding: '8px 10px',
-        background: 'rgba(255,255,255,0.05)',
-        borderRadius: 6,
-        borderLeft: '3px solid #667eea',
-        lineHeight: 1.5,
-        maxHeight: 80,
-        overflow: 'hidden',
-      }}>
+      <div className="scan-detail__prompt">
         {scan.user_prompt || '(system request)'}
       </div>
 
       {/* Quick Stats */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 8,
-        marginBottom: 12,
-      }}>
+      <div className="scan-detail__stats-grid">
         <StatCard label="Cost" value={usage ? formatCost(usage.cost_usd) : 'N/A'} />
         <StatCard label="Context" value={formatTokens(ctx.total_tokens)} />
         <StatCard label="Tools" value={String(scan.tool_calls.length)} />
@@ -74,39 +55,57 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
         expanded={expandedSection === 'context'}
         onToggle={() => toggle('context')}
       >
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ display: 'flex', height: 16, borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-            <div style={{ width: `${systemPct}%`, background: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {systemPct > 15 && <span style={{ fontSize: 9, color: '#fff' }}>{systemPct.toFixed(0)}%</span>}
+        <div>
+          <div className="scan-detail__context-bar">
+            <div
+              className="scan-detail__context-bar-segment"
+              style={{ width: `${systemPct}%`, background: '#8b5cf6' }}
+            >
+              {systemPct > 15 && <span className="scan-detail__context-bar-label">{systemPct.toFixed(0)}%</span>}
             </div>
             {hasBd ? (
               <>
                 {userTextPct > 0 && (
-                  <div style={{ width: `${userTextPct}%`, background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {userTextPct > 15 && <span style={{ fontSize: 9, color: '#fff' }}>{userTextPct.toFixed(0)}%</span>}
+                  <div
+                    className="scan-detail__context-bar-segment"
+                    style={{ width: `${userTextPct}%`, background: '#3b82f6' }}
+                  >
+                    {userTextPct > 15 && <span className="scan-detail__context-bar-label">{userTextPct.toFixed(0)}%</span>}
                   </div>
                 )}
                 {assistantPct > 0 && (
-                  <div style={{ width: `${assistantPct}%`, background: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {assistantPct > 15 && <span style={{ fontSize: 9, color: '#fff' }}>{assistantPct.toFixed(0)}%</span>}
+                  <div
+                    className="scan-detail__context-bar-segment"
+                    style={{ width: `${assistantPct}%`, background: '#60a5fa' }}
+                  >
+                    {assistantPct > 15 && <span className="scan-detail__context-bar-label">{assistantPct.toFixed(0)}%</span>}
                   </div>
                 )}
                 {toolResultPct > 0 && (
-                  <div style={{ width: `${toolResultPct}%`, background: '#06b6d4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {toolResultPct > 15 && <span style={{ fontSize: 9, color: '#fff' }}>{toolResultPct.toFixed(0)}%</span>}
+                  <div
+                    className="scan-detail__context-bar-segment"
+                    style={{ width: `${toolResultPct}%`, background: '#06b6d4' }}
+                  >
+                    {toolResultPct > 15 && <span className="scan-detail__context-bar-label">{toolResultPct.toFixed(0)}%</span>}
                   </div>
                 )}
               </>
             ) : (
-              <div style={{ width: `${messagesPct}%`, background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {messagesPct > 15 && <span style={{ fontSize: 9, color: '#fff' }}>{messagesPct.toFixed(0)}%</span>}
+              <div
+                className="scan-detail__context-bar-segment"
+                style={{ width: `${messagesPct}%`, background: '#3b82f6' }}
+              >
+                {messagesPct > 15 && <span className="scan-detail__context-bar-label">{messagesPct.toFixed(0)}%</span>}
               </div>
             )}
-            <div style={{ width: `${toolsPct}%`, background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {toolsPct > 15 && <span style={{ fontSize: 9, color: '#fff' }}>{toolsPct.toFixed(0)}%</span>}
+            <div
+              className="scan-detail__context-bar-segment"
+              style={{ width: `${toolsPct}%`, background: '#f59e0b' }}
+            >
+              {toolsPct > 15 && <span className="scan-detail__context-bar-label">{toolsPct.toFixed(0)}%</span>}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12, fontSize: 11, flexWrap: 'wrap' }}>
+          <div className="scan-detail__context-legend-row">
             <LegendItem color="#8b5cf6" label="System" tokens={ctx.system_tokens} pct={systemPct} />
             {hasBd ? (
               <>
@@ -129,56 +128,33 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
         onToggle={() => toggle('files')}
       >
         {scan.injected_files.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="scan-detail__files-list">
             {scan.injected_files.map((f, i) => (
               <div
                 key={i}
                 onClick={(e) => onFileClick(f.path, e)}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '6px 10px',
-                  borderRadius: 6,
-                  background: 'rgba(255,255,255,0.03)',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  transition: 'background 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(139, 92, 246, 0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
-                }}
+                className="scan-detail__file-item"
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{
-                    display: 'inline-block',
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: CATEGORY_COLORS[f.category] || '#6b7280',
-                    flexShrink: 0,
-                  }} />
-                  <span style={{ color: '#cbd5e1' }}>
+                <div className="scan-detail__file-left">
+                  <span
+                    className="scan-detail__file-dot"
+                    style={{ background: CATEGORY_COLORS[f.category] || '#6b7280' }}
+                  />
+                  <span className="scan-detail__file-name">
                     {f.path.split('/').slice(-2).join('/')}
                   </span>
-                  <span style={{
-                    fontSize: 9, color: '#64748b',
-                    padding: '1px 5px',
-                    background: 'rgba(255,255,255,0.06)',
-                    borderRadius: 3,
-                  }}>
+                  <span className="scan-detail__file-badge">
                     click to preview
                   </span>
                 </div>
-                <span style={{ color: '#94a3b8', fontSize: 11 }}>
+                <span className="scan-detail__file-tokens">
                   {formatTokens(f.estimated_tokens)}
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <div style={{ color: '#64748b', fontSize: 11 }}>No injected files</div>
+          <div className="scan-detail__empty">No injected files</div>
         )}
       </CollapsibleSection>
 
@@ -189,7 +165,7 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
         onToggle={() => toggle('tools')}
       >
         {scan.tool_calls.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <div className="scan-detail__actions-list">
             {scan.tool_calls.slice(0, 30).map((t) => {
               const isExpanded = expandedActions.has(t.index);
               const truncated = formatActionDetail(t);
@@ -211,13 +187,13 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
               );
             })}
             {scan.tool_calls.length > 30 && (
-              <div style={{ color: '#64748b', fontSize: 11, textAlign: 'center' }}>
+              <div className="scan-detail__more">
                 +{scan.tool_calls.length - 30} more
               </div>
             )}
           </div>
         ) : (
-          <div style={{ color: '#64748b', fontSize: 11 }}>No actions</div>
+          <div className="scan-detail__empty">No actions</div>
         )}
       </CollapsibleSection>
 
@@ -228,12 +204,12 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
           expanded={expandedSection === 'tokens'}
           onToggle={() => toggle('tokens')}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11 }}>
+          <div className="scan-detail__token-list">
             <TokenRow label="Input" value={usage.response.input_tokens} />
             <TokenRow label="Output" value={usage.response.output_tokens} />
             <TokenRow label="Cache Read" value={usage.response.cache_read_input_tokens} />
             <TokenRow label="Cache Create" value={usage.response.cache_creation_input_tokens} />
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 4, marginTop: 2 }}>
+            <div className="scan-detail__token-divider">
               <TokenRow label="Duration" value={usage.duration_ms} suffix="ms" />
             </div>
           </div>
@@ -246,14 +222,9 @@ export const ScanDetailPanel = ({ scan, usage, onFileClick }: ScanDetailPanelPro
 // -- Sub Components --
 
 const StatCard = ({ label, value }: { label: string; value: string }) => (
-  <div style={{
-    textAlign: 'center',
-    padding: '8px 4px',
-    background: 'rgba(255,255,255,0.05)',
-    borderRadius: 6,
-  }}>
-    <div style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>{value}</div>
-    <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{label}</div>
+  <div className="scan-detail__stat-card">
+    <div className="scan-detail__stat-value">{value}</div>
+    <div className="scan-detail__stat-label">{label}</div>
   </div>
 );
 
@@ -265,29 +236,16 @@ type CollapsibleSectionProps = {
 };
 
 const CollapsibleSection = ({ title, expanded, onToggle, children }: CollapsibleSectionProps) => (
-  <div style={{ marginTop: 8 }}>
+  <div className="scan-detail__section">
     <button
       onClick={onToggle}
-      style={{
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '6px 8px',
-        border: 'none',
-        borderRadius: 4,
-        cursor: 'pointer',
-        background: 'rgba(255,255,255,0.05)',
-        color: '#cbd5e1',
-        fontSize: 12,
-        fontWeight: 500,
-      }}
+      className="scan-detail__section-toggle"
     >
       {title}
-      <span style={{ fontSize: 10, color: '#64748b' }}>{expanded ? '[-]' : '[+]'}</span>
+      <span className="scan-detail__section-icon">{expanded ? '[-]' : '[+]'}</span>
     </button>
     {expanded && (
-      <div style={{ padding: '8px 4px' }}>
+      <div className="scan-detail__section-body">
         {children}
       </div>
     )}
@@ -295,15 +253,15 @@ const CollapsibleSection = ({ title, expanded, onToggle, children }: Collapsible
 );
 
 const LegendItem = ({ color, label, tokens, pct }: { color: string; label: string; tokens: number; pct: number }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-    <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: 'inline-block' }} />
-    <span style={{ color: '#cbd5e1' }}>{label} {formatTokens(tokens)} ({pct.toFixed(1)}%)</span>
+  <div className="scan-detail__legend-item">
+    <span className="scan-detail__legend-dot" style={{ background: color }} />
+    <span className="scan-detail__legend-text">{label} {formatTokens(tokens)} ({pct.toFixed(1)}%)</span>
   </div>
 );
 
 const TokenRow = ({ label, value, suffix }: { label: string; value: number; suffix?: string }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-    <span style={{ color: '#94a3b8' }}>{label}</span>
+  <div className="scan-detail__token-row">
+    <span className="scan-detail__token-label">{label}</span>
     <span>{value.toLocaleString()}{suffix ? ` ${suffix}` : ''}</span>
   </div>
 );

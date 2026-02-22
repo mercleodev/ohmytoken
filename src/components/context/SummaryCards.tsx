@@ -1,4 +1,5 @@
 import { formatTokens, formatCost } from '../scan/shared';
+import './context.css';
 
 type SessionSummary = {
   totalInjectedTokens: number;
@@ -37,7 +38,7 @@ export const SummaryCards = ({ summary }: SummaryCardsProps) => {
         <div key={card.label} className="stat-pill">
           <span className="stat-pill-value">{card.value}</span>
           <span className="stat-pill-label">{card.label}</span>
-          <span className="stat-pill-label" style={{ fontSize: 9, marginTop: 2, color: '#8e8e93' }}>
+          <span className="stat-pill-label ctx-summary__sub-note">
             {card.sub}
           </span>
         </div>

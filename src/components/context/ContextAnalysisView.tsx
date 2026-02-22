@@ -4,6 +4,7 @@ import { SummaryCards } from './SummaryCards';
 import { CategoryDonutChart } from './CategoryDonutChart';
 import { FileRankingTable } from './FileRankingTable';
 import type { PromptScan, UsageLogEntry } from '../../types/electron.d';
+import './context.css';
 
 // --- Internal types ---
 
@@ -165,7 +166,7 @@ export const ContextAnalysisView = () => {
 
   if (loading) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: '#8e8e93', fontSize: 13 }}>
+      <div className="ctx-view__loading">
         Loading...
       </div>
     );
@@ -173,15 +174,14 @@ export const ContextAnalysisView = () => {
 
   if (items.length === 0) {
     return (
-      <div style={{ padding: 24, textAlign: 'center' }}>
-        <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.4 }}>
-          {/* magnifying glass icon via text */}
+      <div className="ctx-view__empty">
+        <div className="ctx-view__empty-icon">
           {'( )'}
         </div>
-        <div style={{ fontSize: 13, color: '#8e8e93' }}>
+        <div className="ctx-view__empty-title">
           No scan data yet
         </div>
-        <div style={{ fontSize: 11, color: '#c7c7cc', marginTop: 4 }}>
+        <div className="ctx-view__empty-hint">
           Send API requests through the proxy to start analysis
         </div>
       </div>
@@ -189,21 +189,21 @@ export const ContextAnalysisView = () => {
   }
 
   return (
-    <div style={{ padding: '0 0 16px' }}>
+    <div className="ctx-view__root">
       {/* Summary cards */}
       <SummaryCards summary={summary} />
 
       {/* Category donut chart + legend */}
-      <div style={{ padding: '0 16px' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginBottom: 0 }}>
+      <div className="ctx-view__section">
+        <div className="ctx-view__section-title">
           Injection by Category
         </div>
         <CategoryDonutChart data={categories} totalTokens={summary.totalInjectedTokens} />
       </div>
 
       {/* Cumulative token ranking by file */}
-      <div style={{ padding: '8px 16px 0' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginBottom: 4 }}>
+      <div className="ctx-view__section--ranking">
+        <div className="ctx-view__section-title--ranking">
           File Token Ranking
         </div>
         <FileRankingTable files={files} />

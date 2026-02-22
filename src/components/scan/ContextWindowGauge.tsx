@@ -4,6 +4,7 @@ import {
   getGaugeColor,
   getModelShort,
 } from "./shared";
+import './scan.css';
 
 type MessagesBreakdown = {
   user_text_tokens: number;
@@ -46,31 +47,18 @@ export const ContextWindowGauge = ({
 
   return (
     <div
+      className="scan-gauge"
       style={{
-        padding: "14px 16px",
-        background: "rgba(255,255,255,0.04)",
         border: `1px solid ${pct > 75 ? "rgba(239, 68, 68, 0.3)" : "rgba(255,255,255,0.08)"}`,
-        borderRadius: 12,
-        marginBottom: 12,
-        display: "flex",
-        alignItems: "center",
-        gap: 16,
       }}
     >
       {/* Circular gauge */}
-      <div
-        style={{
-          position: "relative",
-          width: 90,
-          height: 90,
-          flexShrink: 0,
-        }}
-      >
+      <div className="scan-gauge__circle-wrap">
         <svg
+          className="scan-gauge__svg"
           width={90}
           height={90}
           viewBox="0 0 90 90"
-          style={{ transform: "rotate(-90deg)" }}
         >
           <circle
             cx={45}
@@ -90,61 +78,34 @@ export const ContextWindowGauge = ({
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={dashOffset}
-            style={{
-              transition: "stroke-dashoffset 0.6s ease, stroke 0.3s ease",
-            }}
+            className="scan-gauge__stroke-transition"
           />
         </svg>
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <span style={{ fontSize: 20, fontWeight: 700, color, lineHeight: 1 }}>
+        <div className="scan-gauge__center">
+          <span className="scan-gauge__pct" style={{ color }}>
             {pct.toFixed(0)}%
           </span>
-          <span style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}>
+          <span className="scan-gauge__used-label">
             used
           </span>
         </div>
       </div>
 
       {/* Right-side info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: "#e2e8f0",
-            marginBottom: 6,
-          }}
-        >
+      <div className="scan-gauge__info">
+        <div className="scan-gauge__title">
           Context Window
         </div>
 
-        <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>
+        <div className="scan-gauge__token-count">
           <span style={{ fontWeight: 600, color }}>
             {formatTokens(totalTokens)}
           </span>
-          <span style={{ color: "#64748b" }}> / {formatTokens(limit)}</span>
+          <span className="scan-gauge__token-limit"> / {formatTokens(limit)}</span>
         </div>
 
         {/* Horizontal ratio bar (6-color) */}
-        <div
-          style={{
-            display: "flex",
-            height: 6,
-            borderRadius: 3,
-            overflow: "hidden",
-            background: "rgba(255,255,255,0.08)",
-            marginBottom: 6,
-          }}
-        >
+        <div className="scan-gauge__ratio-bar">
           <div
             style={{
               width: `${(systemTokens / limit) * 100}%`,
@@ -189,41 +150,39 @@ export const ContextWindowGauge = ({
         </div>
 
         {/* Legend */}
-        <div
-          style={{ display: "flex", gap: 10, fontSize: 10, color: "#94a3b8" }}
-        >
+        <div className="scan-gauge__legend">
           <span>
-            <span style={{ color: "#8b5cf6" }}>S</span>{" "}
+            <span className="scan-gauge__legend-item--system">S</span>{" "}
             {formatTokens(systemTokens)}
           </span>
           {hasBd ? (
             <>
               <span>
-                <span style={{ color: "#3b82f6" }}>P</span>{" "}
+                <span className="scan-gauge__legend-item--messages">P</span>{" "}
                 {formatTokens(bd.user_text_tokens)}
               </span>
               <span>
-                <span style={{ color: "#60a5fa" }}>R</span>{" "}
+                <span className="scan-gauge__legend-item--messages-light">R</span>{" "}
                 {formatTokens(bd.assistant_tokens)}
               </span>
               {bd.tool_result_tokens > 0 && (
                 <span>
-                  <span style={{ color: "#06b6d4" }}>A</span>{" "}
+                  <span className="scan-gauge__legend-item--tool-result">A</span>{" "}
                   {formatTokens(bd.tool_result_tokens)}
                 </span>
               )}
             </>
           ) : (
             <span>
-              <span style={{ color: "#3b82f6" }}>M</span>{" "}
+              <span className="scan-gauge__legend-item--messages">M</span>{" "}
               {formatTokens(messagesTokens)}
             </span>
           )}
           <span>
-            <span style={{ color: "#f59e0b" }}>T</span>{" "}
+            <span className="scan-gauge__legend-item--tools">T</span>{" "}
             {formatTokens(toolsTokens)}
           </span>
-          <span style={{ marginLeft: "auto", color: "#64748b" }}>
+          <span className="scan-gauge__legend-model">
             {getModelShort(model)}
           </span>
         </div>
