@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { formatTokens, CATEGORY_COLORS } from '../scan/shared';
 import { FilePreviewPopup } from '../scan/FilePreviewPopup';
+import './context.css';
 
 type FileRankEntry = {
   path: string;
@@ -34,7 +35,7 @@ export const FileRankingTable = ({ files }: FileRankingTableProps) => {
 
   if (files.length === 0) {
     return (
-      <div style={{ padding: '16px 0', textAlign: 'center', color: '#8e8e93', fontSize: 12 }}>
+      <div className="ctx-ranking__empty">
         No injected files
       </div>
     );
@@ -43,28 +44,19 @@ export const FileRankingTable = ({ files }: FileRankingTableProps) => {
   const maxTokens = files[0]?.cumulativeTokens ?? 1;
 
   return (
-    <div style={{ padding: '8px 0' }}>
+    <div className="ctx-ranking__root">
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '0 8px 6px',
-        fontSize: 10,
-        fontWeight: 600,
-        color: '#8e8e93',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
-      }}>
-        <span style={{ width: 18, textAlign: 'center' }}>#</span>
-        <span style={{ flex: 1 }}>File</span>
-        <span style={{ width: 36, textAlign: 'center' }}>Cat</span>
-        <span style={{ width: 28, textAlign: 'right' }}>Inj</span>
-        <span style={{ width: 44, textAlign: 'right' }}>Tokens</span>
-        <span style={{ width: 80, textAlign: 'right' }}>Share</span>
+      <div className="ctx-ranking__header">
+        <span className="ctx-ranking__header-rank">#</span>
+        <span className="ctx-ranking__header-file">File</span>
+        <span className="ctx-ranking__header-cat">Cat</span>
+        <span className="ctx-ranking__header-inj">Inj</span>
+        <span className="ctx-ranking__header-tokens">Tokens</span>
+        <span className="ctx-ranking__header-share">Share</span>
       </div>
 
       {/* Rows */}
-      <div className="file-list" style={{ gap: 2 }}>
+      <div className="file-list ctx-ranking__list">
         {files.map((file, idx) => {
           const barWidth = maxTokens > 0 ? (file.cumulativeTokens / maxTokens) * 100 : 0;
           const color = CATEGORY_COLORS[file.category] ?? '#6b7280';
@@ -72,64 +64,53 @@ export const FileRankingTable = ({ files }: FileRankingTableProps) => {
           return (
             <button
               key={file.path}
-              className="file-item"
+              className="file-item ctx-ranking__row"
               onClick={(e) => handleFileClick(file.path, e)}
-              style={{ padding: '5px 8px' }}
             >
               {/* # */}
-              <span style={{ width: 18, textAlign: 'center', fontSize: 10, color: '#c7c7cc', flexShrink: 0 }}>
+              <span className="ctx-ranking__row-rank">
                 {idx + 1}
               </span>
 
               {/* File name */}
-              <span className="file-path" style={{ flex: 1 }}>
+              <span className="file-path">
                 {file.path.split('/').slice(-2).join('/')}
               </span>
 
-              {/* Category badge */}
-              <span style={{
-                width: 36,
-                textAlign: 'center',
-                fontSize: 9,
-                fontWeight: 600,
-                color,
-                background: `${color}18`,
-                borderRadius: 4,
-                padding: '1px 4px',
-                flexShrink: 0,
-              }}>
+              {/* Category badge — color is data-driven, kept as inline style */}
+              <span
+                className="ctx-ranking__badge"
+                style={{
+                  color,
+                  background: `${color}18`,
+                }}
+              >
                 {CATEGORY_SHORT[file.category] ?? file.category}
               </span>
 
               {/* Injection count */}
-              <span style={{ width: 28, textAlign: 'right', fontSize: 11, color: '#8e8e93', flexShrink: 0 }}>
+              <span className="ctx-ranking__row-inj">
                 {file.injectionCount}x
               </span>
 
               {/* Tokens */}
-              <span className="file-tokens" style={{ width: 44, textAlign: 'right' }}>
+              <span className="file-tokens ctx-ranking__row-tokens">
                 {formatTokens(file.cumulativeTokens)}
               </span>
 
               {/* Share bar */}
-              <span style={{ width: 80, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                <span style={{
-                  flex: 1,
-                  height: 4,
-                  borderRadius: 2,
-                  background: 'rgba(0,0,0,0.06)',
-                  overflow: 'hidden',
-                }}>
-                  <span style={{
-                    display: 'block',
-                    height: '100%',
-                    width: `${barWidth}%`,
-                    borderRadius: 2,
-                    background: color,
-                    transition: 'width 0.3s ease',
-                  }} />
+              <span className="ctx-ranking__share-wrap">
+                <span className="ctx-ranking__share-track">
+                  {/* width and background are data-driven, kept as inline style */}
+                  <span
+                    className="ctx-ranking__share-fill"
+                    style={{
+                      width: `${barWidth}%`,
+                      background: color,
+                    }}
+                  />
                 </span>
-                <span style={{ fontSize: 10, color: '#8e8e93', minWidth: 28, textAlign: 'right' }}>
+                <span className="ctx-ranking__share-pct">
                   {file.percentOfTotal.toFixed(1)}%
                 </span>
               </span>

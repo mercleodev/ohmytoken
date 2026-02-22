@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { formatTokens } from '../scan/shared';
+import './context.css';
 
 type CategoryBreakdown = {
   category: string;
@@ -26,16 +27,16 @@ export const CategoryDonutChart = ({ data, totalTokens }: CategoryDonutChartProp
 
   if (chartData.length === 0) {
     return (
-      <div style={{ padding: '16px 0', textAlign: 'center', color: '#8e8e93', fontSize: 12 }}>
+      <div className="ctx-donut__empty">
         No injected files
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0' }}>
+    <div className="ctx-donut__root">
       {/* Donut chart */}
-      <div style={{ position: 'relative', width: 120, height: 120, flexShrink: 0 }}>
+      <div className="ctx-donut__chart-wrap">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -55,40 +56,30 @@ export const CategoryDonutChart = ({ data, totalTokens }: CategoryDonutChartProp
           </PieChart>
         </ResponsiveContainer>
         {/* Center label */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-        }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>
+        <div className="ctx-donut__center-label">
+          <span className="ctx-donut__center-value">
             {formatTokens(totalTokens)}
           </span>
-          <span style={{ fontSize: 9, color: '#8e8e93' }}>tokens</span>
+          <span className="ctx-donut__center-unit">tokens</span>
         </div>
       </div>
 
       {/* Legend */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+      <div className="ctx-donut__legend">
         {chartData.map((entry) => (
-          <div
-            key={entry.category}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}
-          >
+          <div key={entry.category} className="ctx-donut__legend-row">
+            {/* background is data-driven — kept as inline style */}
             <span
               className="legend-dot"
               style={{ background: entry.color }}
             />
-            <span style={{ color: '#3c3c43', flex: 1 }}>
+            <span className="ctx-donut__legend-label">
               {CATEGORY_LABELS[entry.category] ?? entry.category}
             </span>
-            <span style={{ color: '#8e8e93', fontWeight: 500, minWidth: 36, textAlign: 'right' }}>
+            <span className="ctx-donut__legend-tokens">
               {formatTokens(entry.totalTokens)}
             </span>
-            <span style={{ color: '#c7c7cc', fontSize: 11, minWidth: 32, textAlign: 'right' }}>
+            <span className="ctx-donut__legend-pct">
               {entry.percentage.toFixed(1)}%
             </span>
           </div>

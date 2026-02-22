@@ -12,6 +12,7 @@ import {
   getModelColor,
 } from "./shared";
 import type { PromptScan, UsageLogEntry } from "../../types";
+import "./scan.css";
 
 type PromptScanViewProps = {
   onBack: () => void;
@@ -148,40 +149,16 @@ export const PromptScanView = ({
   const latest = messages.length > 0 ? messages[messages.length - 1] : null;
 
   return (
-    <div
-      style={{
-        padding: 16,
-        background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
-        minHeight: "100%",
-        color: "#fff",
-      }}
-    >
+    <div className="scan-view">
       {/* Header - hidden in embedded mode */}
       {!embedded && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-            paddingBottom: 12,
-            borderBottom: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
+        <div className="scan-view__header">
+          <h2 className="scan-view__title">
             Prompt CT Scan
           </h2>
           <button
             onClick={onBack}
-            style={{
-              padding: "6px 14px",
-              border: "none",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontSize: 13,
-              background: "rgba(255,255,255,0.1)",
-              color: "#fff",
-            }}
+            className="scan-view__back-btn"
           >
             Back
           </button>
@@ -209,81 +186,39 @@ export const PromptScanView = ({
 
       {/* Session Info Bar */}
       {sessionId && (
-        <div
-          style={{
-            padding: "8px 12px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 8,
-            marginBottom: 12,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            fontSize: 12,
-          }}
-        >
-          <span style={{ color: "#94a3b8" }}>
+        <div className="scan-view__session-bar">
+          <span className="scan-view__session-label">
             Session:{" "}
-            <span
-              style={{
-                color: "#cbd5e1",
-                fontFamily: "ui-monospace, monospace",
-              }}
-            >
+            <span className="scan-view__session-id">
               {sessionId.slice(0, 8)}...{sessionId.slice(-4)}
             </span>
           </span>
-          <span style={{ color: "#94a3b8" }}>
+          <span className="scan-view__session-meta">
             {messages.length} messages | {formatCost(sessionCost)}
           </span>
         </div>
       )}
 
       {/* Message Feed */}
-      <div style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 500,
-            color: "#e2e8f0",
-            marginBottom: 8,
-          }}
-        >
+      <div className="scan-view__feed-section">
+        <div className="scan-view__feed-title">
           Messages
         </div>
         {loading ? (
-          <div style={{ color: "#94a3b8", fontSize: 12, padding: 12 }}>
+          <div className="scan-view__feed-loading">
             Loading...
           </div>
         ) : initError ? (
-          <div
-            style={{
-              color: "#f87171",
-              fontSize: 12,
-              padding: 12,
-              background: "rgba(239, 68, 68, 0.1)",
-              borderRadius: 6,
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-            }}
-          >
+          <div className="scan-view__feed-error">
             {initError}
           </div>
         ) : messages.length === 0 ? (
-          <div style={{ color: "#64748b", fontSize: 12, padding: 12 }}>
+          <div className="scan-view__feed-empty">
             No messages yet. Make API requests through the proxy to see CT scan
             data.
           </div>
         ) : (
-          <div
-            ref={feedRef}
-            style={{
-              maxHeight: 260,
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-            }}
-          >
+          <div ref={feedRef} className="scan-view__feed-list">
             {messages.map((item) => {
               const { scan, usage } = item;
               const ctx = scan.context_estimate;
@@ -293,68 +228,32 @@ export const PromptScanView = ({
               return (
                 <div
                   key={scan.request_id}
-                  style={{
-                    padding: "8px 10px",
-                    background: isSelected
-                      ? "rgba(99, 102, 241, 0.15)"
-                      : "rgba(255,255,255,0.05)",
-                    borderRadius: 8,
-                    borderLeft: `3px solid ${getModelColor(scan.model)}`,
-                    cursor: "pointer",
-                    transition: "background 0.15s",
-                  }}
+                  className={`scan-view__message${isSelected ? ' scan-view__message--selected' : ''}`}
+                  style={{ borderLeft: `3px solid ${getModelColor(scan.model)}` }}
                   onClick={() => handleMessageClick(item)}
                 >
                   {/* Prompt text + time */}
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "#e2e8f0",
-                        flex: 1,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        marginRight: 8,
-                      }}
-                    >
+                  <div className="scan-view__message-row">
+                    <div className="scan-view__message-prompt">
                       {scan.user_prompt || "(system)"}
                     </div>
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: "#64748b",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <div className="scan-view__message-time">
                       {formatTimeAgo(scan.timestamp)}
                     </div>
                   </div>
 
                   {/* Model + cost + context ratio bar */}
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 8 }}
-                  >
+                  <div className="scan-view__message-meta">
                     <span
-                      style={{
-                        fontSize: 10,
-                        color: getModelColor(scan.model),
-                        fontWeight: 500,
-                      }}
+                      className="scan-view__message-model"
+                      style={{ color: getModelColor(scan.model) }}
                     >
                       {getModelShort(scan.model)}
                     </span>
-                    <span style={{ fontSize: 10, color: "#94a3b8" }}>
+                    <span className="scan-view__message-cost">
                       {formatCost(usage?.cost_usd ?? 0)}
                     </span>
-                    <span style={{ fontSize: 10, color: "#64748b" }}>
+                    <span className="scan-view__message-tokens">
                       {formatTokens(ctx.total_tokens)}
                     </span>
 
@@ -367,16 +266,7 @@ export const PromptScanView = ({
                           bd.assistant_tokens > 0 ||
                           bd.tool_result_tokens > 0);
                       return (
-                        <div
-                          style={{
-                            flex: 1,
-                            display: "flex",
-                            height: 4,
-                            borderRadius: 2,
-                            overflow: "hidden",
-                            background: "rgba(255,255,255,0.08)",
-                          }}
-                        >
+                        <div className="scan-view__ratio-bar">
                           <div
                             style={{
                               width: `${(ctx.system_tokens / total) * 100}%`,
@@ -422,13 +312,7 @@ export const PromptScanView = ({
                       );
                     })()}
 
-                    <span
-                      style={{
-                        fontSize: 9,
-                        color: "#64748b",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <span className="scan-view__message-ratio-label">
                       S{((ctx.system_tokens / total) * 100).toFixed(0)}% M
                       {((ctx.messages_tokens / total) * 100).toFixed(0)}% T
                       {((ctx.tools_definition_tokens / total) * 100).toFixed(0)}
@@ -447,7 +331,7 @@ export const PromptScanView = ({
 
       {/* Selected Scan Detail */}
       {selectedScan && (
-        <div style={{ marginTop: 16 }}>
+        <div className="scan-view__detail-section">
           <ScanDetailPanel
             scan={selectedScan}
             usage={selectedUsage}
