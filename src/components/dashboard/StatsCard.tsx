@@ -1,26 +1,35 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 import type { ScanStats } from '../../types';
-import { formatCost } from '../../utils/format';
+import { formatCost, toLocalDateKey } from '../../utils/format';
 
 type StatsCardProps = {
   onSelectStats: (stats: ScanStats) => void;
   scanRevision?: number;
 };
 
-// Build last 7 days of data (fill empty days with 0)
-const buildLast7Days = (costByPeriod: ScanStats['cost_by_period']): Array<{ day: string; cost: number }> => {
+// Build last 7 days of data (fill empty days with minimum visible bar)
+// Uses local dates so "today" always matches the user's timezone
+const buildLast7Days = (costByPeriod: ScanStats['cost_by_period']): Array<{ day: string; cost: number; actual: number }> => {
   const map = new Map(costByPeriod.map((d) => [d.period, d.cost_usd]));
-  const result: Array<{ day: string; cost: number }> = [];
+  const raw: Array<{ day: string; actual: number }> = [];
   const now = new Date();
 
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    result.push({ day: key, cost: map.get(key) ?? 0 });
+    raw.push({ day: toLocalDateKey(d), actual: map.get(toLocalDateKey(d)) ?? 0 });
   }
-  return result;
+
+  // 5% of max so empty days still show a small placeholder bar
+  const maxCost = Math.max(...raw.map((d) => d.actual), 0.01);
+  const minBar = maxCost * 0.05;
+
+  return raw.map((d) => ({
+    day: d.day,
+    cost: d.actual > 0 ? d.actual : minBar,
+    actual: d.actual,
+  }));
 };
 
 export const StatsCard = ({ onSelectStats, scanRevision }: StatsCardProps) => {
@@ -48,7 +57,7 @@ export const StatsCard = ({ onSelectStats, scanRevision }: StatsCardProps) => {
   if (!stats || stats.summary.total_requests === 0) return null;
 
   const last7 = buildLast7Days(stats.cost_by_period);
-  const maxCost = Math.max(...last7.map((d) => d.cost), 0.01);
+  const maxCost = Math.max(...last7.map((d) => d.actual), 0.01);
 
   return (
     <button className="stats-card" onClick={() => onSelectStats(stats)}>
@@ -62,12 +71,13 @@ export const StatsCard = ({ onSelectStats, scanRevision }: StatsCardProps) => {
             <Bar dataKey="cost" radius={[2, 2, 0, 0]} isAnimationActive={false}>
               {last7.map((entry, i) => {
                 const isToday = i === last7.length - 1;
-                const opacity = entry.cost > 0 ? 0.5 + (entry.cost / maxCost) * 0.5 : 0.15;
+                const hasData = entry.actual > 0;
+                const opacity = hasData ? 0.5 + (entry.actual / maxCost) * 0.5 : 0.15;
                 return (
                   <Cell
                     key={entry.day}
-                    fill={isToday ? '#F59E0B' : '#F59E0B'}
-                    fillOpacity={isToday && entry.cost > 0 ? 1 : opacity}
+                    fill="#F59E0B"
+                    fillOpacity={isToday && hasData ? 1 : opacity}
                   />
                 );
               })}
