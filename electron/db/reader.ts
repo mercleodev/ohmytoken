@@ -386,30 +386,30 @@ export const getScanStats = (): ScanStats => {
   };
 };
 
-export const getDailyStats = (
-  date?: string,
-): Array<{
+type DailyStatsRow = {
   date: string;
   request_count: number;
   total_cost_usd: number;
   total_context_tokens: number;
   cache_hit_rate: number;
-}> => {
+};
+
+export const getDailyStats = (
+  date?: string,
+): DailyStatsRow[] => {
   const db = getDatabase();
   if (date) {
     const row = db
       .prepare("SELECT * FROM daily_stats WHERE date = @date")
-      .get({ date });
-    return row ? [row as any] : [];
+      .get({ date }) as DailyStatsRow | undefined;
+    return row ? [row] : [];
   }
   return db
     .prepare("SELECT * FROM daily_stats ORDER BY date DESC LIMIT 30")
-    .all() as any[];
+    .all() as DailyStatsRow[];
 };
 
-export const getSessionList = (
-  limit = 20,
-): Array<{
+type SessionListRow = {
   session_id: string;
   first_timestamp: string;
   last_timestamp: string;
@@ -417,7 +417,11 @@ export const getSessionList = (
   total_cost_usd: number;
   total_context_tokens: number;
   project: string | null;
-}> => {
+};
+
+export const getSessionList = (
+  limit = 20,
+): SessionListRow[] => {
   const db = getDatabase();
   return db
     .prepare(
@@ -428,7 +432,7 @@ export const getSessionList = (
     LIMIT @limit
   `,
     )
-    .all({ limit }) as any[];
+    .all({ limit }) as SessionListRow[];
 };
 
 export const getPromptCount = (): number => {
