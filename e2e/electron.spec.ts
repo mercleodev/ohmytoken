@@ -47,7 +47,7 @@ test.afterAll(async () => {
 test.describe('Token Analyzer', () => {
   test('app launches successfully', async () => {
     const title = await window.title();
-    expect(title).toContain('AI Token Monitor');
+    expect(title).toContain('OhMyToken');
   });
 
   test('settings screen or usage screen is displayed', async () => {
