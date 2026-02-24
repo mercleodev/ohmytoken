@@ -10,7 +10,7 @@ type StatsCardProps = {
 
 // Build last 7 days of data (fill empty days with minimum visible bar)
 // Uses local dates so "today" always matches the user's timezone
-const buildLast7Days = (costByPeriod: ScanStats['cost_by_period']): Array<{ day: string; cost: number; actual: number }> => {
+export const buildLast7Days = (costByPeriod: ScanStats['cost_by_period']): Array<{ day: string; cost: number; actual: number }> => {
   const map = new Map(costByPeriod.map((d) => [d.period, d.cost_usd]));
   const raw: Array<{ day: string; actual: number }> = [];
   const now = new Date();

@@ -458,6 +458,71 @@ describe("reader", () => {
       expect(stats.injected_file_tokens.length).toBeGreaterThan(0);
       expect(stats.cache_hit_rate.length).toBe(3);
     });
+
+    it("groups cost_by_period by local date, not UTC", () => {
+      // Insert a prompt at a UTC timestamp that may be a different local date
+      const utcTimestamp = "2026-02-10T23:30:00.000Z";
+      insertPrompt(
+        makePromptData({
+          request_id: "req-tz-001",
+          session_id: "sess-TZ",
+          timestamp: utcTimestamp,
+          cost_usd: 0.42,
+        }),
+      );
+
+      const stats = getScanStats();
+      // Compute expected local date from JS (same logic as toLocalDateKey)
+      const d = new Date(utcTimestamp);
+      const expectedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+      // The period grouping must include the expected local date
+      const periods = stats.cost_by_period.map((p) => p.period);
+      expect(periods).toContain(expectedDate);
+
+      // The entry for this local date must include the cost
+      const entry = stats.cost_by_period.find((p) => p.period === expectedDate);
+      expect(entry).toBeDefined();
+      expect(entry!.cost_usd).toBeGreaterThanOrEqual(0.42);
+    });
+
+    it("correctly groups UTC midnight-boundary timestamps", () => {
+      // Two timestamps close in UTC but potentially on different local dates
+      const beforeBoundary = "2026-02-15T14:59:00.000Z";
+      const afterBoundary = "2026-02-15T15:01:00.000Z";
+
+      insertPrompt(
+        makePromptData({
+          request_id: "req-tz-before",
+          session_id: "sess-TZ2",
+          timestamp: beforeBoundary,
+          cost_usd: 0.1,
+        }),
+      );
+      insertPrompt(
+        makePromptData({
+          request_id: "req-tz-after",
+          session_id: "sess-TZ2",
+          timestamp: afterBoundary,
+          cost_usd: 0.2,
+        }),
+      );
+
+      const stats = getScanStats();
+
+      // Compute expected local dates from JS
+      const localBefore = new Date(beforeBoundary);
+      const localAfter = new Date(afterBoundary);
+      const dateBefore = `${localBefore.getFullYear()}-${String(localBefore.getMonth() + 1).padStart(2, "0")}-${String(localBefore.getDate()).padStart(2, "0")}`;
+      const dateAfter = `${localAfter.getFullYear()}-${String(localAfter.getMonth() + 1).padStart(2, "0")}-${String(localAfter.getDate()).padStart(2, "0")}`;
+
+      const periods = stats.cost_by_period.map((p) => p.period);
+      expect(periods).toContain(dateBefore);
+      // If the two timestamps land on different local dates, both should appear
+      if (dateBefore !== dateAfter) {
+        expect(periods).toContain(dateAfter);
+      }
+    });
   });
 
   describe("getDailyStats", () => {
