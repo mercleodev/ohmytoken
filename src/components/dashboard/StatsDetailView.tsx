@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { ScanStats } from '../../types';
-import { formatCost, formatTokens } from '../../utils/format';
+import { formatCost, formatTokens, toLocalDateKey } from '../../utils/format';
 
 type StatsDetailViewProps = {
   stats: ScanStats;
@@ -16,33 +16,44 @@ const formatShortDate = (period: string): string => {
 // Fill missing days in range so every day has a bar
 const fillDailyData = (
   costByPeriod: ScanStats['cost_by_period'],
-): Array<{ period: string; cost_usd: number; request_count: number; label: string }> => {
+): Array<{ period: string; cost_usd: number; actual_cost: number; request_count: number; label: string }> => {
   if (costByPeriod.length === 0) return [];
 
   const map = new Map(costByPeriod.map((d) => [d.period, d]));
-  const result: Array<{ period: string; cost_usd: number; request_count: number; label: string }> = [];
+  const raw: Array<{ period: string; actual: number; request_count: number; label: string }> = [];
 
-  // Last 30 days
+  // Last 30 days (local timezone so "today" matches user expectation)
   const now = new Date();
   for (let i = 29; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+    const key = toLocalDateKey(d);
     const existing = map.get(key);
-    result.push({
+    raw.push({
       period: key,
-      cost_usd: existing?.cost_usd ?? 0,
+      actual: existing?.cost_usd ?? 0,
       request_count: existing?.request_count ?? 0,
       label: formatShortDate(key),
     });
   }
-  return result;
+
+  // 5% of max so empty days still show a small placeholder bar
+  const maxCost = Math.max(...raw.map((d) => d.actual), 0.01);
+  const minBar = maxCost * 0.05;
+
+  return raw.map((d) => ({
+    period: d.period,
+    cost_usd: d.actual > 0 ? d.actual : minBar,
+    actual_cost: d.actual,
+    request_count: d.request_count,
+    label: d.label,
+  }));
 };
 
 // Custom tooltip for bar chart
 type CostTooltipProps = {
   active?: boolean;
-  payload?: Array<{ payload: { period: string; cost_usd: number; request_count: number } }>;
+  payload?: Array<{ payload: { period: string; actual_cost: number; request_count: number } }>;
 };
 
 const CostTooltip = ({ active, payload }: CostTooltipProps) => {
@@ -52,7 +63,7 @@ const CostTooltip = ({ active, payload }: CostTooltipProps) => {
     <div className="stats-tooltip">
       <div className="stats-tooltip-date">{data.period}</div>
       <div className="stats-tooltip-row">
-        <span>Cost:</span> <span>{formatCost(data.cost_usd)}</span>
+        <span>Cost:</span> <span>{formatCost(data.actual_cost)}</span>
       </div>
       <div className="stats-tooltip-row">
         <span>Requests:</span> <span>{data.request_count}</span>
@@ -71,8 +82,8 @@ const SummaryCard = ({ label, value, sub }: { label: string; value: string; sub?
 
 export const StatsDetailView = ({ stats, onBack }: StatsDetailViewProps) => {
   const dailyData = useMemo(() => fillDailyData(stats.cost_by_period), [stats.cost_by_period]);
-  const maxCost = useMemo(() => Math.max(...dailyData.map((d) => d.cost_usd), 0.01), [dailyData]);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const maxCost = useMemo(() => Math.max(...dailyData.map((d) => d.actual_cost), 0.01), [dailyData]);
+  const todayStr = toLocalDateKey(new Date());
 
   return (
     <div className="stats-detail">
@@ -126,12 +137,13 @@ export const StatsDetailView = ({ stats, onBack }: StatsDetailViewProps) => {
               <Bar dataKey="cost_usd" radius={[2, 2, 0, 0]} isAnimationActive={false}>
                 {dailyData.map((entry) => {
                   const isToday = entry.period === todayStr;
-                  const opacity = entry.cost_usd > 0 ? 0.5 + (entry.cost_usd / maxCost) * 0.5 : 0.1;
+                  const hasData = entry.actual_cost > 0;
+                  const opacity = hasData ? 0.5 + (entry.actual_cost / maxCost) * 0.5 : 0.1;
                   return (
                     <Cell
                       key={entry.period}
                       fill="#F59E0B"
-                      fillOpacity={isToday && entry.cost_usd > 0 ? 1 : opacity}
+                      fillOpacity={isToday && hasData ? 1 : opacity}
                     />
                   );
                 })}

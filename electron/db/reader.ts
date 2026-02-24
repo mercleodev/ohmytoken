@@ -266,14 +266,15 @@ export const getSessionPrompts = (sessionId: string): PromptScan[] =>
 export const getScanStats = (): ScanStats => {
   const db = getDatabase();
 
-  // Cost by period (last 30 days)
+  // Cost by period (last 30 days, grouped by local date)
   const costByPeriod = db
     .prepare(
       `
-    SELECT substr(timestamp, 1, 10) as period, SUM(cost_usd) as cost_usd, COUNT(*) as request_count
+    SELECT substr(datetime(timestamp, 'localtime'), 1, 10) as period,
+           SUM(cost_usd) as cost_usd, COUNT(*) as request_count
     FROM prompts
-    WHERE timestamp >= date('now', '-30 days')
-    GROUP BY substr(timestamp, 1, 10)
+    WHERE timestamp >= date('now', 'localtime', '-30 days')
+    GROUP BY substr(datetime(timestamp, 'localtime'), 1, 10)
     ORDER BY period
   `,
     )
