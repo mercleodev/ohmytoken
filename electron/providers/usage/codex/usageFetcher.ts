@@ -1,6 +1,20 @@
 import { readCodexAuth } from '../credentialReader';
 import { ProviderUsageSnapshot, UsageWindow } from '../types';
 
+type CodexUsageWindow = {
+  usedPercent?: number;
+  used_percent?: number;
+  resetsAt?: string;
+  resets_at?: string;
+};
+
+type CodexUsageResponse = {
+  primary?: CodexUsageWindow;
+  secondary?: CodexUsageWindow;
+  identity?: { loginMethod?: string; accountEmail?: string };
+  plan?: string;
+};
+
 const USAGE_ENDPOINT = 'https://chatgpt.com/backend-api/wham/usage';
 
 const formatResetTime = (resetsAt: string): string => {
@@ -39,7 +53,7 @@ export const fetchCodexUsage = async (): Promise<ProviderUsageSnapshot | null> =
       return null;
     }
 
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as CodexUsageResponse;
     const windows: UsageWindow[] = [];
 
     // Primary (Session, 5h)

@@ -37,7 +37,7 @@ export const preciseTokenCounter: TokenCounterPlugin = {
     const words = text.split(/\s+/).filter(w => w.length > 0);
 
     // 2. Special character count (usually separate tokens)
-    const specialChars = (text.match(/[{}()\[\]<>:;,."'`~!@#$%^&*+=|\\/?-]/g) || []).length;
+    const specialChars = (text.match(/[{}()[\]<>:;,."'`~!@#$%^&*+=|\\/?-]/g) || []).length;
 
     // 3. Korean character handling
     const koreanChars = (text.match(/[\uAC00-\uD7A3]/g) || []).length;
@@ -109,7 +109,6 @@ export type SectionTokenAnalysis = {
 
 export const analyzeTextSections = (
   text: string,
-  sectionPattern: RegExp = /^##?\s+.+$/gm
 ): SectionTokenAnalysis[] => {
   const lines = text.split('\n');
   const sections: SectionTokenAnalysis[] = [];

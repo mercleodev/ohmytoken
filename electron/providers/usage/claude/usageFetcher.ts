@@ -6,25 +6,32 @@ import { fetchCreditBalance } from "./creditBalanceFetcher";
 const USAGE_ENDPOINT = "https://api.anthropic.com/api/oauth/usage";
 const ANTHROPIC_BETA = "oauth-2025-04-20";
 
+type ClaudeUsageWindowRaw = {
+  utilization?: number;
+  used_percent?: number;
+  usedPercent?: number;
+  percent_used?: number;
+  resets_at?: string;
+  resetsAt?: string;
+  reset_at?: string;
+  resetAt?: string;
+  window_minutes?: number;
+};
+
 type ClaudeUsageResponse = {
-  five_hour?: {
-    used_percent: number;
-    resets_at: string;
-    window_minutes?: number;
-  };
-  seven_day?: {
-    used_percent: number;
-    resets_at: string;
-    window_minutes?: number;
-  };
-  seven_day_sonnet?: {
-    used_percent: number;
-    resets_at: string;
-  };
-  seven_day_opus?: {
-    used_percent: number;
-    resets_at: string;
-  };
+  five_hour?: ClaudeUsageWindowRaw;
+  fiveHour?: ClaudeUsageWindowRaw;
+  session?: ClaudeUsageWindowRaw;
+  current_session?: ClaudeUsageWindowRaw;
+  seven_day?: ClaudeUsageWindowRaw;
+  sevenDay?: ClaudeUsageWindowRaw;
+  weekly?: ClaudeUsageWindowRaw;
+  seven_day_sonnet?: ClaudeUsageWindowRaw;
+  sevenDaySonnet?: ClaudeUsageWindowRaw;
+  sonnet?: ClaudeUsageWindowRaw;
+  seven_day_opus?: ClaudeUsageWindowRaw;
+  sevenDayOpus?: ClaudeUsageWindowRaw;
+  opus?: ClaudeUsageWindowRaw;
   extra_usage?: {
     monthly_spend_usd: number;
     monthly_limit_usd: number;
@@ -113,11 +120,11 @@ export const fetchClaudeUsage =
         return fetchClaudeUsageViaCLI();
       }
 
-      const data = (await res.json()) as any;
+      const data = (await res.json()) as ClaudeUsageResponse;
       const windows: UsageWindow[] = [];
 
       // Utility: extract percent value (handles various field names)
-      const getPct = (obj: any): number => {
+      const getPct = (obj: ClaudeUsageWindowRaw | undefined): number => {
         if (!obj) return 0;
         return (
           obj.utilization ??
@@ -127,7 +134,7 @@ export const fetchClaudeUsage =
           0
         );
       };
-      const getResetAt = (obj: any): string => {
+      const getResetAt = (obj: ClaudeUsageWindowRaw | undefined): string => {
         if (!obj) return "";
         return (
           obj.resets_at ?? obj.resetsAt ?? obj.reset_at ?? obj.resetAt ?? ""
@@ -135,7 +142,7 @@ export const fetchClaudeUsage =
       };
 
       // If reset time has already passed, the API returned stale data → correct to 0%
-      const buildWindow = (label: string, obj: any): void => {
+      const buildWindow = (label: string, obj: ClaudeUsageWindowRaw | undefined): void => {
         if (!obj) return;
         const resetAt = getResetAt(obj);
         const isPastReset = resetAt && new Date(resetAt).getTime() < Date.now();
