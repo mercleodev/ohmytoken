@@ -81,7 +81,9 @@ const LastUpdatedLabel = ({ updatedAt }: { updatedAt: string }) => {
 
 export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onSelectStats, scanRevision }: UsageViewProps) => {
   // Show SetupGuide when token is missing or expired
-  if (tokenStatus && (!tokenStatus.hasToken || tokenStatus.tokenExpired || !tokenStatus.installed)) {
+  // Note: skip `installed` check — packaged apps cannot reliably resolve CLI PATH,
+  // and having a valid token already implies the CLI was installed.
+  if (tokenStatus && (!tokenStatus.hasToken || tokenStatus.tokenExpired)) {
     return <SetupGuide status={tokenStatus} />;
   }
 

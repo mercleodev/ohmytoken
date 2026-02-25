@@ -57,9 +57,19 @@ export const readClaudeCredentials = (): ClaudeCredentials | null => {
   // Priority 3: File fallback (~/.claude/.credentials.json)
   try {
     const raw = fs.readFileSync(CLAUDE_CRED_FILE_PATH, 'utf-8');
-    const creds = JSON.parse(raw);
-    if (!creds.accessToken) return null;
-    return creds as ClaudeCredentials;
+    const parsed = JSON.parse(raw);
+
+    // Handle claudeAiOauth wrapper format (same as Keychain)
+    const oauthData = parsed.claudeAiOauth ?? parsed;
+    if (oauthData.accessToken) {
+      return {
+        accessToken: oauthData.accessToken,
+        refreshToken: oauthData.refreshToken,
+        expiresAt: oauthData.expiresAt ?? '',
+        scopes: oauthData.scopes,
+      };
+    }
+    return null;
   } catch {
     return null;
   }
@@ -223,9 +233,50 @@ const isGeminiTokenExpired = (creds: GeminiOAuthCreds): boolean => {
 
 // === CLI installation check ===
 
+// Common global binary locations on macOS / Linux
+const EXTRA_BIN_DIRS = [
+  '/usr/local/bin',
+  '/opt/homebrew/bin',
+  path.join(homedir(), '.nvm/current/bin'),
+  path.join(homedir(), '.local/bin'),
+  path.join(homedir(), '.npm-global/bin'),
+];
+
+const getExpandedPath = (): string => {
+  const base = process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin';
+  const dirs = new Set(base.split(':'));
+  for (const d of EXTRA_BIN_DIRS) {
+    dirs.add(d);
+  }
+  // Also try to resolve the real nvm bin directory
+  try {
+    const shell = process.env.SHELL || '/bin/zsh';
+    const shellPath = execSync(`${shell} -lc 'echo $PATH'`, {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 5000,
+    }).trim();
+    for (const d of shellPath.split(':')) {
+      dirs.add(d);
+    }
+  } catch {
+    // Shell PATH resolution failed — use static dirs only
+  }
+  return [...dirs].join(':');
+};
+
+let cachedPath: string | null = null;
+
 const isCLIInstalled = (command: string): boolean => {
   try {
-    execSync(`which ${command}`, { encoding: 'utf-8', stdio: 'pipe' });
+    if (cachedPath === null) {
+      cachedPath = getExpandedPath();
+    }
+    execSync(`which ${command}`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+      env: { ...process.env, PATH: cachedPath },
+    });
     return true;
   } catch {
     return false;
