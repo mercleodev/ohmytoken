@@ -219,7 +219,7 @@ export const fetchClaudeUsage =
           email: null, // OAuth usage API doesn't include email
           plan,
         },
-        cost: null, // TODO: add cost via JSONL log parsing
+        cost: null, // TODO(#125): add cost via JSONL log parsing
         updatedAt: new Date().toISOString(),
         source: "oauth",
       };

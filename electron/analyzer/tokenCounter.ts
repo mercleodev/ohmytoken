@@ -30,8 +30,8 @@ export const simpleTokenCounter: TokenCounterPlugin = {
 export const preciseTokenCounter: TokenCounterPlugin = {
   name: 'precise',
   count: (text: string): number => {
-    // TODO: Integrate tiktoken library
-    // Currently using improved approximation
+    // TODO(#124): Integrate tiktoken library
+    // Currently using improved approximation — accurate enough for v0.1.0
 
     // 1. Word count based on whitespace/newlines
     const words = text.split(/\s+/).filter(w => w.length > 0);

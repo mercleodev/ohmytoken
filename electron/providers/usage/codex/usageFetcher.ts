@@ -83,7 +83,7 @@ export const fetchCodexUsage = async (): Promise<ProviderUsageSnapshot | null> =
         email: data.identity?.accountEmail ?? null,
         plan: plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : null,
       },
-      cost: null, // TODO: parse JSONL logs
+      cost: null, // TODO(#125): parse JSONL logs for cost tracking
       updatedAt: new Date().toISOString(),
       source: 'oauth',
     };
