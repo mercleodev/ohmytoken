@@ -23,20 +23,12 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 import { ProviderTabs, buildProviderTabInfo } from './ProviderTabs';
-import { SubTabs, SubTabType } from './SubTabs';
 import { UsageView } from './UsageView';
-import { LiveSessionView } from './LiveSessionView';
 import { SessionDetailView } from './SessionDetailView';
 import { PromptDetailView } from './PromptDetailView';
-import { ContextAnalysisView } from '../context/ContextAnalysisView';
 import { StatsDetailView } from './StatsDetailView';
 import { ContextLimitSettings } from './ContextLimitSettings';
 import './dashboard.css';
-
-type UsageDashboardProps = {
-  onOpenAnalyzer?: () => void;
-  onOpenScan?: () => void;
-};
 
 // Navigation stack: usage → session → prompt | stats
 type NavState =
@@ -45,9 +37,8 @@ type NavState =
   | { screen: 'prompt'; scan: PromptScan; usage: UsageLogEntry | null; sessionId: string }
   | { screen: 'stats'; stats: import('../../types').ScanStats };
 
-export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardProps) => {
+export const UsageDashboard = () => {
   const [selectedProvider, setSelectedProvider] = useState<UsageProviderType>('claude');
-  const [activeSubTab, setActiveSubTab] = useState<SubTabType>('usage');
   const [providerStatuses, setProviderStatuses] = useState<ProviderTokenStatus[]>([]);
   const [snapshots, setSnapshots] = useState<Record<string, ProviderUsageSnapshot | null>>({});
   const [loading, setLoading] = useState(false);
@@ -66,24 +57,9 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
   const [nav, setNav] = useState<NavState>({ screen: 'main' });
   const [navDirection, setNavDirection] = useState(1);
 
-  // Tab switch animation direction
+  // Provider tab animation direction
   const PROVIDER_ORDER: UsageProviderType[] = ['claude', 'codex', 'gemini'];
-  const SUB_TAB_ORDER: SubTabType[] = ['usage', 'live-session', 'context-analysis'];
-  const SUB_TAB_TITLES: Record<SubTabType, string> = {
-    usage: 'Usage Overview',
-    'live-session': 'Live Session Flow',
-    'context-analysis': 'Context Waste Analysis',
-  };
-  const SUB_TAB_DESCRIPTIONS: Record<SubTabType, string> = {
-    usage:
-      'Track spend trends and browse recent sessions from a usage-first view.',
-    'live-session':
-      'Inspect the current session turn-by-turn with context growth and action flow.',
-    'context-analysis':
-      'Inspect injected context distribution and file-level token impact.',
-  };
   const [providerDirection, setProviderDirection] = useState(0);
-  const [subTabDirection, setSubTabDirection] = useState(0);
 
   const loadStatuses = useCallback(async () => {
     try {
@@ -130,20 +106,11 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
     const nextIdx = PROVIDER_ORDER.indexOf(provider);
     setProviderDirection(nextIdx > prevIdx ? 1 : -1);
     setSelectedProvider(provider);
-    setActiveSubTab('usage');
     setNav({ screen: 'main' });
     if (!snapshots[provider]) {
       loadUsage(provider);
     }
   }, [selectedProvider, snapshots, loadUsage]);
-
-  const handleSubTabChange = useCallback((tab: SubTabType) => {
-    const prevIdx = SUB_TAB_ORDER.indexOf(activeSubTab);
-    const nextIdx = SUB_TAB_ORDER.indexOf(tab);
-    setSubTabDirection(nextIdx > prevIdx ? 1 : -1);
-    setActiveSubTab(tab);
-    setNav({ screen: 'main' });
-  }, [activeSubTab]);
 
   const handleRefresh = useCallback(async () => {
     setLoading(true);
@@ -217,7 +184,7 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
 
   // Animation key for main content
   const contentKey = nav.screen === 'main'
-    ? `${activeSubTab}-${selectedProvider}`
+    ? `usage-${selectedProvider}`
     : nav.screen === 'stats'
       ? 'stats'
       : nav.screen === 'session'
@@ -228,7 +195,7 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
 
   const contentDirection = nav.screen !== 'main'
     ? navDirection
-    : (subTabDirection || providerDirection);
+    : providerDirection;
 
   return (
     <LayoutGroup>
@@ -242,10 +209,10 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
           />
         )}
 
-        {/* Sub tabs - shown only on main screen */}
+        {/* Header row with title and action buttons */}
         {nav.screen === 'main' && (
           <div className="sub-tabs-row">
-            <SubTabs active={activeSubTab} onChange={handleSubTabChange} />
+            <div className="sub-tab-header-title">Usage Overview</div>
             <button
               className={`dashboard-refresh-btn ${loading ? 'loading' : ''}`}
               onClick={handleRefresh}
@@ -265,8 +232,7 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
         )}
         {nav.screen === 'main' && (
           <div className="sub-tab-helper">
-            <div className="sub-tab-helper-title">{SUB_TAB_TITLES[activeSubTab]}</div>
-            <div className="sub-tab-helper-desc">{SUB_TAB_DESCRIPTIONS[activeSubTab]}</div>
+            <div className="sub-tab-helper-desc">Track spend trends and browse recent sessions from a usage-first view.</div>
           </div>
         )}
 
@@ -287,8 +253,8 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
                 }}
                 transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
               >
-                {/* Main: usage or live session */}
-                {nav.screen === 'main' && activeSubTab === 'usage' && (
+                {/* Main: usage view */}
+                {nav.screen === 'main' && (
                   <UsageView
                     snapshot={currentSnapshot}
                     tokenStatus={currentStatus}
@@ -297,14 +263,6 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
                     onSelectStats={handleSelectStats}
                     scanRevision={scanRevision}
                   />
-                )}
-
-                {nav.screen === 'main' && activeSubTab === 'live-session' && (
-                  <LiveSessionView />
-                )}
-
-                {nav.screen === 'main' && activeSubTab === 'context-analysis' && (
-                  <ContextAnalysisView />
                 )}
 
                 {/* Stats Detail */}
@@ -346,18 +304,6 @@ export const UsageDashboard = ({ onOpenAnalyzer, onOpenScan }: UsageDashboardPro
             />
           )}
         </AnimatePresence>
-
-        {/* Bottom legacy buttons - main only */}
-        {nav.screen === 'main' && (onOpenAnalyzer || onOpenScan) && (
-          <div className="dashboard-footer">
-            {onOpenAnalyzer && (
-              <button className="footer-tool-btn" onClick={onOpenAnalyzer}>Token Analysis</button>
-            )}
-            {onOpenScan && (
-              <button className="footer-tool-btn" onClick={onOpenScan}>CT Scan</button>
-            )}
-          </div>
-        )}
       </div>
     </LayoutGroup>
   );

@@ -1,20 +1,16 @@
 import { useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { TokenTreemap } from "./components/TokenTreemap";
-import { PromptScanView } from "./components/scan/PromptScanView";
 import { UsageDashboard } from "./components/dashboard/UsageDashboard";
 import { SettingsSection } from "./components/SettingsSection";
 import { AppSettings } from "./types";
 import "./App.css";
 
-type View = "dashboard" | "analyzer" | "scan" | "settings";
+type View = "dashboard" | "settings";
 
 const App = () => {
   const [view, setView] = useState<View>("dashboard");
   const [settings, setSettings] = useState<AppSettings | null>(null);
 
-  const handleOpenAnalyzer = useCallback(() => setView("analyzer"), []);
-  const handleOpenScan = useCallback(() => setView("scan"), []);
   const handleBackToDashboard = useCallback(() => setView("dashboard"), []);
 
   // Listen for tray context menu navigation
@@ -47,36 +43,7 @@ const App = () => {
             transition={{ duration: 0.15 }}
             className="app-view"
           >
-            <UsageDashboard
-              onOpenAnalyzer={handleOpenAnalyzer}
-              onOpenScan={handleOpenScan}
-            />
-          </motion.div>
-        )}
-
-        {view === "analyzer" && (
-          <motion.div
-            key="analyzer"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
-            className="app-view"
-          >
-            <TokenTreemap onBack={handleBackToDashboard} />
-          </motion.div>
-        )}
-
-        {view === "scan" && (
-          <motion.div
-            key="scan"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
-            className="app-view"
-          >
-            <PromptScanView onBack={handleBackToDashboard} />
+            <UsageDashboard />
           </motion.div>
         )}
 

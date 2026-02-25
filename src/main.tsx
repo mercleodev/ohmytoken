@@ -41,45 +41,6 @@ if (!window.api) {
       },
     }),
     saveSettings: async () => ({ success: true }),
-    scanTokens: async () => ({
-      breakdown: {
-        claudeMd: { global: 15000, project: 2000, total: 17000 },
-        userInput: 3000,
-        cacheCreation: 5000,
-        cacheRead: 8000,
-        output: 2000,
-        total: 35000
-      },
-      insights: ['⚠️ CLAUDE.md accounts for 48.6% of total tokens', '💡 Cache hit rate: 61.5%'],
-      claudeMdSections: [],
-      cacheInfo: { claudeMdPreview: '# Mock CLAUDE.md', recentCacheUsage: [], cacheHitRate: 61.5 }
-    }),
-    getPromptHistory: async () => [
-      { id: '1', timestamp: new Date().toISOString(), content: 'This is a test prompt', tokens: 150 },
-      { id: '2', timestamp: new Date(Date.now() - 60000).toISOString(), content: 'Second prompt', tokens: 200 }
-    ],
-    analyzePrompt: async () => null,
-    getContextLogs: async () => ({
-      autoInjected: ['mock/CLAUDE.md'],
-      readFiles: [
-        'mock/project/src/App.tsx',
-        'mock/project/src/main.tsx',
-        'mock/settings.json'
-      ],
-      globSearches: [
-        { pattern: '**/*.tsx', searchPath: 'mock/project/src' },
-        { pattern: '*.json', searchPath: 'mock/config' }
-      ],
-      grepSearches: [
-        { pattern: 'contextLogs', searchPath: 'mock/project/src' }
-      ],
-      sessionId: 'mock-session-12345678'
-    }),
-
-    // CT Scan Mock API
-    startProxy: async () => ({ success: true }),
-    stopProxy: async () => ({ success: true }),
-    getProxyStatus: async () => ({ running: true, port: 8780, upstream: 'api.anthropic.com', requests_total: 0, errors_total: 0 }),
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getPromptScans: async (_options?: { limit?: number; offset?: number; session_id?: string }) => {
