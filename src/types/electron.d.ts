@@ -26,22 +26,6 @@ export type DailyStats = {
   tokensByModel: Record<string, number>;
 };
 
-export type ContextLogs = {
-  autoInjected: string[];
-  readFiles: string[];
-  globSearches: Array<{ pattern: string; searchPath: string }>;
-  grepSearches: Array<{ pattern: string; searchPath: string }>;
-  sessionId?: string;
-};
-
-export type ProxyStatus = {
-  running: boolean;
-  port: number | null;
-  upstream: string | null;
-  requests_total: number;
-  errors_total: number;
-};
-
 export type InjectedFile = {
   path: string;
   category: "global" | "project" | "rules" | "memory" | "skill";
@@ -188,61 +172,6 @@ export type ScanStats = {
   };
 };
 
-// Legacy scan types (used by TokenScanner/TokenTreemap — consolidate in #92)
-export type LegacyScanResult = {
-  breakdown: {
-    claudeMd: { global: number; project: number; total: number };
-    userInput: number;
-    cacheCreation: number;
-    cacheRead: number;
-    output: number;
-    total: number;
-  };
-  insights?: string[];
-  recentRequests?: Array<{
-    timestamp: string;
-    inputTokens: number;
-    outputTokens: number;
-    cacheCreation: number;
-    cacheRead: number;
-    total: number;
-  }>;
-  claudeMdSections?: Array<{ section: string; tokens: number; percentage: number }>;
-  cacheInfo?: {
-    claudeMdPreview: string;
-    recentCacheUsage: Array<{
-      timestamp: string;
-      prompt: string;
-      cacheRead: number;
-      cacheCreation: number;
-      inputTokens: number;
-    }>;
-    cacheHitRate: number;
-  };
-};
-
-export type LegacyPromptHistory = {
-  id: string;
-  timestamp: string;
-  content: string;
-  fullContent?: string;
-  tokens: number;
-};
-
-export type LegacyPromptAnalysis = {
-  promptId: string;
-  prompt: { content: string; tokens: number; timestamp: string };
-  response: {
-    model: string;
-    inputTokens: number;
-    outputTokens: number;
-    cacheCreationTokens: number;
-    cacheReadTokens: number;
-    totalTokens: number;
-  } | null;
-  cost: { input: number; output: number; cache: number; total: number; saved: number };
-};
-
 export type ElectronApi = {
   saveConfig: (config: Config) => Promise<{ success: boolean }>;
   getConfig: () => Promise<Config>;
@@ -251,16 +180,6 @@ export type ElectronApi = {
   refreshUsage: () => Promise<{ success: boolean }>;
   getUsageData: () => Promise<CurrentUsageData & { settings: AppSettings }>;
   saveSettings: (settings: AppSettings) => Promise<{ success: boolean }>;
-  scanTokens: () => Promise<LegacyScanResult>;
-  getPromptHistory: () => Promise<LegacyPromptHistory[]>;
-  analyzePrompt: (promptId: string) => Promise<LegacyPromptAnalysis | null>;
-  getContextLogs: (sessionId?: string) => Promise<ContextLogs>;
-  startProxy: (
-    port?: number,
-    upstream?: string,
-  ) => Promise<{ success: boolean; error?: string }>;
-  stopProxy: () => Promise<{ success: boolean; error?: string }>;
-  getProxyStatus: () => Promise<ProxyStatus>;
   getRecentHistory: (limit?: number) => Promise<HistoryEntry[]>;
   getDailyStats: () => Promise<DailyStats | null>;
   getHistoryPromptDetail: (

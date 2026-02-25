@@ -95,10 +95,6 @@
   padding-right: 8px;
 }
 
-.sub-tabs-row .sub-tabs {
-  flex: 1;
-}
-
 .sub-tab-helper {
   display: flex;
   flex-direction: column;
@@ -108,53 +104,20 @@
   background: rgba(255, 255, 255, 0.28);
 }
 
-.sub-tab-helper-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #4d4d4e;
-}
-
 .sub-tab-helper-desc {
   font-size: 11px;
   line-height: 1.35;
   color: #8e8e93;
 }
 
-/* --- Sub Tabs (Usage / Live Session) --- */
+/* --- Header Title (replaces sub-tabs) --- */
 
-.sub-tabs {
-  display: flex;
-  padding: 0 16px;
-}
-
-.sub-tab {
-  position: relative;
-  padding: 10px 16px;
+.sub-tab-header-title {
   font-size: 13px;
-  font-weight: 500;
-  color: #92949d;
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  transition: color 0.15s;
-}
-
-.sub-tab:hover {
-  color: #6b6b8a;
-}
-
-.sub-tab.active {
+  font-weight: 600;
   color: #454647;
-}
-
-.sub-tab-underline {
-  position: absolute;
-  bottom: 0;
-  left: 8px;
-  right: 8px;
-  height: 2px;
-  border-radius: 1px;
-  background: #0079fe;
+  padding: 10px 16px;
+  flex: 1;
 }
 
 /* --- Provider Header --- */
@@ -554,38 +517,6 @@
   background: rgba(0, 122, 255, 0.08);
 }
 
-/* --- Footer (legacy tool buttons) --- */
-
-.dashboard-footer {
-  display: flex;
-  gap: 8px;
-  padding: 8px 16px 12px;
-  border-top: 1px solid #dedede;
-}
-
-.footer-tool-btn {
-  flex: 1;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 0.5px solid rgba(0, 0, 0, 0.08);
-  background: rgba(0, 0, 0, 0.03);
-  font-size: 11px;
-  font-weight: 500;
-  color: #92949d;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.footer-tool-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #595959;
-}
-
-/* --- Live Session View --- */
-
-.live-session-view {
-  padding: 0;
-}
 
 /* === Recent Sessions === */
 
