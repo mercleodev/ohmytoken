@@ -3,7 +3,6 @@ import {
   ProviderConfig,
   CurrentUsageData,
   AppSettings,
-  ProxyStatus,
 } from "./types";
 import { PromptScan, ScanStats, UsageLogEntry } from "./proxy/types";
 
@@ -32,36 +31,6 @@ const api = {
 
   saveSettings: (settings: AppSettings): Promise<{ success: boolean }> =>
     ipcRenderer.invoke("save-settings", settings),
-
-  scanTokens: (): Promise<any> => ipcRenderer.invoke("scan-tokens"),
-
-  getPromptHistory: (): Promise<any[]> =>
-    ipcRenderer.invoke("get-prompt-history"),
-
-  analyzePrompt: (promptId: string): Promise<any> =>
-    ipcRenderer.invoke("analyze-prompt", promptId),
-
-  getContextLogs: (
-    sessionId?: string,
-  ): Promise<{
-    autoInjected: string[];
-    readFiles: string[];
-    globSearches: Array<{ pattern: string; searchPath: string }>;
-    grepSearches: Array<{ pattern: string; searchPath: string }>;
-    sessionId?: string;
-  }> => ipcRenderer.invoke("get-context-logs", sessionId),
-
-  startProxy: (
-    port?: number,
-    upstream?: string,
-  ): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke("start-proxy", port, upstream),
-
-  stopProxy: (): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke("stop-proxy"),
-
-  getProxyStatus: (): Promise<ProxyStatus> =>
-    ipcRenderer.invoke("get-proxy-status"),
 
   // History (passive session monitoring)
   getRecentHistory: (limit?: number): Promise<any[]> =>
