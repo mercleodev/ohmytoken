@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 import { app, BrowserWindow, ipcMain, globalShortcut } from "electron";
 import * as path from "path";
 import * as fs from "fs";
@@ -19,7 +20,6 @@ import {
   findScanByTimestamp,
 } from "./proxy/scanWriter";
 import { readUsageLog } from "./proxy/usageWriter";
-import { PromptScan, UsageLogEntry } from "./proxy/types";
 import {
   startHistoryWatcher,
   readRecentHistory,
@@ -248,9 +248,7 @@ const initApp = async (): Promise<void> => {
 
   // Start token file watcher (syncs dashboard + tray simultaneously)
   try {
-    const {
-      startTokenFileWatcher,
-    } = require("./providers/usage/tokenFileWatcher");
+    const { startTokenFileWatcher } = require("./providers/usage/tokenFileWatcher");
     startTokenFileWatcher({
       getMainWindow: () => mainWindow,
       onTokenChanged: () => usageStore.refresh("claude"),
@@ -317,7 +315,6 @@ const initApp = async (): Promise<void> => {
           try {
             const detail = dbReader.getPromptDetail(scan.request_id);
             if (detail) {
-              const promptId = (detail as any).scan?.request_id ? undefined : undefined;
               // Get prompt_id from DB by request_id
               const db = require('./db/index').getDatabase();
               const row = db.prepare('SELECT id FROM prompts WHERE request_id = ?').get(scan.request_id) as { id: number } | undefined;
@@ -723,7 +720,6 @@ const setupIPC = (): void => {
           description: string;
         }> = [];
         let toolResultCount = 0;
-        let toolResultTokensTotal = 0;
         let toolIdx = 0;
 
         if (rawUserIdx >= 0) {
@@ -793,13 +789,7 @@ const setupIPC = (): void => {
               for (const block of entry.message.content) {
                 if (block.type === "tool_result") {
                   toolResultCount++;
-                  if (block.content) {
-                    const text =
-                      typeof block.content === "string"
-                        ? block.content
-                        : JSON.stringify(block.content);
-                    toolResultTokensTotal += countTokens(text);
-                  }
+                  // block.content counted via response usage tokens
                 }
               }
             }
