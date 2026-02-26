@@ -15,7 +15,7 @@
 
 ## Product Context (Mandatory)
 
-- OhMyToken is a real-time AI agent token usage monitor and prompt CT scan tool.
+- OhMyToken is a real-time AI agent token usage monitor.
 - It intercepts API calls via a local proxy, parses SSE streams, and visualizes context window usage.
 - Prioritize accurate token counting, real-time monitoring, and clear cost breakdowns.
 

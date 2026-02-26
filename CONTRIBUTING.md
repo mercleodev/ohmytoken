@@ -2,7 +2,7 @@
 
 Thanks for contributing.
 
-OhMyToken is a real-time AI agent token usage monitor and prompt CT scan tool.
+OhMyToken is a real-time AI agent token usage monitor.
 It intercepts Claude/Codex/Gemini API calls via a local proxy, parses SSE streams, and visualizes context window usage.
 
 Project entry references:
