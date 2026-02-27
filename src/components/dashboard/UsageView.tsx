@@ -8,6 +8,7 @@ import { CostCard } from './CostCard';
 import { StatsCard } from './StatsCard';
 import { SetupGuide } from './SetupGuide';
 import { RecentSessions } from './RecentSessions';
+import { OutputProductivityCard } from './OutputProductivityCard';
 
 type UsageViewProps = {
   snapshot: ProviderUsageSnapshot | null;
@@ -146,6 +147,9 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
           </div>
         </div>
 
+        {/* Output Productivity */}
+        <OutputProductivityCard scanRevision={scanRevision} />
+
         {/* Stats */}
         {onSelectStats && (
           <StatsCard onSelectStats={onSelectStats} scanRevision={scanRevision} />
@@ -180,6 +184,9 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
 
       {/* Cost */}
       <CostCard cost={snapshot.cost} />
+
+      {/* Output Productivity */}
+      <OutputProductivityCard scanRevision={scanRevision} />
 
       {/* Stats */}
       {onSelectStats && (

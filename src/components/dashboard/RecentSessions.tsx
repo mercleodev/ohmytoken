@@ -373,6 +373,11 @@ export const RecentSessions = ({
                         {hasCtx && (
                           <span>{formatTokens(p.totalTokens!)} tokens</span>
                         )}
+                        {ctxPct >= 80 && (
+                          <span className="session-card-compact-hint">
+                            Compact Suggested
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

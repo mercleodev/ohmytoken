@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { ScanStats } from '../../types';
 import { formatCost, formatTokens, toLocalDateKey } from '../../utils/format';
+import { TokenCompositionChart } from './TokenCompositionChart';
 
 type StatsDetailViewProps = {
   stats: ScanStats;
@@ -152,6 +153,9 @@ export const StatsDetailView = ({ stats, onBack }: StatsDetailViewProps) => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Token Composition */}
+      <TokenCompositionChart />
 
       {/* Top Tools */}
       {Object.keys(stats.tool_frequency).length > 0 && (

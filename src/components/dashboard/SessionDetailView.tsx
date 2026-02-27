@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   formatCost,
@@ -11,6 +11,10 @@ import {
 } from "../scan/shared";
 import { scrollToBottom } from "../../hooks";
 import type { PromptScan, UsageLogEntry, HistoryEntry } from "../../types";
+import { CacheGrowthChart } from "./CacheGrowthChart";
+import { SessionAlertBanner } from "./SessionAlert";
+import { getSessionAlerts } from "../../utils/sessionAlerts";
+import { getEfficiency } from "../../utils/efficiency";
 
 type MessageItem = {
   scan: PromptScan;
@@ -254,6 +258,63 @@ export const SessionDetailView = ({
   const latestCtxTokens = latestMsg?.scan.context_estimate?.total_tokens ?? 0;
   const latestCacheHitPct = latestMsg ? getCacheHitPct(latestMsg.usage) : null;
 
+  // Efficiency & alerts computation
+  const { totalOutput, totalAll, totalCacheRead } = useMemo(() => {
+    let out = 0;
+    let all = 0;
+    let cache = 0;
+    for (const m of messages) {
+      const u = m.usage?.response;
+      if (u) {
+        out += u.output_tokens;
+        cache += u.cache_read_input_tokens;
+        all +=
+          u.input_tokens +
+          u.output_tokens +
+          u.cache_creation_input_tokens +
+          u.cache_read_input_tokens;
+      }
+    }
+    return { totalOutput: out, totalAll: all, totalCacheRead: cache };
+  }, [messages]);
+
+  const efficiency = useMemo(
+    () => getEfficiency(totalOutput, totalAll),
+    [totalOutput, totalAll],
+  );
+
+  const sessionAlerts = useMemo(
+    () =>
+      getSessionAlerts({
+        turnCount: messages.length,
+        totalOutput,
+        totalCacheRead,
+        totalAll,
+      }),
+    [messages.length, totalOutput, totalCacheRead, totalAll],
+  );
+
+  // Turn click → navigate to matching prompt detail
+  const handleTurnClick = useCallback(
+    (_turnIndex: number, timestamp: string) => {
+      const turnTime = new Date(timestamp).getTime();
+      // Find the message closest to the turn timestamp
+      let best: MessageItem | null = null;
+      let bestDelta = Infinity;
+      for (const m of messages) {
+        const delta = Math.abs(new Date(m.scan.timestamp).getTime() - turnTime);
+        if (delta < bestDelta) {
+          bestDelta = delta;
+          best = m;
+        }
+      }
+      if (best) {
+        onSelectPrompt(best.scan, best.usage);
+      }
+    },
+    [messages, onSelectPrompt],
+  );
+
   // Session title: first user message (oldest), cleaned up
   const firstPrompt =
     messages.length > 0
@@ -292,7 +353,18 @@ export const SessionDetailView = ({
           promptCount={messages.length}
           totalCost={sessionTotalCost}
           cacheHitPct={latestCacheHitPct}
+          efficiency={efficiency}
         />
+      )}
+
+      {/* Cache Growth Chart */}
+      {hasScanData && !loading && messages.length >= 3 && (
+        <CacheGrowthChart sessionId={sessionId} onTurnClick={handleTurnClick} />
+      )}
+
+      {/* Session Alerts */}
+      {hasScanData && !loading && sessionAlerts.length > 0 && (
+        <SessionAlertBanner alerts={sessionAlerts} />
       )}
 
       {/* Prompt List */}
@@ -571,6 +643,13 @@ const DONUT_RADIUS = 52;
 const DONUT_STROKE_WIDTH = 10;
 const DONUT_TRANSITION_SECONDS = 0.4;
 
+type EfficiencyInfo = {
+  outputRatio: number;
+  grade: string;
+  label: string;
+  color: string;
+};
+
 type SessionDonutGaugeProps = {
   ctxPct: number;
   gaugeColor: string;
@@ -580,6 +659,7 @@ type SessionDonutGaugeProps = {
   promptCount: number;
   totalCost: number;
   cacheHitPct: number | null;
+  efficiency?: EfficiencyInfo;
 };
 
 const SessionDonutGauge = ({
@@ -591,6 +671,7 @@ const SessionDonutGauge = ({
   promptCount,
   totalCost,
   cacheHitPct,
+  efficiency,
 }: SessionDonutGaugeProps) => {
   const circumference = 2 * Math.PI * DONUT_RADIUS;
   const filled = (ctxPct / 100) * circumference;
@@ -662,6 +743,20 @@ const SessionDonutGauge = ({
           <div className="session-donut-row">
             <span>Cache hit</span>
             <span>{cacheHitPct.toFixed(1)}%</span>
+          </div>
+        )}
+        {efficiency && efficiency.outputRatio > 0 && (
+          <div className="session-donut-row">
+            <span>Efficiency</span>
+            <span>
+              {(efficiency.outputRatio * 100).toFixed(2)}%{' '}
+              <span
+                className="efficiency-badge"
+                style={{ color: efficiency.color }}
+              >
+                {efficiency.grade}
+              </span>
+            </span>
           </div>
         )}
       </div>
