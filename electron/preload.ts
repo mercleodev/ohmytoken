@@ -126,6 +126,20 @@ const api = {
     };
   },
 
+  // Token Output Productivity API
+  getTokenComposition: (
+    period: 'today' | '7d' | '30d',
+  ): Promise<import('./db/reader').TokenCompositionResult> =>
+    ipcRenderer.invoke('get-token-composition', period),
+
+  getOutputProductivity: (): Promise<import('./db/reader').OutputProductivityResult> =>
+    ipcRenderer.invoke('get-output-productivity'),
+
+  getSessionTurnMetrics: (
+    sessionId: string,
+  ): Promise<import('./db/reader').TurnMetric[]> =>
+    ipcRenderer.invoke('get-session-turn-metrics', sessionId),
+
   // Evidence Scoring API
   getEvidenceReport: (
     requestId: string,
@@ -164,6 +178,45 @@ const api = {
     ipcRenderer.on("navigate-to", handler);
     return () => {
       ipcRenderer.removeListener("navigate-to", handler);
+    };
+  },
+
+  // Backfill API
+  backfillStart: (): Promise<import('./backfill/types').BackfillResult> =>
+    ipcRenderer.invoke('backfill:start'),
+
+  backfillCancel: (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('backfill:cancel'),
+
+  backfillCount: (): Promise<number> =>
+    ipcRenderer.invoke('backfill:count'),
+
+  backfillStatus: (): Promise<{ completed: boolean; lastScanTimestamp: number | null }> =>
+    ipcRenderer.invoke('backfill:status'),
+
+  onBackfillProgress: (
+    callback: (progress: import('./backfill/types').BackfillProgress) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      progress: import('./backfill/types').BackfillProgress,
+    ) => callback(progress);
+    ipcRenderer.on('backfill:progress', handler);
+    return () => {
+      ipcRenderer.removeListener('backfill:progress', handler);
+    };
+  },
+
+  onBackfillComplete: (
+    callback: (result: import('./backfill/types').BackfillResult) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      result: import('./backfill/types').BackfillResult,
+    ) => callback(result);
+    ipcRenderer.on('backfill:complete', handler);
+    return () => {
+      ipcRenderer.removeListener('backfill:complete', handler);
     };
   },
 };

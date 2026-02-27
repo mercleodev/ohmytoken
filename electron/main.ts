@@ -41,6 +41,7 @@ import { mergeConfig } from "./evidence/config";
 import { parseSystemFieldWithContent } from "./proxy/systemParser";
 import { insertEvidenceReport } from "./db/writer";
 import type { EvidenceEngineConfig } from "./evidence/types";
+import { runGapFill, registerBackfillIPC } from "./backfill/index";
 
 // Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
 process.stdout?.on("error", (err: NodeJS.ErrnoException) => {
@@ -207,6 +208,13 @@ const initApp = async (): Promise<void> => {
         `[DB] Imported ${historyResult.imported} history prompts (${historyResult.durationMs}ms)`,
       );
     }
+    // Gap-fill: import recently changed files since last scan (silent, <500ms)
+    const gapResult = runGapFill();
+    if (gapResult.insertedMessages > 0) {
+      console.log(
+        `[Backfill] Gap-fill: ${gapResult.insertedMessages} new prompts (${gapResult.durationMs}ms)`,
+      );
+    }
   } catch (err) {
     console.error("[DB] Failed to initialize:", err);
   }
@@ -240,6 +248,7 @@ const initApp = async (): Promise<void> => {
   registerShortcut(shortcut);
 
   setupIPC();
+  registerBackfillIPC(() => mainWindow);
 
   // Start usageStore polling + initial fetch
   const refreshInterval = settings?.refreshInterval || 5;
@@ -1228,6 +1237,44 @@ const setupIPC = (): void => {
     } catch (error) {
       console.error("get-scan-stats error:", error);
       return null;
+    }
+  });
+
+  // === Token Output Productivity IPC ===
+
+  ipcMain.handle("get-token-composition", async (_event, period: string) => {
+    try {
+      const validPeriods = ['today', '7d', '30d'] as const;
+      type ValidPeriod = typeof validPeriods[number];
+      if (!validPeriods.includes(period as ValidPeriod)) {
+        return { cache_read: 0, cache_create: 0, input: 0, output: 0, total: 0 };
+      }
+      return dbReader.getTokenComposition(period as ValidPeriod);
+    } catch (error) {
+      console.error("get-token-composition error:", error);
+      return { cache_read: 0, cache_create: 0, input: 0, output: 0, total: 0 };
+    }
+  });
+
+  ipcMain.handle("get-output-productivity", async () => {
+    try {
+      return dbReader.getOutputProductivity();
+    } catch (error) {
+      console.error("get-output-productivity error:", error);
+      return {
+        todayOutputTokens: 0, todayTotalTokens: 0, todayOutputRatio: 0,
+        todayCostUSD: 0, last7DaysOutputTokens: 0, last7DaysTotalTokens: 0,
+        last7DaysOutputRatio: 0,
+      };
+    }
+  });
+
+  ipcMain.handle("get-session-turn-metrics", async (_event, sessionId: string) => {
+    try {
+      return dbReader.getSessionTurnMetrics(sessionId);
+    } catch (error) {
+      console.error("get-session-turn-metrics error:", error);
+      return [];
     }
   });
 
