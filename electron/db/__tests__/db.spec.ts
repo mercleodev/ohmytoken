@@ -17,6 +17,15 @@ import {
 import { onProxyScanComplete } from "../proxyAdapter";
 import { onHistoryPromptParsed } from "../historyAdapter";
 import type { PromptScan, UsageLogEntry } from "../../proxy/types";
+import {
+  getMetadata,
+  setMetadata,
+  deleteMetadata,
+  getLastScanTimestamp,
+  setLastScanTimestamp,
+  isBackfillCompleted,
+  setBackfillCompleted,
+} from "../metadata";
 
 // --- Test fixtures ---
 
@@ -139,7 +148,7 @@ afterEach(() => {
 // ============================================
 
 describe("schema", () => {
-  it("creates all 6 tables", () => {
+  it("creates all 7 tables", () => {
     const db = getDatabase();
     const tables = db
       .prepare(
@@ -154,12 +163,13 @@ describe("schema", () => {
     expect(names).toContain("agent_calls");
     expect(names).toContain("daily_stats");
     expect(names).toContain("sessions");
+    expect(names).toContain("app_metadata");
   });
 
   it("sets user_version to latest migration version", () => {
     const db = getDatabase();
     const ver = db.pragma("user_version", { simple: true });
-    expect(ver).toBe(2);
+    expect(ver).toBe(4);
   });
 
   it("sets WAL mode (memory DB reports 'memory')", () => {
@@ -173,6 +183,64 @@ describe("schema", () => {
     const db = getDatabase();
     const fk = db.pragma("foreign_keys", { simple: true });
     expect(fk).toBe(1);
+  });
+});
+
+// ============================================
+// Metadata
+// ============================================
+
+describe("metadata", () => {
+  describe("getMetadata / setMetadata", () => {
+    it("returns null for non-existent key", () => {
+      expect(getMetadata("nonexistent")).toBeNull();
+    });
+
+    it("stores and retrieves a value", () => {
+      setMetadata("test_key", "test_value");
+      expect(getMetadata("test_key")).toBe("test_value");
+    });
+
+    it("upserts on conflict", () => {
+      setMetadata("upsert_key", "original");
+      setMetadata("upsert_key", "updated");
+      expect(getMetadata("upsert_key")).toBe("updated");
+    });
+  });
+
+  describe("deleteMetadata", () => {
+    it("removes a key", () => {
+      setMetadata("del_key", "value");
+      deleteMetadata("del_key");
+      expect(getMetadata("del_key")).toBeNull();
+    });
+
+    it("no-ops for non-existent key", () => {
+      expect(() => deleteMetadata("ghost")).not.toThrow();
+    });
+  });
+
+  describe("backfill helpers", () => {
+    it("getLastScanTimestamp returns null initially", () => {
+      expect(getLastScanTimestamp()).toBeNull();
+    });
+
+    it("setLastScanTimestamp / getLastScanTimestamp roundtrip", () => {
+      const ts = Date.now();
+      setLastScanTimestamp(ts);
+      expect(getLastScanTimestamp()).toBe(ts);
+    });
+
+    it("isBackfillCompleted defaults to false", () => {
+      expect(isBackfillCompleted()).toBe(false);
+    });
+
+    it("setBackfillCompleted / isBackfillCompleted roundtrip", () => {
+      setBackfillCompleted(true);
+      expect(isBackfillCompleted()).toBe(true);
+      setBackfillCompleted(false);
+      expect(isBackfillCompleted()).toBe(false);
+    });
   });
 });
 
@@ -242,6 +310,21 @@ describe("writer", () => {
         .prepare("SELECT * FROM injected_files WHERE prompt_id = ?")
         .all(id!) as DbRow[];
       expect(files).toHaveLength(0);
+    });
+
+    it("inserts prompt with file-scan source", () => {
+      const data = makePromptData({
+        request_id: "req-filescan-001",
+        source: "file-scan",
+      });
+      const id = insertPrompt(data);
+      expect(id).not.toBeNull();
+
+      const db = getDatabase();
+      const row = db
+        .prepare("SELECT source FROM prompts WHERE request_id = ?")
+        .get("req-filescan-001") as DbRow;
+      expect(row.source).toBe("file-scan");
     });
 
     it("auto-updates daily_stats after insert", () => {

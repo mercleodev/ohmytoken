@@ -164,6 +164,38 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 3,
+    up: (db) => {
+      db.exec(/* v3: session token composition columns */ `
+        ALTER TABLE sessions ADD COLUMN total_output_tokens INTEGER DEFAULT 0;
+        ALTER TABLE sessions ADD COLUMN total_cache_read_tokens INTEGER DEFAULT 0;
+      `);
+      // Backfill from existing prompts
+      db.exec(`
+        UPDATE sessions SET
+          total_output_tokens = (
+            SELECT COALESCE(SUM(output_tokens), 0)
+            FROM prompts WHERE prompts.session_id = sessions.session_id
+          ),
+          total_cache_read_tokens = (
+            SELECT COALESCE(SUM(cache_read_input_tokens), 0)
+            FROM prompts WHERE prompts.session_id = sessions.session_id
+          )
+      `);
+    },
+  },
+  {
+    version: 4,
+    up: (db) => {
+      db.exec(/* v4: app metadata for backfill tracking */ `
+        CREATE TABLE IF NOT EXISTS app_metadata (
+          key   TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export const runMigrations = (db: Database.Database): void => {
