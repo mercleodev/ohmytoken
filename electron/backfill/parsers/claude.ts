@@ -32,17 +32,6 @@ type RawEntry = {
 
 const USER_PROMPT_LIMIT = 500;
 
-const TOOL_SUMMARY_FIELDS = [
-  "file_path",
-  "pattern",
-  "command",
-  "query",
-  "prompt",
-  "url",
-  "selector",
-  "description",
-];
-
 /**
  * Check if a user entry has actual text content (not just tool_result blocks)
  */
@@ -52,7 +41,6 @@ const isRealUserPrompt = (entry: RawEntry): boolean => {
   if (!content) return false;
   if (typeof content === "string") return content.trim().length > 0;
   if (Array.isArray(content)) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return content.some(
       (b: Record<string, unknown>) =>
         b.type === "text" && typeof b.text === "string" && (b.text as string).trim().length > 0,
