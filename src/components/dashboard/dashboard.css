@@ -654,6 +654,19 @@
   min-width: 0;
 }
 
+/* Compact recommendation label (blue — distinct from orange "compacted" detection) */
+.session-card-compact-hint {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  color: #007AFF;
+  background: rgba(0, 122, 255, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 2px;
+  letter-spacing: 0.3px;
+}
+
 /* Mini ctx donut gauge */
 .mini-ctx-gauge {
   position: relative;
@@ -2263,7 +2276,8 @@
   padding: 10px 12px;
   white-space: pre-wrap;
   word-break: break-word;
-  font-style: italic;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 /* --- File Preview Language Badge --- */
@@ -3150,6 +3164,19 @@
 
 .cache-growth-chart {
   /* container for ResponsiveContainer */
+}
+
+.cache-growth-chart--clickable {
+  cursor: pointer;
+}
+
+.stats-tooltip-hint {
+  font-size: 9px;
+  color: #a5a5a7;
+  text-align: center;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 /* --- Session Alerts --- */
