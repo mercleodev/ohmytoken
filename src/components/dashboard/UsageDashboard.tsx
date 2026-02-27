@@ -71,6 +71,14 @@ export const UsageDashboard = () => {
     return cleanup;
   }, []);
 
+  // Listen for periodic backfill completions → refresh dashboard
+  useEffect(() => {
+    const cleanup = window.api.onBackfillComplete(() => {
+      setScanRevision((r) => r + 1);
+    });
+    return cleanup;
+  }, []);
+
   // Navigation
   const [nav, setNav] = useState<NavState>({ screen: 'main' });
   const [navDirection, setNavDirection] = useState(1);

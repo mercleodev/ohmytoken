@@ -42,6 +42,7 @@ import { parseSystemFieldWithContent } from "./proxy/systemParser";
 import { insertEvidenceReport } from "./db/writer";
 import type { EvidenceEngineConfig } from "./evidence/types";
 import { runGapFill, registerBackfillIPC } from "./backfill/index";
+import { startGapFillScheduler, stopGapFillScheduler } from "./backfill/scheduler";
 
 // Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
 process.stdout?.on("error", (err: NodeJS.ErrnoException) => {
@@ -249,6 +250,7 @@ const initApp = async (): Promise<void> => {
 
   setupIPC();
   registerBackfillIPC(() => mainWindow);
+  startGapFillScheduler(() => mainWindow);
 
   // Start usageStore polling + initial fetch
   const refreshInterval = settings?.refreshInterval || 5;
@@ -1401,6 +1403,7 @@ app.on("before-quit", () => {
     mainWindow.close();
   }
   usageStore.stopPolling();
+  stopGapFillScheduler();
   trayManager?.cleanup();
   stopProxyServer().catch((err) => console.error("Proxy cleanup error:", err));
 });
