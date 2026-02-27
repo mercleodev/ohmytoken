@@ -28,6 +28,7 @@ import { SessionDetailView } from './SessionDetailView';
 import { PromptDetailView } from './PromptDetailView';
 import { StatsDetailView } from './StatsDetailView';
 import { ContextLimitSettings } from './ContextLimitSettings';
+import { BackfillDialog } from './BackfillDialog';
 import './dashboard.css';
 
 // Navigation stack: usage → session → prompt | stats
@@ -43,6 +44,23 @@ export const UsageDashboard = () => {
   const [snapshots, setSnapshots] = useState<Record<string, ProviderUsageSnapshot | null>>({});
   const [loading, setLoading] = useState(false);
   const [showContextSettings, setShowContextSettings] = useState(false);
+  const [showBackfill, setShowBackfill] = useState(false);
+
+  // Check backfill status on mount
+  useEffect(() => {
+    const checkBackfill = async () => {
+      try {
+        const status = await window.api.backfillStatus();
+        if (!status.completed) {
+          const count = await window.api.backfillCount();
+          if (count > 0) {
+            setShowBackfill(true);
+          }
+        }
+      } catch { /* backfill check is best-effort */ }
+    };
+    checkBackfill();
+  }, []);
 
   // Listen for new scan events (always active — no data loss regardless of tab)
   const [scanRevision, setScanRevision] = useState(0);
@@ -304,6 +322,17 @@ export const UsageDashboard = () => {
             />
           )}
         </AnimatePresence>
+
+        {/* Backfill Onboarding Dialog */}
+        {showBackfill && (
+          <BackfillDialog
+            onComplete={() => {
+              setShowBackfill(false);
+              setScanRevision((r) => r + 1);
+            }}
+            onDismiss={() => setShowBackfill(false)}
+          />
+        )}
       </div>
     </LayoutGroup>
   );

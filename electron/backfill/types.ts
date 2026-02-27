@@ -1,0 +1,52 @@
+/**
+ * Backfill Types
+ *
+ * Shared type definitions for the backfill system that imports
+ * past token usage from Claude session JSONL files.
+ */
+
+export type BackfillMessage = {
+  dedupKey: string;
+  client: "claude";
+  modelId: string;
+  sessionId: string;
+  projectPath: string;
+  timestamp: string; // ISO 8601
+  tokens: {
+    input: number;
+    output: number;
+    cacheRead: number;
+    cacheWrite: number;
+  };
+  costUsd: number;
+  userPrompt?: string; // 500 char limit
+  toolSummary?: Record<string, number>;
+};
+
+export type BackfillProgress = {
+  phase: "scanning" | "parsing" | "writing" | "done";
+  totalFiles: number;
+  processedFiles: number;
+  discoveredMessages: number;
+  insertedMessages: number;
+  skippedDuplicates: number;
+  errors: number;
+};
+
+export type BackfillResult = {
+  totalFiles: number;
+  processedFiles: number;
+  insertedMessages: number;
+  skippedDuplicates: number;
+  errors: number;
+  totalCostUsd: number;
+  dateRange: { earliest: string; latest: string } | null;
+  durationMs: number;
+};
+
+export type ScanFileEntry = {
+  filePath: string;
+  sessionId: string;
+  projectDir: string;
+  mtimeMs: number;
+};

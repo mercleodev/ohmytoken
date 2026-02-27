@@ -5,7 +5,7 @@ export type PromptRow = {
   request_id: string;
   session_id: string;
   timestamp: string;
-  source: "proxy" | "history";
+  source: "proxy" | "history" | "file-scan";
   user_prompt?: string;
   user_prompt_tokens?: number;
   assistant_response?: string;
@@ -253,7 +253,7 @@ export const upsertSession = (sessionId: string): void => {
   const db = getDatabase();
   db.prepare(
     `
-    INSERT INTO sessions (session_id, first_timestamp, last_timestamp, prompt_count, total_cost_usd, total_context_tokens, models_used, project, updated_at)
+    INSERT INTO sessions (session_id, first_timestamp, last_timestamp, prompt_count, total_cost_usd, total_context_tokens, total_output_tokens, total_cache_read_tokens, models_used, project, updated_at)
     SELECT
       session_id,
       MIN(timestamp) as first_timestamp,
@@ -261,6 +261,8 @@ export const upsertSession = (sessionId: string): void => {
       COUNT(*) as prompt_count,
       SUM(cost_usd) as total_cost_usd,
       SUM(total_context_tokens) as total_context_tokens,
+      SUM(output_tokens) as total_output_tokens,
+      SUM(cache_read_input_tokens) as total_cache_read_tokens,
       json_group_array(DISTINCT model) as models_used,
       NULL as project,
       datetime('now') as updated_at
@@ -273,6 +275,8 @@ export const upsertSession = (sessionId: string): void => {
       prompt_count = excluded.prompt_count,
       total_cost_usd = excluded.total_cost_usd,
       total_context_tokens = excluded.total_context_tokens,
+      total_output_tokens = excluded.total_output_tokens,
+      total_cache_read_tokens = excluded.total_cache_read_tokens,
       models_used = excluded.models_used,
       updated_at = excluded.updated_at
   `,

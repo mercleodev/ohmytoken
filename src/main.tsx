@@ -399,6 +399,47 @@ if (!window.api) {
       return { content };
     },
 
+    // Token Output Productivity Mock API
+    getTokenComposition: async (period: string) => {
+      const multiplier = period === 'today' ? 1 : period === '7d' ? 7 : 30;
+      return {
+        cache_read: 170_000_000 * multiplier,
+        cache_create: 10_310_000 * multiplier,
+        input: 104_000 * multiplier,
+        output: 96_000 * multiplier,
+        total: (170_000_000 + 10_310_000 + 104_000 + 96_000) * multiplier,
+      };
+    },
+
+    getOutputProductivity: async () => ({
+      todayOutputTokens: 96_000,
+      todayTotalTokens: 180_510_000,
+      todayOutputRatio: 96_000 / 180_510_000,
+      todayCostUSD: 2.95,
+      last7DaysOutputTokens: 672_000,
+      last7DaysTotalTokens: 1_263_570_000,
+      last7DaysOutputRatio: 672_000 / 1_263_570_000,
+    }),
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getSessionTurnMetrics: async (_sessionId: string) => {
+      const turns = [];
+      for (let i = 1; i <= 15; i++) {
+        const cacheRead = Math.round(500_000 * i * (i + 1) / 2 * 0.1);
+        turns.push({
+          turnIndex: i,
+          timestamp: new Date(Date.now() - (15 - i) * 180_000).toISOString(),
+          cache_read_tokens: cacheRead,
+          cache_create_tokens: Math.round(200_000 + i * 50_000),
+          input_tokens: Math.round(5_000 + i * 1_000),
+          output_tokens: Math.round(3_000 + Math.random() * 5_000),
+          total_context_tokens: Math.round(20_000 + i * 8_000),
+          cost_usd: +(0.05 + i * 0.03).toFixed(4),
+        });
+      }
+      return turns;
+    },
+
     // Evidence Scoring Mock API
     getEvidenceReport: async () => null,
     getEvidenceConfig: async () => ({
@@ -416,6 +457,29 @@ if (!window.api) {
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onNavigateTo: (_callback: (view: string) => void) => {
+      return () => {};
+    },
+
+    // Backfill Mock API
+    backfillStart: async () => ({
+      totalFiles: 42,
+      processedFiles: 42,
+      insertedMessages: 156,
+      skippedDuplicates: 23,
+      errors: 0,
+      totalCostUsd: 12.34,
+      dateRange: { earliest: '2025-11-01T00:00:00Z', latest: '2026-02-27T00:00:00Z' },
+      durationMs: 3200,
+    }),
+    backfillCancel: async () => ({ success: true }),
+    backfillCount: async () => 42,
+    backfillStatus: async () => ({ completed: false, lastScanTimestamp: null }),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onBackfillProgress: (_callback: (progress: import('./types/electron').BackfillProgress) => void) => {
+      return () => {};
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onBackfillComplete: (_callback: (result: import('./types/electron').BackfillResult) => void) => {
       return () => {};
     },
   };

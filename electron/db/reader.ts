@@ -16,7 +16,7 @@ type PromptQueryOptions = {
   session_id?: string;
   date?: string; // 'YYYY-MM-DD'
   model?: string;
-  source?: "proxy" | "history";
+  source?: "proxy" | "history" | "file-scan";
 };
 
 type PromptDbRow = {
@@ -416,6 +416,8 @@ type SessionListRow = {
   prompt_count: number;
   total_cost_usd: number;
   total_context_tokens: number;
+  total_output_tokens: number;
+  total_cache_read_tokens: number;
   project: string | null;
 };
 
@@ -426,13 +428,186 @@ export const getSessionList = (
   return db
     .prepare(
       `
-    SELECT session_id, first_timestamp, last_timestamp, prompt_count, total_cost_usd, total_context_tokens, project
+    SELECT session_id, first_timestamp, last_timestamp, prompt_count, total_cost_usd, total_context_tokens,
+           COALESCE(total_output_tokens, 0) as total_output_tokens,
+           COALESCE(total_cache_read_tokens, 0) as total_cache_read_tokens,
+           project
     FROM sessions
     ORDER BY last_timestamp DESC
     LIMIT @limit
   `,
     )
     .all({ limit }) as SessionListRow[];
+};
+
+// --- Token Output Productivity queries ---
+
+type TokenCompositionRow = {
+  cache_read: number;
+  cache_create: number;
+  input: number;
+  output: number;
+};
+
+export type TokenCompositionResult = {
+  cache_read: number;
+  cache_create: number;
+  input: number;
+  output: number;
+  total: number;
+};
+
+export const getTokenComposition = (
+  period: 'today' | '7d' | '30d',
+): TokenCompositionResult => {
+  const db = getDatabase();
+  const whereClause = (() => {
+    switch (period) {
+      case 'today':
+        return "WHERE substr(datetime(timestamp, 'localtime'), 1, 10) = date('now', 'localtime')";
+      case '7d':
+        return "WHERE timestamp >= date('now', 'localtime', '-7 days')";
+      case '30d':
+        return "WHERE timestamp >= date('now', 'localtime', '-30 days')";
+    }
+  })();
+
+  const row = db
+    .prepare(
+      `
+    SELECT
+      COALESCE(SUM(cache_read_input_tokens), 0) as cache_read,
+      COALESCE(SUM(cache_creation_input_tokens), 0) as cache_create,
+      COALESCE(SUM(input_tokens), 0) as input,
+      COALESCE(SUM(output_tokens), 0) as output
+    FROM prompts
+    ${whereClause}
+  `,
+    )
+    .get() as TokenCompositionRow;
+
+  const total = row.cache_read + row.cache_create + row.input + row.output;
+  return { ...row, total };
+};
+
+export type OutputProductivityResult = {
+  todayOutputTokens: number;
+  todayTotalTokens: number;
+  todayOutputRatio: number;
+  todayCostUSD: number;
+  last7DaysOutputTokens: number;
+  last7DaysTotalTokens: number;
+  last7DaysOutputRatio: number;
+};
+
+export const getOutputProductivity = (): OutputProductivityResult => {
+  const db = getDatabase();
+
+  type PeriodRow = {
+    output_tokens: number;
+    total_tokens: number;
+    total_cost: number;
+  };
+
+  const todayRow = db
+    .prepare(
+      `
+    SELECT
+      COALESCE(SUM(output_tokens), 0) as output_tokens,
+      COALESCE(SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens), 0) as total_tokens,
+      COALESCE(SUM(cost_usd), 0) as total_cost
+    FROM prompts
+    WHERE substr(datetime(timestamp, 'localtime'), 1, 10) = date('now', 'localtime')
+  `,
+    )
+    .get() as PeriodRow;
+
+  const weekRow = db
+    .prepare(
+      `
+    SELECT
+      COALESCE(SUM(output_tokens), 0) as output_tokens,
+      COALESCE(SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens), 0) as total_tokens,
+      COALESCE(SUM(cost_usd), 0) as total_cost
+    FROM prompts
+    WHERE timestamp >= date('now', 'localtime', '-7 days')
+  `,
+    )
+    .get() as PeriodRow;
+
+  return {
+    todayOutputTokens: todayRow.output_tokens,
+    todayTotalTokens: todayRow.total_tokens,
+    todayOutputRatio:
+      todayRow.total_tokens > 0
+        ? todayRow.output_tokens / todayRow.total_tokens
+        : 0,
+    todayCostUSD: todayRow.total_cost,
+    last7DaysOutputTokens: weekRow.output_tokens,
+    last7DaysTotalTokens: weekRow.total_tokens,
+    last7DaysOutputRatio:
+      weekRow.total_tokens > 0
+        ? weekRow.output_tokens / weekRow.total_tokens
+        : 0,
+  };
+};
+
+export type TurnMetric = {
+  turnIndex: number;
+  timestamp: string;
+  cache_read_tokens: number;
+  cache_create_tokens: number;
+  input_tokens: number;
+  output_tokens: number;
+  total_context_tokens: number;
+  cost_usd: number;
+};
+
+export const getSessionTurnMetrics = (
+  sessionId: string,
+): TurnMetric[] => {
+  const db = getDatabase();
+
+  type TurnRow = {
+    turn_index: number;
+    timestamp: string;
+    cache_read_input_tokens: number;
+    cache_creation_input_tokens: number;
+    input_tokens: number;
+    output_tokens: number;
+    total_context_tokens: number;
+    cost_usd: number;
+  };
+
+  const rows = db
+    .prepare(
+      `
+    SELECT
+      ROW_NUMBER() OVER (ORDER BY timestamp ASC) as turn_index,
+      timestamp,
+      cache_read_input_tokens,
+      cache_creation_input_tokens,
+      input_tokens,
+      output_tokens,
+      total_context_tokens,
+      cost_usd
+    FROM prompts
+    WHERE session_id = @session_id
+    ORDER BY timestamp ASC
+  `,
+    )
+    .all({ session_id: sessionId }) as TurnRow[];
+
+  return rows.map((r) => ({
+    turnIndex: r.turn_index,
+    timestamp: r.timestamp,
+    cache_read_tokens: r.cache_read_input_tokens,
+    cache_create_tokens: r.cache_creation_input_tokens,
+    input_tokens: r.input_tokens,
+    output_tokens: r.output_tokens,
+    total_context_tokens: r.total_context_tokens,
+    cost_usd: r.cost_usd,
+  }));
 };
 
 export const getPromptCount = (): number => {

@@ -128,6 +128,62 @@ export type EvidenceEngineConfig = {
   };
 };
 
+// --- Token Output Productivity Types ---
+
+export type TokenCompositionResult = {
+  cache_read: number;
+  cache_create: number;
+  input: number;
+  output: number;
+  total: number;
+};
+
+export type OutputProductivityResult = {
+  todayOutputTokens: number;
+  todayTotalTokens: number;
+  todayOutputRatio: number;
+  todayCostUSD: number;
+  last7DaysOutputTokens: number;
+  last7DaysTotalTokens: number;
+  last7DaysOutputRatio: number;
+};
+
+export type TurnMetric = {
+  turnIndex: number;
+  timestamp: string;
+  cache_read_tokens: number;
+  cache_create_tokens: number;
+  input_tokens: number;
+  output_tokens: number;
+  total_context_tokens: number;
+  cost_usd: number;
+};
+
+export type EfficiencyGrade = 'A' | 'B' | 'C' | 'D';
+
+// --- Backfill Types ---
+
+export type BackfillProgress = {
+  phase: 'scanning' | 'parsing' | 'writing' | 'done';
+  totalFiles: number;
+  processedFiles: number;
+  discoveredMessages: number;
+  insertedMessages: number;
+  skippedDuplicates: number;
+  errors: number;
+};
+
+export type BackfillResult = {
+  totalFiles: number;
+  processedFiles: number;
+  insertedMessages: number;
+  skippedDuplicates: number;
+  errors: number;
+  totalCostUsd: number;
+  dateRange: { earliest: string; latest: string } | null;
+  durationMs: number;
+};
+
 export type UsageLogEntry = {
   timestamp: string;
   request_id: string;
@@ -223,6 +279,15 @@ export type ElectronApi = {
     }) => void,
   ) => () => void;
 
+  // Token Output Productivity API
+  getTokenComposition: (
+    period: 'today' | '7d' | '30d',
+  ) => Promise<TokenCompositionResult>;
+  getOutputProductivity: () => Promise<OutputProductivityResult>;
+  getSessionTurnMetrics: (
+    sessionId: string,
+  ) => Promise<TurnMetric[]>;
+
   // Evidence Scoring API
   getEvidenceReport: (requestId: string) => Promise<EvidenceReport | null>;
   getEvidenceConfig: () => Promise<EvidenceEngineConfig>;
@@ -239,6 +304,14 @@ export type ElectronApi = {
 
   // Navigation from tray context menu
   onNavigateTo: (callback: (view: string) => void) => () => void;
+
+  // Backfill API
+  backfillStart: () => Promise<BackfillResult>;
+  backfillCancel: () => Promise<{ success: boolean }>;
+  backfillCount: () => Promise<number>;
+  backfillStatus: () => Promise<{ completed: boolean; lastScanTimestamp: number | null }>;
+  onBackfillProgress: (callback: (progress: BackfillProgress) => void) => () => void;
+  onBackfillComplete: (callback: (result: BackfillResult) => void) => () => void;
 };
 
 declare global {
