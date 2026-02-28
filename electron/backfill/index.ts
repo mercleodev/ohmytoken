@@ -235,8 +235,9 @@ export const runGapFill = (): BackfillResult => {
   const allFiles: TaggedScanEntry[] = [];
 
   for (const plugin of plugins) {
-    const providerTs =
-      getProviderScanTimestamp(plugin.id) ?? globalLastTs;
+    // Use per-provider timestamp if available; otherwise null to scan all files
+    // (do NOT fall back to globalLastTs — it may be ahead of a provider that was never scanned)
+    const providerTs = getProviderScanTimestamp(plugin.id) ?? null;
     const files = plugin.scan(providerTs);
     for (const f of files) {
       allFiles.push({ ...f, plugin });
