@@ -13,12 +13,13 @@ import type { TurnMetric } from '../../types/electron';
 
 type CacheGrowthChartProps = {
   sessionId: string;
-  onTurnClick?: (turnIndex: number, timestamp: string) => void;
+  onTurnClick?: (turnIndex: number, timestamp: string, requestId: string) => void;
 };
 
 type CumulativeRow = {
   turn: number;
   timestamp: string;
+  requestId: string;
   cumCacheRead: number;
   cumOutput: number;
   cacheReadThisTurn: number;
@@ -75,6 +76,7 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
       acc.push({
         turn: turn.turnIndex,
         timestamp: turn.timestamp,
+        requestId: turn.request_id,
         cumCacheRead: (prev?.cumCacheRead ?? 0) + turn.cache_read_tokens,
         cumOutput: (prev?.cumOutput ?? 0) + turn.output_tokens,
         cacheReadThisTurn: turn.cache_read_tokens,
@@ -89,7 +91,7 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
     const idx = typeof state.activeTooltipIndex === 'number' ? state.activeTooltipIndex : -1;
     const row = cumulative[idx];
     if (row) {
-      onTurnClick(row.turn, row.timestamp);
+      onTurnClick(row.turn, row.timestamp, row.requestId);
     }
   };
 

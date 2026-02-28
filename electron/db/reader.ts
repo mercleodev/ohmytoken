@@ -570,6 +570,7 @@ export const getSessionTurnMetrics = (
 
   type TurnRow = {
     turn_index: number;
+    request_id: string;
     timestamp: string;
     cache_read_input_tokens: number;
     cache_creation_input_tokens: number;
@@ -579,11 +580,15 @@ export const getSessionTurnMetrics = (
     cost_usd: number;
   };
 
+  const continuationMarker =
+    "This session is being continued from a previous conversation that ran out of context";
+
   const rows = db
     .prepare(
       `
     SELECT
       ROW_NUMBER() OVER (ORDER BY timestamp ASC) as turn_index,
+      request_id,
       timestamp,
       cache_read_input_tokens,
       cache_creation_input_tokens,
@@ -593,13 +598,20 @@ export const getSessionTurnMetrics = (
       cost_usd
     FROM prompts
     WHERE session_id = @session_id
+      AND LOWER(model) NOT LIKE '%synthetic%'
+      AND (user_prompt IS NULL OR user_prompt NOT LIKE @continuation_pattern)
+      AND (total_context_tokens > 0 OR (user_prompt IS NOT NULL AND TRIM(user_prompt) != ''))
     ORDER BY timestamp ASC
   `,
     )
-    .all({ session_id: sessionId }) as TurnRow[];
+    .all({
+      session_id: sessionId,
+      continuation_pattern: `%${continuationMarker}%`,
+    }) as TurnRow[];
 
   return rows.map((r) => ({
     turnIndex: r.turn_index,
+    request_id: r.request_id,
     timestamp: r.timestamp,
     cache_read_tokens: r.cache_read_input_tokens,
     cache_create_tokens: r.cache_creation_input_tokens,

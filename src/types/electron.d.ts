@@ -151,6 +151,7 @@ export type OutputProductivityResult = {
 export type TurnMetric = {
   turnIndex: number;
   timestamp: string;
+  request_id: string;
   cache_read_tokens: number;
   cache_create_tokens: number;
   input_tokens: number;
