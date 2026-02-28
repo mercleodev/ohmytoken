@@ -663,6 +663,8 @@ import type {
   SignalResult,
 } from '../evidence/types';
 
+import { isMcpTool } from '../utils/mcpTools';
+
 type EvidenceReportRow = {
   id: number;
   prompt_id: number;
@@ -813,4 +815,184 @@ export const findPromptByTimestamp = (
       description: a.description ?? "",
     })),
   );
+};
+
+// --- MCP Insights queries ---
+
+type McpToolStat = {
+  name: string;
+  callCount: number;
+  totalResultTokens: number;
+};
+
+type McpInsightsResult = {
+  totalMcpCalls: number;
+  totalToolCalls: number;
+  mcpCallRatio: number;
+  totalToolResultTokens: number;
+  mcpToolStats: McpToolStat[];
+  redundantCallCount: number;
+};
+
+export const getMcpInsights = (period: 'today' | '7d' | '30d'): McpInsightsResult => {
+  const db = getDatabase();
+  const conditions: string[] = [];
+  switch (period) {
+    case 'today':
+      conditions.push("substr(datetime(p.timestamp, 'localtime'), 1, 10) = date('now', 'localtime')");
+      break;
+    case '7d':
+      conditions.push("p.timestamp >= date('now', 'localtime', '-7 days')");
+      break;
+    case '30d':
+      conditions.push("p.timestamp >= date('now', 'localtime', '-30 days')");
+      break;
+  }
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  // 1. Tool call counts grouped by name
+  const toolRows = db
+    .prepare(`
+      SELECT tc.name, COUNT(*) as cnt
+      FROM tool_calls tc JOIN prompts p ON tc.prompt_id = p.id
+      ${whereClause}
+      GROUP BY tc.name ORDER BY cnt DESC
+    `)
+    .all() as Array<{ name: string; cnt: number }>;
+
+  // 2. Total tool_result_tokens
+  const totals = db
+    .prepare(`
+      SELECT
+        COALESCE(SUM(p.tool_result_tokens), 0) as trt,
+        COALESCE(SUM(p.tool_result_count), 0) as trc
+      FROM prompts p
+      ${whereClause}
+    `)
+    .get() as { trt: number; trc: number };
+
+  // 3. Classify with isMcpTool()
+  let totalToolCalls = 0;
+  let totalMcpCalls = 0;
+  const mcpToolStats: McpToolStat[] = [];
+
+  for (const row of toolRows) {
+    totalToolCalls += row.cnt;
+    if (isMcpTool(row.name)) {
+      totalMcpCalls += row.cnt;
+      mcpToolStats.push({
+        name: row.name,
+        callCount: row.cnt,
+        totalResultTokens: 0, // per-tool token breakdown not available in DB
+      });
+    }
+  }
+
+  // 4. Redundant call detection (same name+input_summary appearing 2+ times in same period)
+  const redundantRows = db
+    .prepare(`
+      SELECT tc.name, tc.input_summary, COUNT(*) as cnt
+      FROM tool_calls tc JOIN prompts p ON tc.prompt_id = p.id
+      ${whereClause}
+      GROUP BY tc.name, tc.input_summary
+      HAVING cnt >= 2 AND tc.input_summary IS NOT NULL AND tc.input_summary != ''
+    `)
+    .all() as Array<{ name: string; input_summary: string; cnt: number }>;
+
+  let redundantCallCount = 0;
+  for (const r of redundantRows) {
+    if (isMcpTool(r.name)) {
+      redundantCallCount += r.cnt - 1; // count the duplicates (total - 1 original)
+    }
+  }
+
+  return {
+    totalMcpCalls,
+    totalToolCalls,
+    mcpCallRatio: totalToolCalls > 0 ? totalMcpCalls / totalToolCalls : 0,
+    totalToolResultTokens: totals.trt,
+    mcpToolStats,
+    redundantCallCount,
+  };
+};
+
+type RedundantPattern = {
+  toolName: string;
+  count: number;
+  description: string;
+};
+
+type SessionMcpAnalysis = {
+  totalToolCalls: number;
+  mcpCalls: number;
+  toolResultTokens: number;
+  toolBreakdown: Record<string, number>;
+  redundantPatterns: RedundantPattern[];
+};
+
+export const getSessionMcpAnalysis = (sessionId: string): SessionMcpAnalysis => {
+  const db = getDatabase();
+
+  // 1. All tool_calls for the session
+  const calls = db
+    .prepare(`
+      SELECT tc.name, tc.input_summary
+      FROM tool_calls tc JOIN prompts p ON tc.prompt_id = p.id
+      WHERE p.session_id = @session_id
+      ORDER BY p.timestamp, tc.call_index
+    `)
+    .all({ session_id: sessionId }) as Array<{ name: string; input_summary: string | null }>;
+
+  // 2. tool_result_tokens sum
+  const tokenRow = db
+    .prepare(`
+      SELECT COALESCE(SUM(tool_result_tokens), 0) as trt
+      FROM prompts WHERE session_id = @session_id
+    `)
+    .get({ session_id: sessionId }) as { trt: number };
+
+  // 3. Classify and build breakdown
+  const toolBreakdown: Record<string, number> = {};
+  let mcpCalls = 0;
+
+  for (const call of calls) {
+    toolBreakdown[call.name] = (toolBreakdown[call.name] ?? 0) + 1;
+    if (isMcpTool(call.name)) {
+      mcpCalls++;
+    }
+  }
+
+  // 4. Redundant pattern detection: same (name + input_summary) appearing 2+ times
+  const signatureCount = new Map<string, { name: string; input: string; count: number }>();
+  for (const call of calls) {
+    if (!isMcpTool(call.name)) continue;
+    const input = (call.input_summary ?? '').trim();
+    if (!input) continue;
+    const key = `${call.name}::${input}`;
+    const entry = signatureCount.get(key);
+    if (entry) {
+      entry.count++;
+    } else {
+      signatureCount.set(key, { name: call.name, input, count: 1 });
+    }
+  }
+
+  const redundantPatterns: RedundantPattern[] = [];
+  for (const entry of signatureCount.values()) {
+    if (entry.count >= 2) {
+      redundantPatterns.push({
+        toolName: entry.name,
+        count: entry.count,
+        description: entry.input.slice(0, 80),
+      });
+    }
+  }
+
+  return {
+    totalToolCalls: calls.length,
+    mcpCalls,
+    toolResultTokens: tokenRow.trt,
+    toolBreakdown,
+    redundantPatterns,
+  };
 };

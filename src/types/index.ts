@@ -1,5 +1,5 @@
 // Re-export from electron.d.ts for use in components
-export type { PromptScan, UsageLogEntry, InjectedFile, ToolCall, AgentCall, ScanStats, HistoryEntry, DailyStats, EvidenceReport, FileEvidenceScore, SignalResult, EvidenceClassification, EvidenceEngineConfig, SignalConfig } from './electron.d';
+export type { PromptScan, UsageLogEntry, InjectedFile, ToolCall, AgentCall, ScanStats, HistoryEntry, DailyStats, EvidenceReport, FileEvidenceScore, SignalResult, EvidenceClassification, EvidenceEngineConfig, SignalConfig, McpInsightsResult, McpToolStat, SessionMcpAnalysis, RedundantPattern } from './electron.d';
 
 export type ProviderType = 'claude' | 'openai' | 'gemini';
 

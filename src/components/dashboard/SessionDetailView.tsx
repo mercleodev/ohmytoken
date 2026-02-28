@@ -10,7 +10,7 @@ import {
   getGaugeColor,
 } from "../scan/shared";
 import { scrollToBottom } from "../../hooks";
-import type { PromptScan, UsageLogEntry, HistoryEntry } from "../../types";
+import type { PromptScan, UsageLogEntry, HistoryEntry, SessionMcpAnalysis } from "../../types";
 import { CacheGrowthChart } from "./CacheGrowthChart";
 import { SessionAlertBanner } from "./SessionAlert";
 import { getSessionAlerts } from "../../utils/sessionAlerts";
@@ -96,6 +96,7 @@ export const SessionDetailView = ({
   const [loading, setLoading] = useState(true);
   const [hasScanData, setHasScanData] = useState(false);
   const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
+  const [mcpAnalysis, setMcpAnalysis] = useState<SessionMcpAnalysis | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -154,6 +155,13 @@ export const SessionDetailView = ({
       }
     };
     load();
+  }, [sessionId]);
+
+  // Fetch MCP analysis for the session
+  useEffect(() => {
+    window.api.getSessionMcpAnalysis(sessionId)
+      .then(setMcpAnalysis)
+      .catch(() => { /* MCP analysis unavailable */ });
   }, [sessionId]);
 
   // Real-time: new history entries with retry-enrichment (mirrors Dashboard approach)
@@ -290,8 +298,9 @@ export const SessionDetailView = ({
         totalOutput,
         totalCacheRead,
         totalAll,
+        mcpAnalysis: mcpAnalysis ?? undefined,
       }),
-    [messages.length, totalOutput, totalCacheRead, totalAll],
+    [messages.length, totalOutput, totalCacheRead, totalAll, mcpAnalysis],
   );
 
   // Turn click → navigate to matching prompt detail

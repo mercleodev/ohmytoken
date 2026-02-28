@@ -162,6 +162,37 @@ export type TurnMetric = {
 
 export type EfficiencyGrade = 'A' | 'B' | 'C' | 'D';
 
+// --- MCP Insights Types ---
+
+export type McpToolStat = {
+  name: string;
+  callCount: number;
+  totalResultTokens: number;
+};
+
+export type McpInsightsResult = {
+  totalMcpCalls: number;
+  totalToolCalls: number;
+  mcpCallRatio: number;
+  totalToolResultTokens: number;
+  mcpToolStats: McpToolStat[];
+  redundantCallCount: number;
+};
+
+export type RedundantPattern = {
+  toolName: string;
+  count: number;
+  description: string;
+};
+
+export type SessionMcpAnalysis = {
+  totalToolCalls: number;
+  mcpCalls: number;
+  toolResultTokens: number;
+  toolBreakdown: Record<string, number>;
+  redundantPatterns: RedundantPattern[];
+};
+
 // --- Backfill Types ---
 
 export type BackfillProgress = {
@@ -288,6 +319,10 @@ export type ElectronApi = {
   getSessionTurnMetrics: (
     sessionId: string,
   ) => Promise<TurnMetric[]>;
+
+  // MCP Insights API
+  getMcpInsights: (period: 'today' | '7d' | '30d') => Promise<McpInsightsResult>;
+  getSessionMcpAnalysis: (sessionId: string) => Promise<SessionMcpAnalysis>;
 
   // Evidence Scoring API
   getEvidenceReport: (requestId: string) => Promise<EvidenceReport | null>;
