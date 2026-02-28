@@ -196,6 +196,44 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 5,
+    up: (db) => {
+      // Add provider column to prompts and sessions
+      db.exec(`
+        ALTER TABLE prompts ADD COLUMN provider TEXT NOT NULL DEFAULT 'claude';
+        ALTER TABLE sessions ADD COLUMN provider TEXT NOT NULL DEFAULT 'claude';
+
+        CREATE INDEX idx_prompts_provider ON prompts(provider);
+        CREATE INDEX idx_sessions_provider ON sessions(provider);
+      `);
+
+      // Recreate daily_stats with composite PK (date, provider)
+      db.exec(`
+        CREATE TABLE daily_stats_new (
+          date            TEXT NOT NULL,
+          provider        TEXT NOT NULL DEFAULT 'claude',
+          request_count   INTEGER DEFAULT 0,
+          total_cost_usd  REAL DEFAULT 0,
+          total_input_tokens    INTEGER DEFAULT 0,
+          total_output_tokens   INTEGER DEFAULT 0,
+          total_context_tokens  INTEGER DEFAULT 0,
+          avg_context_tokens    INTEGER DEFAULT 0,
+          cache_hit_rate        REAL DEFAULT 0,
+          models_used     TEXT DEFAULT '[]',
+          updated_at      TEXT NOT NULL,
+          PRIMARY KEY (date, provider)
+        );
+
+        INSERT INTO daily_stats_new (date, provider, request_count, total_cost_usd, total_input_tokens, total_output_tokens, total_context_tokens, avg_context_tokens, cache_hit_rate, models_used, updated_at)
+        SELECT date, 'claude', request_count, total_cost_usd, total_input_tokens, total_output_tokens, total_context_tokens, avg_context_tokens, cache_hit_rate, models_used, updated_at
+        FROM daily_stats;
+
+        DROP TABLE daily_stats;
+        ALTER TABLE daily_stats_new RENAME TO daily_stats;
+      `);
+    },
+  },
 ];
 
 export const runMigrations = (db: Database.Database): void => {

@@ -6,6 +6,7 @@ export type PromptRow = {
   session_id: string;
   timestamp: string;
   source: "proxy" | "history" | "file-scan";
+  provider?: string; // "claude" | "codex" | "gemini" — defaults to "claude"
   user_prompt?: string;
   user_prompt_tokens?: number;
   assistant_response?: string;
@@ -77,7 +78,7 @@ const getStatements = () => {
   if (!stmtCache.insertPrompt) {
     stmtCache.insertPrompt = db.prepare(`
       INSERT OR IGNORE INTO prompts (
-        request_id, session_id, timestamp, source,
+        request_id, session_id, timestamp, source, provider,
         user_prompt, user_prompt_tokens, assistant_response,
         model, max_tokens,
         conversation_turns, user_messages_count, assistant_messages_count, tool_result_count,
@@ -88,7 +89,7 @@ const getStatements = () => {
         cost_usd, duration_ms,
         req_messages_count, req_tools_count, req_has_system
       ) VALUES (
-        @request_id, @session_id, @timestamp, @source,
+        @request_id, @session_id, @timestamp, @source, @provider,
         @user_prompt, @user_prompt_tokens, @assistant_response,
         @model, @max_tokens,
         @conversation_turns, @user_messages_count, @assistant_messages_count, @tool_result_count,
@@ -140,6 +141,7 @@ export const insertPrompt = (
       session_id: p.session_id,
       timestamp: p.timestamp,
       source: p.source,
+      provider: p.provider ?? "claude",
       user_prompt: p.user_prompt ?? null,
       user_prompt_tokens: p.user_prompt_tokens ?? 0,
       assistant_response: p.assistant_response ?? null,
@@ -206,20 +208,22 @@ export const insertPrompt = (
 
   // Update aggregate tables if we actually inserted (skip in batch mode)
   if (promptId !== null && !options?.skipAggregates) {
-    upsertDailyStats(p.timestamp.slice(0, 10));
-    upsertSession(p.session_id);
+    const prov = p.provider ?? "claude";
+    upsertDailyStats(p.timestamp.slice(0, 10), prov);
+    upsertSession(p.session_id, prov);
   }
 
   return promptId;
 };
 
-export const upsertDailyStats = (date: string): void => {
+export const upsertDailyStats = (date: string, provider = "claude"): void => {
   const db = getDatabase();
   db.prepare(
     `
-    INSERT INTO daily_stats (date, request_count, total_cost_usd, total_input_tokens, total_output_tokens, total_context_tokens, avg_context_tokens, cache_hit_rate, models_used, updated_at)
+    INSERT INTO daily_stats (date, provider, request_count, total_cost_usd, total_input_tokens, total_output_tokens, total_context_tokens, avg_context_tokens, cache_hit_rate, models_used, updated_at)
     SELECT
       substr(timestamp, 1, 10) as date,
+      @provider as provider,
       COUNT(*) as request_count,
       SUM(cost_usd) as total_cost_usd,
       SUM(input_tokens) as total_input_tokens,
@@ -233,9 +237,9 @@ export const upsertDailyStats = (date: string): void => {
       json_group_array(DISTINCT model) as models_used,
       datetime('now') as updated_at
     FROM prompts
-    WHERE substr(timestamp, 1, 10) = @date
+    WHERE substr(timestamp, 1, 10) = @date AND provider = @provider
     GROUP BY substr(timestamp, 1, 10)
-    ON CONFLICT(date) DO UPDATE SET
+    ON CONFLICT(date, provider) DO UPDATE SET
       request_count = excluded.request_count,
       total_cost_usd = excluded.total_cost_usd,
       total_input_tokens = excluded.total_input_tokens,
@@ -246,14 +250,14 @@ export const upsertDailyStats = (date: string): void => {
       models_used = excluded.models_used,
       updated_at = excluded.updated_at
   `,
-  ).run({ date });
+  ).run({ date, provider });
 };
 
-export const upsertSession = (sessionId: string): void => {
+export const upsertSession = (sessionId: string, provider = "claude"): void => {
   const db = getDatabase();
   db.prepare(
     `
-    INSERT INTO sessions (session_id, first_timestamp, last_timestamp, prompt_count, total_cost_usd, total_context_tokens, total_output_tokens, total_cache_read_tokens, models_used, project, updated_at)
+    INSERT INTO sessions (session_id, first_timestamp, last_timestamp, prompt_count, total_cost_usd, total_context_tokens, total_output_tokens, total_cache_read_tokens, models_used, provider, project, updated_at)
     SELECT
       session_id,
       MIN(timestamp) as first_timestamp,
@@ -264,6 +268,7 @@ export const upsertSession = (sessionId: string): void => {
       SUM(output_tokens) as total_output_tokens,
       SUM(cache_read_input_tokens) as total_cache_read_tokens,
       json_group_array(DISTINCT model) as models_used,
+      @provider as provider,
       NULL as project,
       datetime('now') as updated_at
     FROM prompts
@@ -278,9 +283,10 @@ export const upsertSession = (sessionId: string): void => {
       total_output_tokens = excluded.total_output_tokens,
       total_cache_read_tokens = excluded.total_cache_read_tokens,
       models_used = excluded.models_used,
+      provider = excluded.provider,
       updated_at = excluded.updated_at
   `,
-  ).run({ session_id: sessionId });
+  ).run({ session_id: sessionId, provider });
 };
 
 // --- Evidence scoring persistence ---

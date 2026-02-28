@@ -28,6 +28,7 @@ export const batchInsertMessages = (
   const batchTx = db.transaction(() => {
     for (const msg of messages) {
       try {
+        const provider = msg.client;
         const id = insertPrompt(
           {
             prompt: {
@@ -35,6 +36,7 @@ export const batchInsertMessages = (
               session_id: msg.sessionId,
               timestamp: msg.timestamp,
               source: "file-scan",
+              provider,
               user_prompt: msg.userPrompt,
               user_prompt_tokens: 0,
               model: msg.modelId,
@@ -55,8 +57,8 @@ export const batchInsertMessages = (
         if (id !== null) {
           inserted++;
           const dateStr = msg.timestamp.slice(0, 10);
-          touchedDates.add(dateStr);
-          touchedSessions.add(msg.sessionId);
+          touchedDates.add(`${dateStr}:${provider}`);
+          touchedSessions.add(`${msg.sessionId}:${provider}`);
         }
       } catch {
         errors++;
@@ -64,8 +66,14 @@ export const batchInsertMessages = (
     }
 
     // Rebuild aggregates for all touched dates/sessions
-    for (const d of touchedDates) upsertDailyStats(d);
-    for (const s of touchedSessions) upsertSession(s);
+    for (const key of touchedDates) {
+      const [d, prov] = key.split(":");
+      upsertDailyStats(d, prov);
+    }
+    for (const key of touchedSessions) {
+      const [s, prov] = key.split(":");
+      upsertSession(s, prov);
+    }
   });
 
   try {
