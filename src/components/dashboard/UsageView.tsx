@@ -9,6 +9,7 @@ import { StatsCard } from './StatsCard';
 import { SetupGuide } from './SetupGuide';
 import { RecentSessions } from './RecentSessions';
 import { OutputProductivityCard } from './OutputProductivityCard';
+import { McpInsightsCard } from './McpInsightsCard';
 
 type UsageViewProps = {
   snapshot: ProviderUsageSnapshot | null;
@@ -149,6 +150,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
 
         {/* Output Productivity */}
         <OutputProductivityCard scanRevision={scanRevision} />
+        <McpInsightsCard scanRevision={scanRevision} />
 
         {/* Stats */}
         {onSelectStats && (
@@ -187,6 +189,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
 
       {/* Output Productivity */}
       <OutputProductivityCard scanRevision={scanRevision} />
+      <McpInsightsCard scanRevision={scanRevision} />
 
       {/* Stats */}
       {onSelectStats && (

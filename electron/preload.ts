@@ -140,6 +140,15 @@ const api = {
   ): Promise<import('./db/reader').TurnMetric[]> =>
     ipcRenderer.invoke('get-session-turn-metrics', sessionId),
 
+  // MCP Insights API
+  getMcpInsights: (
+    period: 'today' | '7d' | '30d',
+  ) => ipcRenderer.invoke('get-mcp-insights', period),
+
+  getSessionMcpAnalysis: (
+    sessionId: string,
+  ) => ipcRenderer.invoke('get-session-mcp-analysis', sessionId),
+
   // Evidence Scoring API
   getEvidenceReport: (
     requestId: string,

@@ -1316,6 +1316,31 @@ const setupIPC = (): void => {
     },
   );
 
+  // === MCP Insights IPC ===
+
+  ipcMain.handle("get-mcp-insights", async (_event, period: string) => {
+    try {
+      const validPeriods = ['today', '7d', '30d'] as const;
+      type ValidPeriod = typeof validPeriods[number];
+      if (!validPeriods.includes(period as ValidPeriod)) {
+        return { totalMcpCalls: 0, totalToolCalls: 0, mcpCallRatio: 0, totalToolResultTokens: 0, mcpToolStats: [], redundantCallCount: 0 };
+      }
+      return dbReader.getMcpInsights(period as ValidPeriod);
+    } catch (error) {
+      console.error("get-mcp-insights error:", error);
+      return { totalMcpCalls: 0, totalToolCalls: 0, mcpCallRatio: 0, totalToolResultTokens: 0, mcpToolStats: [], redundantCallCount: 0 };
+    }
+  });
+
+  ipcMain.handle("get-session-mcp-analysis", async (_event, sessionId: string) => {
+    try {
+      return dbReader.getSessionMcpAnalysis(sessionId);
+    } catch (error) {
+      console.error("get-session-mcp-analysis error:", error);
+      return { totalToolCalls: 0, mcpCalls: 0, toolResultTokens: 0, toolBreakdown: {}, redundantPatterns: [] };
+    }
+  });
+
   // === Evidence Scoring IPC ===
 
   ipcMain.handle("get-evidence-report", async (_event, requestId: string) => {

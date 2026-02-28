@@ -441,6 +441,25 @@ if (!window.api) {
       return turns;
     },
 
+    // MCP Insights Mock API
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getMcpInsights: async (_period: 'today' | '7d' | '30d') => ({
+      totalMcpCalls: 0,
+      totalToolCalls: 0,
+      mcpCallRatio: 0,
+      totalToolResultTokens: 0,
+      mcpToolStats: [],
+      redundantCallCount: 0,
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getSessionMcpAnalysis: async (_sessionId: string) => ({
+      totalToolCalls: 0,
+      mcpCalls: 0,
+      toolResultTokens: 0,
+      toolBreakdown: {},
+      redundantPatterns: [],
+    }),
+
     // Evidence Scoring Mock API
     getEvidenceReport: async () => null,
     getEvidenceConfig: async () => ({
