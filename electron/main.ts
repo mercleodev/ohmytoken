@@ -576,9 +576,9 @@ const setupIPC = (): void => {
     }
   });
 
-  ipcMain.handle("get-daily-stats", async () => {
+  ipcMain.handle("get-daily-stats", async (_event, provider?: string) => {
     try {
-      const dbResult = dbReader.getDailyStats();
+      const dbResult = dbReader.getDailyStats(undefined, provider);
       if (dbResult.length > 0) return dbResult;
       return readTodayStats();
     } catch (error) {
@@ -1125,6 +1125,7 @@ const setupIPC = (): void => {
         limit?: number;
         offset?: number;
         session_id?: string;
+        provider?: string;
       },
     ) => {
       try {
@@ -1244,23 +1245,23 @@ const setupIPC = (): void => {
 
   // === Token Output Productivity IPC ===
 
-  ipcMain.handle("get-token-composition", async (_event, period: string) => {
+  ipcMain.handle("get-token-composition", async (_event, period: string, provider?: string) => {
     try {
       const validPeriods = ['today', '7d', '30d'] as const;
       type ValidPeriod = typeof validPeriods[number];
       if (!validPeriods.includes(period as ValidPeriod)) {
         return { cache_read: 0, cache_create: 0, input: 0, output: 0, total: 0 };
       }
-      return dbReader.getTokenComposition(period as ValidPeriod);
+      return dbReader.getTokenComposition(period as ValidPeriod, provider);
     } catch (error) {
       console.error("get-token-composition error:", error);
       return { cache_read: 0, cache_create: 0, input: 0, output: 0, total: 0 };
     }
   });
 
-  ipcMain.handle("get-output-productivity", async () => {
+  ipcMain.handle("get-output-productivity", async (_event, provider?: string) => {
     try {
-      return dbReader.getOutputProductivity();
+      return dbReader.getOutputProductivity(provider);
     } catch (error) {
       console.error("get-output-productivity error:", error);
       return {
