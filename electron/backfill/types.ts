@@ -2,12 +2,14 @@
  * Backfill Types
  *
  * Shared type definitions for the backfill system that imports
- * past token usage from Claude session JSONL files.
+ * past token usage from provider session files.
  */
+
+export type BackfillClient = "claude" | "codex" | "gemini";
 
 export type BackfillMessage = {
   dedupKey: string;
-  client: "claude";
+  client: BackfillClient;
   modelId: string;
   sessionId: string;
   projectPath: string;
