@@ -4,27 +4,68 @@
  * Orchestrates the full backfill pipeline:
  * scanner → parser → dedup → writer
  *
+ * Multi-provider: iterates all registered plugins via getAllPlugins().
+ * Each provider maintains its own scan timestamp for gap-fill.
+ *
  * Two modes:
- * - runFullScan: scans all files, used for onboarding
- * - runGapFill: scans only files changed since last scan, used on startup
+ * - runFullScan: scans all files from all providers, used for onboarding
+ * - runGapFill: scans only files changed since last scan per provider
  */
 import { ipcMain, BrowserWindow } from "electron";
-import { findClaudeSessionFiles, countSessionFiles } from "./scanner";
-import { parseSessionFile } from "./parsers/index";
+import { getAllPlugins } from "./plugins/registry";
 import { loadExistingRequestIds, filterDuplicates } from "./dedup";
 import { batchInsertMessages } from "./writer";
 import {
   getLastScanTimestamp,
   setLastScanTimestamp,
+  getProviderScanTimestamp,
+  setProviderScanTimestamp,
   isBackfillCompleted,
   setBackfillCompleted,
 } from "../db/metadata";
-import type { BackfillProgress, BackfillResult, BackfillMessage } from "./types";
+import type {
+  BackfillProgress,
+  BackfillResult,
+  BackfillMessage,
+  ScanFileEntry,
+} from "./types";
+import type { ProviderPlugin } from "./plugins/types";
+
+/** Scan entry tagged with the plugin that produced it */
+type TaggedScanEntry = ScanFileEntry & { plugin: ProviderPlugin };
 
 let runningAbortController: AbortController | null = null;
 
 /**
- * Run a full scan of all Claude session files.
+ * Collect files from all registered plugins.
+ * Each file is tagged with the plugin that discovered it.
+ */
+const scanAllPlugins = (
+  lastScanTimestampMs: number | null,
+): TaggedScanEntry[] => {
+  const plugins = getAllPlugins();
+  const entries: TaggedScanEntry[] = [];
+
+  for (const plugin of plugins) {
+    // Per-provider timestamp; fall back to global for backward compat
+    const providerTs =
+      lastScanTimestampMs === null
+        ? null
+        : (getProviderScanTimestamp(plugin.id) ?? lastScanTimestampMs);
+
+    const files = plugin.scan(providerTs);
+    for (const f of files) {
+      entries.push({ ...f, plugin });
+    }
+  }
+
+  // Sort all entries by mtime ascending (oldest first)
+  entries.sort((a, b) => a.mtimeMs - b.mtimeMs);
+  return entries;
+};
+
+/**
+ * Run a full scan of all provider session files.
  * Sends progress events to the renderer.
  */
 export const runFullScan = (
@@ -53,8 +94,8 @@ export const runFullScan = (
     };
 
     try {
-      // Phase 1: Scan
-      const files = findClaudeSessionFiles(null);
+      // Phase 1: Scan all providers
+      const files = scanAllPlugins(null);
       progress.totalFiles = files.length;
       progress.phase = "parsing";
       sendProgress();
@@ -69,7 +110,7 @@ export const runFullScan = (
 
       // Phase 2: Parse + Dedup + Write in batches
       const existingIds = loadExistingRequestIds();
-      let maxMtime = 0;
+      const maxMtimeByProvider = new Map<string, number>();
       let earliest = "";
       let latest = "";
       let totalCost = 0;
@@ -80,11 +121,7 @@ export const runFullScan = (
       for (const file of files) {
         if (abort.signal.aborted) break;
 
-        const messages = parseSessionFile(
-          file.filePath,
-          file.sessionId,
-          file.projectDir,
-        );
+        const messages = file.plugin.parse(file);
 
         const { unique, duplicateCount } = filterDuplicates(
           messages,
@@ -112,7 +149,12 @@ export const runFullScan = (
           totalCost += msg.costUsd;
         }
 
-        if (file.mtimeMs > maxMtime) maxMtime = file.mtimeMs;
+        // Track max mtime per provider
+        const prevMax = maxMtimeByProvider.get(file.plugin.id) ?? 0;
+        if (file.mtimeMs > prevMax) {
+          maxMtimeByProvider.set(file.plugin.id, file.mtimeMs);
+        }
+
         progress.processedFiles++;
 
         // Send progress every 10 files
@@ -129,9 +171,15 @@ export const runFullScan = (
         progress.errors += errors;
       }
 
-      // Update metadata
-      if (maxMtime > 0) {
-        setLastScanTimestamp(maxMtime);
+      // Update per-provider scan timestamps
+      let globalMaxMtime = 0;
+      for (const [providerId, mtime] of maxMtimeByProvider) {
+        setProviderScanTimestamp(providerId, mtime);
+        if (mtime > globalMaxMtime) globalMaxMtime = mtime;
+      }
+      // Keep global timestamp in sync for backward compat
+      if (globalMaxMtime > 0) {
+        setLastScanTimestamp(globalMaxMtime);
       }
       setBackfillCompleted(true);
 
@@ -161,15 +209,15 @@ export const runFullScan = (
 };
 
 /**
- * Run a gap-fill scan (only files changed since last scan).
- * Silent — no progress events, runs on startup.
+ * Run a gap-fill scan (only files changed since last scan per provider).
+ * Silent — no progress events, runs on startup and periodically.
  */
 export const runGapFill = (): BackfillResult => {
   const start = Date.now();
-  const lastTs = getLastScanTimestamp();
+  const globalLastTs = getLastScanTimestamp();
 
   // If never scanned, skip (wait for onboarding dialog)
-  if (lastTs === null) {
+  if (globalLastTs === null) {
     return {
       totalFiles: 0,
       processedFiles: 0,
@@ -182,8 +230,20 @@ export const runGapFill = (): BackfillResult => {
     };
   }
 
-  const files = findClaudeSessionFiles(lastTs);
-  if (files.length === 0) {
+  // Scan all providers using per-provider timestamps
+  const plugins = getAllPlugins();
+  const allFiles: TaggedScanEntry[] = [];
+
+  for (const plugin of plugins) {
+    const providerTs =
+      getProviderScanTimestamp(plugin.id) ?? globalLastTs;
+    const files = plugin.scan(providerTs);
+    for (const f of files) {
+      allFiles.push({ ...f, plugin });
+    }
+  }
+
+  if (allFiles.length === 0) {
     return {
       totalFiles: 0,
       processedFiles: 0,
@@ -200,21 +260,20 @@ export const runGapFill = (): BackfillResult => {
   let inserted = 0;
   let skipped = 0;
   let errors = 0;
-  let maxMtime = lastTs;
+  const maxMtimeByProvider = new Map<string, number>();
   const allMessages: BackfillMessage[] = [];
 
-  for (const file of files) {
-    const messages = parseSessionFile(
-      file.filePath,
-      file.sessionId,
-      file.projectDir,
-    );
+  for (const file of allFiles) {
+    const messages = file.plugin.parse(file);
 
     const { unique, duplicateCount } = filterDuplicates(messages, existingIds);
     skipped += duplicateCount;
     allMessages.push(...unique);
 
-    if (file.mtimeMs > maxMtime) maxMtime = file.mtimeMs;
+    const prevMax = maxMtimeByProvider.get(file.plugin.id) ?? 0;
+    if (file.mtimeMs > prevMax) {
+      maxMtimeByProvider.set(file.plugin.id, file.mtimeMs);
+    }
   }
 
   if (allMessages.length > 0) {
@@ -223,13 +282,23 @@ export const runGapFill = (): BackfillResult => {
     errors = result.errors;
   }
 
-  if (maxMtime > lastTs) {
-    setLastScanTimestamp(maxMtime);
+  // Update per-provider timestamps
+  let globalMaxMtime = globalLastTs;
+  for (const [providerId, mtime] of maxMtimeByProvider) {
+    const currentProviderTs =
+      getProviderScanTimestamp(providerId) ?? globalLastTs;
+    if (mtime > currentProviderTs) {
+      setProviderScanTimestamp(providerId, mtime);
+    }
+    if (mtime > globalMaxMtime) globalMaxMtime = mtime;
+  }
+  if (globalMaxMtime > globalLastTs) {
+    setLastScanTimestamp(globalMaxMtime);
   }
 
   return {
-    totalFiles: files.length,
-    processedFiles: files.length,
+    totalFiles: allFiles.length,
+    processedFiles: allFiles.length,
     insertedMessages: inserted,
     skippedDuplicates: skipped,
     errors,
@@ -250,6 +319,13 @@ export const cancelBackfill = (): void => {
 };
 
 /**
+ * Count total session files across all providers.
+ */
+const countAllSessionFiles = (): number => {
+  return getAllPlugins().reduce((sum, plugin) => sum + plugin.count(), 0);
+};
+
+/**
  * Register IPC handlers for backfill.
  */
 export const registerBackfillIPC = (
@@ -265,7 +341,7 @@ export const registerBackfillIPC = (
   });
 
   ipcMain.handle("backfill:count", () => {
-    return countSessionFiles();
+    return countAllSessionFiles();
   });
 
   ipcMain.handle("backfill:status", () => {

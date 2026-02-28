@@ -39,3 +39,24 @@ export const isBackfillCompleted = (): boolean => {
 export const setBackfillCompleted = (completed: boolean): void => {
   setMetadata("backfill_completed", completed ? "true" : "false");
 };
+
+/**
+ * Per-provider scan timestamps.
+ * Key format: backfill_last_scan_ts_{providerId}
+ * Allows each provider to track its own scan position independently.
+ */
+export const getProviderScanTimestamp = (
+  providerId: string,
+): number | null => {
+  const raw = getMetadata(`backfill_last_scan_ts_${providerId}`);
+  if (!raw) return null;
+  const num = Number(raw);
+  return Number.isFinite(num) ? num : null;
+};
+
+export const setProviderScanTimestamp = (
+  providerId: string,
+  epochMs: number,
+): void => {
+  setMetadata(`backfill_last_scan_ts_${providerId}`, String(epochMs));
+};
