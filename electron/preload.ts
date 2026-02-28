@@ -37,7 +37,7 @@ const api = {
   getRecentHistory: (limit?: number): Promise<any[]> =>
     ipcRenderer.invoke("get-recent-history", limit),
 
-  getDailyStats: (): Promise<any> => ipcRenderer.invoke("get-daily-stats"),
+  getDailyStats: (provider?: string): Promise<any> => ipcRenderer.invoke("get-daily-stats", provider),
 
   getHistoryPromptDetail: (
     sessionId: string,
@@ -59,6 +59,7 @@ const api = {
     limit?: number;
     offset?: number;
     session_id?: string;
+    provider?: string;
   }): Promise<PromptScan[]> => ipcRenderer.invoke("get-prompt-scans", options),
 
   getPromptScanDetail: (
@@ -129,11 +130,12 @@ const api = {
   // Token Output Productivity API
   getTokenComposition: (
     period: 'today' | '7d' | '30d',
+    provider?: string,
   ): Promise<import('./db/reader').TokenCompositionResult> =>
-    ipcRenderer.invoke('get-token-composition', period),
+    ipcRenderer.invoke('get-token-composition', period, provider),
 
-  getOutputProductivity: (): Promise<import('./db/reader').OutputProductivityResult> =>
-    ipcRenderer.invoke('get-output-productivity'),
+  getOutputProductivity: (provider?: string): Promise<import('./db/reader').OutputProductivityResult> =>
+    ipcRenderer.invoke('get-output-productivity', provider),
 
   getSessionTurnMetrics: (
     sessionId: string,

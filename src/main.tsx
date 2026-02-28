@@ -43,7 +43,7 @@ if (!window.api) {
     saveSettings: async () => ({ success: true }),
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getPromptScans: async (_options?: { limit?: number; offset?: number; session_id?: string }) => {
+    getPromptScans: async (_options?: { limit?: number; offset?: number; session_id?: string; provider?: string }) => {
       const models = ['claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'];
       const prompts = [
         'Implement passive session monitoring',
@@ -372,7 +372,8 @@ if (!window.api) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getHistoryPromptDetail: async (_sessionId: string, _timestamp: number) => null,
 
-    getDailyStats: async () => ({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getDailyStats: async (_provider?: string) => ({
       date: new Date().toISOString().slice(0, 10),
       messageCount: 47,
       sessionCount: 5,
@@ -400,7 +401,8 @@ if (!window.api) {
     },
 
     // Token Output Productivity Mock API
-    getTokenComposition: async (period: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getTokenComposition: async (period: string, _provider?: string) => {
       const multiplier = period === 'today' ? 1 : period === '7d' ? 7 : 30;
       return {
         cache_read: 170_000_000 * multiplier,
@@ -411,7 +413,8 @@ if (!window.api) {
       };
     },
 
-    getOutputProductivity: async () => ({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getOutputProductivity: async (_provider?: string) => ({
       todayOutputTokens: 96_000,
       todayTotalTokens: 180_510_000,
       todayOutputRatio: 96_000 / 180_510_000,

@@ -269,7 +269,7 @@ export type ElectronApi = {
   getUsageData: () => Promise<CurrentUsageData & { settings: AppSettings }>;
   saveSettings: (settings: AppSettings) => Promise<{ success: boolean }>;
   getRecentHistory: (limit?: number) => Promise<HistoryEntry[]>;
-  getDailyStats: () => Promise<DailyStats | null>;
+  getDailyStats: (provider?: string) => Promise<DailyStats | null>;
   getHistoryPromptDetail: (
     sessionId: string,
     timestamp: number,
@@ -279,6 +279,7 @@ export type ElectronApi = {
     limit?: number;
     offset?: number;
     session_id?: string;
+    provider?: string;
   }) => Promise<PromptScan[]>;
   getPromptScanDetail: (
     requestId: string,
@@ -314,8 +315,9 @@ export type ElectronApi = {
   // Token Output Productivity API
   getTokenComposition: (
     period: 'today' | '7d' | '30d',
+    provider?: string,
   ) => Promise<TokenCompositionResult>;
-  getOutputProductivity: () => Promise<OutputProductivityResult>;
+  getOutputProductivity: (provider?: string) => Promise<OutputProductivityResult>;
   getSessionTurnMetrics: (
     sessionId: string,
   ) => Promise<TurnMetric[]>;
