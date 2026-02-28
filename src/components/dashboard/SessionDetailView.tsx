@@ -296,9 +296,17 @@ export const SessionDetailView = ({
 
   // Turn click → navigate to matching prompt detail
   const handleTurnClick = useCallback(
-    (_turnIndex: number, timestamp: string) => {
+    (_turnIndex: number, timestamp: string, requestId: string) => {
+      // Prefer exact match by request_id
+      const exactMatch = messages.find(
+        (m) => (m.scan.request_id || "").trim() === requestId,
+      );
+      if (exactMatch) {
+        onSelectPrompt(exactMatch.scan, exactMatch.usage);
+        return;
+      }
+      // Fallback: closest timestamp match
       const turnTime = new Date(timestamp).getTime();
-      // Find the message closest to the turn timestamp
       let best: MessageItem | null = null;
       let bestDelta = Infinity;
       for (const m of messages) {

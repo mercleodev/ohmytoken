@@ -17,6 +17,7 @@ type PromptQueryOptions = {
   date?: string; // 'YYYY-MM-DD'
   model?: string;
   source?: "proxy" | "history" | "file-scan";
+  provider?: string; // "claude" | "codex" | "gemini" — omit for all
 };
 
 type PromptDbRow = {
@@ -154,6 +155,10 @@ export const getPrompts = (options?: PromptQueryOptions): PromptScan[] => {
   if (options?.source) {
     conditions.push("source = @source");
     params.source = options.source;
+  }
+  if (options?.provider) {
+    conditions.push("provider = @provider");
+    params.provider = options.provider;
   }
 
   const where =
@@ -396,17 +401,25 @@ type DailyStatsRow = {
 
 export const getDailyStats = (
   date?: string,
+  provider?: string,
 ): DailyStatsRow[] => {
   const db = getDatabase();
+  const conditions: string[] = [];
+  const params: Record<string, unknown> = {};
+
   if (date) {
-    const row = db
-      .prepare("SELECT * FROM daily_stats WHERE date = @date")
-      .get({ date }) as DailyStatsRow | undefined;
-    return row ? [row] : [];
+    conditions.push("date = @date");
+    params.date = date;
   }
+  if (provider) {
+    conditions.push("provider = @provider");
+    params.provider = provider;
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   return db
-    .prepare("SELECT * FROM daily_stats ORDER BY date DESC LIMIT 30")
-    .all() as DailyStatsRow[];
+    .prepare(`SELECT * FROM daily_stats ${where} ORDER BY date DESC LIMIT 30`)
+    .all(params) as DailyStatsRow[];
 };
 
 type SessionListRow = {
@@ -423,8 +436,10 @@ type SessionListRow = {
 
 export const getSessionList = (
   limit = 20,
+  provider?: string,
 ): SessionListRow[] => {
   const db = getDatabase();
+  const where = provider ? "WHERE provider = @provider" : "";
   return db
     .prepare(
       `
@@ -433,11 +448,12 @@ export const getSessionList = (
            COALESCE(total_cache_read_tokens, 0) as total_cache_read_tokens,
            project
     FROM sessions
+    ${where}
     ORDER BY last_timestamp DESC
     LIMIT @limit
   `,
     )
-    .all({ limit }) as SessionListRow[];
+    .all({ limit, provider: provider ?? null }) as SessionListRow[];
 };
 
 // --- Token Output Productivity queries ---
@@ -459,18 +475,25 @@ export type TokenCompositionResult = {
 
 export const getTokenComposition = (
   period: 'today' | '7d' | '30d',
+  provider?: string,
 ): TokenCompositionResult => {
   const db = getDatabase();
-  const whereClause = (() => {
-    switch (period) {
-      case 'today':
-        return "WHERE substr(datetime(timestamp, 'localtime'), 1, 10) = date('now', 'localtime')";
-      case '7d':
-        return "WHERE timestamp >= date('now', 'localtime', '-7 days')";
-      case '30d':
-        return "WHERE timestamp >= date('now', 'localtime', '-30 days')";
-    }
-  })();
+  const conditions: string[] = [];
+  switch (period) {
+    case 'today':
+      conditions.push("substr(datetime(timestamp, 'localtime'), 1, 10) = date('now', 'localtime')");
+      break;
+    case '7d':
+      conditions.push("timestamp >= date('now', 'localtime', '-7 days')");
+      break;
+    case '30d':
+      conditions.push("timestamp >= date('now', 'localtime', '-30 days')");
+      break;
+  }
+  if (provider) {
+    conditions.push("provider = @provider");
+  }
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const row = db
     .prepare(
@@ -484,7 +507,7 @@ export const getTokenComposition = (
     ${whereClause}
   `,
     )
-    .get() as TokenCompositionRow;
+    .get({ provider: provider ?? null }) as TokenCompositionRow;
 
   const total = row.cache_read + row.cache_create + row.input + row.output;
   return { ...row, total };
@@ -500,7 +523,7 @@ export type OutputProductivityResult = {
   last7DaysOutputRatio: number;
 };
 
-export const getOutputProductivity = (): OutputProductivityResult => {
+export const getOutputProductivity = (provider?: string): OutputProductivityResult => {
   const db = getDatabase();
 
   type PeriodRow = {
@@ -508,6 +531,8 @@ export const getOutputProductivity = (): OutputProductivityResult => {
     total_tokens: number;
     total_cost: number;
   };
+
+  const provFilter = provider ? " AND provider = @provider" : "";
 
   const todayRow = db
     .prepare(
@@ -517,10 +542,10 @@ export const getOutputProductivity = (): OutputProductivityResult => {
       COALESCE(SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens), 0) as total_tokens,
       COALESCE(SUM(cost_usd), 0) as total_cost
     FROM prompts
-    WHERE substr(datetime(timestamp, 'localtime'), 1, 10) = date('now', 'localtime')
+    WHERE substr(datetime(timestamp, 'localtime'), 1, 10) = date('now', 'localtime')${provFilter}
   `,
     )
-    .get() as PeriodRow;
+    .get({ provider: provider ?? null }) as PeriodRow;
 
   const weekRow = db
     .prepare(
@@ -530,10 +555,10 @@ export const getOutputProductivity = (): OutputProductivityResult => {
       COALESCE(SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens), 0) as total_tokens,
       COALESCE(SUM(cost_usd), 0) as total_cost
     FROM prompts
-    WHERE timestamp >= date('now', 'localtime', '-7 days')
+    WHERE timestamp >= date('now', 'localtime', '-7 days')${provFilter}
   `,
     )
-    .get() as PeriodRow;
+    .get({ provider: provider ?? null }) as PeriodRow;
 
   return {
     todayOutputTokens: todayRow.output_tokens,
@@ -570,6 +595,7 @@ export const getSessionTurnMetrics = (
 
   type TurnRow = {
     turn_index: number;
+    request_id: string;
     timestamp: string;
     cache_read_input_tokens: number;
     cache_creation_input_tokens: number;
@@ -579,11 +605,15 @@ export const getSessionTurnMetrics = (
     cost_usd: number;
   };
 
+  const continuationMarker =
+    "This session is being continued from a previous conversation that ran out of context";
+
   const rows = db
     .prepare(
       `
     SELECT
       ROW_NUMBER() OVER (ORDER BY timestamp ASC) as turn_index,
+      request_id,
       timestamp,
       cache_read_input_tokens,
       cache_creation_input_tokens,
@@ -593,13 +623,20 @@ export const getSessionTurnMetrics = (
       cost_usd
     FROM prompts
     WHERE session_id = @session_id
+      AND LOWER(model) NOT LIKE '%synthetic%'
+      AND (user_prompt IS NULL OR user_prompt NOT LIKE @continuation_pattern)
+      AND (total_context_tokens > 0 OR (user_prompt IS NOT NULL AND TRIM(user_prompt) != ''))
     ORDER BY timestamp ASC
   `,
     )
-    .all({ session_id: sessionId }) as TurnRow[];
+    .all({
+      session_id: sessionId,
+      continuation_pattern: `%${continuationMarker}%`,
+    }) as TurnRow[];
 
   return rows.map((r) => ({
     turnIndex: r.turn_index,
+    request_id: r.request_id,
     timestamp: r.timestamp,
     cache_read_tokens: r.cache_read_input_tokens,
     cache_create_tokens: r.cache_creation_input_tokens,

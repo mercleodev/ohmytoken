@@ -428,6 +428,7 @@ if (!window.api) {
         const cacheRead = Math.round(500_000 * i * (i + 1) / 2 * 0.1);
         turns.push({
           turnIndex: i,
+          request_id: `mock-req-${i}`,
           timestamp: new Date(Date.now() - (15 - i) * 180_000).toISOString(),
           cache_read_tokens: cacheRead,
           cache_create_tokens: Math.round(200_000 + i * 50_000),
