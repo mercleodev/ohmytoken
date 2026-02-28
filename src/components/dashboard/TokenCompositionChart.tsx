@@ -5,6 +5,10 @@ import type { TokenCompositionResult } from '../../types/electron';
 
 type Period = 'today' | '7d' | '30d';
 
+type TokenCompositionChartProps = {
+  provider?: string;
+};
+
 const SEGMENTS = [
   { key: 'cache_read', label: 'Cache Read', color: '#9CA3AF' },
   { key: 'cache_create', label: 'Cache Create', color: '#FBBF24' },
@@ -36,17 +40,17 @@ const CompositionTooltip = ({ active, payload }: CompositionTooltipProps) => {
   );
 };
 
-export const TokenCompositionChart = () => {
+export const TokenCompositionChart = ({ provider }: TokenCompositionChartProps) => {
   const [period, setPeriod] = useState<Period>('today');
   const [data, setData] = useState<TokenCompositionResult | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    window.api.getTokenComposition(period)
+    window.api.getTokenComposition(period, provider)
       .then((result) => { if (!cancelled) setData(result); })
       .catch((err) => console.error('getTokenComposition failed:', err));
     return () => { cancelled = true; };
-  }, [period]);
+  }, [period, provider]);
 
   const chartData = useMemo(() => {
     if (!data || data.total === 0) return null;

@@ -23,6 +23,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 import { ProviderTabs, buildProviderTabInfo } from './ProviderTabs';
+import type { ProviderFilter } from './ProviderTabs';
 import { UsageView } from './UsageView';
 import { SessionDetailView } from './SessionDetailView';
 import { PromptDetailView } from './PromptDetailView';
@@ -38,8 +39,10 @@ type NavState =
   | { screen: 'prompt'; scan: PromptScan; usage: UsageLogEntry | null; sessionId: string }
   | { screen: 'stats'; stats: import('../../types').ScanStats };
 
+const TAB_ORDER: ProviderFilter[] = ['all', 'claude', 'codex', 'gemini'];
+
 export const UsageDashboard = () => {
-  const [selectedProvider, setSelectedProvider] = useState<UsageProviderType>('claude');
+  const [selectedProvider, setSelectedProvider] = useState<ProviderFilter>('all');
   const [providerStatuses, setProviderStatuses] = useState<ProviderTokenStatus[]>([]);
   const [snapshots, setSnapshots] = useState<Record<string, ProviderUsageSnapshot | null>>({});
   const [loading, setLoading] = useState(false);
@@ -84,7 +87,6 @@ export const UsageDashboard = () => {
   const [navDirection, setNavDirection] = useState(1);
 
   // Provider tab animation direction
-  const PROVIDER_ORDER: UsageProviderType[] = ['claude', 'codex', 'gemini'];
   const [providerDirection, setProviderDirection] = useState(0);
 
   const loadStatuses = useCallback(async () => {
@@ -123,26 +125,27 @@ export const UsageDashboard = () => {
 
   useEffect(() => {
     loadStatuses();
-    loadUsage(selectedProvider);
-    // mount-only: selectedProvider initial value only
+    // Pre-load claude snapshot on mount (default provider for gauge)
+    loadUsage('claude');
   }, [loadStatuses, loadUsage]);
 
-  const handleProviderChange = useCallback((provider: UsageProviderType) => {
-    const prevIdx = PROVIDER_ORDER.indexOf(selectedProvider);
-    const nextIdx = PROVIDER_ORDER.indexOf(provider);
+  const handleProviderChange = useCallback((provider: ProviderFilter) => {
+    const prevIdx = TAB_ORDER.indexOf(selectedProvider);
+    const nextIdx = TAB_ORDER.indexOf(provider);
     setProviderDirection(nextIdx > prevIdx ? 1 : -1);
     setSelectedProvider(provider);
     setNav({ screen: 'main' });
-    if (!snapshots[provider]) {
+    // Load usage snapshot for specific providers
+    if (provider !== 'all' && !snapshots[provider]) {
       loadUsage(provider);
     }
   }, [selectedProvider, snapshots, loadUsage]);
 
   const handleRefresh = useCallback(async () => {
+    if (selectedProvider === 'all') return;
     setLoading(true);
     try {
       await window.api.refreshProviderUsage(selectedProvider);
-      // Snapshot is auto-updated via onProviderUsageUpdated push
     } catch (err) {
       console.error('Refresh failed:', err);
     } finally {
@@ -205,8 +208,14 @@ export const UsageDashboard = () => {
   }, [nav]);
 
   const tabInfo = buildProviderTabInfo(providerStatuses);
-  const currentSnapshot = snapshots[selectedProvider] ?? null;
-  const currentStatus = providerStatuses.find((s) => s.provider === selectedProvider) ?? null;
+  const isAllView = selectedProvider === 'all';
+  const currentSnapshot = isAllView ? null : (snapshots[selectedProvider] ?? null);
+  const currentStatus = isAllView
+    ? null
+    : (providerStatuses.find((s) => s.provider === selectedProvider) ?? null);
+
+  // Provider filter for data queries: undefined = all providers
+  const providerQueryParam = isAllView ? undefined : selectedProvider;
 
   // Animation key for main content
   const contentKey = nav.screen === 'main'
@@ -239,14 +248,16 @@ export const UsageDashboard = () => {
         {nav.screen === 'main' && (
           <div className="sub-tabs-row">
             <div className="sub-tab-header-title">Usage Overview</div>
-            <button
-              className={`dashboard-refresh-btn ${loading ? 'loading' : ''}`}
-              onClick={handleRefresh}
-              disabled={loading}
-              title="Refresh"
-            >
-              ↻
-            </button>
+            {!isAllView && (
+              <button
+                className={`dashboard-refresh-btn ${loading ? 'loading' : ''}`}
+                onClick={handleRefresh}
+                disabled={loading}
+                title="Refresh"
+              >
+                ↻
+              </button>
+            )}
             <button
               className="dashboard-settings-btn"
               onClick={() => setShowContextSettings(true)}
@@ -288,6 +299,8 @@ export const UsageDashboard = () => {
                     onSelectSession={handleSelectSession}
                     onSelectStats={handleSelectStats}
                     scanRevision={scanRevision}
+                    provider={providerQueryParam}
+                    isAllView={isAllView}
                   />
                 )}
 
