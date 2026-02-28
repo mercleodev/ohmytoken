@@ -10,6 +10,8 @@ import {
 } from "../scan/shared";
 import { useWindowFocusRefresh } from "../../hooks";
 import type { PromptScan, HistoryEntry } from "../../types";
+import { PROVIDER_COLORS, PROVIDER_ICONS } from "./ProviderTabs";
+import type { ProviderFilter } from "./ProviderTabs";
 
 type PromptItem = {
   key: string;
@@ -19,11 +21,13 @@ type PromptItem = {
   project?: string;
   model?: string;
   totalTokens?: number;
+  provider?: string;
 };
 
 type RecentSessionsProps = {
   onSelectSession: (sessionId: string) => void;
   scanRevision?: number;
+  provider?: string;
 };
 
 const INITIAL_LIMIT = 5;
@@ -79,6 +83,7 @@ const buildPromptItems = (
       timestamp: ts,
       text: e.display || "(system)",
       project: e.project || undefined,
+      provider: 'claude', // History entries are always from Claude watcher
     };
 
     // Primary: use enriched data from main process (session JSONL)
@@ -102,10 +107,36 @@ const buildPromptItems = (
     if (bestMatch) {
       item.model = bestMatch.model;
       item.totalTokens = bestMatch.context_estimate?.total_tokens ?? 0;
+      item.provider = bestMatch.provider ?? 'claude';
     }
 
     return item;
   });
+};
+
+/** Build PromptItems directly from DB scans (for non-Claude or All view) */
+const buildPromptItemsFromScans = (scans: PromptScan[]): PromptItem[] => {
+  const sorted = [...scans].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  );
+
+  // Dedup by request_id
+  const seen = new Set<string>();
+  return sorted
+    .filter((s) => {
+      if (seen.has(s.request_id)) return false;
+      seen.add(s.request_id);
+      return true;
+    })
+    .map((s) => ({
+      key: s.request_id,
+      sessionId: s.session_id,
+      timestamp: s.timestamp,
+      text: s.user_prompt || "(system)",
+      model: s.model,
+      totalTokens: s.context_estimate?.total_tokens ?? 0,
+      provider: s.provider ?? 'claude',
+    }));
 };
 
 // Deterministic muted color from string hash (same name = same color always)
@@ -183,9 +214,26 @@ const MiniCtxGauge = ({ pct, noData }: { pct: number; noData?: boolean }) => {
   );
 };
 
+/** Compact provider badge: colored icon */
+const ProviderBadge = ({ provider }: { provider: string }) => {
+  const pid = provider as ProviderFilter;
+  const color = PROVIDER_COLORS[pid] ?? '#8e8e93';
+  const icon = PROVIDER_ICONS[pid] ?? provider.charAt(0).toUpperCase();
+  return (
+    <span
+      className="provider-badge"
+      style={{ color }}
+      title={provider.charAt(0).toUpperCase() + provider.slice(1)}
+    >
+      {icon}
+    </span>
+  );
+};
+
 export const RecentSessions = ({
   onSelectSession,
   scanRevision,
+  provider,
 }: RecentSessionsProps) => {
   const [allPrompts, setAllPrompts] = useState<PromptItem[]>([]);
   const [initialized, setInitialized] = useState(false);
@@ -195,29 +243,48 @@ export const RecentSessions = ({
   const entriesRef = useRef<HistoryEntry[]>([]);
   const scansRef = useRef<PromptScan[]>([]);
 
+  // Show provider badge when viewing "all" (provider is undefined)
+  const showBadge = !provider;
+
   const refresh = useCallback(() => {
-    setAllPrompts(buildPromptItems(entriesRef.current, scansRef.current));
-  }, []);
+    if (!provider || provider === 'claude') {
+      setAllPrompts(buildPromptItems(entriesRef.current, scansRef.current));
+    } else {
+      setAllPrompts(buildPromptItemsFromScans(scansRef.current));
+    }
+  }, [provider]);
 
   const loadData = useCallback(async () => {
     try {
-      const entries = await window.api.getRecentHistory(100);
-      entriesRef.current = entries;
-
-      try {
-        const scans = await window.api.getPromptScans({ limit: 50 });
-        scansRef.current = scans;
-      } catch {
-        // Proxy not available
+      if (!provider || provider === 'claude') {
+        // Claude or All: use history entries as primary source
+        const entries = await window.api.getRecentHistory(100);
+        entriesRef.current = entries;
       }
 
-      setAllPrompts(buildPromptItems(entries, scansRef.current));
+      // Always load scans from DB (with optional provider filter)
+      try {
+        const scans = await window.api.getPromptScans({
+          limit: provider ? 50 : 100,
+          provider,
+        });
+        scansRef.current = scans;
+      } catch {
+        // DB not available
+      }
+
+      if (!provider || provider === 'claude') {
+        setAllPrompts(buildPromptItems(entriesRef.current, scansRef.current));
+      } else {
+        // Non-Claude providers: use DB scans as primary source
+        setAllPrompts(buildPromptItemsFromScans(scansRef.current));
+      }
     } catch (err) {
       console.error("Failed to load recent prompts:", err);
     } finally {
       setInitialized(true);
     }
-  }, []);
+  }, [provider]);
 
   // Load on mount + window focus
   useWindowFocusRefresh(loadData);
@@ -260,11 +327,9 @@ export const RecentSessions = ({
     return cleanup;
   }, [refresh]);
 
-  // Reload on external scan revision
+  // Reload on external scan revision or provider change
   useEffect(() => {
-    if (scanRevision && scanRevision > 0) {
-      loadData();
-    }
+    loadData();
   }, [scanRevision, loadData]);
 
   // Load more history when expanding
@@ -272,16 +337,29 @@ export const RecentSessions = ({
     setExpanded(true);
     setLoadingMore(true);
     try {
-      const entries = await window.api.getRecentHistory(500);
-      entriesRef.current = entries;
-      setAllPrompts(buildPromptItems(entries, scansRef.current));
+      if (!provider || provider === 'claude') {
+        const entries = await window.api.getRecentHistory(500);
+        entriesRef.current = entries;
+      }
+
+      const scans = await window.api.getPromptScans({
+        limit: provider ? 200 : 500,
+        provider,
+      });
+      scansRef.current = scans;
+
+      if (!provider || provider === 'claude') {
+        setAllPrompts(buildPromptItems(entriesRef.current, scansRef.current));
+      } else {
+        setAllPrompts(buildPromptItemsFromScans(scansRef.current));
+      }
       setVisibleCount(INITIAL_LIMIT + BATCH_SIZE);
     } catch (err) {
       console.error("Failed to load more prompts:", err);
     } finally {
       setLoadingMore(false);
     }
-  }, []);
+  }, [provider]);
 
   // Show more items progressively
   const handleShowMore = useCallback(() => {
@@ -346,6 +424,12 @@ export const RecentSessions = ({
                         </span>
                       </div>
                       <div className="session-card-meta">
+                        {showBadge && p.provider && (
+                          <>
+                            <ProviderBadge provider={p.provider} />
+                            <span>&middot;</span>
+                          </>
+                        )}
                         {p.project && (
                           <>
                             <span

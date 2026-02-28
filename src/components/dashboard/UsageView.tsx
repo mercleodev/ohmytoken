@@ -18,6 +18,8 @@ type UsageViewProps = {
   onSelectSession?: (sessionId: string) => void;
   onSelectStats?: (stats: ScanStats) => void;
   scanRevision?: number;
+  provider?: string;
+  isAllView?: boolean;
 };
 
 const CreditBalanceCard = ({ creditBalance }: { creditBalance: CreditBalance }) => {
@@ -81,7 +83,28 @@ const LastUpdatedLabel = ({ updatedAt }: { updatedAt: string }) => {
   );
 };
 
-export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onSelectStats, scanRevision }: UsageViewProps) => {
+export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onSelectStats, scanRevision, provider, isAllView }: UsageViewProps) => {
+  // "All" view: skip gauge/cost, show data cards with no provider filter
+  if (isAllView) {
+    return (
+      <div>
+        {/* Output Productivity (all providers) */}
+        <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
+        <McpInsightsCard scanRevision={scanRevision} />
+
+        {/* Stats */}
+        {onSelectStats && (
+          <StatsCard onSelectStats={onSelectStats} scanRevision={scanRevision} />
+        )}
+
+        {/* Recent Sessions (all providers) */}
+        {onSelectSession && (
+          <RecentSessions onSelectSession={onSelectSession} scanRevision={scanRevision} provider={provider} />
+        )}
+      </div>
+    );
+  }
+
   // Show SetupGuide when token is missing or expired
   // Note: skip `installed` check — packaged apps cannot reliably resolve CLI PATH,
   // and having a valid token already implies the CLI was installed.
@@ -149,7 +172,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
         </div>
 
         {/* Output Productivity */}
-        <OutputProductivityCard scanRevision={scanRevision} />
+        <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
         <McpInsightsCard scanRevision={scanRevision} />
 
         {/* Stats */}
@@ -159,7 +182,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
 
         {/* Recent Sessions (CT Scan) */}
         {onSelectSession && (
-          <RecentSessions onSelectSession={onSelectSession} scanRevision={scanRevision} />
+          <RecentSessions onSelectSession={onSelectSession} scanRevision={scanRevision} provider={provider} />
         )}
       </div>
     );
@@ -188,7 +211,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
       <CostCard cost={snapshot.cost} />
 
       {/* Output Productivity */}
-      <OutputProductivityCard scanRevision={scanRevision} />
+      <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
       <McpInsightsCard scanRevision={scanRevision} />
 
       {/* Stats */}
@@ -198,7 +221,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
 
       {/* Recent Sessions */}
       {onSelectSession && (
-        <RecentSessions onSelectSession={onSelectSession} scanRevision={scanRevision} />
+        <RecentSessions onSelectSession={onSelectSession} scanRevision={scanRevision} provider={provider} />
       )}
     </div>
   );

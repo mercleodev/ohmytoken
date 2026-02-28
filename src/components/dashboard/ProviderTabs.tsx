@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
 import { UsageProviderType, ProviderTokenStatus } from '../../types';
 
+export type ProviderFilter = UsageProviderType | 'all';
+
 type ProviderTabInfo = {
-  id: UsageProviderType;
+  id: ProviderFilter;
   name: string;
   icon: string;
   connected: boolean;
@@ -10,14 +12,22 @@ type ProviderTabInfo = {
 
 type ProviderTabsProps = {
   providers: ProviderTabInfo[];
-  selected: UsageProviderType;
-  onSelect: (provider: UsageProviderType) => void;
+  selected: ProviderFilter;
+  onSelect: (provider: ProviderFilter) => void;
 };
 
-const PROVIDER_COLORS: Record<UsageProviderType, string> = {
+export const PROVIDER_COLORS: Record<ProviderFilter, string> = {
+  all: '#8e8e93',
   claude: '#d97757',
   codex: '#10a37f',
   gemini: '#4285f4',
+};
+
+export const PROVIDER_ICONS: Record<ProviderFilter, string> = {
+  all: '⊕',
+  claude: '✺',
+  codex: '◎',
+  gemini: '◆',
 };
 
 export const ProviderTabs = ({ providers, selected, onSelect }: ProviderTabsProps) => {
@@ -39,7 +49,9 @@ export const ProviderTabs = ({ providers, selected, onSelect }: ProviderTabsProp
           )}
           <span className="provider-tab-icon">{p.icon}</span>
           <span className="provider-tab-name">{p.name}</span>
-          <span className={`provider-tab-dot ${p.connected ? '' : 'disconnected'}`} />
+          {p.id !== 'all' && (
+            <span className={`provider-tab-dot ${p.connected ? '' : 'disconnected'}`} />
+          )}
         </button>
       ))}
     </div>
@@ -47,21 +59,21 @@ export const ProviderTabs = ({ providers, selected, onSelect }: ProviderTabsProp
 };
 
 export const buildProviderTabInfo = (statuses: ProviderTokenStatus[]): ProviderTabInfo[] => {
-  const ICONS: Record<UsageProviderType, string> = {
-    claude: '✺',
-    codex: '◎',
-    gemini: '◆',
-  };
-
   const allProviders: UsageProviderType[] = ['claude', 'codex', 'gemini'];
 
-  return allProviders.map((id) => {
+  const providerTabs: ProviderTabInfo[] = allProviders.map((id) => {
     const status = statuses.find((s) => s.provider === id);
     return {
       id,
       name: status?.displayName ?? id.charAt(0).toUpperCase() + id.slice(1),
-      icon: ICONS[id],
+      icon: PROVIDER_ICONS[id],
       connected: status ? status.hasToken && !status.tokenExpired : false,
     };
   });
+
+  // Prepend the "All" tab
+  return [
+    { id: 'all' as ProviderFilter, name: 'All', icon: PROVIDER_ICONS.all, connected: true },
+    ...providerTabs,
+  ];
 };

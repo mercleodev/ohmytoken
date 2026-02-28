@@ -667,6 +667,13 @@
   letter-spacing: 0.3px;
 }
 
+/* Provider badge (compact icon in session meta row) */
+.provider-badge {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
 /* Mini ctx donut gauge */
 .mini-ctx-gauge {
   position: relative;

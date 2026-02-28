@@ -5,21 +5,22 @@ import type { OutputProductivityResult } from '../../types/electron';
 
 type OutputProductivityCardProps = {
   scanRevision?: number;
+  provider?: string;
 };
 
 const OUTPUT_BAR_MIN_WIDTH_PCT = 2;
 
-export const OutputProductivityCard = ({ scanRevision }: OutputProductivityCardProps) => {
+export const OutputProductivityCard = ({ scanRevision, provider }: OutputProductivityCardProps) => {
   const [expanded, setExpanded] = useState(true);
   const [data, setData] = useState<OutputProductivityResult | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    window.api.getOutputProductivity()
+    window.api.getOutputProductivity(provider)
       .then((result) => { if (!cancelled) setData(result); })
       .catch((err) => console.error('getOutputProductivity failed:', err));
     return () => { cancelled = true; };
-  }, [scanRevision]);
+  }, [scanRevision, provider]);
 
   if (!data || data.todayTotalTokens === 0) return null;
 

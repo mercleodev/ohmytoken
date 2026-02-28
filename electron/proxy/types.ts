@@ -131,6 +131,9 @@ export type PromptScan = {
   assistant_messages_count: number;
   tool_result_count: number;
 
+  /** Provider identifier (e.g. "claude", "codex", "gemini"). Omitted = "claude". */
+  provider?: string;
+
   /** Evidence scoring report (attached asynchronously after scan completion) */
   evidence_report?: import('../evidence/types').EvidenceReport;
 };

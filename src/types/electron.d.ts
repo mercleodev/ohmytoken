@@ -74,6 +74,7 @@ export type PromptScan = {
   user_messages_count: number;
   assistant_messages_count: number;
   tool_result_count: number;
+  provider?: string;
   evidence_report?: EvidenceReport;
 };
 
