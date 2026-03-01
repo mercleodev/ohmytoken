@@ -50,10 +50,12 @@ export const calculateCodexCost = (
   const outputRate = isO4Mini ? 1.6 : 8;
   const cachedRate = isO4Mini ? 0.1 : 0.5;
 
-  const nonCachedInput = Math.max(0, inputTokens - cachedInputTokens);
+  // Clamp cached tokens: upstream delta can be negative after Codex context compaction
+  const safeCached = Math.max(0, cachedInputTokens);
+  const nonCachedInput = Math.max(0, inputTokens - safeCached);
   return (
     (nonCachedInput / 1_000_000) * inputRate +
     (outputTokens / 1_000_000) * outputRate +
-    (cachedInputTokens / 1_000_000) * cachedRate
+    (safeCached / 1_000_000) * cachedRate
   );
 };
