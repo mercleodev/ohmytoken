@@ -67,8 +67,8 @@ const api = {
   ): Promise<{ scan: PromptScan; usage: UsageLogEntry | null } | null> =>
     ipcRenderer.invoke("get-prompt-scan-detail", requestId),
 
-  getScanStats: (): Promise<ScanStats | null> =>
-    ipcRenderer.invoke("get-scan-stats"),
+  getScanStats: (provider?: string): Promise<ScanStats | null> =>
+    ipcRenderer.invoke("get-scan-stats", provider),
 
   readFileContent: (
     filePath: string,

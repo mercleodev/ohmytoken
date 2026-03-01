@@ -7,6 +7,7 @@ import { TokenCompositionChart } from './TokenCompositionChart';
 type StatsDetailViewProps = {
   stats: ScanStats;
   onBack: () => void;
+  provider?: string;
 };
 
 const formatShortDate = (period: string): string => {
@@ -81,7 +82,7 @@ const SummaryCard = ({ label, value, sub }: { label: string; value: string; sub?
   </div>
 );
 
-export const StatsDetailView = ({ stats, onBack }: StatsDetailViewProps) => {
+export const StatsDetailView = ({ stats, onBack, provider }: StatsDetailViewProps) => {
   const dailyData = useMemo(() => fillDailyData(stats.cost_by_period), [stats.cost_by_period]);
   const maxCost = useMemo(() => Math.max(...dailyData.map((d) => d.actual_cost), 0.01), [dailyData]);
   const todayStr = toLocalDateKey(new Date());
@@ -155,7 +156,7 @@ export const StatsDetailView = ({ stats, onBack }: StatsDetailViewProps) => {
       </div>
 
       {/* Token Composition */}
-      <TokenCompositionChart />
+      <TokenCompositionChart provider={provider} />
 
       {/* Top Tools */}
       {Object.keys(stats.tool_frequency).length > 0 && (

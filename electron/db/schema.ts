@@ -234,6 +234,22 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 6,
+    up: (db) => {
+      // Backfill tool_result_count from tool_summary JSON for existing prompts
+      db.exec(`
+        UPDATE prompts
+        SET tool_result_count = (
+          SELECT COALESCE(SUM(value), 0)
+          FROM json_each(prompts.tool_summary)
+        )
+        WHERE tool_result_count = 0
+          AND tool_summary IS NOT NULL
+          AND tool_summary != '{}'
+      `);
+    },
+  },
 ];
 
 export const runMigrations = (db: Database.Database): void => {
