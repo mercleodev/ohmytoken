@@ -217,7 +217,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
 
       {/* Stats */}
       {onSelectStats && (
-        <StatsCard onSelectStats={onSelectStats} scanRevision={scanRevision} />
+        <StatsCard onSelectStats={onSelectStats} scanRevision={scanRevision} provider={provider} />
       )}
 
       {/* Recent Sessions */}
