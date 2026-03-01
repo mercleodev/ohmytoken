@@ -302,8 +302,8 @@ export const RecentSessions = ({
           provider,
         });
         scansRef.current = scans;
-      } catch {
-        // DB not available
+      } catch (dbErr) {
+        console.error("[RecentSessions] DB scan load failed:", dbErr);
       }
 
       if (provider === 'claude') {
@@ -330,6 +330,16 @@ export const RecentSessions = ({
     const unsubscribe = window.api.onNewHistoryEntry((entry) => {
       entriesRef.current = [entry, ...entriesRef.current].slice(0, 500);
       refresh();
+
+      // For non-Claude tabs (All, Codex, etc.): scansRef isn't updated by
+      // onNewHistoryEntry, but importSinglePrompt has already written to DB
+      // before this IPC event arrives. Reload from DB immediately.
+      if (provider !== 'claude') {
+        loadData();
+        return;
+      }
+
+      // Claude tab: schedule retries for token enrichment.
       // Clear any pending retries from previous entries
       timers.forEach(clearTimeout);
       timers.length = 0;
@@ -348,7 +358,7 @@ export const RecentSessions = ({
       unsubscribe();
       timers.forEach(clearTimeout);
     };
-  }, [refresh, loadData]);
+  }, [refresh, loadData, provider]);
 
   // Real-time: new scan events
   useEffect(() => {

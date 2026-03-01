@@ -155,6 +155,14 @@ export const readCodexAuth = (): CodexAuth | null => {
     const expiresAtCandidates = [
       auth.expires_at,
       tokenBundle.expires_at,
+      // Prefer access_token exp (long-lived, used for API calls)
+      // over id_token exp (short-lived, ~1h, identity only).
+      extractJwtExp(
+        (typeof auth.access_token === "string" ? auth.access_token : null) ??
+          (typeof tokenBundle.access_token === "string"
+            ? tokenBundle.access_token
+            : null),
+      ),
       extractJwtExp(
         (typeof auth.id_token === "string" ? auth.id_token : null) ??
           (typeof tokenBundle.id_token === "string"
