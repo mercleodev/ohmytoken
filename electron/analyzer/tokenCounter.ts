@@ -2,8 +2,11 @@
  * Token Counter Module
  *
  * Module for counting tokens in text.
- * Designed with a plugin architecture for easy algorithm swapping.
+ * Uses tiktoken (cl100k_base) for accurate BPE token counting.
+ * Falls back to heuristic approximation if tiktoken fails to load.
  */
+import { encodingForModel } from 'js-tiktoken';
+import type { Tiktoken } from 'js-tiktoken';
 
 // Token counter plugin type
 export type TokenCounterPlugin = {
@@ -12,47 +15,56 @@ export type TokenCounterPlugin = {
   countAsync?: (text: string) => Promise<number>;
 };
 
-// Simple token counter (approximation - 4 chars ≈ 1 token)
+// Lazy-initialized tiktoken encoder
+let _encoder: Tiktoken | null = null;
+let _encoderFailed = false;
+
+const getEncoder = (): Tiktoken | null => {
+  if (_encoder) return _encoder;
+  if (_encoderFailed) return null;
+  try {
+    _encoder = encodingForModel('gpt-4');
+    return _encoder;
+  } catch (err) {
+    _encoderFailed = true;
+    console.warn('[TokenCounter] tiktoken init failed, using heuristic fallback:', err);
+    return null;
+  }
+};
+
+// Heuristic fallback (word-based approximation)
+const heuristicCount = (text: string): number => {
+  const words = text.split(/\s+/).filter(w => w.length > 0);
+  const specialChars = (text.match(/[{}()[\]<>:;,."'`~!@#$%^&*+=|\\/?-]/g) || []).length;
+  const koreanChars = (text.match(/[\uAC00-\uD7A3]/g) || []).length;
+  const codeBlocks = (text.match(/```[\s\S]*?```/g) || []).length;
+  let tokens = 0;
+  tokens += words.length * 1.3;
+  tokens += specialChars * 0.5;
+  tokens += koreanChars * 0.4;
+  tokens += codeBlocks * 10;
+  return Math.ceil(tokens);
+};
+
+// Simple token counter (character-based approximation)
 export const simpleTokenCounter: TokenCounterPlugin = {
   name: 'simple',
   count: (text: string): number => {
-    // For Claude, roughly 4 chars = 1 token (English baseline)
-    // Korean uses more tokens, so estimate 2.5 chars = 1 token
     const koreanChars = (text.match(/[\uAC00-\uD7A3]/g) || []).length;
     const otherChars = text.length - koreanChars;
-
     return Math.ceil(koreanChars / 2.5 + otherChars / 4);
   },
 };
 
-// Precise token counter (cl100k_base-based - GPT-4/Claude compatible)
-// Use tiktoken-node or a similar library for actual implementation
+// Precise token counter (tiktoken cl100k_base with heuristic fallback)
 export const preciseTokenCounter: TokenCounterPlugin = {
   name: 'precise',
   count: (text: string): number => {
-    // TODO(#124): Integrate tiktoken library
-    // Currently using improved approximation — accurate enough for v0.1.0
-
-    // 1. Word count based on whitespace/newlines
-    const words = text.split(/\s+/).filter(w => w.length > 0);
-
-    // 2. Special character count (usually separate tokens)
-    const specialChars = (text.match(/[{}()[\]<>:;,."'`~!@#$%^&*+=|\\/?-]/g) || []).length;
-
-    // 3. Korean character handling
-    const koreanChars = (text.match(/[\uAC00-\uD7A3]/g) || []).length;
-
-    // 4. Detect code blocks (code requires more tokens)
-    const codeBlocks = (text.match(/```[\s\S]*?```/g) || []).length;
-
-    // Approximate calculation
-    let tokens = 0;
-    tokens += words.length * 1.3; // ~1.3 tokens per word on average
-    tokens += specialChars * 0.5; // Special characters
-    tokens += koreanChars * 0.4;  // Extra tokens for Korean characters
-    tokens += codeBlocks * 10;    // Code block overhead
-
-    return Math.ceil(tokens);
+    const enc = getEncoder();
+    if (enc) {
+      return enc.encode(text).length;
+    }
+    return heuristicCount(text);
   },
 };
 
