@@ -28,6 +28,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "better-sqlite3": "^12.6.2",
     "framer-motion": "^12.33.0",
+    "js-tiktoken": "^1.0.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-syntax-highlighter": "^16.1.0",
@@ -62,10 +63,15 @@
     ],
     "mac": {
       "category": "public.app-category.utilities",
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "extraResources": [],
     "asar": true,
-    "asarUnpack": ["node_modules/better-sqlite3/**"]
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**"
+    ]
   }
 }
