@@ -18,11 +18,11 @@
     "test:e2e:headed": "npm run build:electron && npx playwright test --headed",
     "postinstall": "electron-builder install-app-deps"
   },
-  "author": "",
+  "author": "mercleodev",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ohmytoken/ohmytoken.git"
+    "url": "https://github.com/mercleodev/ohmytoken.git"
   },
   "dependencies": {
     "@types/react-syntax-highlighter": "^15.5.13",
