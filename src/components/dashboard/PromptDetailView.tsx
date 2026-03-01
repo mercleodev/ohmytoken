@@ -68,6 +68,12 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
   const hasOutputTokens = (usage?.response.output_tokens ?? 0) > 0;
   const isPromptCompleted = hasAssistantResponse || hasOutputTokens;
 
+  const hasDetailedBreakdown = (scan.context_estimate?.system_tokens ?? 0) > 0
+    || (scan.context_estimate?.messages_tokens ?? 0) > 0;
+  const hasInjectedFiles = injectedFiles.length > 0;
+  const hasToolCalls = toolCalls.length > 0;
+  const isLimitedProvider = !hasDetailedBreakdown && !hasInjectedFiles && !hasToolCalls;
+
   const toolNameOptions = useMemo(() => {
     const freq: Record<string, number> = {};
     for (const tc of toolCalls) {
@@ -154,6 +160,13 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
       <ContextGauge scan={scan} usage={usage} cacheHitPct={cacheHitPct} />
       <ContextTreemap scan={scan} onFileClick={(path) => setPreviewFile(path)} />
 
+      {/* Provider data limitation notice */}
+      {isLimitedProvider && (
+        <div className="provider-data-notice">
+          Token breakdown and file/action details are not available for this provider.
+        </div>
+      )}
+
       {/* Quick Stats */}
       <div className="prompt-detail-stats">
         <StatPill label="Turns" value={String(scan.conversation_turns ?? 0)} />
@@ -165,27 +178,29 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
 
       <JourneySummary scan={scan} usage={usage} cacheHitPct={cacheHitPct} onFileClick={setPreviewFile} />
 
-      {/* Injected Evidence */}
-      <Section
-        title={`Injected Evidence (C ${injectedEvidence.confirmed.length} · L ${injectedEvidence.likely.length} · U ${injectedEvidence.unverified.length})`}
-        id="injected-evidence"
-        expanded={expandedSections}
-        onToggle={toggle}
-        headerExtra={
-          <button className="evidence-settings-btn" onClick={(e) => { e.stopPropagation(); setShowEvidenceSettings(true); }} aria-label="Evidence scoring settings">
-            &#x2699;
-          </button>
-        }
-      >
-        <div className="injected-evidence-summary">
-          <span className="injected-evidence-badge confirmed">Confirmed {injectedEvidence.confirmed.length}</span>
-          <span className="injected-evidence-badge likely">Likely {injectedEvidence.likely.length}</span>
-          <span className="injected-evidence-badge unverified">Unverified {injectedEvidence.unverified.length}</span>
-        </div>
-        <EvidenceGroup title="Confirmed" status="confirmed" items={injectedEvidence.confirmed} onOpenFile={setPreviewFile} />
-        <EvidenceGroup title="Likely" status="likely" items={injectedEvidence.likely} onOpenFile={setPreviewFile} />
-        <EvidenceGroup title="Unverified" status="unverified" items={injectedEvidence.unverified} onOpenFile={setPreviewFile} />
-      </Section>
+      {/* Injected Evidence — hidden when no injected files (e.g. Codex) */}
+      {hasInjectedFiles && (
+        <Section
+          title={`Injected Evidence (C ${injectedEvidence.confirmed.length} · L ${injectedEvidence.likely.length} · U ${injectedEvidence.unverified.length})`}
+          id="injected-evidence"
+          expanded={expandedSections}
+          onToggle={toggle}
+          headerExtra={
+            <button className="evidence-settings-btn" onClick={(e) => { e.stopPropagation(); setShowEvidenceSettings(true); }} aria-label="Evidence scoring settings">
+              &#x2699;
+            </button>
+          }
+        >
+          <div className="injected-evidence-summary">
+            <span className="injected-evidence-badge confirmed">Confirmed {injectedEvidence.confirmed.length}</span>
+            <span className="injected-evidence-badge likely">Likely {injectedEvidence.likely.length}</span>
+            <span className="injected-evidence-badge unverified">Unverified {injectedEvidence.unverified.length}</span>
+          </div>
+          <EvidenceGroup title="Confirmed" status="confirmed" items={injectedEvidence.confirmed} onOpenFile={setPreviewFile} />
+          <EvidenceGroup title="Likely" status="likely" items={injectedEvidence.likely} onOpenFile={setPreviewFile} />
+          <EvidenceGroup title="Unverified" status="unverified" items={injectedEvidence.unverified} onOpenFile={setPreviewFile} />
+        </Section>
+      )}
 
       <AnimatePresence>
         {showEvidenceSettings && <EvidenceSettings onClose={() => setShowEvidenceSettings(false)} onSave={handleRescore} />}

@@ -605,8 +605,7 @@ const setupIPC = (): void => {
           const dbMatch = dbReader.findPromptByTimestamp(sessionId, timestamp);
           if (
             dbMatch &&
-            dbMatch.context_estimate.total_tokens > 0 &&
-            dbMatch.context_estimate.system_tokens > 0
+            dbMatch.context_estimate.total_tokens > 0
           ) {
             const dbDetail = dbReader.getPromptDetail(dbMatch.request_id);
             if (dbDetail) return dbDetail;
