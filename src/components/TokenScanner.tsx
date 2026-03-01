@@ -1,25 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import './TokenScanner.css';
-
-// Token breakdown type
-type TokenBreakdown = {
-  claudeMd: { global: number; project: number; total: number };
-  userInput: number;
-  cacheCreation: number;
-  cacheRead: number;
-  output: number;
-  total: number;
-};
-
-// Recent request type
-type RecentRequest = {
-  timestamp: string;
-  inputTokens: number;
-  outputTokens: number;
-  cacheCreation: number;
-  cacheRead: number;
-  total: number;
-};
+import type { ScanTokensResult } from '../types';
 
 type TokenScannerProps = {
   onBack: () => void;
@@ -27,8 +8,8 @@ type TokenScannerProps = {
 
 export const TokenScanner = ({ onBack }: TokenScannerProps) => {
   const [isScanning, setIsScanning] = useState(false);
-  const [breakdown, setBreakdown] = useState<TokenBreakdown | null>(null);
-  const [recentRequests, setRecentRequests] = useState<RecentRequest[]>([]);
+  const [breakdown, setBreakdown] = useState<ScanTokensResult['breakdown'] | null>(null);
+  const [recentRequests, setRecentRequests] = useState<NonNullable<ScanTokensResult['recentRequests']>>([]);
   const [scanProgress, setScanProgress] = useState(0);
 
   // Start scan

@@ -126,8 +126,8 @@ export const SessionDetailView = ({
               items = upsertMessage(
                 items,
                 {
-                  scan: detail.scan as unknown as PromptScan,
-                  usage: (detail.usage as unknown as UsageLogEntry) ?? null,
+                  scan: detail.scan,
+                  usage: detail.usage ?? null,
                 },
                 false,
               );
@@ -164,7 +164,7 @@ export const SessionDetailView = ({
           entry.timestamp,
         );
         if (detail && detail.scan) {
-          const scan = detail.scan as unknown as PromptScan;
+          const scan = detail.scan;
           if (isDisplayablePrompt(scan)) {
             setHasScanData(true);
             setMessages((prev) => {
@@ -172,7 +172,7 @@ export const SessionDetailView = ({
                 prev,
                 {
                   scan,
-                  usage: (detail.usage as unknown as UsageLogEntry) ?? null,
+                  usage: detail.usage ?? null,
                 },
                 true,
               );
@@ -214,15 +214,14 @@ export const SessionDetailView = ({
   useEffect(() => {
     const cleanup = window.api.onNewPromptScan(({ scan, usage }) => {
       if (scan.session_id !== sessionId) return;
-      const scanItem = scan as unknown as PromptScan;
-      if (!isDisplayablePrompt(scanItem)) return;
+      if (!isDisplayablePrompt(scan)) return;
       setHasScanData(true);
       setMessages((prev) => {
         return upsertMessage(
           prev,
           {
-            scan: scanItem,
-            usage: (usage as unknown as UsageLogEntry) ?? null,
+            scan,
+            usage: usage ?? null,
           },
           true,
         );
