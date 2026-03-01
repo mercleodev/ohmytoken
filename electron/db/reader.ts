@@ -270,8 +270,10 @@ export const getPromptDetail = (
 export const getSessionPrompts = (sessionId: string): PromptScan[] =>
   getPrompts({ session_id: sessionId, limit: 500 });
 
-export const getScanStats = (): ScanStats => {
+export const getScanStats = (provider?: string): ScanStats => {
   const db = getDatabase();
+  const providerFilter = provider ? "AND provider = ?" : "";
+  const providerParams = provider ? [provider] : [];
 
   // Cost by period (last 30 days, grouped by local date)
   const costByPeriod = db
@@ -280,12 +282,12 @@ export const getScanStats = (): ScanStats => {
     SELECT substr(datetime(timestamp, 'localtime'), 1, 10) as period,
            SUM(cost_usd) as cost_usd, COUNT(*) as request_count
     FROM prompts
-    WHERE timestamp >= date('now', 'localtime', '-30 days')
+    WHERE timestamp >= date('now', 'localtime', '-30 days') ${providerFilter}
     GROUP BY substr(datetime(timestamp, 'localtime'), 1, 10)
     ORDER BY period
   `,
     )
-    .all() as Array<{
+    .all(...providerParams) as Array<{
     period: string;
     cost_usd: number;
     request_count: number;
@@ -297,37 +299,64 @@ export const getScanStats = (): ScanStats => {
       `
     SELECT timestamp, model, cost_usd
     FROM prompts
+    WHERE 1=1 ${providerFilter}
     ORDER BY timestamp DESC
     LIMIT 500
   `,
     )
-    .all() as Array<{ timestamp: string; model: string; cost_usd: number }>;
+    .all(...providerParams) as Array<{ timestamp: string; model: string; cost_usd: number }>;
 
-  // Tool frequency
-  const toolRows = db
-    .prepare(
-      `
+  // Tool frequency (join with prompts for provider filter)
+  const toolRows = provider
+    ? (db
+        .prepare(
+          `
+    SELECT tc.name, COUNT(*) as cnt
+    FROM tool_calls tc
+    JOIN prompts p ON tc.prompt_id = p.id
+    WHERE p.provider = ?
+    GROUP BY tc.name
+    ORDER BY cnt DESC
+  `,
+        )
+        .all(provider) as Array<{ name: string; cnt: number }>)
+    : (db
+        .prepare(
+          `
     SELECT name, COUNT(*) as cnt
     FROM tool_calls
     GROUP BY name
     ORDER BY cnt DESC
   `,
-    )
-    .all() as Array<{ name: string; cnt: number }>;
+        )
+        .all() as Array<{ name: string; cnt: number }>);
   const toolFrequency: Record<string, number> = {};
   for (const t of toolRows) toolFrequency[t.name] = t.cnt;
 
-  // Injected file tokens
-  const injectedRows = db
-    .prepare(
-      `
+  // Injected file tokens (join with prompts for provider filter)
+  const injectedRows = provider
+    ? (db
+        .prepare(
+          `
+    SELECT inf.path, SUM(inf.estimated_tokens) as total_tokens
+    FROM injected_files inf
+    JOIN prompts p ON inf.prompt_id = p.id
+    WHERE p.provider = ?
+    GROUP BY inf.path
+    ORDER BY total_tokens DESC
+  `,
+        )
+        .all(provider) as Array<{ path: string; total_tokens: number }>)
+    : (db
+        .prepare(
+          `
     SELECT path, SUM(estimated_tokens) as total_tokens
     FROM injected_files
     GROUP BY path
     ORDER BY total_tokens DESC
   `,
-    )
-    .all() as Array<{ path: string; total_tokens: number }>;
+        )
+        .all() as Array<{ path: string; total_tokens: number }>);
   const totalInjected = injectedRows.reduce((s, r) => s + r.total_tokens, 0);
   const injectedFileTokens = injectedRows.map((r) => ({
     path: r.path,
@@ -345,11 +374,12 @@ export const getScanStats = (): ScanStats => {
         ELSE 0
       END as hit_rate
     FROM prompts
+    WHERE 1=1 ${providerFilter}
     ORDER BY timestamp DESC
     LIMIT 500
   `,
     )
-    .all() as Array<{ timestamp: string; hit_rate: number }>;
+    .all(...providerParams) as Array<{ timestamp: string; hit_rate: number }>;
 
   // Summary
   const summaryRow = db
@@ -364,9 +394,10 @@ export const getScanStats = (): ScanStats => {
         ELSE 0
       END as cache_hit_rate
     FROM prompts
+    WHERE 1=1 ${providerFilter}
   `,
     )
-    .get() as
+    .get(...providerParams) as
     | {
         total_requests: number;
         total_cost_usd: number;

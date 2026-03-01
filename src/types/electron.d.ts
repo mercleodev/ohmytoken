@@ -285,7 +285,7 @@ export type ElectronApi = {
   getPromptScanDetail: (
     requestId: string,
   ) => Promise<{ scan: PromptScan; usage: UsageLogEntry | null } | null>;
-  getScanStats: () => Promise<ScanStats | null>;
+  getScanStats: (provider?: string) => Promise<ScanStats | null>;
   readFileContent: (
     filePath: string,
   ) => Promise<{ content: string; error?: string }>;

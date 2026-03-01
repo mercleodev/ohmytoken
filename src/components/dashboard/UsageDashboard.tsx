@@ -309,6 +309,7 @@ export const UsageDashboard = () => {
                   <StatsDetailView
                     stats={nav.stats}
                     onBack={handleBackFromStats}
+                    provider={providerQueryParam}
                   />
                 )}
 

@@ -1128,7 +1128,13 @@ const setupIPC = (): void => {
       },
     ) => {
       try {
-        return dbReader.getPrompts(options);
+        const results = dbReader.getPrompts(options);
+        const providers = new Map<string, number>();
+        for (const r of results) {
+          providers.set(r.provider ?? 'unknown', (providers.get(r.provider ?? 'unknown') ?? 0) + 1);
+        }
+        console.log(`[IPC] get-prompt-scans provider=${options?.provider ?? 'ALL'} → ${results.length} results`, Object.fromEntries(providers));
+        return results;
       } catch (error) {
         console.error("get-prompt-scans error:", error);
         return [];
@@ -1224,9 +1230,9 @@ const setupIPC = (): void => {
   });
 
   // Aggregate statistics (DB query — replaced 120-line JSONL scan)
-  ipcMain.handle("get-scan-stats", async () => {
+  ipcMain.handle("get-scan-stats", async (_event, provider?: string) => {
     try {
-      return dbReader.getScanStats();
+      return dbReader.getScanStats(provider);
     } catch (error) {
       console.error("get-scan-stats error:", error);
       return null;

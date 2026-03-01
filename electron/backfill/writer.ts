@@ -50,6 +50,9 @@ export const batchInsertMessages = (
                 msg.totalContextTokens ??
                 (msg.tokens.input + msg.tokens.cacheRead + msg.tokens.cacheWrite),
               tool_summary: msg.toolSummary,
+              tool_result_count: msg.toolSummary
+                ? Object.values(msg.toolSummary).reduce((a, b) => a + b, 0)
+                : 0,
             },
           },
           { skipAggregates: true },

@@ -6,6 +6,7 @@ import { formatCost, toLocalDateKey } from '../../utils/format';
 type StatsCardProps = {
   onSelectStats: (stats: ScanStats) => void;
   scanRevision?: number;
+  provider?: string;
 };
 
 // Build last 7 days of data (fill empty days with minimum visible bar)
@@ -32,17 +33,17 @@ export const buildLast7Days = (costByPeriod: ScanStats['cost_by_period']): Array
   }));
 };
 
-export const StatsCard = ({ onSelectStats, scanRevision }: StatsCardProps) => {
+export const StatsCard = ({ onSelectStats, scanRevision, provider }: StatsCardProps) => {
   const [stats, setStats] = useState<ScanStats | null>(null);
 
   const loadStats = useCallback(async () => {
     try {
-      const data = await window.api.getScanStats();
+      const data = await window.api.getScanStats(provider);
       if (data) setStats(data);
     } catch {
       // Stats loading is best-effort
     }
-  }, []);
+  }, [provider]);
 
   useEffect(() => {
     loadStats();
