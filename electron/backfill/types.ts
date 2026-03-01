@@ -20,6 +20,9 @@ export type BackfillMessage = {
     cacheRead: number;
     cacheWrite: number;
   };
+  /** Explicit context window fill (e.g. from last_token_usage.input_tokens).
+   *  When set, writer uses this instead of input+cacheRead+cacheWrite. */
+  totalContextTokens?: number;
   costUsd: number;
   userPrompt?: string; // 500 char limit
   toolSummary?: Record<string, number>;
