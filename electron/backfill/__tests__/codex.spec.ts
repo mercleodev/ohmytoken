@@ -429,6 +429,52 @@ describe("parseCodexSessionFile", () => {
     expect(results).toHaveLength(0);
   });
 
+  it("clamps negative deltas when Codex resets cumulative counters after compaction", () => {
+    // Simulates Codex context compaction: turn 2's cumulative cached_input_tokens
+    // is LOWER than turn 1's, which would produce a negative delta without clamping.
+    const filePath = writeJsonl("compaction-reset.jsonl", [
+      makeSessionMeta(),
+      makeUserResponseItem("Turn 1"),
+      makeUserMessage("Turn 1"),
+      makeTaskStarted(),
+      // Turn 1: cumulative totals
+      makeTokenCount({
+        input_tokens: 180000,
+        cached_input_tokens: 174000,
+        output_tokens: 3000,
+        reasoning_output_tokens: 1000,
+      }),
+      makeUserResponseItem("Turn 2"),
+      makeUserMessage("Turn 2"),
+      makeTaskStarted(),
+      // Turn 2: Codex compacted context — cached_input_tokens DECREASED
+      makeTokenCount({
+        input_tokens: 200000,
+        cached_input_tokens: 100000, // dropped from 174000!
+        output_tokens: 5000,
+        reasoning_output_tokens: 2000,
+      }),
+    ]);
+
+    const results = parseCodexSessionFile(filePath, "sess-compaction", "/test/project");
+
+    expect(results).toHaveLength(2);
+
+    // Turn 1: normal values
+    expect(results[0].tokens.cacheRead).toBe(174000);
+    expect(results[0].tokens.input).toBe(6000); // 180000 - 174000
+
+    // Turn 2: deltaCached would be 100000 - 174000 = -74000 → clamped to 0
+    expect(results[1].tokens.cacheRead).toBe(0);
+    // deltaInput = 200000 - 180000 = 20000
+    // nonCachedInput = max(0, 20000 - 0) = 20000
+    expect(results[1].tokens.input).toBe(20000);
+    // deltaOutput = 5000 - 3000 = 2000, deltaReasoning = 2000 - 1000 = 1000
+    expect(results[1].tokens.output).toBe(3000);
+    // Cost must be non-negative
+    expect(results[1].costUsd).toBeGreaterThanOrEqual(0);
+  });
+
   it("returns empty array for session with no user_message events", () => {
     const filePath = writeJsonl("no-turns.jsonl", [
       makeSessionMeta(),
