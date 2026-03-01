@@ -139,6 +139,11 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
     [cumulative],
   );
 
+  const hasCacheData = useMemo(
+    () => cumulative.some((r) => r.cacheReadThisTurn > 0),
+    [cumulative],
+  );
+
   if (cumulative.length < MIN_TURNS_TO_SHOW) return null;
 
   const clickable = Boolean(onTurnClick);
@@ -146,7 +151,9 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
   return (
     <div className="cache-growth-section">
       <div className="cache-growth-label">
-        Cache Read grows O(N²) — Output stays linear
+        {hasCacheData
+          ? 'Cache Read grows O(N²) — Output stays linear'
+          : 'Output Token Growth'}
         {compactedTurns.length > 0 && (
           <span className="cache-growth-compacted-count">
             {compactedTurns.length} compacted

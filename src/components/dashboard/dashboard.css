@@ -1025,6 +1025,17 @@
   color: #9b9c9e;
 }
 
+/* Provider data limitation notice */
+.provider-data-notice {
+  padding: 8px 12px;
+  margin: 8px 16px;
+  background: var(--bg-secondary, #1c1c1e);
+  border-radius: 8px;
+  color: var(--text-secondary, #8e8e93);
+  font-size: 12px;
+  text-align: center;
+}
+
 /* Quick Stats */
 .prompt-detail-stats {
   display: flex;

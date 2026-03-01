@@ -99,17 +99,43 @@ export const SessionDetailView = ({
   const [mcpAnalysis, setMcpAnalysis] = useState<SessionMcpAnalysis | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
+  // Reusable: build MessageItem[] from DB scans for a given session
+  const buildMessagesFromDb = useCallback(async (sid: string): Promise<MessageItem[]> => {
+    const dbScans = await window.api.getPromptScans({ session_id: sid, limit: 200 });
+    const items: MessageItem[] = [];
+    for (const scan of dbScans) {
+      try {
+        const detail = await window.api.getPromptScanDetail(scan.request_id);
+        if (detail && isDisplayablePrompt(detail.scan)) {
+          items.push({ scan: detail.scan, usage: detail.usage ?? null });
+        }
+      } catch {
+        if (isDisplayablePrompt(scan)) {
+          items.push({ scan, usage: null });
+        }
+      }
+    }
+    return items;
+  }, []);
+
   useEffect(() => {
     const load = async () => {
       try {
-        // 1. Always load history entries as the authoritative prompt list
-        //    (same source the Dashboard uses — guarantees all prompts appear)
+        // === DB-first loading (provider-agnostic) ===
+        const dbItems = await buildMessagesFromDb(sessionId);
+        if (dbItems.length > 0) {
+          setHasScanData(true);
+          setMessages(dbItems);
+          setLoading(false);
+          return; // DB path succeeded → skip Claude history path
+        }
+
+        // === Fallback: Claude history-based path ===
         const allHistory = await window.api.getRecentHistory(500);
         const sorted = allHistory
           .filter((e) => e.sessionId === sessionId)
           .sort((a, b) => b.timestamp - a.timestamp);
 
-        // Dedup: exact key only (do not near-dedup by text/time to avoid dropping valid prompts)
         const seenTs = new Set<number>();
         const deduped: HistoryEntry[] = [];
         for (const e of sorted) {
@@ -119,7 +145,6 @@ export const SessionDetailView = ({
         }
         setHistoryEntries(deduped);
 
-        // 2. Build rich scan data from each history entry
         let items: MessageItem[] = [];
         for (const entry of deduped) {
           try {
@@ -155,7 +180,7 @@ export const SessionDetailView = ({
       }
     };
     load();
-  }, [sessionId]);
+  }, [sessionId, buildMessagesFromDb]);
 
   // Fetch MCP analysis for the session
   useEffect(() => {
@@ -242,6 +267,19 @@ export const SessionDetailView = ({
     });
     return cleanup;
   }, [sessionId]);
+
+  // Real-time: backfill completion → refresh DB data (Codex/Gemini sessions)
+  useEffect(() => {
+    const cleanup = window.api.onBackfillComplete(async () => {
+      const items = await buildMessagesFromDb(sessionId);
+      if (items.length > 0) {
+        setHasScanData(true);
+        setMessages(items);
+        scrollToBottom(feedRef);
+      }
+    });
+    return cleanup;
+  }, [sessionId, buildMessagesFromDb]);
 
   // Session total cost: sum of all prompt costs
   const sessionTotalCost = messages.reduce(
