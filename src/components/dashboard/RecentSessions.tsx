@@ -22,6 +22,7 @@ type PromptItem = {
   model?: string;
   totalTokens?: number;
   provider?: string;
+  compacted?: boolean;
 };
 
 type RecentSessionsProps = {
@@ -139,6 +140,37 @@ const buildPromptItemsFromScans = (scans: PromptScan[]): PromptItem[] => {
     }));
 };
 
+/** Detect compaction events: context drop > 20% between consecutive prompts in same session */
+const markCompacted = (items: PromptItem[]): PromptItem[] => {
+  const bySession = new Map<string, PromptItem[]>();
+  for (const item of items) {
+    const group = bySession.get(item.sessionId) || [];
+    group.push(item);
+    bySession.set(item.sessionId, group);
+  }
+
+  const compactedKeys = new Set<string>();
+  for (const [, group] of bySession) {
+    // Sort oldest-first by timestamp
+    const sorted = [...group].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1].totalTokens;
+      const curr = sorted[i].totalTokens;
+      if (prev && prev > 0 && curr && curr < prev * 0.8) {
+        compactedKeys.add(sorted[i].key);
+      }
+    }
+  }
+
+  if (compactedKeys.size === 0) return items;
+  return items.map((item) => ({
+    ...item,
+    compacted: compactedKeys.has(item.key),
+  }));
+};
+
 // Deterministic muted color from string hash (same name = same color always)
 const stringToColor = (str: string): string => {
   let hash = 0;
@@ -247,17 +279,18 @@ export const RecentSessions = ({
   const showBadge = !provider;
 
   const refresh = useCallback(() => {
-    if (!provider || provider === 'claude') {
-      setAllPrompts(buildPromptItems(entriesRef.current, scansRef.current));
+    if (provider === 'claude') {
+      setAllPrompts(markCompacted(buildPromptItems(entriesRef.current, scansRef.current)));
     } else {
-      setAllPrompts(buildPromptItemsFromScans(scansRef.current));
+      // All tab (!provider) and non-Claude providers: use DB scans as primary source
+      setAllPrompts(markCompacted(buildPromptItemsFromScans(scansRef.current)));
     }
   }, [provider]);
 
   const loadData = useCallback(async () => {
     try {
-      if (!provider || provider === 'claude') {
-        // Claude or All: use history entries as primary source
+      if (provider === 'claude') {
+        // Claude tab: use history entries as primary source
         const entries = await window.api.getRecentHistory(100);
         entriesRef.current = entries;
       }
@@ -273,11 +306,11 @@ export const RecentSessions = ({
         // DB not available
       }
 
-      if (!provider || provider === 'claude') {
-        setAllPrompts(buildPromptItems(entriesRef.current, scansRef.current));
+      if (provider === 'claude') {
+        setAllPrompts(markCompacted(buildPromptItems(entriesRef.current, scansRef.current)));
       } else {
-        // Non-Claude providers: use DB scans as primary source
-        setAllPrompts(buildPromptItemsFromScans(scansRef.current));
+        // All tab (!provider) and non-Claude providers: use DB scans as primary source
+        setAllPrompts(markCompacted(buildPromptItemsFromScans(scansRef.current)));
       }
     } catch (err) {
       console.error("Failed to load recent prompts:", err);
@@ -337,7 +370,7 @@ export const RecentSessions = ({
     setExpanded(true);
     setLoadingMore(true);
     try {
-      if (!provider || provider === 'claude') {
+      if (provider === 'claude') {
         const entries = await window.api.getRecentHistory(500);
         entriesRef.current = entries;
       }
@@ -348,10 +381,11 @@ export const RecentSessions = ({
       });
       scansRef.current = scans;
 
-      if (!provider || provider === 'claude') {
-        setAllPrompts(buildPromptItems(entriesRef.current, scansRef.current));
+      if (provider === 'claude') {
+        setAllPrompts(markCompacted(buildPromptItems(entriesRef.current, scansRef.current)));
       } else {
-        setAllPrompts(buildPromptItemsFromScans(scansRef.current));
+        // All tab (!provider) and non-Claude providers: use DB scans as primary source
+        setAllPrompts(markCompacted(buildPromptItemsFromScans(scansRef.current)));
       }
       setVisibleCount(INITIAL_LIMIT + BATCH_SIZE);
     } catch (err) {
@@ -457,7 +491,12 @@ export const RecentSessions = ({
                         {hasCtx && (
                           <span>{formatTokens(p.totalTokens!)} tokens</span>
                         )}
-                        {ctxPct >= 80 && (
+                        {p.compacted && (
+                          <span className="session-card-compacted-label">
+                            Compacted
+                          </span>
+                        )}
+                        {ctxPct >= 80 && !p.compacted && (
                           <span className="session-card-compact-hint">
                             Compact Suggested
                           </span>

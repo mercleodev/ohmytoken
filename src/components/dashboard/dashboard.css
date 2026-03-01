@@ -667,6 +667,19 @@
   letter-spacing: 0.3px;
 }
 
+/* Compacted detection label (orange — actual compaction detected) */
+.session-card-compacted-label {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 2px;
+  letter-spacing: 0.3px;
+}
+
 /* Provider badge (compact icon in session meta row) */
 .provider-badge {
   font-size: 10px;
@@ -3175,6 +3188,33 @@
 
 .cache-growth-chart--clickable {
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.cache-growth-chart--clickable .recharts-surface {
+  cursor: pointer;
+}
+
+.cache-growth-compacted-count {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 6px;
+  letter-spacing: 0.3px;
+}
+
+.stats-tooltip-compacted {
+  font-size: 9px;
+  font-weight: 600;
+  color: #ff9500;
+  margin-left: 4px;
 }
 
 .stats-tooltip-hint {
