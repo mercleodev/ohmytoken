@@ -8,6 +8,7 @@ import {
   getDailyStats,
   getTokenComposition,
   getOutputProductivity,
+  getProviderCostSummary,
 } from "../reader";
 
 // --- Test helpers ---
@@ -342,5 +343,127 @@ describe("getOutputProductivity provider filter", () => {
 
     const codex = getOutputProductivity("codex");
     expect(codex.todayOutputTokens).toBe(80);
+  });
+});
+
+// ============================================
+// Provider Filter — getProviderCostSummary
+// ============================================
+
+describe("getProviderCostSummary", () => {
+  it("returns zeros when no data exists", () => {
+    const result = getProviderCostSummary();
+    expect(result.todayCostUSD).toBe(0);
+    expect(result.todayTokens).toBe(0);
+    expect(result.last30DaysCostUSD).toBe(0);
+    expect(result.last30DaysTokens).toBe(0);
+  });
+
+  it("aggregates all providers when provider is omitted", () => {
+    const now = new Date().toISOString();
+    insertPrompt(
+      makePromptData({
+        request_id: "req-cs-claude",
+        provider: "claude",
+        timestamp: now,
+        input_tokens: 100,
+        output_tokens: 50,
+        cache_creation_input_tokens: 200,
+        cache_read_input_tokens: 5000,
+        cost_usd: 0.05,
+      }),
+    );
+    insertPrompt(
+      makePromptData({
+        request_id: "req-cs-codex",
+        provider: "codex",
+        model: "o3",
+        timestamp: now,
+        input_tokens: 200,
+        output_tokens: 80,
+        cache_creation_input_tokens: 100,
+        cache_read_input_tokens: 3000,
+        cost_usd: 0.10,
+      }),
+    );
+
+    const all = getProviderCostSummary();
+    expect(all.todayCostUSD).toBeCloseTo(0.15);
+    expect(all.todayTokens).toBe(100 + 50 + 200 + 5000 + 200 + 80 + 100 + 3000);
+    expect(all.last30DaysCostUSD).toBeCloseTo(0.15);
+    expect(all.last30DaysTokens).toBe(all.todayTokens);
+  });
+
+  it("filters cost summary by provider", () => {
+    const now = new Date().toISOString();
+    insertPrompt(
+      makePromptData({
+        request_id: "req-csf-claude",
+        provider: "claude",
+        timestamp: now,
+        input_tokens: 100,
+        output_tokens: 50,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        cost_usd: 0.05,
+      }),
+    );
+    insertPrompt(
+      makePromptData({
+        request_id: "req-csf-codex",
+        provider: "codex",
+        model: "o3",
+        timestamp: now,
+        input_tokens: 200,
+        output_tokens: 80,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        cost_usd: 0.10,
+      }),
+    );
+
+    const claude = getProviderCostSummary("claude");
+    expect(claude.todayCostUSD).toBeCloseTo(0.05);
+    expect(claude.todayTokens).toBe(150);
+
+    const codex = getProviderCostSummary("codex");
+    expect(codex.todayCostUSD).toBeCloseTo(0.10);
+    expect(codex.todayTokens).toBe(280);
+  });
+
+  it("separates today vs last 30 days", () => {
+    const now = new Date().toISOString();
+    const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+
+    insertPrompt(
+      makePromptData({
+        request_id: "req-csd-today",
+        provider: "claude",
+        timestamp: now,
+        input_tokens: 100,
+        output_tokens: 50,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        cost_usd: 0.05,
+      }),
+    );
+    insertPrompt(
+      makePromptData({
+        request_id: "req-csd-past",
+        provider: "claude",
+        timestamp: tenDaysAgo,
+        input_tokens: 200,
+        output_tokens: 80,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        cost_usd: 0.10,
+      }),
+    );
+
+    const result = getProviderCostSummary("claude");
+    expect(result.todayCostUSD).toBeCloseTo(0.05);
+    expect(result.todayTokens).toBe(150);
+    expect(result.last30DaysCostUSD).toBeCloseTo(0.15);
+    expect(result.last30DaysTokens).toBe(430);
   });
 });

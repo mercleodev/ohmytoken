@@ -1,4 +1,5 @@
 import { ProviderUsageSnapshot, UsageProviderType } from './providers/usage/types';
+import { getProviderCostSummary } from './db/reader';
 
 type OnChangeCallback = (provider: UsageProviderType, snapshot: ProviderUsageSnapshot | null) => void;
 
@@ -64,6 +65,13 @@ const scheduleResetRefresh = (provider: UsageProviderType, snapshot: ProviderUsa
 const refresh = async (provider: UsageProviderType): Promise<ProviderUsageSnapshot | null> => {
   try {
     const snapshot = await fetchByProvider(provider);
+    if (snapshot) {
+      try {
+        snapshot.cost = getProviderCostSummary(provider);
+      } catch (err) {
+        console.warn(`[UsageStore] cost enrichment failed for ${provider}:`, err);
+      }
+    }
     snapshotCache[provider] = snapshot;
     emitChange(provider, snapshot);
     scheduleResetRefresh(provider, snapshot);
