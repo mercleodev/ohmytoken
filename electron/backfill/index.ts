@@ -12,8 +12,12 @@
  * - runGapFill: scans only files changed since last scan per provider
  */
 import { ipcMain, BrowserWindow } from "electron";
-import { getAllPlugins } from "./plugins/registry";
-import { loadExistingRequestIds, filterDuplicates } from "./dedup";
+import { getAllPlugins, getPlugin } from "./plugins/registry";
+import {
+  loadExistingRequestIds,
+  loadProviderRequestIds,
+  filterDuplicates,
+} from "./dedup";
 import { batchInsertMessages } from "./writer";
 import {
   getLastScanTimestamp,
@@ -24,6 +28,7 @@ import {
   setBackfillCompleted,
 } from "../db/metadata";
 import type {
+  BackfillClient,
   BackfillProgress,
   BackfillResult,
   BackfillMessage,
@@ -300,6 +305,80 @@ export const runGapFill = (): BackfillResult => {
   return {
     totalFiles: allFiles.length,
     processedFiles: allFiles.length,
+    insertedMessages: inserted,
+    skippedDuplicates: skipped,
+    errors,
+    totalCostUsd: allMessages.reduce((s, m) => s + m.costUsd, 0),
+    dateRange: null,
+    durationMs: Date.now() - start,
+  };
+};
+
+/**
+ * Run a provider-scoped gap-fill (only one provider).
+ * Much faster than runGapFill() because it skips other providers
+ * and loads a smaller dedup set.
+ */
+export const runProviderGapFill = (providerId: string): BackfillResult => {
+  const start = Date.now();
+  const emptyResult: BackfillResult = {
+    totalFiles: 0,
+    processedFiles: 0,
+    insertedMessages: 0,
+    skippedDuplicates: 0,
+    errors: 0,
+    totalCostUsd: 0,
+    dateRange: null,
+    durationMs: Date.now() - start,
+  };
+
+  const globalLastTs = getLastScanTimestamp();
+  if (globalLastTs === null) return emptyResult;
+
+  const plugin = getPlugin(providerId as BackfillClient);
+  if (!plugin) return emptyResult;
+
+  const providerTs = getProviderScanTimestamp(plugin.id) ?? null;
+  const files = plugin.scan(providerTs);
+  if (files.length === 0) return emptyResult;
+
+  const existingIds = loadProviderRequestIds(providerId);
+  let inserted = 0;
+  let skipped = 0;
+  let errors = 0;
+  let maxMtime = 0;
+  const allMessages: BackfillMessage[] = [];
+
+  for (const file of files) {
+    const messages = plugin.parse(file);
+    const { unique, duplicateCount } = filterDuplicates(messages, existingIds);
+    skipped += duplicateCount;
+    allMessages.push(...unique);
+
+    if (file.mtimeMs > maxMtime) maxMtime = file.mtimeMs;
+  }
+
+  if (allMessages.length > 0) {
+    const result = batchInsertMessages(allMessages);
+    inserted = result.inserted;
+    errors = result.errors;
+  }
+
+  // Update provider timestamp
+  if (maxMtime > 0) {
+    const currentProviderTs = getProviderScanTimestamp(plugin.id) ?? 0;
+    if (maxMtime > currentProviderTs) {
+      setProviderScanTimestamp(plugin.id, maxMtime);
+    }
+    const currentGlobalTs = globalLastTs;
+    if (maxMtime > currentGlobalTs) {
+      setLastScanTimestamp(maxMtime);
+    }
+  }
+
+  return {
+    totalFiles: files.length,
+    processedFiles: files.length,
     insertedMessages: inserted,
     skippedDuplicates: skipped,
     errors,

@@ -22,6 +22,21 @@ export const loadExistingRequestIds = (): Set<string> => {
 };
 
 /**
+ * Load request_ids for a specific provider only (much smaller set).
+ * Used by provider-scoped gap-fill for faster dedup.
+ */
+export const loadProviderRequestIds = (provider: string): Set<string> => {
+  const db = getDatabase();
+  const rows = db
+    .prepare("SELECT request_id FROM prompts WHERE provider = ?")
+    .all(provider) as Array<{ request_id: string }>;
+
+  const ids = new Set<string>();
+  for (const r of rows) ids.add(r.request_id);
+  return ids;
+};
+
+/**
  * Filter out messages whose dedupKey already exists in the DB.
  * Returns only new (non-duplicate) messages.
  */

@@ -7,6 +7,18 @@
  */
 import type { BackfillMessage, BackfillClient, ScanFileEntry } from "../types";
 
+/**
+ * Configuration for real-time file-change detection.
+ * Providers that need instant session detection declare this;
+ * the generic providerSessionWatcher picks it up automatically.
+ */
+export type WatchConfig = {
+  /** Directory to watch recursively for session file changes */
+  dir: string;
+  /** File pattern to filter watch events (default: /\.jsonl$/) */
+  filePattern?: RegExp;
+};
+
 export type ProviderPlugin = {
   /** Unique provider identifier */
   id: BackfillClient;
@@ -22,4 +34,11 @@ export type ProviderPlugin = {
 
   /** Parse a single session file into normalized BackfillMessages */
   parse(entry: ScanFileEntry): BackfillMessage[];
+
+  /**
+   * Optional: real-time file-change detection config.
+   * Providers with their own watcher (e.g. Claude's historyWatcher)
+   * should NOT set this to avoid duplicate detection.
+   */
+  watchConfig?: WatchConfig;
 };

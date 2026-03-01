@@ -43,6 +43,7 @@ import { insertEvidenceReport } from "./db/writer";
 import type { EvidenceEngineConfig } from "./evidence/types";
 import { runGapFill, registerBackfillIPC } from "./backfill/index";
 import { startGapFillScheduler, stopGapFillScheduler } from "./backfill/scheduler";
+import { startProviderSessionWatcher } from "./watcher/providerSessionWatcher";
 
 // Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
 process.stdout?.on("error", (err: NodeJS.ErrnoException) => {
@@ -285,6 +286,13 @@ const initApp = async (): Promise<void> => {
     });
   } catch (err) {
     console.error("[HistoryWatcher] Failed to start:", err);
+  }
+
+  // Start provider session watcher (real-time detection for non-Claude providers)
+  try {
+    startProviderSessionWatcher(() => mainWindow);
+  } catch (err) {
+    console.error("[SessionWatcher] Failed to start:", err);
   }
 
   // Auto-start proxy server (saved port or default 8780)

@@ -4,6 +4,8 @@
  * Wraps the Codex scanner and parser into the ProviderPlugin interface.
  * Pure delegation — no new logic beyond the plugin contract.
  */
+import * as path from "path";
+import { homedir } from "os";
 import type { ProviderPlugin } from "./types";
 import { findCodexSessionFiles, countCodexSessionFiles } from "../codex-scanner";
 import { parseCodexSessionFile } from "../parsers/codex";
@@ -23,5 +25,10 @@ export const codexPlugin: ProviderPlugin = {
 
   parse(entry: ScanFileEntry): BackfillMessage[] {
     return parseCodexSessionFile(entry.filePath, entry.sessionId, entry.projectDir);
+  },
+
+  watchConfig: {
+    dir: path.join(homedir(), ".codex", "sessions"),
+    filePattern: /\.jsonl$/,
   },
 };
