@@ -36,7 +36,7 @@ type RawEvent = {
     // event_msg/token_count
     info?: {
       total_token_usage?: TokenUsage;
-      last_token_usage?: TokenUsage;
+      last_token_usage?: { input_tokens?: number };
       model_context_window?: number;
     } | null;
     // event_msg/task_started
@@ -172,7 +172,9 @@ export const parseCodexSessionFile = (
 
     // Find the LAST token_count event with total_token_usage in this turn range.
     // Token events appear in duplicate pairs — we want the last unique one.
+    // Also track last_token_usage.input_tokens for actual context window fill.
     let lastTotal: TokenUsage | null = null;
+    let lastCallInputTokens = 0;
     for (let i = turn.idx; i < nextIdx; i++) {
       const ev = events[i];
       if (
@@ -181,6 +183,10 @@ export const parseCodexSessionFile = (
         ev.payload.info?.total_token_usage
       ) {
         lastTotal = ev.payload.info.total_token_usage;
+        // last_token_usage.input_tokens = actual context fill for that API call
+        if (ev.payload.info.last_token_usage?.input_tokens) {
+          lastCallInputTokens = ev.payload.info.last_token_usage.input_tokens;
+        }
       }
     }
 
@@ -232,6 +238,11 @@ export const parseCodexSessionFile = (
         cacheRead: deltaCached,
         cacheWrite: 0,
       },
+      // Use last API call's input_tokens as actual context window fill level.
+      // Codex makes many API calls per turn; the delta of cumulative totals
+      // gives total consumed tokens (not context fill). last_token_usage gives
+      // the actual context size of the final API call in the turn.
+      totalContextTokens: lastCallInputTokens || undefined,
       costUsd: cost,
       userPrompt,
       toolSummary,

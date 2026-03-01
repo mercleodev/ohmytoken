@@ -47,7 +47,8 @@ export const batchInsertMessages = (
               cache_read_input_tokens: msg.tokens.cacheRead,
               cost_usd: msg.costUsd,
               total_context_tokens:
-                msg.tokens.input + msg.tokens.cacheRead + msg.tokens.cacheWrite,
+                msg.totalContextTokens ??
+                (msg.tokens.input + msg.tokens.cacheRead + msg.tokens.cacheWrite),
               tool_summary: msg.toolSummary,
             },
           },

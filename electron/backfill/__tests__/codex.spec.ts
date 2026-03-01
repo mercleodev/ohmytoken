@@ -169,6 +169,46 @@ describe("parseCodexSessionFile", () => {
     expect(results[0].costUsd).toBeGreaterThan(0);
     expect(results[0].userPrompt).toBe("Hello Codex");
     expect(results[0].dedupKey).toBe("codex-sess-001-turn-0");
+    // totalContextTokens = last_token_usage.input_tokens (= total when no last override)
+    expect(results[0].totalContextTokens).toBe(10000);
+  });
+
+  it("uses last_token_usage for totalContextTokens in multi-call turns", () => {
+    // Simulates an agentic turn with many API calls:
+    // total_token_usage grows cumulatively, but last_token_usage reflects the
+    // final API call's actual context window fill.
+    const filePath = writeJsonl("multi-call-turn.jsonl", [
+      makeSessionMeta(),
+      makeUserResponseItem("Analyze the project"),
+      makeUserMessage("Analyze the project"),
+      makeTaskStarted(),
+      // After many internal API calls, cumulative total is high
+      // but the last call's input is what reflects actual context fill.
+      makeTokenCount(
+        {
+          input_tokens: 500000,
+          cached_input_tokens: 400000,
+          output_tokens: 5000,
+          reasoning_output_tokens: 2000,
+        },
+        {
+          // last API call only used 170k context
+          input_tokens: 170000,
+          cached_input_tokens: 160000,
+          output_tokens: 200,
+          reasoning_output_tokens: 100,
+        },
+      ),
+    ]);
+
+    const results = parseCodexSessionFile(filePath, "sess-ctx", "/test/project");
+
+    expect(results).toHaveLength(1);
+    // totalContextTokens should be from last_token_usage, not the delta
+    expect(results[0].totalContextTokens).toBe(170000);
+    // tokens.input/cacheRead should still reflect the full delta
+    expect(results[0].tokens.input).toBe(100000); // 500000 - 400000
+    expect(results[0].tokens.cacheRead).toBe(400000);
   });
 
   it("parses multi-turn sessions with correct deltas", () => {
