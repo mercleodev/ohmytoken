@@ -29,6 +29,12 @@ export const batchInsertMessages = (
     for (const msg of messages) {
       try {
         const provider = msg.client;
+        const toolCallRows = msg.toolCalls?.map((tc, idx) => ({
+          call_index: idx,
+          name: tc.name,
+          input_summary: tc.inputSummary,
+          timestamp: tc.timestamp,
+        }));
         const id = insertPrompt(
           {
             prompt: {
@@ -39,8 +45,12 @@ export const batchInsertMessages = (
               provider,
               user_prompt: msg.userPrompt,
               user_prompt_tokens: 0,
+              assistant_response: msg.assistantResponse,
               model: msg.modelId,
               max_tokens: 0,
+              conversation_turns: msg.conversationTurns,
+              user_messages_count: msg.userMessagesCount,
+              assistant_messages_count: msg.assistantMessagesCount,
               input_tokens: msg.tokens.input,
               output_tokens: msg.tokens.output,
               cache_creation_input_tokens: msg.tokens.cacheWrite,
@@ -51,6 +61,7 @@ export const batchInsertMessages = (
                 (msg.tokens.input + msg.tokens.cacheRead + msg.tokens.cacheWrite),
               tool_summary: msg.toolSummary,
             },
+            tool_calls: toolCallRows,
           },
           { skipAggregates: true },
         );

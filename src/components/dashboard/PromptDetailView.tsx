@@ -72,7 +72,9 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
     || (scan.context_estimate?.messages_tokens ?? 0) > 0;
   const hasInjectedFiles = injectedFiles.length > 0;
   const hasToolCalls = toolCalls.length > 0;
-  const isLimitedProvider = !hasDetailedBreakdown && !hasInjectedFiles && !hasToolCalls;
+  const hasAnyData = hasDetailedBreakdown || hasInjectedFiles || hasToolCalls
+    || (scan.context_estimate?.total_tokens ?? 0) > 0;
+  const isLimitedProvider = !hasAnyData;
 
   const toolNameOptions = useMemo(() => {
     const freq: Record<string, number> = {};

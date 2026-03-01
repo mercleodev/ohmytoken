@@ -59,82 +59,97 @@ const buildTreemapData = (scan: PromptScan): TreemapNode[] => {
   const toolResultCount = scan.tool_result_count ?? 0;
   const data: TreemapNode[] = [];
 
-  // System: broken down by injected files
-  if (ctx.system_tokens > 0) {
-    const fileTokens = files.reduce((sum, f) => sum + f.estimated_tokens, 0);
-    const otherSystemTokens = Math.max(ctx.system_tokens - fileTokens, 0);
+  const hasDetailedBreakdown = ctx.system_tokens > 0 || ctx.messages_tokens > 0;
 
-    const systemChildren: TreemapNode[] = files.map((f) => ({
-      name: f.path.split("/").pop() ?? f.path,
-      size: f.estimated_tokens,
-      tokens: f.estimated_tokens,
-      color: COLORS[f.category] ?? COLORS.system,
-      filePath: f.path,
-    }));
+  if (hasDetailedBreakdown) {
+    // Claude-style detailed breakdown
 
-    if (otherSystemTokens > 100) {
-      systemChildren.push({
-        name: "System (other)",
-        size: otherSystemTokens,
-        tokens: otherSystemTokens,
-        color: "#7c3aed",
-      });
-    }
+    // System: broken down by injected files
+    if (ctx.system_tokens > 0) {
+      const fileTokens = files.reduce((sum, f) => sum + f.estimated_tokens, 0);
+      const otherSystemTokens = Math.max(ctx.system_tokens - fileTokens, 0);
 
-    data.push(...systemChildren);
-  }
+      const systemChildren: TreemapNode[] = files.map((f) => ({
+        name: f.path.split("/").pop() ?? f.path,
+        size: f.estimated_tokens,
+        tokens: f.estimated_tokens,
+        color: COLORS[f.category] ?? COLORS.system,
+        filePath: f.path,
+      }));
 
-  // Messages: split into user prompts / responses / action results
-  if (ctx.messages_tokens > 0) {
-    const bd = ctx.messages_tokens_breakdown;
-    const hasBreakdown =
-      bd &&
-      (bd.user_text_tokens > 0 ||
-        bd.assistant_tokens > 0 ||
-        bd.tool_result_tokens > 0);
-
-    if (hasBreakdown) {
-      if (bd.assistant_tokens > 100) {
-        data.push({
-          name: "Responses",
-          size: bd.assistant_tokens,
-          tokens: bd.assistant_tokens,
-          color: "#60a5fa",
+      if (otherSystemTokens > 100) {
+        systemChildren.push({
+          name: "System (other)",
+          size: otherSystemTokens,
+          tokens: otherSystemTokens,
+          color: "#7c3aed",
         });
       }
-      if (bd.user_text_tokens > 100) {
+
+      data.push(...systemChildren);
+    }
+
+    // Messages: split into user prompts / responses / action results
+    if (ctx.messages_tokens > 0) {
+      const bd = ctx.messages_tokens_breakdown;
+      const hasBreakdown =
+        bd &&
+        (bd.user_text_tokens > 0 ||
+          bd.assistant_tokens > 0 ||
+          bd.tool_result_tokens > 0);
+
+      if (hasBreakdown) {
+        if (bd.assistant_tokens > 100) {
+          data.push({
+            name: "Responses",
+            size: bd.assistant_tokens,
+            tokens: bd.assistant_tokens,
+            color: "#60a5fa",
+          });
+        }
+        if (bd.user_text_tokens > 100) {
+          data.push({
+            name: "Your Prompts",
+            size: bd.user_text_tokens,
+            tokens: bd.user_text_tokens,
+            color: COLORS.messages,
+          });
+        }
+        if (bd.tool_result_tokens > 100) {
+          data.push({
+            name: `Action Results (${toolResultCount || ""})`.trim(),
+            size: bd.tool_result_tokens,
+            tokens: bd.tool_result_tokens,
+            color: "#06b6d4",
+          });
+        }
+      } else {
         data.push({
-          name: "Your Prompts",
-          size: bd.user_text_tokens,
-          tokens: bd.user_text_tokens,
+          name: "Messages",
+          size: ctx.messages_tokens,
+          tokens: ctx.messages_tokens,
           color: COLORS.messages,
         });
       }
-      if (bd.tool_result_tokens > 100) {
-        data.push({
-          name: `Action Results (${toolResultCount || ""})`.trim(),
-          size: bd.tool_result_tokens,
-          tokens: bd.tool_result_tokens,
-          color: "#06b6d4",
-        });
-      }
-    } else {
+    }
+
+    // Tools Definition
+    if (ctx.tools_definition_tokens > 0) {
       data.push({
-        name: "Messages",
-        size: ctx.messages_tokens,
-        tokens: ctx.messages_tokens,
-        color: COLORS.messages,
+        name: "Tools Def",
+        size: ctx.tools_definition_tokens,
+        tokens: ctx.tools_definition_tokens,
+        color: COLORS.tools,
       });
     }
-  }
-
-  // Tools Definition
-  if (ctx.tools_definition_tokens > 0) {
+  } else if (ctx.total_tokens > 0) {
+    // Non-Claude providers: show total input tokens as a single block
+    // (no system/messages/tools breakdown available)
     data.push({
-      name: "Tools Def",
-      size: ctx.tools_definition_tokens,
-      tokens: ctx.tools_definition_tokens,
-      color: COLORS.tools,
+      name: "Input",
+      size: ctx.total_tokens,
+      tokens: ctx.total_tokens,
+      color: "#3b82f6",
     });
   }
 

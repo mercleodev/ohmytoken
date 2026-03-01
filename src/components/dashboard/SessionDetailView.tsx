@@ -510,6 +510,23 @@ export const SessionDetailView = ({
                   {(() => {
                     const ce = item.scan.context_estimate;
                     if (!ce || ce.total_tokens <= 0) return null;
+                    const hasDetailedBd = ce.system_tokens > 0 || ce.messages_tokens > 0;
+
+                    if (!hasDetailedBd) {
+                      // Non-Claude: single bar showing total input
+                      return (
+                        <div className="prompt-card-injected">
+                          <div className="prompt-card-injected-bar">
+                            <div
+                              className="injected-segment"
+                              data-tooltip={`Input · ${formatTokens(ce.total_tokens)}`}
+                              style={{ width: "100%", background: "#3b82f6" }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    }
+
                     const bd = ce.messages_tokens_breakdown;
                     const hasBd =
                       bd &&
