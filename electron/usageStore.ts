@@ -91,7 +91,7 @@ const startPolling = (intervalMin: number): void => {
   stopPolling();
   const ms = intervalMin * 60 * 1000;
   pollingTimer = setInterval(() => {
-    refresh('claude');
+    refreshAll();
   }, ms);
 };
 

@@ -6,6 +6,12 @@ export const getModelShort = (model: string): string => {
   if (model.includes('opus')) return 'Opus';
   if (model.includes('sonnet')) return 'Sonnet';
   if (model.includes('haiku')) return 'Haiku';
+  if (model.includes('o4-mini')) return 'o4-mini';
+  if (model.includes('o3')) return 'o3';
+  if (model.includes('gemini')) {
+    const m = model.match(/gemini-(\d+\.\d+)-(\w+)/);
+    if (m) return `${m[1]} ${m[2].charAt(0).toUpperCase() + m[2].slice(1)}`;
+  }
   return model.split('-').pop() || model;
 };
 
@@ -13,6 +19,8 @@ export const getModelColor = (model: string): string => {
   if (model.includes('opus')) return '#8b5cf6';
   if (model.includes('sonnet')) return '#3b82f6';
   if (model.includes('haiku')) return '#10b981';
+  if (model.includes('o4-mini') || model.includes('o3')) return '#f97316';
+  if (model.includes('gemini')) return '#4285f4';
   return '#6b7280';
 };
 
@@ -31,6 +39,10 @@ const MODEL_CONTEXT_LIMITS: Record<string, number> = {
   'claude-opus-4-6': 200_000,
   'claude-sonnet-4-5-20250929': 200_000,
   'claude-haiku-4-5-20251001': 200_000,
+  'o4-mini': 200_000,
+  'o3': 258_400,
+  'gemini-2.0-flash': 1_048_576,
+  'gemini-2.5-pro': 1_048_576,
 };
 
 const DEFAULT_CONTEXT_LIMIT = 200_000;
