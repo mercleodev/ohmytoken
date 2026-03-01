@@ -515,6 +515,49 @@ export const getTokenComposition = (
   return { ...row, total };
 };
 
+export type ProviderCostSummary = {
+  todayCostUSD: number;
+  todayTokens: number;
+  last30DaysCostUSD: number;
+  last30DaysTokens: number;
+};
+
+export const getProviderCostSummary = (provider?: string): ProviderCostSummary => {
+  const db = getDatabase();
+  const provFilter = provider ? " AND provider = @provider" : "";
+
+  type CostRow = { total_cost: number; total_tokens: number };
+
+  const todayRow = db
+    .prepare(
+      `
+    SELECT COALESCE(SUM(cost_usd), 0) as total_cost,
+           COALESCE(SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens), 0) as total_tokens
+    FROM prompts
+    WHERE substr(datetime(timestamp, 'localtime'), 1, 10) = date('now', 'localtime')${provFilter}
+  `,
+    )
+    .get({ provider: provider ?? null }) as CostRow;
+
+  const monthRow = db
+    .prepare(
+      `
+    SELECT COALESCE(SUM(cost_usd), 0) as total_cost,
+           COALESCE(SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens), 0) as total_tokens
+    FROM prompts
+    WHERE timestamp >= date('now', 'localtime', '-30 days')${provFilter}
+  `,
+    )
+    .get({ provider: provider ?? null }) as CostRow;
+
+  return {
+    todayCostUSD: todayRow.total_cost,
+    todayTokens: todayRow.total_tokens,
+    last30DaysCostUSD: monthRow.total_cost,
+    last30DaysTokens: monthRow.total_tokens,
+  };
+};
+
 export type OutputProductivityResult = {
   todayOutputTokens: number;
   todayTotalTokens: number;
