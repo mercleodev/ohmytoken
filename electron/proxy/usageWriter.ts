@@ -20,24 +20,3 @@ export const writeUsageLog = (entry: UsageLogEntry): void => {
     console.error("Failed to write usage log:", error);
   }
 };
-
-/** @deprecated Use dbReader.getPromptDetail() instead. Kept as JSONL fallback. */
-export const readUsageLog = (): UsageLogEntry[] => {
-  const filePath = getUsageFilePath();
-
-  if (!fs.existsSync(filePath)) {
-    return [];
-  }
-
-  try {
-    const content = fs.readFileSync(filePath, "utf-8");
-    return content
-      .trim()
-      .split("\n")
-      .filter((line) => line.trim())
-      .map((line) => JSON.parse(line) as UsageLogEntry);
-  } catch (error) {
-    console.error("Failed to read usage log:", error);
-    return [];
-  }
-};

@@ -15,12 +15,6 @@ import {
   getSessionId,
 } from "./proxy/server";
 import {
-  readScanLogFiltered,
-  readScanByRequestId,
-  findScanByTimestamp,
-} from "./proxy/scanWriter";
-import { readUsageLog } from "./proxy/usageWriter";
-import {
   startHistoryWatcher,
   readRecentHistory,
   getLastActiveSessionId,
@@ -851,9 +845,9 @@ const setupIPC = (): void => {
           }
         }
 
-        // Determine injected files: proxy scan -> cache -> disk fallback
+        // Determine injected files: DB scan -> cache -> disk fallback
         const userMsgTime = new Date(userMsg.timestamp).getTime();
-        const proxyScan = findScanByTimestamp(userMsgTime);
+        const proxyScan = dbReader.findPromptByTimestamp(sessionId, userMsgTime);
         const cacheKey = `${sessionId}:${timestamp}`;
 
         let injectedFiles: Array<{
@@ -1111,19 +1105,17 @@ const setupIPC = (): void => {
     return getSessionId();
   });
 
-  // Get scan list by session (DB primary, JSONL fallback)
+  // Get scan list by session
   ipcMain.handle("get-session-scans", async (_event, sessionId: string) => {
     try {
-      const dbResult = dbReader.getSessionPrompts(sessionId);
-      if (dbResult.length > 0) return dbResult;
-      return readScanLogFiltered({ session_id: sessionId, limit: 200 });
+      return dbReader.getSessionPrompts(sessionId);
     } catch (error) {
       console.error("get-session-scans error:", error);
       return [];
     }
   });
 
-  // Get scan list (DB primary, JSONL fallback)
+  // Get scan list
   ipcMain.handle(
     "get-prompt-scans",
     async (
@@ -1136,9 +1128,7 @@ const setupIPC = (): void => {
       },
     ) => {
       try {
-        const dbResult = dbReader.getPrompts(options);
-        if (dbResult.length > 0) return dbResult;
-        return readScanLogFiltered(options);
+        return dbReader.getPrompts(options);
       } catch (error) {
         console.error("get-prompt-scans error:", error);
         return [];
@@ -1146,19 +1136,12 @@ const setupIPC = (): void => {
     },
   );
 
-  // Scan detail + usage join (DB primary, JSONL fallback)
+  // Scan detail + usage join
   ipcMain.handle(
     "get-prompt-scan-detail",
     async (_event, requestId: string) => {
       try {
-        const dbResult = dbReader.getPromptDetail(requestId);
-        if (dbResult) return dbResult;
-        // Fallback to JSONL
-        const scan = readScanByRequestId(requestId);
-        if (!scan) return null;
-        const usageLogs = readUsageLog();
-        const usage = usageLogs.find((u) => u.request_id === requestId) ?? null;
-        return { scan, usage };
+        return dbReader.getPromptDetail(requestId) ?? null;
       } catch (error) {
         console.error("get-prompt-scan-detail error:", error);
         return null;
