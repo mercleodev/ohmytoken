@@ -7,7 +7,7 @@
 import * as path from "path";
 import { homedir } from "os";
 import type { ProviderPlugin } from "./types";
-import { findCodexSessionFiles, countCodexSessionFiles } from "../codex-scanner";
+import { findCodexSessionFiles, countCodexSessionFiles, buildScanEntry } from "../codex-scanner";
 import { parseCodexSessionFile } from "../parsers/codex";
 import type { ScanFileEntry, BackfillMessage } from "../types";
 
@@ -25,6 +25,10 @@ export const codexPlugin: ProviderPlugin = {
 
   parse(entry: ScanFileEntry): BackfillMessage[] {
     return parseCodexSessionFile(entry.filePath, entry.sessionId, entry.projectDir);
+  },
+
+  buildEntry(filePath: string): ScanFileEntry | null {
+    return buildScanEntry(filePath);
   },
 
   watchConfig: {

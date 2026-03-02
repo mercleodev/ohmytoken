@@ -119,6 +119,25 @@ export const findCodexSessionFiles = (
 };
 
 /**
+ * Build a ScanFileEntry from a single file path.
+ * Used by the real-time watcher to bypass mtime-based scanning.
+ */
+export const buildScanEntry = (filePath: string): ScanFileEntry | null => {
+  try {
+    const stat = fs.statSync(filePath);
+    const filename = path.basename(filePath);
+    return {
+      filePath,
+      sessionId: extractSessionId(filename),
+      projectDir: extractProjectDir(filePath),
+      mtimeMs: stat.mtimeMs,
+    };
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Quick count of Codex session files.
  */
 export const countCodexSessionFiles = (): number => {
