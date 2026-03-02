@@ -36,6 +36,13 @@ export type ProviderPlugin = {
   parse(entry: ScanFileEntry): BackfillMessage[];
 
   /**
+   * Optional: build a ScanFileEntry from a single file path.
+   * Used by the real-time watcher for direct file import,
+   * bypassing mtime-based scanning.
+   */
+  buildEntry?(filePath: string): ScanFileEntry | null;
+
+  /**
    * Optional: real-time file-change detection config.
    * Providers with their own watcher (e.g. Claude's historyWatcher)
    * should NOT set this to avoid duplicate detection.

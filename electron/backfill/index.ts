@@ -389,6 +389,63 @@ export const runProviderGapFill = (providerId: string): BackfillResult => {
 };
 
 /**
+ * Import a single file directly for a specific provider.
+ * Used by the real-time watcher to bypass mtime-based scanning.
+ * Does NOT update scan timestamps — the periodic gap-fill handles that.
+ */
+export const importProviderFile = (
+  providerId: string,
+  filePath: string,
+): BackfillResult => {
+  const start = Date.now();
+  const emptyResult: BackfillResult = {
+    totalFiles: 0,
+    processedFiles: 0,
+    insertedMessages: 0,
+    skippedDuplicates: 0,
+    errors: 0,
+    totalCostUsd: 0,
+    dateRange: null,
+    durationMs: 0,
+  };
+
+  const plugin = getPlugin(providerId as BackfillClient);
+  if (!plugin?.buildEntry) {
+    emptyResult.durationMs = Date.now() - start;
+    return emptyResult;
+  }
+
+  const entry = plugin.buildEntry(filePath);
+  if (!entry) {
+    emptyResult.durationMs = Date.now() - start;
+    return emptyResult;
+  }
+
+  const existingIds = loadProviderRequestIds(providerId);
+  const messages = plugin.parse(entry);
+  const { unique, duplicateCount } = filterDuplicates(messages, existingIds);
+
+  let inserted = 0;
+  let errors = 0;
+  if (unique.length > 0) {
+    const result = batchInsertMessages(unique);
+    inserted = result.inserted;
+    errors = result.errors;
+  }
+
+  return {
+    totalFiles: 1,
+    processedFiles: 1,
+    insertedMessages: inserted,
+    skippedDuplicates: duplicateCount,
+    errors,
+    totalCostUsd: unique.reduce((s, m) => s + m.costUsd, 0),
+    dateRange: null,
+    durationMs: Date.now() - start,
+  };
+};
+
+/**
  * Cancel a running full scan.
  */
 export const cancelBackfill = (): void => {

@@ -10,9 +10,10 @@
  * do not declare watchConfig and are unaffected.
  */
 import * as fs from "fs";
+import * as path from "path";
 import { BrowserWindow } from "electron";
 import { getAllPlugins } from "../backfill/plugins/registry";
-import { runProviderGapFill } from "../backfill/index";
+import { runProviderGapFill, importProviderFile } from "../backfill/index";
 
 const DEBOUNCE_MS = 1000;
 const DEFAULT_PATTERN = /\.jsonl$/;
@@ -59,7 +60,12 @@ export const startProviderSessionWatcher = (
       if (state.timer) clearTimeout(state.timer);
       state.timer = setTimeout(() => {
         try {
-          const result = runProviderGapFill(plugin.id);
+          // Direct file import when filename is known — bypasses mtime filter
+          // to avoid race where scan timestamp advances past active file mtime.
+          // Falls back to gap-fill when filename is unavailable.
+          const result = filename
+            ? importProviderFile(plugin.id, path.join(dir, filename))
+            : runProviderGapFill(plugin.id);
           if (result.insertedMessages > 0) {
             console.log(
               `[SessionWatcher] ${plugin.id}: ${result.insertedMessages} new prompts (${result.durationMs}ms)`,
