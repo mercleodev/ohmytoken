@@ -37,6 +37,8 @@ import { insertEvidenceReport } from "./db/writer";
 import type { EvidenceEngineConfig } from "./evidence/types";
 import { runGapFill, registerBackfillIPC } from "./backfill/index";
 import { backfillCodexToolCalls } from "./backfill/codex-tool-backfill";
+import { clampNegativeTokens } from "./backfill/clamp-negative-tokens-backfill";
+import { runDedupCleanup } from "./backfill/dedup-cleanup-backfill";
 import { startGapFillScheduler, stopGapFillScheduler } from "./backfill/scheduler";
 import { startProviderSessionWatcher } from "./watcher/providerSessionWatcher";
 
@@ -217,6 +219,20 @@ const initApp = async (): Promise<void> => {
     if (toolBackfill.updated > 0) {
       console.log(
         `[Backfill] Codex tool backfill: ${toolBackfill.updated} prompts updated`,
+      );
+    }
+    // One-time: clamp legacy negative token values to 0
+    const clampResult = clampNegativeTokens();
+    if (clampResult.updated > 0) {
+      console.log(
+        `[Backfill] Clamp negative tokens: ${clampResult.updated} rows fixed`,
+      );
+    }
+    // One-time: remove duplicate Claude prompts (history vs file-scan)
+    const dedupResult = runDedupCleanup();
+    if (dedupResult.removed > 0) {
+      console.log(
+        `[Backfill] Dedup cleanup: removed ${dedupResult.removed} duplicate entries`,
       );
     }
   } catch (err) {

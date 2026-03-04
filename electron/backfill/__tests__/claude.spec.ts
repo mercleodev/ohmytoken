@@ -136,9 +136,10 @@ describe("parseClaudeSessionFile", () => {
   });
 
   it("uses last assistant entry with usage for each turn", () => {
+    const userUuid = "user-uuid-shared";
     const reqId = "req_shared";
     const filePath = writeJsonl("stream.jsonl", [
-      makeUserEntry("Test"),
+      makeUserEntry("Test", userUuid),
       makeAssistantEntry(
         "claude-opus-4-6",
         { input_tokens: 10, output_tokens: 5 },
@@ -156,7 +157,8 @@ describe("parseClaudeSessionFile", () => {
     expect(results).toHaveLength(1);
     // Should use the last assistant entry (output_tokens=50)
     expect(results[0].tokens.output).toBe(50);
-    expect(results[0].dedupKey).toBe(reqId);
+    // dedupKey uses user.uuid (matches historyImporter)
+    expect(results[0].dedupKey).toBe(userUuid);
   });
 
   it("skips entries with zero total tokens", () => {
@@ -276,29 +278,64 @@ describe("parseClaudeSessionFile", () => {
     expect(results).toHaveLength(0);
   });
 
-  it("deduplicates within same file by requestId", () => {
-    const reqId = "req_dup";
+  it("deduplicates within same file by user.uuid", () => {
+    const userUuid = "user-dup-uuid";
     const filePath = writeJsonl("intra-dup.jsonl", [
-      makeUserEntry("First"),
+      makeUserEntry("First", userUuid),
       makeAssistantEntry(
         "claude-opus-4-6",
         { input_tokens: 100, output_tokens: 50 },
-        reqId,
       ),
-      makeUserEntry("Second"),
-      // Same requestId appears again (rare but possible)
+      makeUserEntry("Second", userUuid),
       makeAssistantEntry(
         "claude-opus-4-6",
         { input_tokens: 200, output_tokens: 100 },
-        reqId,
       ),
     ]);
 
     const results = parseClaudeSessionFile(filePath, "sess-011", "prj-dir");
 
-    // Only first occurrence with this requestId should be included
+    // Only first occurrence with this user.uuid should be included
     expect(results).toHaveLength(1);
-    expect(results[0].dedupKey).toBe(reqId);
+    expect(results[0].dedupKey).toBe(userUuid);
+  });
+
+  it("extracts individual tool_calls with input_summary", () => {
+    const filePath = writeJsonl("toolcalls.jsonl", [
+      makeUserEntry("Use some tools"),
+      makeToolUseAssistantEntry(
+        "claude-opus-4-6",
+        { input_tokens: 100, output_tokens: 50 },
+        [
+          { name: "Read", input: { file_path: "/src/index.ts" } },
+          { name: "Grep", input: { pattern: "TODO" } },
+          { name: "Bash", input: { command: "npm test" } },
+        ],
+      ),
+    ]);
+
+    const results = parseClaudeSessionFile(filePath, "sess-tc", "prj-dir");
+
+    expect(results).toHaveLength(1);
+    expect(results[0].toolCalls).toBeDefined();
+    expect(results[0].toolCalls).toHaveLength(3);
+    expect(results[0].toolCalls![0]).toMatchObject({
+      call_index: 0,
+      name: "Read",
+      input_summary: "/src/index.ts",
+    });
+    expect(results[0].toolCalls![1]).toMatchObject({
+      call_index: 1,
+      name: "Grep",
+      input_summary: "TODO",
+    });
+    expect(results[0].toolCalls![2]).toMatchObject({
+      call_index: 2,
+      name: "Bash",
+      input_summary: "npm test",
+    });
+    // toolSummary should also be populated
+    expect(results[0].toolSummary).toEqual({ Read: 1, Grep: 1, Bash: 1 });
   });
 
   it("handles array content in user messages", () => {

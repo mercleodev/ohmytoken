@@ -168,14 +168,29 @@ export const getPrompts = (options?: PromptQueryOptions): PromptScan[] => {
   const limit = options?.limit ?? 50;
   const offset = options?.offset ?? 0;
 
-  const rows = db
-    .prepare(
-      `
+  // When filtering by session_id, apply dedup CTE to avoid duplicate prompts
+  const useDedup = !!options?.session_id;
+  const query = useDedup
+    ? `
+    WITH deduped AS (
+      SELECT *, ROW_NUMBER() OVER (
+        PARTITION BY session_id, timestamp
+        ORDER BY CASE source WHEN 'history' THEN 3 WHEN 'proxy' THEN 2 ELSE 1 END DESC
+      ) as _rn
+      FROM prompts ${where}
+    )
+    SELECT * FROM deduped WHERE _rn = 1
+    ORDER BY timestamp DESC
+    LIMIT @limit OFFSET @offset
+  `
+    : `
     SELECT * FROM prompts ${where}
     ORDER BY timestamp DESC
     LIMIT @limit OFFSET @offset
-  `,
-    )
+  `;
+
+  const rows = db
+    .prepare(query)
     .all({ ...params, limit, offset }) as PromptDbRow[];
 
   return rows.map((row) => {
@@ -542,8 +557,14 @@ export const getTokenComposition = (
     )
     .get({ provider: provider ?? null }) as TokenCompositionRow;
 
-  const total = row.cache_read + row.cache_create + row.input + row.output;
-  return { ...row, total };
+  const clamped = {
+    cache_read: Math.max(0, row.cache_read),
+    cache_create: Math.max(0, row.cache_create),
+    input: Math.max(0, row.input),
+    output: Math.max(0, row.output),
+  };
+  const total = clamped.cache_read + clamped.cache_create + clamped.input + clamped.output;
+  return { ...clamped, total };
 };
 
 export type ProviderCostSummary = {
@@ -636,20 +657,19 @@ export const getOutputProductivity = (provider?: string): OutputProductivityResu
     )
     .get({ provider: provider ?? null }) as PeriodRow;
 
+  const todayOutput = Math.max(0, todayRow.output_tokens);
+  const todayTotal = Math.max(0, todayRow.total_tokens);
+  const weekOutput = Math.max(0, weekRow.output_tokens);
+  const weekTotal = Math.max(0, weekRow.total_tokens);
+
   return {
-    todayOutputTokens: todayRow.output_tokens,
-    todayTotalTokens: todayRow.total_tokens,
-    todayOutputRatio:
-      todayRow.total_tokens > 0
-        ? todayRow.output_tokens / todayRow.total_tokens
-        : 0,
+    todayOutputTokens: todayOutput,
+    todayTotalTokens: todayTotal,
+    todayOutputRatio: todayTotal > 0 ? todayOutput / todayTotal : 0,
     todayCostUSD: todayRow.total_cost,
-    last7DaysOutputTokens: weekRow.output_tokens,
-    last7DaysTotalTokens: weekRow.total_tokens,
-    last7DaysOutputRatio:
-      weekRow.total_tokens > 0
-        ? weekRow.output_tokens / weekRow.total_tokens
-        : 0,
+    last7DaysOutputTokens: weekOutput,
+    last7DaysTotalTokens: weekTotal,
+    last7DaysOutputRatio: weekTotal > 0 ? weekOutput / weekTotal : 0,
   };
 };
 
@@ -687,6 +707,17 @@ export const getSessionTurnMetrics = (
   const rows = db
     .prepare(
       `
+    WITH deduped AS (
+      SELECT *, ROW_NUMBER() OVER (
+        PARTITION BY session_id, timestamp
+        ORDER BY CASE source WHEN 'history' THEN 3 WHEN 'proxy' THEN 2 ELSE 1 END DESC
+      ) as _rn
+      FROM prompts
+      WHERE session_id = @session_id
+        AND LOWER(model) NOT LIKE '%synthetic%'
+        AND (user_prompt IS NULL OR user_prompt NOT LIKE @continuation_pattern)
+        AND (total_context_tokens > 0 OR (user_prompt IS NOT NULL AND TRIM(user_prompt) != ''))
+    )
     SELECT
       ROW_NUMBER() OVER (ORDER BY timestamp ASC) as turn_index,
       request_id,
@@ -697,11 +728,8 @@ export const getSessionTurnMetrics = (
       output_tokens,
       total_context_tokens,
       cost_usd
-    FROM prompts
-    WHERE session_id = @session_id
-      AND LOWER(model) NOT LIKE '%synthetic%'
-      AND (user_prompt IS NULL OR user_prompt NOT LIKE @continuation_pattern)
-      AND (total_context_tokens > 0 OR (user_prompt IS NOT NULL AND TRIM(user_prompt) != ''))
+    FROM deduped
+    WHERE _rn = 1
     ORDER BY timestamp ASC
   `,
     )
@@ -714,10 +742,10 @@ export const getSessionTurnMetrics = (
     turnIndex: r.turn_index,
     request_id: r.request_id,
     timestamp: r.timestamp,
-    cache_read_tokens: r.cache_read_input_tokens,
-    cache_create_tokens: r.cache_creation_input_tokens,
-    input_tokens: r.input_tokens,
-    output_tokens: r.output_tokens,
+    cache_read_tokens: Math.max(0, r.cache_read_input_tokens),
+    cache_create_tokens: Math.max(0, r.cache_creation_input_tokens),
+    input_tokens: Math.max(0, r.input_tokens),
+    output_tokens: Math.max(0, r.output_tokens),
     total_context_tokens: r.total_context_tokens,
     cost_usd: r.cost_usd,
   }));
