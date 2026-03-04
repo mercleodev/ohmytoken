@@ -36,6 +36,10 @@ npm-debug.log*
 # Test coverage
 coverage/
 
+# Local hook scripts
+scripts/completion-gate.sh
+scripts/keyword-doc-router.sh
+
 # Agent-local instructions and automation configs
 CLAUDE.md
 START-HERE.md
