@@ -5,6 +5,8 @@
  * past token usage from provider session files.
  */
 
+import type { ToolCallRow } from "../db/writer";
+
 export type BackfillClient = "claude" | "codex" | "gemini";
 
 export type BackfillMessage = {
@@ -26,6 +28,7 @@ export type BackfillMessage = {
   costUsd: number;
   userPrompt?: string; // 500 char limit
   toolSummary?: Record<string, number>;
+  toolCalls?: ToolCallRow[];
 };
 
 export type BackfillProgress = {
