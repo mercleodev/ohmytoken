@@ -78,15 +78,45 @@ const extractUserText = (entry: RawEntry): string => {
 };
 
 /**
- * Extract tool_summary from assistant entries in a turn range
+ * Fields used to extract a human-readable summary from tool_use input.
  */
-const extractToolSummary = (
+const SUMMARY_FIELDS = [
+  "file_path",
+  "pattern",
+  "command",
+  "query",
+  "prompt",
+  "url",
+  "selector",
+  "description",
+];
+
+/**
+ * Extract tool_calls, tool_summary, and agent_calls from assistant entries.
+ * Ported from historyImporter.ts extractToolInfo for parity.
+ */
+const extractToolInfo = (
   entries: RawEntry[],
   startIdx: number,
   endIdx: number,
-): Record<string, number> | undefined => {
-  const summary: Record<string, number> = {};
+): {
+  toolCalls: Array<{
+    call_index: number;
+    name: string;
+    input_summary: string;
+    timestamp?: string;
+  }>;
+  toolSummary: Record<string, number> | undefined;
+} => {
+  const toolCalls: Array<{
+    call_index: number;
+    name: string;
+    input_summary: string;
+    timestamp?: string;
+  }> = [];
+  const toolSummary: Record<string, number> = {};
   let found = false;
+  let toolIdx = 0;
 
   for (let i = startIdx; i < endIdx; i++) {
     const entry = entries[i];
@@ -98,14 +128,36 @@ const extractToolSummary = (
       for (const block of entry.message.content) {
         if (block.type === "tool_use") {
           const name = (block.name as string) || "Unknown";
-          summary[name] = (summary[name] || 0) + 1;
+          let inputStr = "";
+          if (typeof block.input === "object" && block.input) {
+            for (const field of SUMMARY_FIELDS) {
+              if (
+                block.input[field] &&
+                typeof block.input[field] === "string"
+              ) {
+                inputStr = String(block.input[field]).slice(0, 500);
+                break;
+              }
+            }
+            if (!inputStr) inputStr = JSON.stringify(block.input).slice(0, 500);
+          }
+          toolCalls.push({
+            call_index: toolIdx++,
+            name,
+            input_summary: inputStr,
+            timestamp: entry.timestamp,
+          });
+          toolSummary[name] = (toolSummary[name] || 0) + 1;
           found = true;
         }
       }
     }
   }
 
-  return found ? summary : undefined;
+  return {
+    toolCalls: found ? toolCalls : [],
+    toolSummary: found ? toolSummary : undefined,
+  };
 };
 
 /**
@@ -184,9 +236,8 @@ export const parseClaudeSessionFile = (
 
     const model = bestAssistant.message.model ?? "unknown";
 
-    // Build dedup key: prefer requestId, fall back to uuid-based
+    // Build dedup key: use user.uuid (matches historyImporter), fall back to generated key
     const requestId =
-      bestAssistant.requestId ??
       userEntry.uuid ??
       `backfill-${sessionId}-${userIdx}`;
 
@@ -206,7 +257,7 @@ export const parseClaudeSessionFile = (
     );
 
     const userText = extractUserText(userEntry);
-    const toolSummary = extractToolSummary(entries, userIdx + 1, nextUserIdx);
+    const { toolCalls, toolSummary } = extractToolInfo(entries, userIdx + 1, nextUserIdx);
 
     results.push({
       dedupKey: requestId,
@@ -224,6 +275,7 @@ export const parseClaudeSessionFile = (
       costUsd: cost,
       userPrompt: userText || undefined,
       toolSummary,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     });
   }
 

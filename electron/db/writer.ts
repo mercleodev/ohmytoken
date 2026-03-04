@@ -133,6 +133,18 @@ export const insertPrompt = (
   const stmts = getStatements();
   const p = data.prompt;
 
+  // Write-time dedup guard: skip file-scan Claude entries that already exist
+  // with same (session_id, timestamp). Prevents backfill from creating dupes
+  // when historyImporter already imported the same prompt.
+  if (p.source === "file-scan" && (p.provider === "claude" || !p.provider)) {
+    const existing = db
+      .prepare(
+        "SELECT id FROM prompts WHERE session_id = @sid AND timestamp = @ts AND provider = 'claude' LIMIT 1",
+      )
+      .get({ sid: p.session_id, ts: p.timestamp }) as { id: number } | undefined;
+    if (existing) return null;
+  }
+
   let promptId: number | null = null;
 
   const insert = db.transaction(() => {
