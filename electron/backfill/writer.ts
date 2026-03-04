@@ -54,6 +54,7 @@ export const batchInsertMessages = (
                 ? Object.values(msg.toolSummary).reduce((a, b) => a + b, 0)
                 : 0,
             },
+            tool_calls: msg.toolCalls,
           },
           { skipAggregates: true },
         );

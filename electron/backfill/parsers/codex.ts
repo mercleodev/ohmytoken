@@ -13,6 +13,7 @@
 import * as fs from "fs";
 import { calculateCodexCost } from "../../utils/costCalculator";
 import type { BackfillMessage } from "../types";
+import type { ToolCallRow } from "../../db/writer";
 
 type TokenUsage = {
   input_tokens: number;
@@ -44,6 +45,8 @@ type RawEvent = {
     // response_item fields
     role?: string;
     name?: string;
+    arguments?: string;
+    call_id?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     content?: any[];
   };
@@ -101,6 +104,63 @@ const extractToolSummary = (
   }
 
   return found ? summary : undefined;
+};
+
+const INPUT_SUMMARY_LIMIT = 100;
+
+/**
+ * Build a short input summary from function_call arguments JSON.
+ * Prefers `cmd` field (shell commands), falls back to first 100 chars.
+ */
+const buildInputSummary = (argsStr: string | undefined): string => {
+  if (!argsStr) return "";
+  try {
+    const parsed = JSON.parse(argsStr);
+    if (typeof parsed === "object" && parsed !== null) {
+      // Prefer cmd (exec_command), command (shell), or stdin (write_stdin)
+      const short = parsed.cmd ?? parsed.command ?? parsed.stdin;
+      if (typeof short === "string" && short.length > 0) {
+        return short.length > INPUT_SUMMARY_LIMIT
+          ? short.slice(0, INPUT_SUMMARY_LIMIT)
+          : short;
+      }
+    }
+  } catch {
+    /* not valid JSON — fall through */
+  }
+  return argsStr.length > INPUT_SUMMARY_LIMIT
+    ? argsStr.slice(0, INPUT_SUMMARY_LIMIT)
+    : argsStr;
+};
+
+/**
+ * Extract individual tool call records from response_item(function_call) events.
+ */
+const extractToolCalls = (
+  events: RawEvent[],
+  startIdx: number,
+  endIdx: number,
+): ToolCallRow[] => {
+  const calls: ToolCallRow[] = [];
+  let callIndex = 0;
+
+  for (let i = startIdx; i < endIdx; i++) {
+    const ev = events[i];
+    if (
+      ev.type === "response_item" &&
+      ev.payload.type === "function_call" &&
+      ev.payload.name
+    ) {
+      calls.push({
+        call_index: callIndex++,
+        name: ev.payload.name,
+        input_summary: buildInputSummary(ev.payload.arguments),
+        timestamp: ev.timestamp,
+      });
+    }
+  }
+
+  return calls;
 };
 
 /**
@@ -229,6 +289,7 @@ export const parseCodexSessionFile = (
 
     const userPrompt = extractUserPrompt(turn.message);
     const toolSummary = extractToolSummary(events, turn.idx, nextIdx);
+    const toolCalls = extractToolCalls(events, turn.idx, nextIdx);
     const timestamp = turn.timestamp ?? new Date().toISOString();
 
     results.push({
@@ -252,6 +313,7 @@ export const parseCodexSessionFile = (
       costUsd: cost,
       userPrompt,
       toolSummary,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     });
   }
 

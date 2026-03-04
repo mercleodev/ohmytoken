@@ -36,6 +36,7 @@ import { parseSystemFieldWithContent } from "./proxy/systemParser";
 import { insertEvidenceReport } from "./db/writer";
 import type { EvidenceEngineConfig } from "./evidence/types";
 import { runGapFill, registerBackfillIPC } from "./backfill/index";
+import { backfillCodexToolCalls } from "./backfill/codex-tool-backfill";
 import { startGapFillScheduler, stopGapFillScheduler } from "./backfill/scheduler";
 import { startProviderSessionWatcher } from "./watcher/providerSessionWatcher";
 
@@ -209,6 +210,13 @@ const initApp = async (): Promise<void> => {
     if (gapResult.insertedMessages > 0) {
       console.log(
         `[Backfill] Gap-fill: ${gapResult.insertedMessages} new prompts (${gapResult.durationMs}ms)`,
+      );
+    }
+    // One-time: backfill tool_calls for existing Codex prompts
+    const toolBackfill = backfillCodexToolCalls();
+    if (toolBackfill.updated > 0) {
+      console.log(
+        `[Backfill] Codex tool backfill: ${toolBackfill.updated} prompts updated`,
       );
     }
   } catch (err) {
