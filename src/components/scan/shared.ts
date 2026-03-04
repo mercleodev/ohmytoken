@@ -112,6 +112,15 @@ export const ACTION_COLORS: Record<string, string> = {
   ReadMcpResourceTool: '#84cc16',
   // Worktree
   EnterWorktree: '#78716c',
+  // Codex tools
+  exec_command: '#10b981',   // same as Bash (shell execution)
+  shell: '#10b981',
+  shell_command: '#10b981',
+  write_stdin: '#059669',    // darker green (stdin pipe)
+  update_plan: '#0ea5e9',    // same as EnterPlanMode
+  view_image: '#f472b6',     // pink (media)
+  list_mcp_resources: '#84cc16',
+  list_mcp_resource_templates: '#84cc16',
 };
 
 const FILE_TOOLS = new Set(['Read', 'Write', 'Edit', 'Glob', 'Grep']);
