@@ -138,6 +138,20 @@ export const buildScanEntry = (filePath: string): ScanFileEntry | null => {
 };
 
 /**
+ * Find a session file path by session ID (UUID).
+ * Walks the sessions directory looking for a filename that contains the UUID.
+ */
+export const findSessionFileBySessionId = (
+  sessionId: string,
+): string | null => {
+  const sessionsDir = getCodexSessionsDir();
+  if (!fs.existsSync(sessionsDir)) return null;
+
+  const allFiles = walkDir(sessionsDir, (name) => ROLLOUT_PATTERN.test(name));
+  return allFiles.find((f) => f.includes(sessionId)) ?? null;
+};
+
+/**
  * Quick count of Codex session files.
  */
 export const countCodexSessionFiles = (): number => {

@@ -34,5 +34,6 @@ export const codexPlugin: ProviderPlugin = {
   watchConfig: {
     dir: path.join(homedir(), ".codex", "sessions"),
     filePattern: /\.jsonl$/,
+    triggerFile: path.join(homedir(), ".codex", "history.jsonl"),
   },
 };

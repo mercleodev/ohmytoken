@@ -17,6 +17,14 @@ export type WatchConfig = {
   dir: string;
   /** File pattern to filter watch events (default: /\.jsonl$/) */
   filePattern?: RegExp;
+  /**
+   * Optional trigger file that is written to on every user turn
+   * (e.g. ~/.codex/history.jsonl). When this file changes, the watcher
+   * triggers a gap-fill even if the session directory watcher missed
+   * the write. Solves the problem where session files are flushed
+   * asynchronously after the trigger file.
+   */
+  triggerFile?: string;
 };
 
 export type ProviderPlugin = {
