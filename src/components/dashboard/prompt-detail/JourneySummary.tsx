@@ -9,6 +9,7 @@ type JourneySummaryProps = {
 };
 
 export const JourneySummary = ({ scan, usage, cacheHitPct, onFileClick }: JourneySummaryProps) => {
+  const isClaude = (scan.provider ?? "claude") === "claude";
   const injectedFiles = scan.injected_files ?? [];
   const toolCalls = scan.tool_calls ?? [];
   const actionCounts = Object.entries(scan.tool_summary ?? {})
@@ -17,6 +18,11 @@ export const JourneySummary = ({ scan, usage, cacheHitPct, onFileClick }: Journe
   const topInjectedFiles = [...injectedFiles]
     .sort((a, b) => b.estimated_tokens - a.estimated_tokens)
     .slice(0, 3);
+
+  // For non-Claude providers without individual tool_calls, derive count from tool_summary
+  const actionCountValue = toolCalls.length > 0
+    ? toolCalls.length
+    : Object.values(scan.tool_summary ?? {}).reduce((a, b) => a + b, 0);
 
   return (
     <div className="journey-summary">
@@ -28,15 +34,17 @@ export const JourneySummary = ({ scan, usage, cacheHitPct, onFileClick }: Journe
             {formatTokens(scan.user_prompt_tokens || 0)} tokens
           </div>
         </div>
-        <div className="journey-summary-card">
-          <div className="journey-summary-label">Injected</div>
-          <div className="journey-summary-value">
-            {injectedFiles.length} files · {formatTokens(scan.total_injected_tokens || 0)}
+        {isClaude && (
+          <div className="journey-summary-card">
+            <div className="journey-summary-label">Injected</div>
+            <div className="journey-summary-value">
+              {injectedFiles.length} files · {formatTokens(scan.total_injected_tokens || 0)}
+            </div>
           </div>
-        </div>
+        )}
         <div className="journey-summary-card">
           <div className="journey-summary-label">Actions</div>
-          <div className="journey-summary-value">{toolCalls.length} calls</div>
+          <div className="journey-summary-value">{actionCountValue} calls</div>
           {actionCounts.length > 0 && (
             <div className="journey-summary-sub">
               {actionCounts.map(([name, cnt]) => `${name}×${cnt}`).join(" · ")}
