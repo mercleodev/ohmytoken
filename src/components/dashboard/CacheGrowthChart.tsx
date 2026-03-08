@@ -76,11 +76,24 @@ const MarkerDot = ({ cx, cy, payload }: {
   return null;
 };
 
+/* Compact axis formatter — drops trailing ".0" to save horizontal space */
+const formatAxisTokens = (v: number): string => {
+  if (v >= 1_000_000) {
+    const m = v / 1_000_000;
+    return m % 1 === 0 ? `${m}M` : `${m.toFixed(1)}M`;
+  }
+  if (v >= 1_000) {
+    const k = v / 1_000;
+    return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
+  }
+  return String(v);
+};
+
 // Chart margins matching ComposedChart config
-const YAXIS_WIDTH = 44;
-const MARGIN_LEFT = -20;
+const YAXIS_WIDTH = 50;
+const MARGIN_LEFT = -16;
 const MARGIN_RIGHT = 4;
-const PLOT_LEFT = YAXIS_WIDTH + MARGIN_LEFT; // 24px
+const PLOT_LEFT = YAXIS_WIDTH + MARGIN_LEFT; // 34px
 
 const MIN_TURNS_TO_SHOW = 3;
 
@@ -106,10 +119,10 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
         turn: turn.turnIndex,
         timestamp: turn.timestamp,
         requestId: turn.request_id,
-        cumCacheRead: (prev?.cumCacheRead ?? 0) + turn.cache_read_tokens,
-        cumOutput: (prev?.cumOutput ?? 0) + turn.output_tokens,
-        cacheReadThisTurn: turn.cache_read_tokens,
-        outputThisTurn: turn.output_tokens,
+        cumCacheRead: (prev?.cumCacheRead ?? 0) + Math.max(0, turn.cache_read_tokens),
+        cumOutput: (prev?.cumOutput ?? 0) + Math.max(0, turn.output_tokens),
+        cacheReadThisTurn: Math.max(0, turn.cache_read_tokens),
+        outputThisTurn: Math.max(0, turn.output_tokens),
         compacted,
       });
       return acc;
@@ -181,8 +194,9 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
               tick={{ fontSize: 9, fill: '#9B9C9E' }}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(v: number) => formatTokens(v)}
+              tickFormatter={formatAxisTokens}
               width={YAXIS_WIDTH}
+              domain={[0, 'auto']}
             />
             <Tooltip content={<GrowthTooltip clickable={clickable} />} />
             {compactedTurns.map((r) => (
