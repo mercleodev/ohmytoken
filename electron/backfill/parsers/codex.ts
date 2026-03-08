@@ -310,12 +310,16 @@ export const parseCodexSessionFile = (
     if (!lastTotal) continue;
 
     // Compute per-turn delta from cumulative totals
-    const deltaInput = lastTotal.input_tokens - prevTotal.input_tokens;
-    const deltaCached =
-      lastTotal.cached_input_tokens - prevTotal.cached_input_tokens;
-    const deltaOutput = lastTotal.output_tokens - prevTotal.output_tokens;
-    const deltaReasoning =
-      lastTotal.reasoning_output_tokens - prevTotal.reasoning_output_tokens;
+    const deltaInput = Math.max(0, lastTotal.input_tokens - prevTotal.input_tokens);
+    const deltaCached = Math.max(
+      0,
+      lastTotal.cached_input_tokens - prevTotal.cached_input_tokens,
+    );
+    const deltaOutput = Math.max(0, lastTotal.output_tokens - prevTotal.output_tokens);
+    const deltaReasoning = Math.max(
+      0,
+      lastTotal.reasoning_output_tokens - prevTotal.reasoning_output_tokens,
+    );
 
     prevTotal = { ...lastTotal };
 
