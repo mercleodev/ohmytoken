@@ -87,12 +87,13 @@ export const backfillCodexToolCalls = (): { updated: number; errors: number } =>
             if (promptId === undefined) continue;
             if (!msg.toolCalls || msg.toolCalls.length === 0) continue;
 
-            for (const tc of msg.toolCalls) {
+            for (let i = 0; i < msg.toolCalls.length; i++) {
+              const tc = msg.toolCalls[i];
               insertToolCall.run({
                 prompt_id: promptId,
-                call_index: tc.call_index,
+                call_index: i,
                 name: tc.name,
-                input_summary: tc.input_summary ?? null,
+                input_summary: tc.inputSummary ?? null,
                 timestamp: tc.timestamp ?? null,
               });
             }

@@ -68,13 +68,13 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
   const hasOutputTokens = (usage?.response.output_tokens ?? 0) > 0;
   const isPromptCompleted = hasAssistantResponse || hasOutputTokens;
 
-  const isClaude = (scan.provider ?? "claude") === "claude";
   const hasDetailedBreakdown = (scan.context_estimate?.system_tokens ?? 0) > 0
     || (scan.context_estimate?.messages_tokens ?? 0) > 0;
   const hasInjectedFiles = injectedFiles.length > 0;
   const hasToolCalls = toolCalls.length > 0;
-  const hasToolSummary = Object.keys(scan.tool_summary ?? {}).length > 0;
-  const isLimitedProvider = !hasDetailedBreakdown && !hasInjectedFiles && !hasToolCalls && !hasToolSummary;
+  const hasAnyData = hasDetailedBreakdown || hasInjectedFiles || hasToolCalls
+    || (scan.context_estimate?.total_tokens ?? 0) > 0;
+  const isLimitedProvider = !hasAnyData;
 
   const toolNameOptions = useMemo(() => {
     const freq: Record<string, number> = {};
@@ -172,20 +172,16 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
       {/* Quick Stats */}
       <div className="prompt-detail-stats">
         <StatPill label="Turns" value={String(scan.conversation_turns ?? 0)} />
-        <StatPill label="Tools" value={String(
-          toolCalls.length > 0
-            ? toolCalls.length
-            : Object.values(scan.tool_summary ?? {}).reduce((a, b) => a + b, 0)
-        )} />
-        {isClaude && <StatPill label="Files" value={String(injectedFiles.length)} />}
+        <StatPill label="Tools" value={String(toolCalls.length)} />
+        <StatPill label="Files" value={String(injectedFiles.length)} />
         <StatPill label="Compactions" value={sessionCompactions === null ? "..." : String(sessionCompactions)} />
         {usage && <StatPill label="Duration" value={`${(usage.duration_ms / 1000).toFixed(1)}s`} />}
       </div>
 
       <JourneySummary scan={scan} usage={usage} cacheHitPct={cacheHitPct} onFileClick={setPreviewFile} />
 
-      {/* Injected Evidence — only for Claude provider */}
-      {isClaude && hasInjectedFiles && (
+      {/* Injected Evidence — hidden when no injected files (e.g. Codex) */}
+      {hasInjectedFiles && (
         <Section
           title={`Injected Evidence (C ${injectedEvidence.confirmed.length} · L ${injectedEvidence.likely.length} · U ${injectedEvidence.unverified.length})`}
           id="injected-evidence"
@@ -212,24 +208,22 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
         {showEvidenceSettings && <EvidenceSettings onClose={() => setShowEvidenceSettings(false)} onSave={handleRescore} />}
       </AnimatePresence>
 
-      {/* Injected Files — only for Claude provider */}
-      {isClaude && (
-        <Section title={`Injected Files (${injectedFiles.length})`} id="files" expanded={expandedSections} onToggle={toggle}>
-          {injectedFiles.length > 0 ? (
-            <div className="file-list">
-              {injectedFiles.map((f, i) => (
-                <button key={i} className="file-item" onClick={() => setPreviewFile(f.path)}>
-                  <span className="file-dot" style={{ background: CATEGORY_COLORS[f.category] || "#8e8e93" }} />
-                  <span className="file-path">{f.path.split("/").slice(-2).join("/")}</span>
-                  <span className="file-tokens">{formatTokens(f.estimated_tokens)}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="section-empty">No injected files</div>
-          )}
-        </Section>
-      )}
+      {/* Injected Files */}
+      <Section title={`Injected Files (${injectedFiles.length})`} id="files" expanded={expandedSections} onToggle={toggle}>
+        {injectedFiles.length > 0 ? (
+          <div className="file-list">
+            {injectedFiles.map((f, i) => (
+              <button key={i} className="file-item" onClick={() => setPreviewFile(f.path)}>
+                <span className="file-dot" style={{ background: CATEGORY_COLORS[f.category] || "#8e8e93" }} />
+                <span className="file-path">{f.path.split("/").slice(-2).join("/")}</span>
+                <span className="file-tokens">{formatTokens(f.estimated_tokens)}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="section-empty">No injected files</div>
+        )}
+      </Section>
 
       {/* Actions */}
       <Section title={`Actions (${toolCalls.length})`} id="tools" expanded={expandedSections} onToggle={toggle}>

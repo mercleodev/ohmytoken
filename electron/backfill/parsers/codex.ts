@@ -1,19 +1,22 @@
 /**
  * Codex JSONL Parser
  *
- * Parses Codex CLI session JSONL files and extracts token usage.
+ * Parses Codex CLI session JSONL files and extracts token usage,
+ * tool calls, assistant responses, and conversation metrics.
+ *
  * Codex events: session_meta, response_item, event_msg, turn_context.
  *
  * Strategy:
  * 1. Turn boundaries are marked by event_msg(user_message)
  * 2. Token usage comes from event_msg(token_count).total_token_usage (cumulative)
  * 3. Per-turn usage = delta between end-of-turn and start-of-turn cumulative totals
- * 4. Model name inferred from model_context_window (not explicit in Codex data)
+ * 4. Model name from turn_context.payload.model, fallback to context window inference
+ * 5. Tool calls from response_item(function_call|custom_tool_call)
+ * 6. Assistant response from event_msg(agent_message)
  */
 import * as fs from "fs";
 import { calculateCodexCost } from "../../utils/costCalculator";
-import type { BackfillMessage } from "../types";
-import type { ToolCallRow } from "../../db/writer";
+import type { BackfillMessage, BackfillToolCall } from "../types";
 
 type TokenUsage = {
   input_tokens: number;
@@ -34,6 +37,8 @@ type RawEvent = {
     model_provider?: string;
     // event_msg/user_message
     message?: string;
+    // event_msg/agent_message
+    phase?: string;
     // event_msg/token_count
     info?: {
       total_token_usage?: TokenUsage;
@@ -42,10 +47,13 @@ type RawEvent = {
     } | null;
     // event_msg/task_started
     model_context_window?: number;
+    // turn_context fields
+    model?: string;
     // response_item fields
     role?: string;
     name?: string;
     arguments?: string;
+    input?: string;
     call_id?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     content?: any[];
@@ -53,6 +61,8 @@ type RawEvent = {
 };
 
 const USER_PROMPT_LIMIT = 500;
+const INPUT_SUMMARY_LIMIT = 200;
+const RESPONSE_LIMIT = 2000;
 const ZERO_USAGE: TokenUsage = {
   input_tokens: 0,
   cached_input_tokens: 0,
@@ -62,8 +72,7 @@ const ZERO_USAGE: TokenUsage = {
 };
 
 /**
- * Infer model name from context window size.
- * Codex JSONL doesn't include explicit model names.
+ * Infer model name from context window size (fallback only).
  */
 const inferModelName = (contextWindow: number): string => {
   if (contextWindow <= 200_000) return "o4-mini";
@@ -80,7 +89,7 @@ const extractUserPrompt = (message: string | undefined): string | undefined => {
 };
 
 /**
- * Extract tool summary from response_item(function_call) events in a range.
+ * Extract tool summary from response_item(function_call|custom_tool_call) events.
  */
 const extractToolSummary = (
   events: RawEvent[],
@@ -92,9 +101,11 @@ const extractToolSummary = (
 
   for (let i = startIdx; i < endIdx; i++) {
     const ev = events[i];
+    if (!ev.payload) continue;
+    const pt = ev.payload.type;
     if (
       ev.type === "response_item" &&
-      ev.payload.type === "function_call" &&
+      (pt === "function_call" || pt === "custom_tool_call") &&
       ev.payload.name
     ) {
       const name = ev.payload.name;
@@ -106,61 +117,103 @@ const extractToolSummary = (
   return found ? summary : undefined;
 };
 
-const INPUT_SUMMARY_LIMIT = 100;
-
 /**
- * Build a short input summary from function_call arguments JSON.
- * Prefers `cmd` field (shell commands), falls back to first 100 chars.
- */
-const buildInputSummary = (argsStr: string | undefined): string => {
-  if (!argsStr) return "";
-  try {
-    const parsed = JSON.parse(argsStr);
-    if (typeof parsed === "object" && parsed !== null) {
-      // Prefer cmd (exec_command), command (shell), or stdin (write_stdin)
-      const short = parsed.cmd ?? parsed.command ?? parsed.stdin;
-      if (typeof short === "string" && short.length > 0) {
-        return short.length > INPUT_SUMMARY_LIMIT
-          ? short.slice(0, INPUT_SUMMARY_LIMIT)
-          : short;
-      }
-    }
-  } catch {
-    /* not valid JSON — fall through */
-  }
-  return argsStr.length > INPUT_SUMMARY_LIMIT
-    ? argsStr.slice(0, INPUT_SUMMARY_LIMIT)
-    : argsStr;
-};
-
-/**
- * Extract individual tool call records from response_item(function_call) events.
+ * Extract detailed tool calls from response_item events in a turn range.
+ * Includes function_call, custom_tool_call, and web_search_call.
  */
 const extractToolCalls = (
   events: RawEvent[],
   startIdx: number,
   endIdx: number,
-): ToolCallRow[] => {
-  const calls: ToolCallRow[] = [];
-  let callIndex = 0;
+): BackfillToolCall[] => {
+  const calls: BackfillToolCall[] = [];
 
   for (let i = startIdx; i < endIdx; i++) {
     const ev = events[i];
-    if (
-      ev.type === "response_item" &&
-      ev.payload.type === "function_call" &&
-      ev.payload.name
-    ) {
+    if (!ev.payload) continue;
+    const pt = ev.payload.type;
+
+    if (ev.type !== "response_item") continue;
+
+    if (pt === "function_call" && ev.payload.name) {
+      const args = ev.payload.arguments ?? "";
+      let inputSummary = args;
+      // For exec_command, extract just the cmd for readability
+      if (ev.payload.name === "exec_command") {
+        try {
+          const parsed = JSON.parse(args);
+          inputSummary = parsed.cmd ?? args;
+        } catch { /* use raw args */ }
+      }
       calls.push({
-        call_index: callIndex++,
         name: ev.payload.name,
-        input_summary: buildInputSummary(ev.payload.arguments),
+        inputSummary: inputSummary.slice(0, INPUT_SUMMARY_LIMIT),
+        timestamp: ev.timestamp,
+      });
+    } else if (pt === "custom_tool_call" && ev.payload.name) {
+      const input = ev.payload.input ?? "";
+      calls.push({
+        name: ev.payload.name,
+        inputSummary: input.slice(0, INPUT_SUMMARY_LIMIT),
+        timestamp: ev.timestamp,
+      });
+    } else if (pt === "web_search_call") {
+      calls.push({
+        name: "web_search",
+        inputSummary: "",
         timestamp: ev.timestamp,
       });
     }
   }
 
   return calls;
+};
+
+/**
+ * Extract assistant response from event_msg/agent_message events in a turn range.
+ * Concatenates commentary phase messages.
+ */
+const extractAssistantResponse = (
+  events: RawEvent[],
+  startIdx: number,
+  endIdx: number,
+): string | undefined => {
+  const parts: string[] = [];
+
+  for (let i = startIdx; i < endIdx; i++) {
+    const ev = events[i];
+    if (!ev.payload) continue;
+    if (
+      ev.type === "event_msg" &&
+      ev.payload.type === "agent_message" &&
+      ev.payload.message
+    ) {
+      parts.push(ev.payload.message);
+    }
+  }
+
+  if (parts.length === 0) return undefined;
+  const combined = parts.join("\n\n");
+  return combined.slice(0, RESPONSE_LIMIT) || undefined;
+};
+
+/**
+ * Count assistant messages in a turn range (agent_message events).
+ */
+const countAssistantMessages = (
+  events: RawEvent[],
+  startIdx: number,
+  endIdx: number,
+): number => {
+  let count = 0;
+  for (let i = startIdx; i < endIdx; i++) {
+    const ev = events[i];
+    if (!ev.payload) continue;
+    if (ev.type === "event_msg" && ev.payload.type === "agent_message") {
+      count++;
+    }
+  }
+  return count;
 };
 
 /**
@@ -193,25 +246,29 @@ export const parseCodexSessionFile = (
 
   if (events.length === 0) return [];
 
-  // Detect model from task_started or token_count context window
-  let modelName = "o3"; // default
+  // Detect model: prefer turn_context.payload.model, fallback to context window
+  let modelName = "";
+  let contextWindowModel = "";
   for (const ev of events) {
-    if (ev.type === "event_msg") {
+    if (ev.type === "turn_context" && ev.payload?.model && !modelName) {
+      modelName = ev.payload.model;
+    }
+    if (ev.type === "event_msg" && ev.payload && !contextWindowModel) {
       const ctxWindow =
         ev.payload.model_context_window ??
         ev.payload.info?.model_context_window;
       if (ctxWindow) {
-        modelName = inferModelName(ctxWindow);
-        break;
+        contextWindowModel = inferModelName(ctxWindow);
       }
     }
   }
+  if (!modelName) modelName = contextWindowModel || "o3";
 
   // Find turn boundaries: event_msg(user_message)
   const turnStarts: { idx: number; message?: string; timestamp?: string }[] = [];
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
-    if (ev.type === "event_msg" && ev.payload.type === "user_message") {
+    if (ev.type === "event_msg" && ev.payload?.type === "user_message") {
       turnStarts.push({
         idx: i,
         message: ev.payload.message,
@@ -239,7 +296,7 @@ export const parseCodexSessionFile = (
       const ev = events[i];
       if (
         ev.type === "event_msg" &&
-        ev.payload.type === "token_count" &&
+        ev.payload?.type === "token_count" &&
         ev.payload.info?.total_token_usage
       ) {
         lastTotal = ev.payload.info.total_token_usage;
@@ -252,9 +309,7 @@ export const parseCodexSessionFile = (
 
     if (!lastTotal) continue;
 
-    // Compute per-turn delta from cumulative totals.
-    // Clamp to 0: Codex may reset/reduce cumulative counters after context
-    // compaction, which would produce negative deltas and corrupt cost/graph data.
+    // Compute per-turn delta from cumulative totals
     const deltaInput = Math.max(0, lastTotal.input_tokens - prevTotal.input_tokens);
     const deltaCached = Math.max(
       0,
@@ -290,6 +345,8 @@ export const parseCodexSessionFile = (
     const userPrompt = extractUserPrompt(turn.message);
     const toolSummary = extractToolSummary(events, turn.idx, nextIdx);
     const toolCalls = extractToolCalls(events, turn.idx, nextIdx);
+    const assistantResponse = extractAssistantResponse(events, turn.idx, nextIdx);
+    const assistantMsgCount = countAssistantMessages(events, turn.idx, nextIdx);
     const timestamp = turn.timestamp ?? new Date().toISOString();
 
     results.push({
@@ -314,6 +371,10 @@ export const parseCodexSessionFile = (
       userPrompt,
       toolSummary,
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+      assistantResponse,
+      conversationTurns: turnStarts.length,
+      userMessagesCount: 1,
+      assistantMessagesCount: assistantMsgCount,
     });
   }
 

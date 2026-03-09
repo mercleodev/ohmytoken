@@ -6,6 +6,7 @@ export const getModelShort = (model: string): string => {
   if (model.includes('opus')) return 'Opus';
   if (model.includes('sonnet')) return 'Sonnet';
   if (model.includes('haiku')) return 'Haiku';
+  if (model.includes('gpt-5')) return 'GPT-5';
   if (model.includes('o4-mini')) return 'o4-mini';
   if (model.includes('o3')) return 'o3';
   if (model.includes('gemini')) {
@@ -19,7 +20,7 @@ export const getModelColor = (model: string): string => {
   if (model.includes('opus')) return '#8b5cf6';
   if (model.includes('sonnet')) return '#3b82f6';
   if (model.includes('haiku')) return '#10b981';
-  if (model.includes('o4-mini') || model.includes('o3')) return '#f97316';
+  if (model.includes('gpt-5') || model.includes('o4-mini') || model.includes('o3')) return '#f97316';
   if (model.includes('gemini')) return '#4285f4';
   return '#6b7280';
 };
@@ -41,6 +42,7 @@ const MODEL_CONTEXT_LIMITS: Record<string, number> = {
   'claude-haiku-4-5-20251001': 200_000,
   'o4-mini': 200_000,
   'o3': 258_400,
+  'gpt-5.3-codex': 258_400,
   'gemini-2.0-flash': 1_048_576,
   'gemini-2.5-pro': 1_048_576,
 };
@@ -113,14 +115,9 @@ export const ACTION_COLORS: Record<string, string> = {
   // Worktree
   EnterWorktree: '#78716c',
   // Codex tools
-  exec_command: '#10b981',   // same as Bash (shell execution)
-  shell: '#10b981',
-  shell_command: '#10b981',
-  write_stdin: '#059669',    // darker green (stdin pipe)
-  update_plan: '#0ea5e9',    // same as EnterPlanMode
-  view_image: '#f472b6',     // pink (media)
-  list_mcp_resources: '#84cc16',
-  list_mcp_resource_templates: '#84cc16',
+  exec_command: '#10b981',
+  apply_patch: '#f59e0b',
+  web_search: '#ec4899',
 };
 
 const FILE_TOOLS = new Set(['Read', 'Write', 'Edit', 'Glob', 'Grep']);
@@ -132,7 +129,8 @@ export const formatActionDetail = (t: { name: string; input_summary: string }): 
     const parts = s.split('/');
     return parts.length > 2 ? parts.slice(-2).join('/') : s;
   }
-  if (t.name === 'Bash') return s.length > 60 ? s.slice(0, 60) + '...' : s;
+  if (t.name === 'Bash' || t.name === 'exec_command') return s.length > 60 ? s.slice(0, 60) + '...' : s;
+  if (t.name === 'apply_patch') return s.length > 60 ? s.slice(0, 60) + '...' : s;
   return s.length > 80 ? s.slice(0, 80) + '...' : s;
 };
 
