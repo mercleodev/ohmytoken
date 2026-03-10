@@ -120,6 +120,10 @@ const parseEntry = (entry: any): ParsedMessage | null => {
     if (typeof content === 'string') {
       result.content = content;
     } else if (Array.isArray(content)) {
+      // Messages containing tool_result blocks are tool responses, not real user input
+      const hasToolResult = content.some((c: any) => c.type === 'tool_result');
+      if (hasToolResult) return null;
+
       // Extract text-type blocks from array
       const textParts = content
         .filter((c: any) => c.type === 'text' && c.text)
@@ -128,7 +132,6 @@ const parseEntry = (entry: any): ParsedMessage | null => {
       if (textParts.length > 0) {
         result.content = textParts.join('\n');
       } else {
-        // Ignore tool_result, etc. (not actual user input)
         return null;
       }
     }

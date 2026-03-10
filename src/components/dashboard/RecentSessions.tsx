@@ -35,6 +35,21 @@ type RecentSessionsProps = {
 const INITIAL_LIMIT = 5;
 const BATCH_SIZE = 20;
 
+/** Patterns indicating system/tool messages that should not appear as user prompts */
+const SYSTEM_PROMPT_PATTERNS = [
+  "Compacted (ctrl+o to see full summary)",
+  "This session is being continued from a previous conversation",
+  "Read the output file to retrieve the result:",
+];
+
+const stripAnsi = (text: string): string =>
+  text.replace(/\x1b\[[0-9;]*m/g, "").replace(/\[[\d;]*m/g, "");
+
+const isSystemPrompt = (text: string): boolean => {
+  const clean = stripAnsi(text).trim();
+  return SYSTEM_PROMPT_PATTERNS.some((p) => clean.includes(p));
+};
+
 const buildPromptItems = (
   entries: HistoryEntry[],
   scans: PromptScan[],
@@ -51,10 +66,13 @@ const buildPromptItems = (
     return true;
   });
 
+  // Pass 1.5: filter out system/tool messages
+  const pass1b = pass1.filter((e) => !isSystemPrompt(e.display || ""));
+
   // Pass 2: near-dedup by display text within 60s window (cross-session)
   // Keep the entry with more data (has token info)
   const unique: HistoryEntry[] = [];
-  for (const e of pass1) {
+  for (const e of pass1b) {
     const displayKey = (e.display || "").slice(0, 80).trim();
     if (!displayKey) {
       unique.push(e);
@@ -123,12 +141,13 @@ const buildPromptItemsFromScans = (scans: PromptScan[]): PromptItem[] => {
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
 
-  // Dedup by request_id
+  // Dedup by request_id, filter system messages
   const seen = new Set<string>();
   return sorted
     .filter((s) => {
       if (seen.has(s.request_id)) return false;
       seen.add(s.request_id);
+      if (isSystemPrompt(s.user_prompt || "")) return false;
       return true;
     })
     .map((s) => ({
@@ -467,7 +486,7 @@ export const RecentSessions = ({
                             <span>&middot;</span>
                           </>
                         )}
-                        {p.model && (
+                        {p.model && p.model !== "unknown" && (
                           <>
                             <span
                               style={{

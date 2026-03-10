@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Treemap, ResponsiveContainer } from "recharts";
 import { formatTokens, CATEGORY_COLORS } from "../scan/shared";
 import type { PromptScan } from "../../types";
@@ -14,12 +14,6 @@ type TreemapNode = {
   tokens: number;
   color: string;
   filePath?: string;
-  relatedFiles?: {
-    name: string;
-    path: string;
-    tokens: number;
-    color: string;
-  }[];
   children?: TreemapNode[];
 };
 
@@ -27,14 +21,15 @@ type HoverInfo = {
   name: string;
   tokens: number;
   filePath?: string;
-  relatedFiles?: {
-    name: string;
-    path: string;
-    tokens: number;
-    color: string;
-  }[];
   x: number;
   y: number;
+};
+
+type GroupLabel = {
+  name: string;
+  tokens: number;
+  left: number;
+  top: number;
 };
 
 const COLORS: Record<string, string> = {
@@ -48,6 +43,8 @@ const COLORS: Record<string, string> = {
   skill: CATEGORY_COLORS.skill,
 };
 
+const GROUP_NAMES = new Set(["Injected", "Actions"]);
+
 const buildTreemapData = (scan: PromptScan): TreemapNode[] => {
   const ctx = scan.context_estimate ?? {
     system_tokens: 0,
@@ -57,113 +54,138 @@ const buildTreemapData = (scan: PromptScan): TreemapNode[] => {
   };
   const files = scan.injected_files ?? [];
   const toolResultCount = scan.tool_result_count ?? 0;
-  const data: TreemapNode[] = [];
+  const total = ctx.total_tokens || 1;
+  const minSize = total * 0.01;
 
   const hasDetailedBreakdown = ctx.system_tokens > 0 || ctx.messages_tokens > 0;
 
-  if (hasDetailedBreakdown) {
-    // Claude-style detailed breakdown
+  if (!hasDetailedBreakdown) {
+    if (ctx.total_tokens > 0) {
+      return [{
+        name: "Input",
+        size: ctx.total_tokens,
+        tokens: ctx.total_tokens,
+        color: "#3b82f6",
+      }];
+    }
+    return [];
+  }
 
-    // System: broken down by injected files
-    if (ctx.system_tokens > 0) {
-      const fileTokens = files.reduce((sum, f) => sum + f.estimated_tokens, 0);
-      const otherSystemTokens = Math.max(ctx.system_tokens - fileTokens, 0);
+  const injectedChildren: TreemapNode[] = [];
+  const actionsChildren: TreemapNode[] = [];
 
-      const systemChildren: TreemapNode[] = files.map((f) => ({
-        name: f.path.split("/").pop() ?? f.path,
-        size: f.estimated_tokens,
-        tokens: f.estimated_tokens,
-        color: COLORS[f.category] ?? COLORS.system,
-        filePath: f.path,
-      }));
+  if (ctx.system_tokens > 0) {
+    const fileTokens = files.reduce((sum, f) => sum + f.estimated_tokens, 0);
+    const otherSystemTokens = Math.max(ctx.system_tokens - fileTokens, 0);
 
-      if (otherSystemTokens > 100) {
-        systemChildren.push({
-          name: "System (other)",
-          size: otherSystemTokens,
-          tokens: otherSystemTokens,
-          color: "#7c3aed",
+    for (const f of files) {
+      if (f.estimated_tokens >= minSize) {
+        injectedChildren.push({
+          name: f.path.split("/").pop() ?? f.path,
+          size: f.estimated_tokens,
+          tokens: f.estimated_tokens,
+          color: COLORS[f.category] ?? COLORS.system,
+          filePath: f.path,
         });
       }
-
-      data.push(...systemChildren);
     }
 
-    // Messages: split into user prompts / responses / action results
-    if (ctx.messages_tokens > 0) {
-      const bd = ctx.messages_tokens_breakdown;
-      const hasBreakdown =
-        bd &&
-        (bd.user_text_tokens > 0 ||
-          bd.assistant_tokens > 0 ||
-          bd.tool_result_tokens > 0);
+    if (otherSystemTokens > minSize) {
+      injectedChildren.push({
+        name: "System (other)",
+        size: otherSystemTokens,
+        tokens: otherSystemTokens,
+        color: "#7c3aed",
+      });
+    }
+  }
 
-      if (hasBreakdown) {
-        if (bd.assistant_tokens > 100) {
-          data.push({
-            name: "Responses",
-            size: bd.assistant_tokens,
-            tokens: bd.assistant_tokens,
-            color: "#60a5fa",
-          });
-        }
-        if (bd.user_text_tokens > 100) {
-          data.push({
-            name: "Your Prompts",
-            size: bd.user_text_tokens,
-            tokens: bd.user_text_tokens,
-            color: COLORS.messages,
-          });
-        }
-        if (bd.tool_result_tokens > 100) {
-          data.push({
-            name: `Action Results (${toolResultCount || ""})`.trim(),
-            size: bd.tool_result_tokens,
-            tokens: bd.tool_result_tokens,
-            color: "#06b6d4",
-          });
-        }
-      } else {
-        data.push({
-          name: "Messages",
-          size: ctx.messages_tokens,
-          tokens: ctx.messages_tokens,
+  if (ctx.messages_tokens > 0) {
+    const bd = ctx.messages_tokens_breakdown;
+    const hasBreakdown =
+      bd &&
+      (bd.user_text_tokens > 0 ||
+        bd.assistant_tokens > 0 ||
+        bd.tool_result_tokens > 0);
+
+    if (hasBreakdown) {
+      if (bd.assistant_tokens > minSize) {
+        actionsChildren.push({
+          name: "Responses",
+          size: bd.assistant_tokens,
+          tokens: bd.assistant_tokens,
+          color: "#60a5fa",
+        });
+      }
+      if (bd.user_text_tokens > minSize) {
+        actionsChildren.push({
+          name: "Your Prompts",
+          size: bd.user_text_tokens,
+          tokens: bd.user_text_tokens,
           color: COLORS.messages,
         });
       }
-    }
-
-    // Tools Definition
-    if (ctx.tools_definition_tokens > 0) {
-      data.push({
-        name: "Tools Def",
-        size: ctx.tools_definition_tokens,
-        tokens: ctx.tools_definition_tokens,
-        color: COLORS.tools,
+      if (bd.tool_result_tokens > minSize) {
+        actionsChildren.push({
+          name: `Action Results (${toolResultCount || ""})`.trim(),
+          size: bd.tool_result_tokens,
+          tokens: bd.tool_result_tokens,
+          color: "#06b6d4",
+        });
+      }
+    } else {
+      actionsChildren.push({
+        name: "Messages",
+        size: ctx.messages_tokens,
+        tokens: ctx.messages_tokens,
+        color: COLORS.messages,
       });
     }
-  } else if (ctx.total_tokens > 0) {
-    // Non-Claude providers: show total input tokens as a single block
-    // (no system/messages/tools breakdown available)
-    data.push({
-      name: "Input",
-      size: ctx.total_tokens,
-      tokens: ctx.total_tokens,
-      color: "#3b82f6",
+  }
+
+  if (ctx.tools_definition_tokens > minSize) {
+    actionsChildren.push({
+      name: "Tools Def",
+      size: ctx.tools_definition_tokens,
+      tokens: ctx.tools_definition_tokens,
+      color: COLORS.tools,
     });
   }
 
-  // Filter out nodes too small to display (< 1% of total)
-  const total = ctx.total_tokens || 1;
-  return data.filter((d) => d.size / total >= 0.01);
+  const data: TreemapNode[] = [];
+
+  if (injectedChildren.length > 0) {
+    const injectedTotal = injectedChildren.reduce((s, c) => s + c.tokens, 0);
+    data.push({
+      name: "Injected",
+      size: injectedTotal,
+      tokens: injectedTotal,
+      color: "#8b5cf6",
+      children: injectedChildren,
+    });
+  }
+
+  if (actionsChildren.length > 0) {
+    const actionsTotal = actionsChildren.reduce((s, c) => s + c.tokens, 0);
+    data.push({
+      name: "Actions",
+      size: actionsTotal,
+      tokens: actionsTotal,
+      color: "#3b82f6",
+      children: actionsChildren,
+    });
+  }
+
+  return data;
 };
 
-// Custom cell renderer
-type ContextCellProps = {
+// Cell renderer
+type CellProps = {
   x: number;
   y: number;
   width: number;
   height: number;
+  depth: number;
   name: string;
   tokens: number;
   color: string;
@@ -172,37 +194,58 @@ type ContextCellProps = {
   onClick?: (filePath: string) => void;
 };
 
-const CustomContent = (props: Partial<ContextCellProps>) => {
+const CustomContent = (props: Partial<CellProps>) => {
   const {
     x = 0,
     y = 0,
     width = 0,
     height = 0,
-    name = '',
+    depth = 1,
+    name = "",
     tokens = 0,
-    color = '#8884d8',
+    color = "#8884d8",
     filePath,
     onHover,
     onClick,
   } = props;
-  if (!width || !height || width < 4 || height < 4) return null;
 
+  if (!width || !height || width < 2 || height < 2) return null;
+
+  const isGroup = depth === 1 && GROUP_NAMES.has(name);
+
+  if (isGroup) {
+    // Group parent: render an invisible marker rect with data attributes for DOM query
+    return (
+      <rect
+        data-group={name}
+        data-tokens={tokens}
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill="none"
+        stroke="rgba(255,255,255,0.6)"
+        strokeWidth={2}
+        rx={6}
+        ry={6}
+      />
+    );
+  }
+
+  // Leaf nodes
   const handleMouseEnter = (e: React.MouseEvent) => {
     if (onHover) {
-      const rect = (e.currentTarget as SVGElement).closest(
+      const container = (e.currentTarget as SVGElement).closest(
         ".context-treemap-chart",
       );
-      const bounds = rect?.getBoundingClientRect();
+      const bounds = container?.getBoundingClientRect();
       const relX = bounds ? e.clientX - bounds.left : x;
       const relY = bounds ? e.clientY - bounds.top : y;
       onHover({ name, tokens, filePath, x: relX, y: relY });
     }
   };
 
-  const handleMouseLeave = () => {
-    if (onHover) onHover(null);
-  };
-
+  const handleMouseLeave = () => onHover?.(null);
   const handleClick = () => {
     if (onClick && filePath) onClick(filePath);
   };
@@ -230,8 +273,8 @@ const CustomContent = (props: Partial<ContextCellProps>) => {
     );
   }
 
-  const showLabel = width > 50 && height > 30;
-  const showTokens = width > 60 && height > 42;
+  const showLabel = width > 50 && height > 28;
+  const showTokens = width > 60 && height > 40;
 
   return (
     <g
@@ -285,21 +328,33 @@ const CustomContent = (props: Partial<ContextCellProps>) => {
 
 export const ContextTreemap = ({ scan, onFileClick }: ContextTreemapProps) => {
   const [hoveredNode, setHoveredNode] = useState<HoverInfo | null>(null);
+  const [groupLabels, setGroupLabels] = useState<GroupLabel[]>([]);
   const chartRef = useRef<HTMLDivElement>(null);
   const data = buildTreemapData(scan);
   const files = scan.injected_files ?? [];
 
-  if (data.length === 0) return null;
+  // After treemap renders, read group rect positions from the DOM
+  const prevLabelsRef = useRef<string>("");
+  useEffect(() => {
+    const el = chartRef.current;
+    if (!el) return;
+    const rects = el.querySelectorAll<SVGRectElement>("rect[data-group]");
+    const labels: GroupLabel[] = [];
+    rects.forEach((rect) => {
+      const name = rect.getAttribute("data-group") ?? "";
+      const tokens = Number(rect.getAttribute("data-tokens") ?? 0);
+      const x = Number(rect.getAttribute("x") ?? 0);
+      const y = Number(rect.getAttribute("y") ?? 0);
+      labels.push({ name, tokens, left: x + 4, top: y + 3 });
+    });
+    const key = labels.map((l) => `${l.name}:${l.left}:${l.top}`).join("|");
+    if (key !== prevLabelsRef.current) {
+      prevLabelsRef.current = key;
+      setGroupLabels(labels);
+    }
+  });
 
-  // Build a map of file nodes: find all files matching a system-category node
-  const filesByCategory = new Map<string, typeof files>();
-  for (const f of files) {
-    const displayName = f.path.split("/").pop() ?? f.path;
-    // Each file has its own treemap cell, so the "category" is the display name
-    const existing = filesByCategory.get(displayName) ?? [];
-    existing.push(f);
-    filesByCategory.set(displayName, existing);
-  }
+  if (data.length === 0) return null;
 
   const handleCellClick = (filePath: string) => {
     if (onFileClick) onFileClick(filePath);
@@ -313,7 +368,7 @@ export const ContextTreemap = ({ scan, onFileClick }: ContextTreemapProps) => {
         ref={chartRef}
         style={{ position: "relative" }}
       >
-        <ResponsiveContainer width="100%" height={140}>
+        <ResponsiveContainer width="100%" height={160}>
           <Treemap
             data={data}
             dataKey="size"
@@ -327,6 +382,32 @@ export const ContextTreemap = ({ scan, onFileClick }: ContextTreemapProps) => {
             isAnimationActive={false}
           />
         </ResponsiveContainer>
+
+        {/* Group label overlays — HTML on top of SVG */}
+        {groupLabels.map((g) => (
+          <div
+            key={g.name}
+            style={{
+              position: "absolute",
+              left: g.left,
+              top: g.top,
+              pointerEvents: "none",
+              background: "rgba(0,0,0,0.45)",
+              color: "#fff",
+              fontSize: 9,
+              fontWeight: 600,
+              fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+              padding: "2px 6px",
+              borderRadius: 4,
+              textTransform: "uppercase",
+              letterSpacing: "0.4px",
+              lineHeight: "1.2",
+              zIndex: 5,
+            }}
+          >
+            {g.name} · {formatTokens(g.tokens)}
+          </div>
+        ))}
 
         {/* Hover tooltip */}
         {hoveredNode && (

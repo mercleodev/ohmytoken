@@ -66,6 +66,9 @@ const isRealUserPrompt = (entry: RawEntry): boolean => {
     return content.trim().length > 0 && !isSystemMessage(content);
   }
   if (Array.isArray(content)) {
+    // Messages containing tool_result blocks are tool responses, not real user prompts
+    const hasToolResult = content.some((b: any) => b.type === "tool_result");
+    if (hasToolResult) return false;
     const textParts = content
       .filter((b: any) => b.type === "text" && typeof b.text === "string")
       .map((b: any) => b.text);
