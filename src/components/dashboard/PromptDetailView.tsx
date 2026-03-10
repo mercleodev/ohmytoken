@@ -215,7 +215,7 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
       </AnimatePresence>
 
       {/* Injected Files */}
-      <Section title={`Injected Files (${injectedFiles.length})`} id="files" expanded={expandedSections} onToggle={toggle}>
+      <Section title={`Injected Files (${injectedFiles.length})${injectedFiles.length > 0 ? ` · ${formatTokens(injectedFiles.reduce((sum, f) => sum + f.estimated_tokens, 0))}` : ""}`} id="files" expanded={expandedSections} onToggle={toggle}>
         {injectedFiles.length > 0 ? (
           <div className="file-list">
             {injectedFiles.map((f, i) => (
