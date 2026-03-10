@@ -39,6 +39,9 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
 
   const { enrichedScan, sessionCompactions, handleRescore } = usePromptDetail(scan);
 
+  // Use enrichedScan as primary data source (may have richer JSONL-parsed data)
+  const displayScan = enrichedScan;
+
   const toggleAction = (idx: number) =>
     setExpandedActions((prev) => {
       const next = new Set(prev);
@@ -56,24 +59,24 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
 
   const gaugeColor = getGaugeColor(
     (() => {
-      const ctx = scan.context_estimate ?? { total_tokens: 0 };
-      const limit = getContextLimit(scan.model ?? "");
+      const ctx = displayScan.context_estimate ?? { total_tokens: 0 };
+      const limit = getContextLimit(displayScan.model ?? "");
       return ctx.total_tokens > 0 ? Math.min((ctx.total_tokens / limit) * 100, 100) : 0;
     })(),
   );
 
-  const injectedFiles = scan.injected_files ?? [];
-  const toolCalls = scan.tool_calls ?? [];
-  const hasAssistantResponse = Boolean(scan.assistant_response?.trim());
+  const injectedFiles = displayScan.injected_files ?? [];
+  const toolCalls = displayScan.tool_calls ?? [];
+  const hasAssistantResponse = Boolean(displayScan.assistant_response?.trim());
   const hasOutputTokens = (usage?.response.output_tokens ?? 0) > 0;
   const isPromptCompleted = hasAssistantResponse || hasOutputTokens;
 
-  const hasDetailedBreakdown = (scan.context_estimate?.system_tokens ?? 0) > 0
-    || (scan.context_estimate?.messages_tokens ?? 0) > 0;
+  const hasDetailedBreakdown = (displayScan.context_estimate?.system_tokens ?? 0) > 0
+    || (displayScan.context_estimate?.messages_tokens ?? 0) > 0;
   const hasInjectedFiles = injectedFiles.length > 0;
   const hasToolCalls = toolCalls.length > 0;
   const hasAnyData = hasDetailedBreakdown || hasInjectedFiles || hasToolCalls
-    || (scan.context_estimate?.total_tokens ?? 0) > 0;
+    || (displayScan.context_estimate?.total_tokens ?? 0) > 0;
   const isLimitedProvider = !hasAnyData;
 
   const toolNameOptions = useMemo(() => {
@@ -114,7 +117,7 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
     [toolNameOptions],
   );
 
-  const injectedEvidence = buildInjectedEvidence(enrichedScan);
+  const injectedEvidence = buildInjectedEvidence(displayScan);
   const cacheBaseTokens = usage
     ? usage.response.input_tokens +
       usage.response.cache_read_input_tokens +
@@ -131,10 +134,10 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
       <div className="prompt-detail-header">
         <button className="session-back-btn" onClick={onBack}>‹ Back</button>
         <span className="prompt-detail-model" style={{ color: gaugeColor }}>
-          {getModelShort(scan.model)}
+          {getModelShort(displayScan.model)}
         </span>
-        {scan.git_branch && (
-          <span className="prompt-detail-branch">{scan.git_branch}</span>
+        {displayScan.git_branch && (
+          <span className="prompt-detail-branch">{displayScan.git_branch}</span>
         )}
       </div>
 
@@ -142,28 +145,28 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
       <div
         className={`prompt-detail-text${promptExpanded ? " expanded" : ""}`}
         onClick={() =>
-          scan.user_prompt && scan.user_prompt.length > 100 && setPromptExpanded((v) => !v)
+          displayScan.user_prompt && displayScan.user_prompt.length > 100 && setPromptExpanded((v) => !v)
         }
-        style={scan.user_prompt && scan.user_prompt.length > 100 ? { cursor: "pointer" } : undefined}
+        style={displayScan.user_prompt && displayScan.user_prompt.length > 100 ? { cursor: "pointer" } : undefined}
       >
-        {!scan.user_prompt
+        {!displayScan.user_prompt
           ? "(system request)"
           : promptExpanded
-            ? scan.user_prompt
-            : scan.user_prompt.length > 100
-              ? scan.user_prompt.slice(0, 100) + "..."
-              : scan.user_prompt}
+            ? displayScan.user_prompt
+            : displayScan.user_prompt.length > 100
+              ? displayScan.user_prompt.slice(0, 100) + "..."
+              : displayScan.user_prompt}
       </div>
 
       {/* Response Preview */}
-      {scan.assistant_response && (
+      {displayScan.assistant_response && (
         <Section title="Response" id="response" expanded={expandedSections} onToggle={toggle}>
-          <div className="response-section">{scan.assistant_response}</div>
+          <div className="response-section">{displayScan.assistant_response}</div>
         </Section>
       )}
 
-      <ContextGauge scan={scan} usage={usage} cacheHitPct={cacheHitPct} />
-      <ContextTreemap scan={scan} onFileClick={(path) => setPreviewFile(path)} />
+      <ContextGauge scan={displayScan} usage={usage} cacheHitPct={cacheHitPct} />
+      <ContextTreemap scan={displayScan} onFileClick={(path) => setPreviewFile(path)} />
 
       {/* Provider data limitation notice */}
       {isLimitedProvider && (
@@ -174,14 +177,14 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
 
       {/* Quick Stats */}
       <div className="prompt-detail-stats">
-        <StatPill label="Turns" value={String(scan.conversation_turns ?? 0)} />
+        <StatPill label="Turns" value={String(displayScan.conversation_turns ?? 0)} />
         <StatPill label="Tools" value={String(toolCalls.length)} />
         <StatPill label="Files" value={String(injectedFiles.length)} />
         <StatPill label="Compactions" value={sessionCompactions === null ? "..." : String(sessionCompactions)} />
         {usage && <StatPill label="Duration" value={`${(usage.duration_ms / 1000).toFixed(1)}s`} />}
       </div>
 
-      <JourneySummary scan={scan} usage={usage} cacheHitPct={cacheHitPct} onFileClick={setPreviewFile} />
+      <JourneySummary scan={displayScan} usage={usage} cacheHitPct={cacheHitPct} onFileClick={setPreviewFile} />
 
       {/* Injected Evidence — hidden when no injected files (e.g. Codex) */}
       {hasInjectedFiles && (
@@ -233,7 +236,7 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
         {toolCalls.length > 0 ? (
           <>
             <ActionFilterChips options={toolNameOptions} activeTools={activeTools} onToggle={handleToolToggle} totalCount={toolCalls.length} filteredCount={filteredToolCalls.length} />
-            <ActionFlowList toolCalls={filteredToolCalls} expandedActions={expandedActions} onToggleAction={toggleAction} onOpenFile={setPreviewFile} scanTimestamp={scan.timestamp} isCompleted={isPromptCompleted} />
+            <ActionFlowList toolCalls={filteredToolCalls} expandedActions={expandedActions} onToggleAction={toggleAction} onOpenFile={setPreviewFile} scanTimestamp={displayScan.timestamp} isCompleted={isPromptCompleted} />
           </>
         ) : (
           <div className="section-empty">No actions</div>
