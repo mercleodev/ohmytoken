@@ -986,6 +986,8 @@ const setupIPC = (): void => {
         }
 
         const cleanContent = (userMsg.content || "")
+          .replace(/\x1b\[[0-9;]*m/g, "")
+          .replace(/\[[\d;]*m/g, "")
           .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "")
           .replace(/<task-notification>[\s\S]*?<\/task-notification>/g, "")
           .replace(/<[^>]+>/g, "")

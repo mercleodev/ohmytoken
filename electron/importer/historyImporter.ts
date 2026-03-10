@@ -47,16 +47,31 @@ const UUID_PATTERN =
 /**
  * Check if a user entry has actual text content (not just tool_result blocks)
  */
+/** Patterns that indicate system/internal messages, not real user prompts */
+const SYSTEM_MESSAGE_PATTERNS = [
+  "Compacted (ctrl+o to see full summary)",
+  "This session is being continued from a previous conversation",
+];
+
+const isSystemMessage = (text: string): boolean => {
+  const clean = stripAnsi(text).trim();
+  return SYSTEM_MESSAGE_PATTERNS.some((p) => clean.includes(p));
+};
+
 const isRealUserPrompt = (entry: RawEntry): boolean => {
   if (entry.type !== "user") return false;
   const content = entry.message?.content;
   if (!content) return false;
-  if (typeof content === "string") return content.trim().length > 0;
+  if (typeof content === "string") {
+    return content.trim().length > 0 && !isSystemMessage(content);
+  }
   if (Array.isArray(content)) {
-    return content.some(
-      (b: any) =>
-        b.type === "text" && typeof b.text === "string" && b.text.trim(),
-    );
+    const textParts = content
+      .filter((b: any) => b.type === "text" && typeof b.text === "string")
+      .map((b: any) => b.text);
+    if (textParts.length === 0) return false;
+    const combined = textParts.join(" ");
+    return combined.trim().length > 0 && !isSystemMessage(combined);
   }
   return false;
 };
@@ -64,25 +79,27 @@ const isRealUserPrompt = (entry: RawEntry): boolean => {
 /**
  * Extract clean user prompt text from a user entry
  */
+const stripAnsi = (text: string): string =>
+  text.replace(/\x1b\[[0-9;]*m/g, "").replace(/\[[\d;]*m/g, "");
+
+const cleanPromptText = (raw: string): string =>
+  stripAnsi(raw)
+    .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "")
+    .replace(/<task-notification>[\s\S]*?<\/task-notification>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+
 const extractUserText = (entry: RawEntry): string => {
   const content = entry.message?.content;
   if (!content) return "";
-  if (typeof content === "string") {
-    return content
-      .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "")
-      .replace(/<task-notification>[\s\S]*?<\/task-notification>/g, "")
-      .replace(/<[^>]+>/g, "")
-      .trim();
-  }
+  if (typeof content === "string") return cleanPromptText(content);
   if (Array.isArray(content)) {
-    return content
-      .filter((b: any) => b.type === "text")
-      .map((b: any) => b.text || "")
-      .join("\n")
-      .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "")
-      .replace(/<task-notification>[\s\S]*?<\/task-notification>/g, "")
-      .replace(/<[^>]+>/g, "")
-      .trim();
+    return cleanPromptText(
+      content
+        .filter((b: any) => b.type === "text")
+        .map((b: any) => b.text || "")
+        .join("\n"),
+    );
   }
   return "";
 };
