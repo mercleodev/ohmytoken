@@ -6,6 +6,12 @@ import { fetchCreditBalance } from "./creditBalanceFetcher";
 const USAGE_ENDPOINT = "https://api.anthropic.com/api/oauth/usage";
 const ANTHROPIC_BETA = "oauth-2025-04-20";
 
+// Rate-limit guard: cache last successful result and enforce minimum call interval
+const MIN_CALL_INTERVAL_MS = 30_000; // 30 seconds between API calls
+let lastCallTime = 0;
+let lastSuccessResult: ProviderUsageSnapshot | null = null;
+let rateLimitedUntil = 0; // timestamp when 429 backoff expires
+
 type ClaudeUsageWindowRaw = {
   utilization?: number;
   used_percent?: number;
@@ -55,11 +61,36 @@ const formatResetTime = (resetsAt: string): string => {
 
 export const fetchClaudeUsage =
   async (): Promise<ProviderUsageSnapshot | null> => {
+    const now = Date.now();
+
+    // Return cached result if called too frequently or still rate-limited
+    if (now < rateLimitedUntil || now - lastCallTime < MIN_CALL_INTERVAL_MS) {
+      if (lastSuccessResult) {
+        console.log("[Claude] Returning cached usage (rate-limit guard)");
+        return lastSuccessResult;
+      }
+      // No cached result yet but still rate-limited → skip API call, return null
+      if (now < rateLimitedUntil) {
+        console.log("[Claude] Rate-limited, no cached result, skipping API call");
+        return null;
+      }
+    }
+    lastCallTime = now;
+
     const creds = readClaudeCredentials();
     if (!creds) {
       console.log("[Claude] No credentials found");
       return null;
     }
+
+    // Helper: run CLI fallback and cache successful result
+    const cliFallback = async (): Promise<ProviderUsageSnapshot | null> => {
+      const result = await fetchClaudeUsageViaCLI();
+      if (result && result.windows.length > 0) {
+        lastSuccessResult = result;
+      }
+      return result;
+    };
 
     const isApiKey =
       creds.accessToken.startsWith("sk-ant-api") ||
@@ -69,7 +100,7 @@ export const fetchClaudeUsage =
     // API key only means no OAuth → try CLI PTY → on failure, show prepaid notice + credit balance
     if (isApiKey) {
       console.log("[Claude] API key detected, trying CLI PTY probe first");
-      const cliResult = await fetchClaudeUsageViaCLI();
+      const cliResult = await cliFallback();
       if (cliResult && cliResult.windows.length > 0) return cliResult;
 
       // CLI also failed → assume prepaid account, check credit balance
@@ -96,13 +127,13 @@ export const fetchClaudeUsage =
       console.warn(
         "[Claude] Token missing user:profile scope, falling back to CLI PTY",
       );
-      return fetchClaudeUsageViaCLI();
+      return cliFallback();
     }
 
     // OAuth token: fall back to CLI PTY if expired
     if (creds.expiresAt && new Date(creds.expiresAt).getTime() < Date.now()) {
       console.warn("[Claude] Token expired, falling back to CLI PTY");
-      return fetchClaudeUsageViaCLI();
+      return cliFallback();
     }
 
     try {
@@ -114,10 +145,20 @@ export const fetchClaudeUsage =
       });
 
       if (!res.ok) {
+        if (res.status === 429) {
+          // Back off for 60 seconds on rate limit
+          const retryAfterRaw = parseInt(res.headers.get("retry-after") ?? "60", 10);
+          const retryAfter = Math.max(retryAfterRaw, 60); // minimum 60s backoff
+          rateLimitedUntil = Date.now() + retryAfter * 1000;
+          console.warn(
+            `[Claude] Usage API 429, backing off ${retryAfter}s${lastSuccessResult ? " (returning cached)" : ""}`,
+          );
+          if (lastSuccessResult) return lastSuccessResult;
+        }
         console.error(
           `[Claude] Usage API returned ${res.status}, falling back to CLI PTY`,
         );
-        return fetchClaudeUsageViaCLI();
+        return cliFallback();
       }
 
       const data = (await res.json()) as ClaudeUsageResponse;
@@ -218,7 +259,7 @@ export const fetchClaudeUsage =
         };
       }
 
-      return {
+      const result: ProviderUsageSnapshot = {
         provider: "claude",
         displayName: "Claude",
         windows,
@@ -230,12 +271,15 @@ export const fetchClaudeUsage =
         updatedAt: new Date().toISOString(),
         source: "oauth",
       };
+      lastSuccessResult = result;
+      rateLimitedUntil = 0;
+      return result;
     } catch (err) {
       console.error(
         "[Claude] Usage fetch error, falling back to CLI PTY:",
         err,
       );
-      const cliResult = await fetchClaudeUsageViaCLI();
+      const cliResult = await cliFallback();
       if (cliResult && cliResult.windows.length > 0) return cliResult;
 
       // All sources failed → try credit balance as last resort

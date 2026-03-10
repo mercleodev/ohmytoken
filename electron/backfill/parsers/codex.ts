@@ -60,6 +60,19 @@ type RawEvent = {
   };
 };
 
+/**
+ * Try to extract a git branch name from the working directory path.
+ * Worktree paths often contain branch names (e.g. /project/.worktrees/feature-x/).
+ * Returns undefined if no branch can be inferred.
+ */
+const inferBranchFromCwd = (cwd: string | undefined): string | undefined => {
+  if (!cwd) return undefined;
+  // Common worktree patterns: .worktrees/<branch>, worktrees/<branch>
+  const worktreeMatch = cwd.match(/[/\\]\.?(?:claude-)?worktrees?[/\\]([^/\\]+)/);
+  if (worktreeMatch) return worktreeMatch[1];
+  return undefined;
+};
+
 const USER_PROMPT_LIMIT = 500;
 const INPUT_SUMMARY_LIMIT = 200;
 const RESPONSE_LIMIT = 2000;
@@ -246,6 +259,16 @@ export const parseCodexSessionFile = (
 
   if (events.length === 0) return [];
 
+  // Extract cwd from session_meta for branch inference
+  let sessionCwd: string | undefined;
+  for (const ev of events) {
+    if (ev.type === "session_meta" && ev.payload?.cwd) {
+      sessionCwd = ev.payload.cwd;
+      break;
+    }
+  }
+  const gitBranch = inferBranchFromCwd(sessionCwd);
+
   // Detect model: prefer turn_context.payload.model, fallback to context window
   let modelName = "";
   let contextWindowModel = "";
@@ -375,6 +398,7 @@ export const parseCodexSessionFile = (
       conversationTurns: turnStarts.length,
       userMessagesCount: 1,
       assistantMessagesCount: assistantMsgCount,
+      gitBranch,
     });
   }
 

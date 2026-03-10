@@ -16,6 +16,8 @@ type RawEntry = {
   timestamp?: string;
   uuid?: string;
   requestId?: string;
+  gitBranch?: string;
+  cwd?: string;
   message?: {
     role?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -259,6 +261,9 @@ export const parseClaudeSessionFile = (
     const userText = extractUserText(userEntry);
     const { toolCalls, toolSummary } = extractToolInfo(entries, userIdx + 1, nextUserIdx);
 
+    // Extract git branch from the user entry (or nearest assistant)
+    const gitBranch = userEntry.gitBranch ?? bestAssistant.gitBranch ?? undefined;
+
     results.push({
       dedupKey: requestId,
       client: "claude",
@@ -276,6 +281,7 @@ export const parseClaudeSessionFile = (
       userPrompt: userText || undefined,
       toolSummary,
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+      gitBranch,
     });
   }
 

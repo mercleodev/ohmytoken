@@ -84,10 +84,20 @@ const LastUpdatedLabel = ({ updatedAt }: { updatedAt: string }) => {
 };
 
 export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onSelectStats, scanRevision, provider, isAllView }: UsageViewProps) => {
-  // "All" view: skip gauge/cost, show data cards with no provider filter
+  // Fetch aggregated cost for "All" view
+  const [allCost, setAllCost] = useState<{ todayCostUSD: number; todayTokens: number; last30DaysCostUSD: number; last30DaysTokens: number } | null>(null);
+  useEffect(() => {
+    if (!isAllView) return;
+    window.api.getCostSummary().then(setAllCost).catch(() => setAllCost(null));
+  }, [isAllView, scanRevision]);
+
+  // "All" view: skip gauge, show aggregated cost + data cards
   if (isAllView) {
     return (
       <div>
+        {/* Aggregated Cost (all providers) */}
+        <CostCard cost={allCost} />
+
         {/* Output Productivity (all providers) */}
         <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
         <McpInsightsCard scanRevision={scanRevision} />

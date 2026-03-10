@@ -133,6 +133,9 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
         <span className="prompt-detail-model" style={{ color: gaugeColor }}>
           {getModelShort(scan.model)}
         </span>
+        {scan.git_branch && (
+          <span className="prompt-detail-branch">{scan.git_branch}</span>
+        )}
       </div>
 
       {/* Prompt Text */}

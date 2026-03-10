@@ -680,6 +680,20 @@
   letter-spacing: 0.3px;
 }
 
+/* Git branch label */
+.session-card-branch {
+  font-size: 10px;
+  font-weight: 500;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+  padding: 0 4px;
+  border-radius: 3px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Provider badge (compact icon in session meta row) */
 .provider-badge {
   font-size: 10px;
@@ -954,6 +968,20 @@
 .prompt-detail-model {
   font-size: 13px;
   font-weight: 600;
+}
+
+.prompt-detail-branch {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .prompt-detail-text {

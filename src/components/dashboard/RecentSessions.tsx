@@ -22,6 +22,7 @@ type PromptItem = {
   model?: string;
   totalTokens?: number;
   provider?: string;
+  gitBranch?: string;
   compacted?: boolean;
 };
 
@@ -109,6 +110,7 @@ const buildPromptItems = (
       item.model = bestMatch.model;
       item.totalTokens = bestMatch.context_estimate?.total_tokens ?? 0;
       item.provider = bestMatch.provider ?? 'claude';
+      item.gitBranch = bestMatch.git_branch;
     }
 
     return item;
@@ -137,6 +139,7 @@ const buildPromptItemsFromScans = (scans: PromptScan[]): PromptItem[] => {
       model: s.model,
       totalTokens: s.context_estimate?.total_tokens ?? 0,
       provider: s.provider ?? 'claude',
+      gitBranch: s.git_branch,
     }));
 };
 
@@ -169,16 +172,6 @@ const markCompacted = (items: PromptItem[]): PromptItem[] => {
     ...item,
     compacted: compactedKeys.has(item.key),
   }));
-};
-
-// Deterministic muted color from string hash (same name = same color always)
-const stringToColor = (str: string): string => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = ((hash % 360) + 360) % 360;
-  return `hsl(${hue}, 35%, 45%)`;
 };
 
 // Mini donut SVG for ctx %
@@ -474,17 +467,6 @@ export const RecentSessions = ({
                             <span>&middot;</span>
                           </>
                         )}
-                        {p.project && (
-                          <>
-                            <span
-                              className="session-card-project"
-                              style={{ color: stringToColor(p.project) }}
-                            >
-                              {p.project.split("/").pop()}
-                            </span>
-                            <span>&middot;</span>
-                          </>
-                        )}
                         {p.model && (
                           <>
                             <span
@@ -494,6 +476,14 @@ export const RecentSessions = ({
                               }}
                             >
                               {getModelShort(p.model)}
+                            </span>
+                            <span>&middot;</span>
+                          </>
+                        )}
+                        {p.gitBranch && (
+                          <>
+                            <span className="session-card-branch">
+                              {p.gitBranch}
                             </span>
                             <span>&middot;</span>
                           </>

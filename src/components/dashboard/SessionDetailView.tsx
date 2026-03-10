@@ -127,7 +127,39 @@ export const SessionDetailView = ({
           setHasScanData(true);
           setMessages(dbItems);
           setLoading(false);
-          return; // DB path succeeded → skip Claude history path
+
+          // Supplement: check for newer prompts in history not yet in DB
+          // (e.g., latest prompt where assistant response hasn't arrived yet)
+          try {
+            const latestDbTs = new Date(dbItems[0].scan.timestamp).getTime();
+            const allHistory = await window.api.getRecentHistory(100);
+            const newerEntries = allHistory.filter(
+              (e) => e.sessionId === sessionId && e.timestamp > latestDbTs,
+            );
+            for (const entry of newerEntries) {
+              try {
+                const detail = await window.api.getHistoryPromptDetail(
+                  entry.sessionId,
+                  entry.timestamp,
+                );
+                if (detail && isDisplayablePrompt(detail.scan)) {
+                  setMessages((prev) =>
+                    upsertMessage(
+                      prev,
+                      { scan: detail.scan, usage: detail.usage ?? null },
+                      true,
+                    ),
+                  );
+                }
+              } catch {
+                /* detail not yet available */
+              }
+            }
+          } catch {
+            /* history supplement is best-effort */
+          }
+
+          return; // DB path succeeded
         }
 
         // === Fallback: Claude history-based path ===
