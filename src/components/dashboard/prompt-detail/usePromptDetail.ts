@@ -13,14 +13,52 @@ type UsePromptDetailReturn = {
   handleRescore: () => Promise<void>;
 };
 
+/** Check if scan has only batch-import level data (missing detailed breakdown) */
+const isIncompleteScan = (s: PromptScan): boolean =>
+  (s.context_estimate?.system_tokens ?? 0) === 0 &&
+  (s.injected_files ?? []).length === 0 &&
+  (s.context_estimate?.total_tokens ?? 0) > 0;
+
 export function usePromptDetail(scan: PromptScan): UsePromptDetailReturn {
   const [enrichedScan, setEnrichedScan] = useState<PromptScan>(scan);
   const [sessionCompactions, setSessionCompactions] = useState<number | null>(null);
 
+  // Enrich incomplete batch-imported scans with full JSONL data
+  useEffect(() => {
+    if (!isIncompleteScan(scan)) return;
+    let cancelled = false;
+
+    const enrich = async () => {
+      try {
+        // Try history prompt detail (has JSONL fallback with full data)
+        const ts = new Date(scan.timestamp).getTime();
+        const detail = await window.api.getHistoryPromptDetail(scan.session_id, ts);
+        if (cancelled || !detail?.scan) return;
+
+        // Only replace if the enriched data is actually richer
+        const enriched = detail.scan as PromptScan;
+        const hasMoreData =
+          (enriched.injected_files?.length ?? 0) > 0 ||
+          (enriched.context_estimate?.system_tokens ?? 0) > 0;
+        if (hasMoreData) {
+          setEnrichedScan((prev) => ({
+            ...enriched,
+            evidence_report: prev.evidence_report,
+          }));
+        }
+      } catch {
+        /* enrichment is best-effort */
+      }
+    };
+
+    enrich();
+    return () => { cancelled = true; };
+  }, [scan.request_id, scan.session_id, scan.timestamp]);
+
   // Fetch evidence report if not already attached; auto-rescore if missing
   useEffect(() => {
     if (scan.evidence_report) {
-      setEnrichedScan(scan);
+      setEnrichedScan((prev) => ({ ...prev, evidence_report: scan.evidence_report }));
       return;
     }
     let cancelled = false;
