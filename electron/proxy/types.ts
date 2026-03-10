@@ -134,6 +134,9 @@ export type PromptScan = {
   /** Provider identifier (e.g. "claude", "codex", "gemini"). Omitted = "claude". */
   provider?: string;
 
+  /** Git branch name from the session (e.g. "main", "feature-x"). */
+  git_branch?: string;
+
   /** Evidence scoring report (attached asynchronously after scan completion) */
   evidence_report?: import('../evidence/types').EvidenceReport;
 };

@@ -414,6 +414,14 @@ if (!window.api) {
     },
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getCostSummary: async (_provider?: string) => ({
+      todayCostUSD: 3.45,
+      todayTokens: 250_000,
+      last30DaysCostUSD: 42.10,
+      last30DaysTokens: 3_200_000,
+    }),
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getOutputProductivity: async (_provider?: string) => ({
       todayOutputTokens: 96_000,
       todayTotalTokens: 180_510_000,

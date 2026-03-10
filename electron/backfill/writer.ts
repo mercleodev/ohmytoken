@@ -60,6 +60,7 @@ export const batchInsertMessages = (
                 msg.totalContextTokens ??
                 (msg.tokens.input + msg.tokens.cacheRead + msg.tokens.cacheWrite),
               tool_summary: msg.toolSummary,
+              git_branch: msg.gitBranch,
             },
             tool_calls: toolCallRows,
           },

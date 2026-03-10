@@ -54,6 +54,7 @@ type PromptDbRow = {
   req_tools_count: number;
   req_has_system: number;
   provider: string;
+  git_branch: string | null;
 };
 
 type InjectedFileDbRow = {
@@ -112,6 +113,7 @@ const rowToPromptScan = (
   assistant_messages_count: row.assistant_messages_count,
   tool_result_count: row.tool_result_count,
   provider: row.provider ?? 'claude',
+  git_branch: row.git_branch ?? undefined,
 });
 
 const rowToUsageLogEntry = (row: PromptDbRow): UsageLogEntry => ({

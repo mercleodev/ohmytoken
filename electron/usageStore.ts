@@ -71,11 +71,15 @@ const refresh = async (provider: UsageProviderType): Promise<ProviderUsageSnapsh
       } catch (err) {
         console.warn(`[UsageStore] cost enrichment failed for ${provider}:`, err);
       }
+      snapshotCache[provider] = snapshot;
+      emitChange(provider, snapshot);
+      scheduleResetRefresh(provider, snapshot);
+    } else if (!snapshotCache[provider]) {
+      // Only emit null if there's no existing cached snapshot
+      // This prevents overwriting a valid snapshot with null during rate-limit
+      emitChange(provider, null);
     }
-    snapshotCache[provider] = snapshot;
-    emitChange(provider, snapshot);
-    scheduleResetRefresh(provider, snapshot);
-    return snapshot;
+    return snapshot ?? snapshotCache[provider] ?? null;
   } catch (err) {
     console.error(`[UsageStore] refresh(${provider}) failed:`, err);
     return snapshotCache[provider] ?? null;

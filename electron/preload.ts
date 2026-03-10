@@ -142,6 +142,11 @@ const api = {
   ): Promise<import('./db/reader').TurnMetric[]> =>
     ipcRenderer.invoke('get-session-turn-metrics', sessionId),
 
+  getCostSummary: (provider?: string): Promise<{
+    todayCostUSD: number; todayTokens: number;
+    last30DaysCostUSD: number; last30DaysTokens: number;
+  }> => ipcRenderer.invoke('get-cost-summary', provider),
+
   // MCP Insights API
   getMcpInsights: (
     period: 'today' | '7d' | '30d',

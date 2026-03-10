@@ -250,6 +250,15 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 7,
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE prompts ADD COLUMN git_branch TEXT;
+        CREATE INDEX idx_prompts_git_branch ON prompts(git_branch);
+      `);
+    },
+  },
 ];
 
 export const runMigrations = (db: Database.Database): void => {

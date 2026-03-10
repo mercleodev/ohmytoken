@@ -1301,6 +1301,15 @@ const setupIPC = (): void => {
     }
   });
 
+  ipcMain.handle("get-cost-summary", async (_event, provider?: string) => {
+    try {
+      return dbReader.getProviderCostSummary(provider);
+    } catch (error) {
+      console.error("get-cost-summary error:", error);
+      return { todayCostUSD: 0, todayTokens: 0, last30DaysCostUSD: 0, last30DaysTokens: 0 };
+    }
+  });
+
   // === Usage Dashboard IPC (real API connection) ===
 
   ipcMain.handle("get-provider-usage", async (_event, provider: string) => {

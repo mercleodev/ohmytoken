@@ -37,6 +37,7 @@ export type BackfillMessage = {
   conversationTurns?: number;
   userMessagesCount?: number;
   assistantMessagesCount?: number;
+  gitBranch?: string;
 };
 
 export type BackfillProgress = {

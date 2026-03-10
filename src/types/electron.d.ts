@@ -75,6 +75,7 @@ export type PromptScan = {
   assistant_messages_count: number;
   tool_result_count: number;
   provider?: string;
+  git_branch?: string;
   evidence_report?: EvidenceReport;
 };
 
@@ -312,6 +313,11 @@ export type ElectronApi = {
       snapshot: ProviderUsageSnapshot | null;
     }) => void,
   ) => () => void;
+
+  getCostSummary: (provider?: string) => Promise<{
+    todayCostUSD: number; todayTokens: number;
+    last30DaysCostUSD: number; last30DaysTokens: number;
+  }>;
 
   // Token Output Productivity API
   getTokenComposition: (
