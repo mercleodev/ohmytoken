@@ -46,12 +46,18 @@ const getMessageKey = (item: MessageItem): string => {
   return `${item.scan.session_id}:${item.scan.timestamp}`;
 };
 
+const COMPACTION_MARKER = "Compacted (ctrl+o to see full summary)";
+
+const stripAnsi = (text: string): string =>
+  text.replace(/\x1b\[[0-9;]*m/g, "").replace(/\[[\d;]*m/g, "");
+
 const isDisplayablePrompt = (scan: PromptScan): boolean => {
   const model = (scan.model ?? "").toLowerCase();
   if (model.includes("synthetic")) return false;
 
-  const promptText = (scan.user_prompt ?? "").trim();
+  const promptText = stripAnsi(scan.user_prompt ?? "").trim();
   if (promptText.includes(CONTINUATION_PROMPT_MARKER)) return false;
+  if (promptText.includes(COMPACTION_MARKER)) return false;
 
   const totalTokens = scan.context_estimate?.total_tokens ?? 0;
   return totalTokens > 0 || promptText.length > 0;
