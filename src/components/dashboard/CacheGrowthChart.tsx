@@ -17,20 +17,18 @@ type CacheGrowthChartProps = {
   onTurnClick?: (turnIndex: number, timestamp: string, requestId: string) => void;
 };
 
-type CumulativeRow = {
+type TurnRow = {
   turn: number;
   timestamp: string;
   requestId: string;
-  cumCacheRead: number;
-  cumOutput: number;
-  cacheReadThisTurn: number;
-  outputThisTurn: number;
+  cacheRead: number;
+  output: number;
   compacted: boolean;
 };
 
 type GrowthTooltipProps = {
   active?: boolean;
-  payload?: Array<{ payload: CumulativeRow }>;
+  payload?: Array<{ payload: TurnRow }>;
   clickable?: boolean;
 };
 
@@ -46,16 +44,10 @@ const GrowthTooltip = ({ active, payload, clickable }: GrowthTooltipProps) => {
         )}
       </div>
       <div className="stats-tooltip-row">
-        <span>Cache Read:</span> <span>{formatTokens(d.cacheReadThisTurn)}</span>
+        <span>Cache Read:</span> <span>{formatTokens(d.cacheRead)}</span>
       </div>
       <div className="stats-tooltip-row">
-        <span>Output:</span> <span>{formatTokens(d.outputThisTurn)}</span>
-      </div>
-      <div className="stats-tooltip-row">
-        <span>Cum. Cache:</span> <span>{formatTokens(d.cumCacheRead)}</span>
-      </div>
-      <div className="stats-tooltip-row">
-        <span>Cum. Output:</span> <span>{formatTokens(d.cumOutput)}</span>
+        <span>Output:</span> <span>{formatTokens(d.output)}</span>
       </div>
       {clickable && (
         <div className="stats-tooltip-hint">Click anywhere to view prompt</div>
@@ -66,7 +58,7 @@ const GrowthTooltip = ({ active, payload, clickable }: GrowthTooltipProps) => {
 
 /* Small visual marker dot — compacted turns get orange highlight */
 const MarkerDot = ({ cx, cy, payload }: {
-  cx?: number; cy?: number; index?: number; payload?: CumulativeRow;
+  cx?: number; cy?: number; index?: number; payload?: TurnRow;
   fill?: string; stroke?: string;
 }) => {
   if (cx == null || cy == null || !payload) return null;
@@ -109,55 +101,51 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
     return () => { cancelled = true; };
   }, [sessionId]);
 
-  const cumulative = useMemo<CumulativeRow[]>(() => {
-    return turns.reduce<CumulativeRow[]>((acc, turn, i) => {
-      const prev = acc[i - 1];
+  const turnRows = useMemo<TurnRow[]>(() => {
+    return turns.map((turn, i) => {
       const prevCtx = i > 0 ? turns[i - 1].total_context_tokens : 0;
       const compacted =
         i > 0 && prevCtx > 0 && turn.total_context_tokens < prevCtx * 0.8;
-      acc.push({
+      return {
         turn: turn.turnIndex,
         timestamp: turn.timestamp,
         requestId: turn.request_id,
-        cumCacheRead: (prev?.cumCacheRead ?? 0) + Math.max(0, turn.cache_read_tokens),
-        cumOutput: (prev?.cumOutput ?? 0) + Math.max(0, turn.output_tokens),
-        cacheReadThisTurn: Math.max(0, turn.cache_read_tokens),
-        outputThisTurn: Math.max(0, turn.output_tokens),
+        cacheRead: Math.max(0, turn.cache_read_tokens),
+        output: Math.max(0, turn.output_tokens),
         compacted,
-      });
-      return acc;
-    }, []);
+      };
+    });
   }, [turns]);
 
   // Click anywhere in chart → map X coordinate to nearest data point
   const handleChartAreaClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!onTurnClick || cumulative.length === 0) return;
+      if (!onTurnClick || turnRows.length === 0) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const plotWidth = rect.width - PLOT_LEFT - MARGIN_RIGHT;
       if (plotWidth <= 0) return;
       const ratio = Math.max(0, Math.min(1, (x - PLOT_LEFT) / plotWidth));
-      const idx = Math.round(ratio * (cumulative.length - 1));
-      const row = cumulative[Math.max(0, Math.min(idx, cumulative.length - 1))];
+      const idx = Math.round(ratio * (turnRows.length - 1));
+      const row = turnRows[Math.max(0, Math.min(idx, turnRows.length - 1))];
       if (row) {
         onTurnClick(row.turn, row.timestamp, row.requestId);
       }
     },
-    [onTurnClick, cumulative],
+    [onTurnClick, turnRows],
   );
 
   const compactedTurns = useMemo(
-    () => cumulative.filter((r) => r.compacted),
-    [cumulative],
+    () => turnRows.filter((r) => r.compacted),
+    [turnRows],
   );
 
   const hasCacheData = useMemo(
-    () => cumulative.some((r) => r.cacheReadThisTurn > 0),
-    [cumulative],
+    () => turnRows.some((r) => r.cacheRead > 0),
+    [turnRows],
   );
 
-  if (cumulative.length < MIN_TURNS_TO_SHOW) return null;
+  if (turnRows.length < MIN_TURNS_TO_SHOW) return null;
 
   const clickable = Boolean(onTurnClick);
 
@@ -165,8 +153,8 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
     <div className="cache-growth-section">
       <div className="cache-growth-label">
         {hasCacheData
-          ? 'Cache Read grows O(N²) — Output stays linear'
-          : 'Output Token Growth'}
+          ? 'Cache Read per Turn — Output per Turn'
+          : 'Output per Turn'}
         {compactedTurns.length > 0 && (
           <span className="cache-growth-compacted-count">
             {compactedTurns.length} compacted
@@ -180,7 +168,7 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
       >
         <ResponsiveContainer width="100%" height={140}>
           <ComposedChart
-            data={cumulative}
+            data={turnRows}
             margin={{ top: 4, right: MARGIN_RIGHT, bottom: 0, left: MARGIN_LEFT }}
           >
             <XAxis
@@ -217,7 +205,7 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
             ))}
             <Area
               type="monotone"
-              dataKey="cumCacheRead"
+              dataKey="cacheRead"
               fill="#9CA3AF"
               fillOpacity={0.15}
               stroke="#9CA3AF"
@@ -228,7 +216,7 @@ export const CacheGrowthChart = ({ sessionId, onTurnClick }: CacheGrowthChartPro
             />
             <Line
               type="monotone"
-              dataKey="cumOutput"
+              dataKey="output"
               stroke="#34D399"
               strokeWidth={2}
               isAnimationActive={false}
