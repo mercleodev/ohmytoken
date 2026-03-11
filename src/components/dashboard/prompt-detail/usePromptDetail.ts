@@ -13,11 +13,21 @@ type UsePromptDetailReturn = {
   handleRescore: () => Promise<void>;
 };
 
-/** Check if scan has only batch-import level data (missing detailed breakdown) */
-const isIncompleteScan = (s: PromptScan): boolean =>
-  (s.context_estimate?.system_tokens ?? 0) === 0 &&
-  (s.injected_files ?? []).length === 0 &&
-  (s.context_estimate?.total_tokens ?? 0) > 0;
+/** Check if scan is missing detailed data that JSONL enrichment can provide */
+const isIncompleteScan = (s: PromptScan): boolean => {
+  // Case 1: batch import with tokens but no detailed breakdown
+  const missingBreakdown =
+    (s.context_estimate?.system_tokens ?? 0) === 0 &&
+    (s.injected_files ?? []).length === 0 &&
+    (s.context_estimate?.total_tokens ?? 0) > 0;
+
+  // Case 2: has structure (turns/files) but missing API response metadata
+  const missingApiMeta =
+    (!s.model || s.model === "unknown") &&
+    (s.context_estimate?.total_tokens ?? 0) === 0;
+
+  return missingBreakdown || missingApiMeta;
+};
 
 export function usePromptDetail(scan: PromptScan): UsePromptDetailReturn {
   const [enrichedScan, setEnrichedScan] = useState<PromptScan>(scan);
@@ -39,7 +49,9 @@ export function usePromptDetail(scan: PromptScan): UsePromptDetailReturn {
         const enriched = detail.scan as PromptScan;
         const hasMoreData =
           (enriched.injected_files?.length ?? 0) > 0 ||
-          (enriched.context_estimate?.system_tokens ?? 0) > 0;
+          (enriched.context_estimate?.system_tokens ?? 0) > 0 ||
+          (enriched.model != null && enriched.model !== "unknown") ||
+          (enriched.context_estimate?.total_tokens ?? 0) > 0;
         if (hasMoreData) {
           setEnrichedScan((prev) => ({
             ...enriched,
