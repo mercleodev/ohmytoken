@@ -454,7 +454,7 @@ if (!window.api) {
 
     // MCP Insights Mock API
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getMcpInsights: async (_period: 'today' | '7d' | '30d') => ({
+    getMcpInsights: async (_period: 'today' | '7d' | '30d', _provider?: string) => ({
       totalMcpCalls: 0,
       totalToolCalls: 0,
       mcpCallRatio: 0,

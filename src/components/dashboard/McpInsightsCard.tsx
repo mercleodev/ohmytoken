@@ -8,6 +8,7 @@ type Period = 'today' | '7d' | '30d';
 
 type McpInsightsCardProps = {
   scanRevision?: number;
+  provider?: string;
 };
 
 const MCP_BAR_MIN_WIDTH_PCT = 2;
@@ -67,18 +68,18 @@ const shortToolName = (name: string): string => {
   return parts.length >= 3 ? parts.slice(2).join('__') : name;
 };
 
-export const McpInsightsCard = ({ scanRevision }: McpInsightsCardProps) => {
+export const McpInsightsCard = ({ scanRevision, provider }: McpInsightsCardProps) => {
   const [expanded, setExpanded] = useState(true);
   const [period, setPeriod] = useState<Period>('today');
   const [data, setData] = useState<McpInsightsResult | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    window.api.getMcpInsights(period)
+    window.api.getMcpInsights(period, provider)
       .then((result) => { if (!cancelled) setData(result); })
       .catch((err) => console.error('getMcpInsights failed:', err));
     return () => { cancelled = true; };
-  }, [period, scanRevision]);
+  }, [period, scanRevision, provider]);
 
   const topTools = useMemo(() => {
     if (!data) return [];

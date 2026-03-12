@@ -150,7 +150,8 @@ const api = {
   // MCP Insights API
   getMcpInsights: (
     period: 'today' | '7d' | '30d',
-  ) => ipcRenderer.invoke('get-mcp-insights', period),
+    provider?: string,
+  ) => ipcRenderer.invoke('get-mcp-insights', period, provider),
 
   getSessionMcpAnalysis: (
     sessionId: string,

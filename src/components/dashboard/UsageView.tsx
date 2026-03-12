@@ -100,7 +100,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
 
         {/* Output Productivity (all providers) */}
         <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
-        <McpInsightsCard scanRevision={scanRevision} />
+        <McpInsightsCard scanRevision={scanRevision} provider={provider} />
 
         {/* Stats */}
         {onSelectStats && (
@@ -141,7 +141,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
     return (
       <div>
         <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
-        <McpInsightsCard scanRevision={scanRevision} />
+        <McpInsightsCard scanRevision={scanRevision} provider={provider} />
         {onSelectStats && (
           <StatsCard onSelectStats={onSelectStats} scanRevision={scanRevision} provider={provider} />
         )}
@@ -184,7 +184,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
 
         {/* Output Productivity */}
         <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
-        <McpInsightsCard scanRevision={scanRevision} />
+        <McpInsightsCard scanRevision={scanRevision} provider={provider} />
 
         {/* Stats */}
         {onSelectStats && (
@@ -223,7 +223,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
 
       {/* Output Productivity */}
       <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
-      <McpInsightsCard scanRevision={scanRevision} />
+      <McpInsightsCard scanRevision={scanRevision} provider={provider} />
 
       {/* Stats */}
       {onSelectStats && (

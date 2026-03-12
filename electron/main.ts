@@ -1357,14 +1357,14 @@ const setupIPC = (): void => {
 
   // === MCP Insights IPC ===
 
-  ipcMain.handle("get-mcp-insights", async (_event, period: string) => {
+  ipcMain.handle("get-mcp-insights", async (_event, period: string, provider?: string) => {
     try {
       const validPeriods = ['today', '7d', '30d'] as const;
       type ValidPeriod = typeof validPeriods[number];
       if (!validPeriods.includes(period as ValidPeriod)) {
         return { totalMcpCalls: 0, totalToolCalls: 0, mcpCallRatio: 0, totalToolResultTokens: 0, mcpToolStats: [], redundantCallCount: 0 };
       }
-      return dbReader.getMcpInsights(period as ValidPeriod);
+      return dbReader.getMcpInsights(period as ValidPeriod, provider);
     } catch (error) {
       console.error("get-mcp-insights error:", error);
       return { totalMcpCalls: 0, totalToolCalls: 0, mcpCallRatio: 0, totalToolResultTokens: 0, mcpToolStats: [], redundantCallCount: 0 };
