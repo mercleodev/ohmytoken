@@ -330,7 +330,7 @@ export type ElectronApi = {
   ) => Promise<TurnMetric[]>;
 
   // MCP Insights API
-  getMcpInsights: (period: 'today' | '7d' | '30d') => Promise<McpInsightsResult>;
+  getMcpInsights: (period: 'today' | '7d' | '30d', provider?: string) => Promise<McpInsightsResult>;
   getSessionMcpAnalysis: (sessionId: string) => Promise<SessionMcpAnalysis>;
 
   // Evidence Scoring API

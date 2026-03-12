@@ -940,7 +940,7 @@ type McpInsightsResult = {
   redundantCallCount: number;
 };
 
-export const getMcpInsights = (period: 'today' | '7d' | '30d'): McpInsightsResult => {
+export const getMcpInsights = (period: 'today' | '7d' | '30d', provider?: string): McpInsightsResult => {
   const db = getDatabase();
   const conditions: string[] = [];
   switch (period) {
@@ -954,7 +954,11 @@ export const getMcpInsights = (period: 'today' | '7d' | '30d'): McpInsightsResul
       conditions.push("p.timestamp >= date('now', 'localtime', '-30 days')");
       break;
   }
+  if (provider) {
+    conditions.push("p.provider = @provider");
+  }
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const params = provider ? { provider } : {};
 
   // 1. Tool call counts grouped by name
   const toolRows = db
@@ -964,7 +968,7 @@ export const getMcpInsights = (period: 'today' | '7d' | '30d'): McpInsightsResul
       ${whereClause}
       GROUP BY tc.name ORDER BY cnt DESC
     `)
-    .all() as Array<{ name: string; cnt: number }>;
+    .all(params) as Array<{ name: string; cnt: number }>;
 
   // 2. Total tool_result_tokens
   const totals = db
@@ -975,7 +979,7 @@ export const getMcpInsights = (period: 'today' | '7d' | '30d'): McpInsightsResul
       FROM prompts p
       ${whereClause}
     `)
-    .get() as { trt: number; trc: number };
+    .get(params) as { trt: number; trc: number };
 
   // 3. Classify with isMcpTool()
   let totalToolCalls = 0;
@@ -1003,7 +1007,7 @@ export const getMcpInsights = (period: 'today' | '7d' | '30d'): McpInsightsResul
       GROUP BY tc.name, tc.input_summary
       HAVING cnt >= 2 AND tc.input_summary IS NOT NULL AND tc.input_summary != ''
     `)
-    .all() as Array<{ name: string; input_summary: string; cnt: number }>;
+    .all(params) as Array<{ name: string; input_summary: string; cnt: number }>;
 
   let redundantCallCount = 0;
   for (const r of redundantRows) {
