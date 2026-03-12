@@ -10,6 +10,7 @@ import { SetupGuide } from './SetupGuide';
 import { RecentSessions } from './RecentSessions';
 import { OutputProductivityCard } from './OutputProductivityCard';
 import { McpInsightsCard } from './McpInsightsCard';
+import { FEATURE_FLAGS } from '../../config/featureFlags';
 
 type UsageViewProps = {
   snapshot: ProviderUsageSnapshot | null;
@@ -106,8 +107,8 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
         <CostCard cost={allCost} />
 
         {/* Output Productivity (all providers) */}
-        <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
-        <McpInsightsCard scanRevision={scanRevision} provider={provider} />
+        {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
+        {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
 
         {/* Stats */}
         {onSelectStats && (
@@ -148,8 +149,8 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
     return (
       <div>
         <CostCard cost={dbCost} />
-        <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
-        <McpInsightsCard scanRevision={scanRevision} provider={provider} />
+        {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
+        {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
         {onSelectStats && (
           <StatsCard onSelectStats={onSelectStats} scanRevision={scanRevision} provider={provider} />
         )}
@@ -191,8 +192,8 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
         </div>
 
         {/* Output Productivity */}
-        <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
-        <McpInsightsCard scanRevision={scanRevision} provider={provider} />
+        {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
+        {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
 
         {/* Stats */}
         {onSelectStats && (
@@ -230,8 +231,8 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
       <CostCard cost={snapshot.cost} />
 
       {/* Output Productivity */}
-      <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
-      <McpInsightsCard scanRevision={scanRevision} provider={provider} />
+      {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
+      {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
 
       {/* Stats */}
       {onSelectStats && (

@@ -15,6 +15,7 @@ import { CacheGrowthChart } from "./CacheGrowthChart";
 import { SessionAlertBanner } from "./SessionAlert";
 import { getSessionAlerts } from "../../utils/sessionAlerts";
 import { getEfficiency } from "../../utils/efficiency";
+import { FEATURE_FLAGS } from "../../config/featureFlags";
 
 type MessageItem = {
   scan: PromptScan;
@@ -220,8 +221,9 @@ export const SessionDetailView = ({
     load();
   }, [sessionId, buildMessagesFromDb]);
 
-  // Fetch MCP analysis for the session
+  // Fetch MCP analysis for the session (gated by feature flag)
   useEffect(() => {
+    if (!FEATURE_FLAGS.MCP_INSIGHTS) return;
     window.api.getSessionMcpAnalysis(sessionId)
       .then(setMcpAnalysis)
       .catch(() => { /* MCP analysis unavailable */ });
