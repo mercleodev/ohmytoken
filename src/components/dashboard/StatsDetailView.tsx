@@ -39,13 +39,9 @@ const fillDailyData = (
     });
   }
 
-  // 5% of max so empty days still show a small placeholder bar
-  const maxCost = Math.max(...raw.map((d) => d.actual), 0.01);
-  const minBar = maxCost * 0.05;
-
   return raw.map((d) => ({
     period: d.period,
-    cost_usd: d.actual > 0 ? d.actual : minBar,
+    cost_usd: d.actual,
     actual_cost: d.actual,
     request_count: d.request_count,
     label: d.label,
@@ -140,7 +136,7 @@ export const StatsDetailView = ({ stats, onBack, provider }: StatsDetailViewProp
                 {dailyData.map((entry) => {
                   const isToday = entry.period === todayStr;
                   const hasData = entry.actual_cost > 0;
-                  const opacity = hasData ? 0.5 + (entry.actual_cost / maxCost) * 0.5 : 0.1;
+                  const opacity = hasData ? 0.5 + (entry.actual_cost / maxCost) * 0.5 : 0;
                   return (
                     <Cell
                       key={entry.period}
