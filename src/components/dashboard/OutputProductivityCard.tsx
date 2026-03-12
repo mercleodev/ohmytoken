@@ -25,7 +25,8 @@ export const OutputProductivityCard = ({ scanRevision, provider }: OutputProduct
   if (!data || (data.todayTotalTokens === 0 && data.last7DaysTotalTokens === 0)) return null;
 
   const ratioPct = data.todayOutputRatio * 100;
-  const barWidth = Math.max(ratioPct, OUTPUT_BAR_MIN_WIDTH_PCT);
+  const hasTodayOutput = data.todayTotalTokens > 0;
+  const barWidth = hasTodayOutput ? Math.max(ratioPct, OUTPUT_BAR_MIN_WIDTH_PCT) : 0;
   const avg7dOutput = data.last7DaysTotalTokens > 0
     ? Math.round(data.last7DaysOutputTokens / 7)
     : 0;
@@ -50,19 +51,25 @@ export const OutputProductivityCard = ({ scanRevision, provider }: OutputProduct
             transition={{ duration: 0.2 }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="output-card-headline">
-              <span className="output-card-value">{formatTokens(data.todayOutputTokens)}</span>
-              <span className="output-card-unit"> tokens produced</span>
-            </div>
-            <div className="output-card-sub">
-              out of {formatTokens(data.todayTotalTokens)} total ({ratioPct.toFixed(2)}%)
-            </div>
-            <div className="output-card-bar-track">
-              <div
-                className="output-card-bar-fill"
-                style={{ width: `${barWidth}%` }}
-              />
-            </div>
+            {hasTodayOutput ? (
+              <>
+                <div className="output-card-headline">
+                  <span className="output-card-value">{formatTokens(data.todayOutputTokens)}</span>
+                  <span className="output-card-unit"> tokens produced</span>
+                </div>
+                <div className="output-card-sub">
+                  out of {formatTokens(data.todayTotalTokens)} total ({ratioPct.toFixed(2)}%)
+                </div>
+                <div className="output-card-bar-track">
+                  <div
+                    className="output-card-bar-fill"
+                    style={{ width: `${barWidth}%` }}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="output-card-empty">No output today</div>
+            )}
             {avg7dOutput > 0 && (
               <div className="output-card-trend">
                 7d avg: {formatTokens(avg7dOutput)} output/day
