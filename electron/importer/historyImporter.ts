@@ -656,9 +656,9 @@ export const importHistorySessions = (): ImportResult => {
 export const importSinglePrompt = (
   sessionId: string,
   timestamp: number,
-): boolean => {
+): string | null => {
   const projectsDir = path.join(homedir(), ".claude", "projects");
-  if (!fs.existsSync(projectsDir)) return false;
+  if (!fs.existsSync(projectsDir)) return null;
 
   try {
     // Find the session file across projects
@@ -678,10 +678,10 @@ export const importSinglePrompt = (
         break;
       }
     }
-    if (!filePath) return false;
+    if (!filePath) return null;
 
     const entries = parseSessionFile(filePath);
-    if (entries.length === 0) return false;
+    if (entries.length === 0) return null;
 
     // Find the user prompt closest to the given timestamp
     const targetMs = timestamp;
@@ -701,7 +701,7 @@ export const importSinglePrompt = (
       if (entryMs < targetMs - 120_000) break;
     }
 
-    if (bestUserIdx < 0) return false;
+    if (bestUserIdx < 0) return null;
 
     const userEntry = entries[bestUserIdx];
     const requestId = userEntry.uuid || `history-${sessionId}-${bestUserIdx}`;
@@ -711,7 +711,7 @@ export const importSinglePrompt = (
     const existing = db
       .prepare("SELECT id FROM prompts WHERE request_id = @rid")
       .get({ rid: requestId });
-    if (existing) return false;
+    if (existing) return null;
 
     // Find next real user prompt for range bounding
     let nextUserIdx = entries.length;
@@ -731,10 +731,10 @@ export const importSinglePrompt = (
       }
     }
 
-    if (!assistantEntry?.message?.usage) return false;
+    if (!assistantEntry?.message?.usage) return null;
 
     const userText = extractUserText(userEntry);
-    if (!userText) return false;
+    if (!userText) return null;
 
     const data = buildPromptData(
       requestId,
@@ -747,9 +747,9 @@ export const importSinglePrompt = (
     );
 
     const id = insertPrompt(data);
-    return id !== null;
+    return id !== null ? requestId : null;
   } catch (err) {
     console.error("[HistoryImporter] Single import error:", err);
-    return false;
+    return null;
   }
 };

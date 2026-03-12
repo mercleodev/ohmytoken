@@ -296,7 +296,14 @@ const initApp = async (): Promise<void> => {
         }
         // Real-time DB import: parse session file and insert latest prompt
         try {
-          importSinglePrompt(entry.sessionId, entry.timestamp);
+          const insertedRequestId = importSinglePrompt(entry.sessionId, entry.timestamp);
+          // Notify renderer so All tab picks up the new scan immediately
+          if (insertedRequestId && mainWindow && !mainWindow.isDestroyed()) {
+            const detail = dbReader.getPromptDetail(insertedRequestId);
+            if (detail?.scan) {
+              mainWindow.webContents.send("new-prompt-scan", { scan: detail.scan });
+            }
+          }
         } catch (e) {
           console.error("[DB] history real-time import error:", e);
         }
