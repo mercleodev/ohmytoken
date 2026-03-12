@@ -1,0 +1,324 @@
+/* ── Notification Overlay Container ── */
+.notif-overlay {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+}
+
+/* ── Notification Card (iOS System Alert Style) ── */
+.notif-card {
+  pointer-events: auto;
+  width: 280px;
+  background: rgba(30, 30, 32, 0.92);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.06);
+  transition: background 0.15s ease;
+}
+
+.notif-card:hover {
+  background: rgba(38, 38, 40, 0.95);
+}
+
+.notif-card:active {
+  transform: scale(0.98);
+}
+
+/* ── Header ── */
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.notif-provider-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.notif-provider-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.notif-provider-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.notif-model {
+  font-size: 10px;
+  color: #8e8e93;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 90px;
+}
+
+.notif-time {
+  font-size: 10px;
+  color: #636366;
+  flex-shrink: 0;
+}
+
+.notif-dismiss {
+  background: none;
+  border: none;
+  color: #636366;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.notif-dismiss:hover {
+  color: #aeaeb2;
+}
+
+/* ── Prompt Preview ── */
+.notif-prompt-text {
+  font-size: 11px;
+  color: #aeaeb2;
+  line-height: 1.35;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ── Live Activity Feed ── */
+.notif-activity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  min-height: 26px;
+  overflow: hidden;
+}
+
+.notif-activity-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.notif-activity-dot--live {
+  background: #30D158;
+  box-shadow: 0 0 6px rgba(48, 209, 88, 0.6);
+  animation: notif-blink 1s ease-in-out infinite;
+}
+
+.notif-activity-dot--done {
+  background: #636366;
+}
+
+@keyframes notif-blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.7); }
+}
+
+.notif-activity-text {
+  flex: 1;
+  font-size: 10px;
+  color: #d1d1d6;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: notif-text-fade 0.3s ease-out;
+}
+
+@keyframes notif-text-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notif-activity-count {
+  font-size: 9px;
+  color: #636366;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+/* ── Token Composition Bar ── */
+.notif-token-bar-section {
+  margin-bottom: 6px;
+}
+
+.notif-token-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+
+.notif-token-bar-cache {
+  background: linear-gradient(90deg, #FF9500, #FFB340);
+  height: 100%;
+  min-width: 1px;
+  transition: width 0.3s ease;
+}
+
+.notif-token-bar-output {
+  background: linear-gradient(90deg, #30D158, #4ADE80);
+  height: 100%;
+  min-width: 1px;
+  transition: width 0.3s ease;
+}
+
+.notif-token-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.notif-label-cache {
+  color: #FFB340;
+}
+
+.notif-label-output {
+  color: #4ADE80;
+}
+
+/* ── Sparkline Section ── */
+.notif-sparkline-section {
+  margin-bottom: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 6px 8px 4px;
+}
+
+.notif-sparkline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.notif-sparkline-title {
+  font-size: 9px;
+  color: #636366;
+  font-weight: 500;
+}
+
+.notif-sparkline-total {
+  font-size: 9px;
+  color: #aeaeb2;
+  font-weight: 600;
+}
+
+.mini-sparkline {
+  display: block;
+  width: 100%;
+}
+
+/* ── Metrics Row ── */
+.notif-metrics-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.notif-metric {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.notif-metric-label {
+  font-size: 9px;
+  color: #636366;
+  font-weight: 500;
+}
+
+.notif-metric-value {
+  font-size: 10px;
+  color: #aeaeb2;
+}
+
+.notif-ctx-warn {
+  color: #FF9500 !important;
+  font-weight: 600;
+}
+
+/* ── Alert (simple one-liner) ── */
+.notif-alert {
+  font-size: 9px;
+  line-height: 1.3;
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-alert-warning {
+  background: rgba(255, 59, 48, 0.1);
+  color: #FF6961;
+}
+
+.notif-alert-info {
+  background: rgba(0, 122, 255, 0.1);
+  color: #64ACFF;
+}
+
+/* ── Progress Bar (Streaming) ── */
+.notif-progress-bar {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.notif-progress-bar-fill {
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, #007AFF, #5AC8FA);
+  border-radius: 1px;
+  animation: notif-progress-slide 1.5s ease-in-out infinite;
+}
+
+@keyframes notif-progress-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}

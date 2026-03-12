@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   refreshInterval: 5,
   shortcut: 'CommandOrControl+Shift+T',
   proxyPort: DEFAULT_PROXY_PORT,
+  notificationsEnabled: true,
 };
 
 export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionProps) => {
@@ -29,6 +30,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_SETTINGS.refreshInterval);
   const [shortcut, setShortcut] = useState(DEFAULT_SETTINGS.shortcut);
   const [proxyPort, setProxyPort] = useState(DEFAULT_SETTINGS.proxyPort);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(DEFAULT_SETTINGS.notificationsEnabled ?? true);
   const [isRecording, setIsRecording] = useState(false);
 
   useEffect(() => {
@@ -40,6 +42,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
       setRefreshInterval(settings.refreshInterval);
       setShortcut(settings.shortcut || DEFAULT_SETTINGS.shortcut);
       setProxyPort(settings.proxyPort || DEFAULT_SETTINGS.proxyPort);
+      setNotificationsEnabled(settings.notificationsEnabled ?? true);
     }
   }, [settings]);
 
@@ -102,6 +105,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
       refreshInterval,
       shortcut,
       proxyPort,
+      notificationsEnabled,
     });
   };
 
@@ -214,6 +218,25 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
             </button>
           </div>
           <p className="hint">Click and press your desired key combo (e.g. ⌘+Shift+T)</p>
+        </div>
+      </div>
+
+      <div className="settings-group">
+        <h3>Notifications</h3>
+        <div className="form-group">
+          <label htmlFor="notificationsEnabled" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              id="notificationsEnabled"
+              checked={notificationsEnabled}
+              onChange={(e) => setNotificationsEnabled(e.target.checked)}
+              style={{ width: 16, height: 16 }}
+            />
+            <span>Prompt Notifications</span>
+          </label>
+          <p className="hint">
+            Show an overlay card when a new prompt is detected with token insights, cache growth chart, and live action feed
+          </p>
         </div>
       </div>
 

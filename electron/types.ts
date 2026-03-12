@@ -41,6 +41,7 @@ export type AppSettings = {
   shortcut: string;        // Global shortcut (e.g., "CommandOrControl+Shift+T")
   proxyPort: number;       // Proxy server port (default: 8780)
   contextLimitOverride?: number; // 0 = auto (plan-based), >0 = manual override
+  notificationsEnabled?: boolean; // Prompt notification overlay (default: true)
 };
 
 export type StoreData = {
