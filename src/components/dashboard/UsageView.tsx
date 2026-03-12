@@ -91,6 +91,13 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
     window.api.getCostSummary().then(setAllCost).catch(() => setAllCost(null));
   }, [isAllView, scanRevision]);
 
+  // Fetch DB-based cost when snapshot is unavailable (e.g., Codex/Gemini without API snapshot)
+  const [dbCost, setDbCost] = useState<{ todayCostUSD: number; todayTokens: number; last30DaysCostUSD: number; last30DaysTokens: number } | null>(null);
+  useEffect(() => {
+    if (snapshot || isAllView) return;
+    window.api.getCostSummary(provider).then(setDbCost).catch(() => setDbCost(null));
+  }, [snapshot, isAllView, provider, scanRevision]);
+
   // "All" view: skip gauge, show aggregated cost + data cards
   if (isAllView) {
     return (
@@ -137,12 +144,6 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
   }
 
   // No snapshot — skip gauge but still show DB-based cost + data cards
-  const [dbCost, setDbCost] = useState<{ todayCostUSD: number; todayTokens: number; last30DaysCostUSD: number; last30DaysTokens: number } | null>(null);
-  useEffect(() => {
-    if (snapshot || isAllView) return; // snapshot provides cost; All view has its own cost fetch
-    window.api.getCostSummary(provider).then(setDbCost).catch(() => setDbCost(null));
-  }, [snapshot, isAllView, provider, scanRevision]);
-
   if (!snapshot) {
     return (
       <div>
