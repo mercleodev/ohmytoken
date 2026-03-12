@@ -1,4 +1,5 @@
 import type { SessionMcpAnalysis } from '../types/electron';
+import { FEATURE_FLAGS } from '../config/featureFlags';
 
 export type SessionAlert = {
   id: string;
@@ -77,7 +78,8 @@ export const getSessionAlerts = (input: SessionAlertInput): SessionAlert[] => {
     });
   }
 
-  // --- MCP alerts (skip if no analysis data) ---
+  // --- MCP alerts (skip if no analysis data or feature flag off) ---
+  if (!FEATURE_FLAGS.MCP_INSIGHTS) return alerts;
   const mcp = input.mcpAnalysis;
   if (!mcp || mcp.mcpCalls === 0) return alerts;
 
