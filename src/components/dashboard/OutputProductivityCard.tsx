@@ -22,7 +22,7 @@ export const OutputProductivityCard = ({ scanRevision, provider }: OutputProduct
     return () => { cancelled = true; };
   }, [scanRevision, provider]);
 
-  if (!data || data.todayTotalTokens === 0) return null;
+  if (!data || (data.todayTotalTokens === 0 && data.last7DaysTotalTokens === 0)) return null;
 
   const ratioPct = data.todayOutputRatio * 100;
   const barWidth = Math.max(ratioPct, OUTPUT_BAR_MIN_WIDTH_PCT);

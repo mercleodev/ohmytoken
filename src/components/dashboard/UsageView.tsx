@@ -136,10 +136,17 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
     );
   }
 
-  // No snapshot — skip gauge/cost but still show data cards (prompts from DB)
+  // No snapshot — skip gauge but still show DB-based cost + data cards
+  const [dbCost, setDbCost] = useState<{ todayCostUSD: number; todayTokens: number; last30DaysCostUSD: number; last30DaysTokens: number } | null>(null);
+  useEffect(() => {
+    if (snapshot || isAllView) return; // snapshot provides cost; All view has its own cost fetch
+    window.api.getCostSummary(provider).then(setDbCost).catch(() => setDbCost(null));
+  }, [snapshot, isAllView, provider, scanRevision]);
+
   if (!snapshot) {
     return (
       <div>
+        <CostCard cost={dbCost} />
         <OutputProductivityCard scanRevision={scanRevision} provider={provider} />
         <McpInsightsCard scanRevision={scanRevision} provider={provider} />
         {onSelectStats && (
