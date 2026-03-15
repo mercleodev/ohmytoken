@@ -164,6 +164,11 @@ export type TurnMetric = {
 
 export type EfficiencyGrade = 'A' | 'B' | 'C' | 'D';
 
+export type HeatmapDay = {
+  date: string;
+  count: number;
+};
+
 // --- MCP Insights Types ---
 
 export type McpToolStat = {
@@ -286,7 +291,8 @@ export type ElectronApi = {
   getPromptScanDetail: (
     requestId: string,
   ) => Promise<{ scan: PromptScan; usage: UsageLogEntry | null } | null>;
-  getScanStats: (provider?: string) => Promise<ScanStats | null>;
+  getScanStats: (provider?: string, days?: number) => Promise<ScanStats | null>;
+  getPromptHeatmap: (provider?: string) => Promise<Array<{ date: string; count: number }>>;
   readFileContent: (
     filePath: string,
   ) => Promise<{ content: string; error?: string }>;

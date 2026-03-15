@@ -154,6 +154,20 @@ if (!window.api) {
       };
     },
 
+    getPromptHeatmap: async () => {
+      const days: Array<{ date: string; count: number }> = [];
+      const now = new Date();
+      for (let i = 364; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        if (Math.random() > 0.3) {
+          days.push({ date: key, count: Math.floor(Math.random() * 40) });
+        }
+      }
+      return days;
+    },
+
     getScanStats: async () => {
       const days: Array<{ period: string; cost_usd: number; request_count: number }> = [];
       const now = new Date();

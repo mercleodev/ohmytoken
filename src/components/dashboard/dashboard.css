@@ -2941,6 +2941,35 @@
   font-size: 15px;
   font-weight: 600;
   color: #454647;
+  flex: 1;
+}
+
+/* Period Toggle (in stats detail header) */
+.stats-period-toggle {
+  display: flex;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 6px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.stats-period-btn {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border: none;
+  background: transparent;
+  color: #9b9c9e;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.stats-period-btn.active {
+  background: #fff;
+  color: #4d4d4d;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 /* Summary Cards Grid */
@@ -3620,4 +3649,95 @@
   font-size: 12px;
   color: #9b9c9e;
   padding: 8px 0;
+}
+
+/* --- Prompt Heatmap (GitHub-style) --- */
+
+.heatmap-header {
+  margin-bottom: 8px;
+}
+
+.heatmap-total {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b6b6c;
+}
+
+.heatmap-container {
+  display: flex;
+  gap: 0;
+}
+
+.heatmap-day-labels {
+  display: flex;
+  flex-direction: column;
+  padding-top: 18px;
+  flex-shrink: 0;
+}
+
+.heatmap-day-label {
+  font-size: 9px;
+  color: #9b9c9e;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.heatmap-grid-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  flex: 1;
+  min-width: 0;
+}
+
+.heatmap-month-labels {
+  position: relative;
+}
+
+.heatmap-month-label {
+  position: absolute;
+  top: 0;
+  font-size: 9px;
+  color: #9b9c9e;
+  white-space: nowrap;
+}
+
+.heatmap-grid {
+  position: relative;
+}
+
+.heatmap-cell {
+  position: absolute;
+  cursor: pointer;
+  transition: outline 0.1s;
+}
+
+.heatmap-cell:hover {
+  outline: 1px solid rgba(0, 0, 0, 0.3);
+  outline-offset: -1px;
+}
+
+.heatmap-tooltip {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.heatmap-legend-label {
+  font-size: 9px;
+  color: #9b9c9e;
+  margin: 0 2px;
+}
+
+.heatmap-legend-cell {
+  flex-shrink: 0;
 }
