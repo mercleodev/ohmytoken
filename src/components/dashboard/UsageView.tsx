@@ -10,6 +10,7 @@ import { RecentSessions } from './RecentSessions';
 import { OutputProductivityCard } from './OutputProductivityCard';
 import { McpInsightsCard } from './McpInsightsCard';
 import { FEATURE_FLAGS } from '../../config/featureFlags';
+import { PromptHeatmap } from './PromptHeatmap';
 
 type UsageViewProps = {
   snapshot: ProviderUsageSnapshot | null;
@@ -109,6 +110,9 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
         {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
         {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
 
+        {/* Prompt Heatmap */}
+        <PromptHeatmap provider={provider} />
+
         {/* Stats */}
         {onSelectStats && (
           <StatsCard onSelectStats={onSelectStats} scanRevision={scanRevision} provider={provider} />
@@ -150,6 +154,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
         <CostCard cost={dbCost} />
         {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
         {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
+        <PromptHeatmap provider={provider} />
         {onSelectStats && (
           <StatsCard onSelectStats={onSelectStats} scanRevision={scanRevision} provider={provider} />
         )}
@@ -194,6 +199,9 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
         {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
         {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
 
+        {/* Prompt Heatmap */}
+        <PromptHeatmap provider={provider} />
+
         {/* Stats */}
         {onSelectStats && (
           <StatsCard onSelectStats={onSelectStats} scanRevision={scanRevision} provider={provider} />
@@ -232,6 +240,9 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
       {/* Output Productivity */}
       {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
       {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
+
+      {/* Prompt Heatmap */}
+      <PromptHeatmap provider={provider} />
 
       {/* Stats */}
       {onSelectStats && (
