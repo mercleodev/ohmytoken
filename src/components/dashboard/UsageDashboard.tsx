@@ -37,7 +37,7 @@ type NavState =
   | { screen: 'main' }
   | { screen: 'session'; sessionId: string }
   | { screen: 'prompt'; scan: PromptScan; usage: UsageLogEntry | null; sessionId: string }
-  | { screen: 'stats'; stats: import('../../types').ScanStats };
+  | { screen: 'stats' };
 
 const TAB_ORDER: ProviderFilter[] = ['all', 'claude', 'codex', 'gemini'];
 
@@ -170,9 +170,9 @@ export const UsageDashboard = () => {
   }, []);
 
   // Select stats → stats detail view
-  const handleSelectStats = useCallback((stats: import('../../types').ScanStats) => {
+  const handleSelectStats = useCallback(() => {
     setNavDirection(1);
-    setNav({ screen: 'stats', stats });
+    setNav({ screen: 'stats' });
   }, []);
 
   // Select session → session detail view
@@ -307,9 +307,9 @@ export const UsageDashboard = () => {
                 {/* Stats Detail */}
                 {nav.screen === 'stats' && (
                   <StatsDetailView
-                    stats={nav.stats}
                     onBack={handleBackFromStats}
                     provider={providerQueryParam}
+                    scanRevision={scanRevision}
                   />
                 )}
 

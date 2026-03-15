@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ProviderUsageSnapshot, ProviderTokenStatus, CreditBalance } from '../../types';
-import type { ScanStats } from '../../types';
 import { UsageGaugeCard } from './UsageGaugeCard';
 import { formatTimeAgo } from '../../utils/format';
 import { CostCard } from './CostCard';
@@ -16,7 +15,7 @@ type UsageViewProps = {
   tokenStatus: ProviderTokenStatus | null;
   loading: boolean;
   onSelectSession?: (sessionId: string) => void;
-  onSelectStats?: (stats: ScanStats) => void;
+  onSelectStats?: () => void;
   scanRevision?: number;
   provider?: string;
   isAllView?: boolean;

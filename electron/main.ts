@@ -1263,12 +1263,22 @@ const setupIPC = (): void => {
   });
 
   // Aggregate statistics (DB query — replaced 120-line JSONL scan)
-  ipcMain.handle("get-scan-stats", async (_event, provider?: string) => {
+  ipcMain.handle("get-scan-stats", async (_event, provider?: string, days?: number) => {
     try {
-      return dbReader.getScanStats(provider);
+      return dbReader.getScanStats(provider, days);
     } catch (error) {
       console.error("get-scan-stats error:", error);
       return null;
+    }
+  });
+
+  // Prompt heatmap (GitHub-style activity graph, last 365 days)
+  ipcMain.handle("get-prompt-heatmap", async (_event, provider?: string) => {
+    try {
+      return dbReader.getPromptHeatmap(provider);
+    } catch (error) {
+      console.error("get-prompt-heatmap error:", error);
+      return [];
     }
   });
 

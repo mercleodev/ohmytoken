@@ -4,7 +4,7 @@ import type { ScanStats } from '../../types';
 import { formatCost, toLocalDateKey } from '../../utils/format';
 
 type StatsCardProps = {
-  onSelectStats: (stats: ScanStats) => void;
+  onSelectStats: () => void;
   scanRevision?: number;
   provider?: string;
 };
@@ -56,10 +56,10 @@ export const StatsCard = ({ onSelectStats, scanRevision, provider }: StatsCardPr
   const hasAnyActivity = last7.some((d) => d.actual > 0);
 
   return (
-    <button className="stats-card" onClick={() => onSelectStats(stats)}>
+    <button className="stats-card" onClick={onSelectStats}>
       <div className="stats-card-header">
         <span className="stats-card-title">Stats</span>
-        <span className="stats-card-chevron">›</span>
+        <span className="stats-card-chevron">&rsaquo;</span>
       </div>
       {hasAnyActivity ? (
         <div className="stats-card-chart">

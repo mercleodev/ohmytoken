@@ -67,8 +67,11 @@ const api = {
   ): Promise<{ scan: PromptScan; usage: UsageLogEntry | null } | null> =>
     ipcRenderer.invoke("get-prompt-scan-detail", requestId),
 
-  getScanStats: (provider?: string): Promise<ScanStats | null> =>
-    ipcRenderer.invoke("get-scan-stats", provider),
+  getScanStats: (provider?: string, days?: number): Promise<ScanStats | null> =>
+    ipcRenderer.invoke("get-scan-stats", provider, days),
+
+  getPromptHeatmap: (provider?: string): Promise<Array<{ date: string; count: number }>> =>
+    ipcRenderer.invoke("get-prompt-heatmap", provider),
 
   readFileContent: (
     filePath: string,

@@ -287,19 +287,20 @@ export const getPromptDetail = (
 export const getSessionPrompts = (sessionId: string): PromptScan[] =>
   getPrompts({ session_id: sessionId, limit: 500 });
 
-export const getScanStats = (provider?: string): ScanStats => {
+export const getScanStats = (provider?: string, days?: number): ScanStats => {
   const db = getDatabase();
+  const periodDays = days ?? 30;
   const providerFilter = provider ? "AND provider = ?" : "";
   const providerParams = provider ? [provider] : [];
 
-  // Cost by period (last 30 days, grouped by local date)
+  // Cost by period (grouped by local date)
   const costByPeriod = db
     .prepare(
       `
     SELECT substr(datetime(timestamp, 'localtime'), 1, 10) as period,
            SUM(cost_usd) as cost_usd, COUNT(*) as request_count
     FROM prompts
-    WHERE timestamp >= date('now', 'localtime', '-30 days') ${providerFilter}
+    WHERE timestamp >= date('now', 'localtime', '-${periodDays} days') ${providerFilter}
     GROUP BY substr(datetime(timestamp, 'localtime'), 1, 10)
     ORDER BY period
   `,
@@ -398,7 +399,7 @@ export const getScanStats = (provider?: string): ScanStats => {
     )
     .all(...providerParams) as Array<{ timestamp: string; hit_rate: number }>;
 
-  // Summary
+  // Summary (scoped to period)
   const summaryRow = db
     .prepare(
       `
@@ -411,7 +412,7 @@ export const getScanStats = (provider?: string): ScanStats => {
         ELSE 0
       END as cache_hit_rate
     FROM prompts
-    WHERE 1=1 ${providerFilter}
+    WHERE timestamp >= date('now', 'localtime', '-${periodDays} days') ${providerFilter}
   `,
     )
     .get(...providerParams) as
@@ -1038,6 +1039,33 @@ type SessionMcpAnalysis = {
   toolResultTokens: number;
   toolBreakdown: Record<string, number>;
   redundantPatterns: RedundantPattern[];
+};
+
+// --- Prompt Heatmap (GitHub-style activity graph) ---
+
+export type HeatmapDay = {
+  date: string;  // YYYY-MM-DD
+  count: number;
+};
+
+export const getPromptHeatmap = (provider?: string): HeatmapDay[] => {
+  const db = getDatabase();
+  const providerFilter = provider ? "AND provider = @provider" : "";
+
+  const rows = db
+    .prepare(
+      `
+    SELECT substr(datetime(timestamp, 'localtime'), 1, 10) as date,
+           COUNT(*) as count
+    FROM prompts
+    WHERE timestamp >= date('now', 'localtime', '-365 days') ${providerFilter}
+    GROUP BY substr(datetime(timestamp, 'localtime'), 1, 10)
+    ORDER BY date
+  `,
+    )
+    .all({ provider: provider ?? null }) as HeatmapDay[];
+
+  return rows;
 };
 
 export const getSessionMcpAnalysis = (sessionId: string): SessionMcpAnalysis => {
