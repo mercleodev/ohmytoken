@@ -1,14 +1,11 @@
 /* ── Notification Overlay Container ── */
 .notif-overlay {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  z-index: 9999;
   display: flex;
   flex-direction: column;
   gap: 8px;
   pointer-events: none;
-  max-height: calc(100vh - 24px);
+  padding: 0;
+  max-height: 100vh;
   overflow: hidden;
 }
 

@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { NotificationCard } from './NotificationCard';
 import { useNotificationManager } from './useNotificationManager';
@@ -15,18 +16,36 @@ export const NotificationOverlay = ({ enabled, onNavigateToPrompt }: Props) => {
     onNavigateToPrompt,
   );
 
+  // Toggle click-through: when mouse is on a card, enable clicks
+  const handleMouseEnter = useCallback(() => {
+    if (window.api.setMouseOnCard) {
+      window.api.setMouseOnCard(true);
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (window.api.setMouseOnCard) {
+      window.api.setMouseOnCard(false);
+    }
+  }, []);
+
   if (!enabled || notifications.length === 0) return null;
 
   return (
     <div className="notif-overlay">
       <AnimatePresence mode="popLayout">
         {notifications.map((notif) => (
-          <NotificationCard
+          <div
             key={notif.id}
-            notification={notif}
-            onDismiss={dismiss}
-            onClick={handleClick}
-          />
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <NotificationCard
+              notification={notif}
+              onDismiss={dismiss}
+              onClick={handleClick}
+            />
+          </div>
         ))}
       </AnimatePresence>
     </div>

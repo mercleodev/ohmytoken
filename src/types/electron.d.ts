@@ -353,6 +353,17 @@ export type ElectronApi = {
     }) => void,
   ) => () => void;
 
+  // Navigate from notification overlay window to main window prompt detail
+  navigateToPromptFromNotification: (scan: PromptScan, usage: UsageLogEntry | null) => void;
+
+  // Toggle click-through on notification window (notification window only)
+  setMouseOnCard?: (isOnCard: boolean) => void;
+
+  // Listen for notification window click → navigate to prompt detail (main window only)
+  onNotificationNavigate?: (
+    callback: (data: { scan: PromptScan; usage: UsageLogEntry | null }) => void,
+  ) => () => void;
+
   // Navigation from tray context menu
   onNavigateTo: (callback: (view: string) => void) => () => void;
 

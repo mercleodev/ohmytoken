@@ -51,6 +51,7 @@ process.stderr?.on("error", (err: NodeJS.ErrnoException) => {
 });
 
 let mainWindow: BrowserWindow | null = null;
+let notificationWindow: BrowserWindow | null = null;
 let trayManager: TrayManager | null = null;
 let store: Store | null = null;
 let currentShortcut: string | null = null;
@@ -152,6 +153,82 @@ const createWindow = (): void => {
   });
 };
 
+const NOTIFICATION_WIDTH = 300;
+const NOTIFICATION_HEIGHT = 420;
+const NOTIFICATION_MARGIN = 12;
+
+const createNotificationWindow = (): void => {
+  const { screen } = require("electron");
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth } = primaryDisplay.workAreaSize;
+
+  notificationWindow = new BrowserWindow({
+    width: NOTIFICATION_WIDTH,
+    height: NOTIFICATION_HEIGHT,
+    x: screenWidth - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN,
+    y: NOTIFICATION_MARGIN,
+    resizable: false,
+    movable: false,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    hasShadow: false,
+    focusable: false,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "notificationPreload.js"),
+    },
+  });
+
+  // Default: ignore all mouse events (click-through entire window)
+  notificationWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  if (isDev && !isTest) {
+    notificationWindow.loadURL("http://localhost:5173/notification.html");
+  } else {
+    notificationWindow.loadFile(
+      path.join(__dirname, "../dist/notification.html"),
+    );
+  }
+
+  notificationWindow.webContents.on("did-finish-load", () => {
+    notificationWindow?.showInactive();
+  });
+
+  notificationWindow.on("closed", () => {
+    notificationWindow = null;
+  });
+};
+
+// Send new-prompt-scan to notification window
+const sendToNotificationWindow = (channel: string, data: unknown): void => {
+  if (notificationWindow && !notificationWindow.isDestroyed()) {
+    notificationWindow.webContents.send(channel, data);
+  }
+};
+
+// Toggle click-through on notification window when mouse enters/leaves card
+ipcMain.on("notification-mouse-on-card", (_event, isOnCard: boolean) => {
+  if (notificationWindow && !notificationWindow.isDestroyed()) {
+    notificationWindow.setIgnoreMouseEvents(!isOnCard, { forward: true });
+  }
+});
+
+// Handle notification click → navigate main window to prompt detail
+ipcMain.on(
+  "notification-navigate-to-prompt",
+  (_event, data: { scan: unknown; usage: unknown }) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("notification-navigate-to-prompt", data);
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  },
+);
+
 const registerShortcut = (shortcut: string): boolean => {
   // Unregister existing shortcut
   if (currentShortcut) {
@@ -247,6 +324,7 @@ const initApp = async (): Promise<void> => {
   console.log('[Evidence] Engine initialized, fusion:', evidenceEngine.getConfig().fusion_method);
 
   createWindow();
+  createNotificationWindow();
 
   trayManager = new TrayManager(mainWindow!, store);
   trayManager.init();
@@ -297,11 +375,25 @@ const initApp = async (): Promise<void> => {
         // Real-time DB import: parse session file and insert latest prompt
         try {
           const insertedRequestId = importSinglePrompt(entry.sessionId, entry.timestamp);
-          // Notify renderer so All tab picks up the new scan immediately
-          if (insertedRequestId && mainWindow && !mainWindow.isDestroyed()) {
+          const sendScan = (scan: unknown, usage: unknown) => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send("new-prompt-scan", { scan, usage });
+            }
+            sendToNotificationWindow("new-prompt-scan", { scan, usage });
+          };
+
+          if (insertedRequestId) {
             const detail = dbReader.getPromptDetail(insertedRequestId);
             if (detail?.scan) {
-              mainWindow.webContents.send("new-prompt-scan", { scan: detail.scan });
+              sendScan(detail.scan, detail.usage ?? null);
+            }
+          } else {
+            const scans = dbReader.getPrompts({ session_id: entry.sessionId, limit: 1 });
+            if (scans.length > 0) {
+              const detail = dbReader.getPromptDetail(scans[0].request_id);
+              if (detail?.scan) {
+                sendScan(detail.scan, detail.usage ?? null);
+              }
             }
           }
         } catch (e) {
@@ -330,6 +422,7 @@ const initApp = async (): Promise<void> => {
       resolveSessionId: () => getLastActiveSessionId(),
       onScanComplete: (scan, usage) => {
         mainWindow?.webContents.send("new-prompt-scan", { scan, usage });
+        sendToNotificationWindow("new-prompt-scan", { scan, usage });
         // Dual-write: also persist to SQLite DB
         try {
           onProxyScanComplete(scan, usage);
@@ -435,6 +528,7 @@ const setupIPC = (): void => {
           resolveSessionId: () => getLastActiveSessionId(),
           onScanComplete: (scan, usage) => {
             mainWindow?.webContents.send("new-prompt-scan", { scan, usage });
+            sendToNotificationWindow("new-prompt-scan", { scan, usage });
             try {
               onProxyScanComplete(scan, usage);
             } catch (e) {
@@ -1454,6 +1548,7 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+    createNotificationWindow();
   }
 });
 

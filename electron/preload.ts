@@ -201,6 +201,19 @@ const api = {
     };
   },
 
+  // Navigate from notification overlay window
+  onNotificationNavigate: (callback: (data: { scan: unknown; usage: unknown }) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: { scan: unknown; usage: unknown }) =>
+      callback(data);
+    ipcRenderer.on("notification-navigate-to-prompt", handler);
+    return () => {
+      ipcRenderer.removeListener("notification-navigate-to-prompt", handler);
+    };
+  },
+
+  // No-op for notification preload compat (only used by notification window)
+  navigateToPromptFromNotification: () => {},
+
   // Backfill API
   backfillStart: (): Promise<import('./backfill/types').BackfillResult> =>
     ipcRenderer.invoke('backfill:start'),
