@@ -437,18 +437,42 @@ const initApp = async (): Promise<void> => {
     const sessionWatcher = startSessionFileWatcher({
       onTurn: (event) => {
         if (event.type === "human") {
-          // User just sent a prompt → show streaming notification immediately
+          // Fetch session stats from DB for instant display on streaming card
+          let sessionStats: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number } | undefined;
+          try {
+            const scans = dbReader.getSessionPrompts(event.sessionId);
+            let totalCost = 0, totalTokens = 0, totalCacheRead = 0;
+            for (const s of scans) {
+              const detail = dbReader.getPromptDetail(s.request_id);
+              if (detail?.usage) {
+                totalCost += detail.usage.cost_usd ?? 0;
+                const r = detail.usage.response;
+                totalTokens += (r.input_tokens ?? 0) + (r.output_tokens ?? 0) + (r.cache_read_input_tokens ?? 0) + (r.cache_creation_input_tokens ?? 0);
+                totalCacheRead += r.cache_read_input_tokens ?? 0;
+              }
+            }
+            sessionStats = {
+              turns: scans.length,
+              costUsd: totalCost,
+              totalTokens,
+              cacheReadPct: totalTokens > 0 ? (totalCacheRead / totalTokens) * 100 : 0,
+            };
+          } catch (e) {
+            console.error("[SessionFileWatcher] Failed to fetch session stats:", e);
+          }
+
           const streamingData = {
             sessionId: event.sessionId,
             userPrompt: event.userPrompt ?? "",
             timestamp: event.timestamp,
             model: event.model,
+            sessionStats,
           };
           sendToNotificationWindow("new-prompt-streaming", streamingData);
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send("new-prompt-streaming", streamingData);
           }
-          console.log(`[SessionFileWatcher] HumanTurn detected → streaming notification sent`);
+          console.log(`[SessionFileWatcher] HumanTurn → streaming sent (turns=${sessionStats?.turns}, cost=$${sessionStats?.costUsd?.toFixed(3)})`);
         } else if (event.type === "assistant") {
           // Response complete → dismiss streaming state
           const completeData = {
