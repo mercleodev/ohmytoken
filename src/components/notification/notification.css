@@ -15,7 +15,7 @@
 .notif-card {
   pointer-events: auto;
   width: 296px;
-  max-height: 520px;
+  max-height: 680px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
