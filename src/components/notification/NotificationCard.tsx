@@ -164,17 +164,29 @@ const ActionsTimeline = ({ lines, isStreaming }: {
   );
 };
 
-// ── 3. Response Section (collapsible) ──
+// ── 3. Response Section (real-time streaming + scrollable) ──
 
-const ResponseSection = ({ text, isStreaming }: { text?: string; isStreaming: boolean }) => {
+const ResponseSection = ({ text, streamingTexts, isStreaming }: {
+  text?: string;
+  streamingTexts: string[];
+  isStreaming: boolean;
+}) => {
   const [expanded, setExpanded] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const hasText = Boolean(text?.trim());
-  const previewLength = 120;
-  const needsExpand = hasText && text!.length > previewLength;
-  const displayText = hasText
-    ? (expanded ? text! : truncate(text!, previewLength))
-    : null;
+  // Auto-scroll to bottom on new streaming text
+  useEffect(() => {
+    if (scrollRef.current && isStreaming) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [streamingTexts.length, isStreaming]);
+
+  // Combine: final response text takes priority, else show streaming fragments
+  const finalText = text?.trim();
+  const liveText = streamingTexts.length > 0 ? streamingTexts.join('\n') : '';
+  const displayText = finalText || liveText;
+  const hasText = displayText.length > 0;
+  const needsExpand = hasText && displayText.length > 120;
 
   return (
     <div className="notif-section">
@@ -188,8 +200,13 @@ const ResponseSection = ({ text, isStreaming }: { text?: string; isStreaming: bo
           <span className="notif-expand-toggle">{expanded ? '▾' : '▸'}</span>
         )}
       </div>
-      <div className={`notif-response-body ${expanded ? 'notif-response-body--expanded' : ''}`}>
-        {displayText ?? (
+      <div
+        ref={scrollRef}
+        className={`notif-response-body ${expanded ? 'notif-response-body--expanded' : ''}`}
+      >
+        {hasText ? (
+          expanded ? displayText : truncate(displayText, 120)
+        ) : (
           <span className="notif-section-empty">
             {isStreaming ? 'Waiting for response...' : 'No response'}
           </span>
@@ -314,8 +331,12 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
       {/* ── 2. Actions Timeline (always visible) ── */}
       <ActionsTimeline lines={activityLog} isStreaming={isStreaming} />
 
-      {/* ── 3. Response (always visible) ── */}
-      <ResponseSection text={scan.assistant_response} isStreaming={isStreaming} />
+      {/* ── 3. Response (always visible, real-time streaming) ── */}
+      <ResponseSection
+        text={scan.assistant_response}
+        streamingTexts={activityLog.filter((l) => l.kind === 'text').map((l) => l.detail)}
+        isStreaming={isStreaming}
+      />
 
       {/* ── Context Growth Sparkline (always visible) ── */}
       <CtxSparkline turnMetrics={turnMetrics} model={scan.model} />

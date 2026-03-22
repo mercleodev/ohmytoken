@@ -298,6 +298,7 @@ const buildPromptData = (
   entries: RawEntry[],
   userIdx: number,
   endIdx: number,
+  projectPath?: string,
 ): InsertPromptData => {
   const userText = extractUserText(userEntry);
   const usage = assistantEntry.message!.usage!;
@@ -360,7 +361,7 @@ const buildPromptData = (
       req_tools_count: 0,
       req_has_system: true,
     },
-    injected_files: [],
+    injected_files: projectPath ? readInjectedFiles(projectPath) : [],
     tool_calls: toolCalls.map((t) => ({
       call_index: t.index,
       name: t.name,
@@ -376,26 +377,43 @@ const buildPromptData = (
 };
 
 /**
- * Read injected files from disk for a given project path and return total tokens.
+ * Category classification for injected files (matches systemParser logic).
  */
-const readInjectedTokens = (projectPath: string): number => {
-  let total = 0;
-  const readFile = (fp: string) => {
+const classifyCategory = (filePath: string): string => {
+  const lower = filePath.toLowerCase();
+  if (lower.includes("/rules/")) return "rules";
+  if (lower.includes("/memory/")) return "memory";
+  if (lower.includes("/skills/") || lower.includes("/skill")) return "skill";
+  if (lower.includes("claude.md")) {
+    if (lower.includes("/.claude/") && !lower.includes("/projects/")) return "global";
+    return "project";
+  }
+  return "project";
+};
+
+type InjectedFileInfo = { path: string; category: string; estimated_tokens: number };
+
+/**
+ * Read injected files from disk for a given project path and return file details.
+ */
+export const readInjectedFiles = (projectPath: string): InjectedFileInfo[] => {
+  const files: InjectedFileInfo[] = [];
+
+  const tryAdd = (fp: string) => {
     try {
       if (fs.existsSync(fp)) {
-        total += countTokens(fs.readFileSync(fp, "utf-8"));
+        const tokens = countTokens(fs.readFileSync(fp, "utf-8"));
+        files.push({ path: fp, category: classifyCategory(fp), estimated_tokens: tokens });
       }
     } catch {
       /* skip */
     }
   };
-  const readDir = (dirPath: string) => {
+  const tryAddDir = (dirPath: string) => {
     try {
       if (fs.existsSync(dirPath)) {
-        for (const f of fs
-          .readdirSync(dirPath)
-          .filter((f) => f.endsWith(".md"))) {
-          readFile(path.join(dirPath, f));
+        for (const f of fs.readdirSync(dirPath).filter((f) => f.endsWith(".md"))) {
+          tryAdd(path.join(dirPath, f));
         }
       }
     } catch {
@@ -404,18 +422,24 @@ const readInjectedTokens = (projectPath: string): number => {
   };
 
   // Global CLAUDE.md + rules
-  readFile(path.join(homedir(), ".claude", "CLAUDE.md"));
-  readDir(path.join(homedir(), ".claude", "rules"));
+  tryAdd(path.join(homedir(), ".claude", "CLAUDE.md"));
+  tryAddDir(path.join(homedir(), ".claude", "rules"));
 
   // Project CLAUDE.md + rules + memory
   if (projectPath && fs.existsSync(projectPath)) {
-    readFile(path.join(projectPath, "CLAUDE.md"));
-    readDir(path.join(projectPath, ".claude", "rules"));
-    readDir(path.join(projectPath, ".claude", "memory"));
+    tryAdd(path.join(projectPath, "CLAUDE.md"));
+    tryAddDir(path.join(projectPath, ".claude", "rules"));
+    tryAddDir(path.join(projectPath, ".claude", "memory"));
   }
 
-  return total;
+  return files;
 };
+
+/**
+ * Read injected files and return total tokens only (legacy compat).
+ */
+const readInjectedTokens = (projectPath: string): number =>
+  readInjectedFiles(projectPath).reduce((sum, f) => sum + f.estimated_tokens, 0);
 
 /**
  * Post-import: estimate system_tokens for batch-imported history prompts.
@@ -671,14 +695,21 @@ export const importSinglePrompt = (
     });
 
     let filePath: string | null = null;
+    let projectDir: string | null = null;
     for (const dir of dirs) {
       const candidate = path.join(projectsDir, dir, `${sessionId}.jsonl`);
       if (fs.existsSync(candidate)) {
         filePath = candidate;
+        projectDir = dir;
         break;
       }
     }
     if (!filePath) return null;
+
+    // Restore project path from dash-delimited directory name
+    const projectPath = projectDir
+      ? projectDir.replace(/^-/, "/").replace(/-/g, "/")
+      : "";
 
     const entries = parseSessionFile(filePath);
     if (entries.length === 0) return null;
@@ -744,6 +775,7 @@ export const importSinglePrompt = (
       entries,
       bestUserIdx,
       nextUserIdx,
+      projectPath,
     );
 
     const id = insertPrompt(data);
