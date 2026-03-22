@@ -4,6 +4,11 @@ import { UsageProviderType, ProviderUsageSnapshot, ProviderTokenStatus } from '.
 import type { PromptScan, UsageLogEntry } from '../../types';
 import { setContextLimitOverride } from '../scan/shared';
 
+type PendingPromptNav = {
+  scan: PromptScan;
+  usage: UsageLogEntry | null;
+};
+
 // Error boundary: displays error message on crash
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -41,7 +46,12 @@ type NavState =
 
 const TAB_ORDER: ProviderFilter[] = ['all', 'claude', 'codex', 'gemini'];
 
-export const UsageDashboard = () => {
+type DashboardProps = {
+  pendingPromptNav?: PendingPromptNav | null;
+  onPromptNavConsumed?: () => void;
+};
+
+export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: DashboardProps = {}) => {
   const [selectedProvider, setSelectedProvider] = useState<ProviderFilter>('all');
   const [providerStatuses, setProviderStatuses] = useState<ProviderTokenStatus[]>([]);
   const [snapshots, setSnapshots] = useState<Record<string, ProviderUsageSnapshot | null>>({});
@@ -206,6 +216,15 @@ export const UsageDashboard = () => {
       setNav({ screen: 'session', sessionId: nav.sessionId });
     }
   }, [nav]);
+
+  // Handle notification click → navigate to prompt detail
+  useEffect(() => {
+    if (!pendingPromptNav) return;
+    const { scan, usage } = pendingPromptNav;
+    setNavDirection(1);
+    setNav({ screen: 'prompt', scan, usage, sessionId: scan.session_id });
+    onPromptNavConsumed?.();
+  }, [pendingPromptNav, onPromptNavConsumed]);
 
   const tabInfo = buildProviderTabInfo(providerStatuses);
   const isAllView = selectedProvider === 'all';

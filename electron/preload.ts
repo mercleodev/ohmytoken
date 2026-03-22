@@ -98,6 +98,32 @@ const api = {
     };
   },
 
+  onNewPromptStreaming: (
+    callback: (data: { sessionId: string; userPrompt: string; timestamp: string; model?: string }) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: { sessionId: string; userPrompt: string; timestamp: string; model?: string },
+    ) => callback(data);
+    ipcRenderer.on("new-prompt-streaming", handler);
+    return () => {
+      ipcRenderer.removeListener("new-prompt-streaming", handler);
+    };
+  },
+
+  onPromptStreamingComplete: (
+    callback: (data: { sessionId: string; timestamp: string; model?: string }) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: { sessionId: string; timestamp: string; model?: string },
+    ) => callback(data);
+    ipcRenderer.on("prompt-streaming-complete", handler);
+    return () => {
+      ipcRenderer.removeListener("prompt-streaming-complete", handler);
+    };
+  },
+
   // Usage Dashboard API
   getProviderUsage: (provider: string): Promise<any> =>
     ipcRenderer.invoke("get-provider-usage", provider),
@@ -192,6 +218,8 @@ const api = {
     };
   },
 
+  getDisplays: () => ipcRenderer.invoke("get-displays"),
+
   onNavigateTo: (callback: (view: string) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, view: string) =>
       callback(view);
@@ -200,6 +228,19 @@ const api = {
       ipcRenderer.removeListener("navigate-to", handler);
     };
   },
+
+  // Navigate from notification overlay window
+  onNotificationNavigate: (callback: (data: { scan: unknown; usage: unknown }) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: { scan: unknown; usage: unknown }) =>
+      callback(data);
+    ipcRenderer.on("notification-navigate-to-prompt", handler);
+    return () => {
+      ipcRenderer.removeListener("notification-navigate-to-prompt", handler);
+    };
+  },
+
+  // No-op for notification preload compat (only used by notification window)
+  navigateToPromptFromNotification: () => {},
 
   // Backfill API
   backfillStart: (): Promise<import('./backfill/types').BackfillResult> =>

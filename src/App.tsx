@@ -3,13 +3,20 @@ import { AnimatePresence, motion } from "framer-motion";
 import { UsageDashboard } from "./components/dashboard/UsageDashboard";
 import { SettingsSection } from "./components/SettingsSection";
 import { AppSettings } from "./types";
+import type { PromptScan, UsageLogEntry } from "./types/electron";
 import "./App.css";
 
 type View = "dashboard" | "settings";
 
+type PendingPromptNav = {
+  scan: PromptScan;
+  usage: UsageLogEntry | null;
+};
+
 const App = () => {
   const [view, setView] = useState<View>("dashboard");
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [pendingPromptNav, setPendingPromptNav] = useState<PendingPromptNav | null>(null);
 
   const handleBackToDashboard = useCallback(() => setView("dashboard"), []);
 
@@ -26,9 +33,24 @@ const App = () => {
     return cleanup;
   }, []);
 
+  // Listen for notification window click → navigate to prompt detail
+  useEffect(() => {
+    if (!window.api.onNotificationNavigate) return;
+    const cleanup = window.api.onNotificationNavigate((data: { scan: PromptScan; usage: UsageLogEntry | null }) => {
+      setView("dashboard");
+      setPendingPromptNav(data);
+    });
+    return cleanup;
+  }, []);
+
   const handleSaveSettings = useCallback(async (newSettings: AppSettings) => {
     await window.api.saveSettings(newSettings);
     setView("dashboard");
+  }, []);
+
+  // After dashboard consumes the nav, clear it
+  const handlePromptNavConsumed = useCallback(() => {
+    setPendingPromptNav(null);
   }, []);
 
   return (
@@ -43,7 +65,10 @@ const App = () => {
             transition={{ duration: 0.15 }}
             className="app-view"
           >
-            <UsageDashboard />
+            <UsageDashboard
+              pendingPromptNav={pendingPromptNav}
+              onPromptNavConsumed={handlePromptNavConsumed}
+            />
           </motion.div>
         )}
 

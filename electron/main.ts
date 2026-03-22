@@ -41,6 +41,7 @@ import { clampNegativeTokens } from "./backfill/clamp-negative-tokens-backfill";
 import { runDedupCleanup } from "./backfill/dedup-cleanup-backfill";
 import { startGapFillScheduler, stopGapFillScheduler } from "./backfill/scheduler";
 import { startProviderSessionWatcher } from "./watcher/providerSessionWatcher";
+import { startSessionFileWatcher } from "./watcher/sessionFileWatcher";
 
 // Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
 process.stdout?.on("error", (err: NodeJS.ErrnoException) => {
@@ -51,11 +52,14 @@ process.stderr?.on("error", (err: NodeJS.ErrnoException) => {
 });
 
 let mainWindow: BrowserWindow | null = null;
+let notificationWindow: BrowserWindow | null = null;
 let trayManager: TrayManager | null = null;
 let store: Store | null = null;
 let currentShortcut: string | null = null;
 let isQuitting = false;
 let evidenceEngine: EvidenceEngine | null = null;
+let sessionFileWatcherCleanup: (() => void) | null = null;
+let switchSessionFileWatcher: ((sessionId: string) => void) | null = null;
 
 // injected files cache: file-based persistent storage
 const INJECTED_CACHE_PATH = path.join(
@@ -152,6 +156,146 @@ const createWindow = (): void => {
   });
 };
 
+const NOTIFICATION_WIDTH = 320;
+const NOTIFICATION_HEIGHT = 900;
+const NOTIFICATION_MARGIN = 12;
+
+/** Find the target display based on saved settings (0/undefined = auto: largest external) */
+const getNotificationDisplay = (): Electron.Display => {
+  const { screen } = require("electron");
+  const allDisplays = screen.getAllDisplays();
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const savedId = (store?.get("settings") as AppSettings | undefined)?.notificationDisplayId;
+  if (savedId) {
+    const found = allDisplays.find((d: Electron.Display) => d.id === savedId);
+    if (found) return found;
+  }
+  // Auto: largest external display, fallback to primary
+  const externalDisplays = allDisplays.filter((d: Electron.Display) => d.id !== primaryDisplay.id);
+  return externalDisplays.length > 0
+    ? externalDisplays.reduce((biggest: Electron.Display, d: Electron.Display) =>
+        (d.bounds.width * d.bounds.height) > (biggest.bounds.width * biggest.bounds.height) ? d : biggest
+      )
+    : primaryDisplay;
+};
+
+/** Reposition notification window to the top-right of the target display */
+const repositionNotificationWindow = (): void => {
+  if (!notificationWindow || notificationWindow.isDestroyed()) return;
+  const targetDisplay = getNotificationDisplay();
+  const { x, y, width } = targetDisplay.workArea;
+  const newX = x + width - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN;
+  const newY = y + NOTIFICATION_MARGIN;
+  console.log(`[NotificationWindow] Target: id=${targetDisplay.id} (${targetDisplay.bounds.width}x${targetDisplay.bounds.height}) → position (${newX}, ${newY})`);
+  notificationWindow.setPosition(newX, newY);
+};
+
+const createNotificationWindow = (): void => {
+  const targetDisplay = getNotificationDisplay();
+  const { x: displayX, width: screenWidth } = targetDisplay.workArea;
+
+  notificationWindow = new BrowserWindow({
+    width: NOTIFICATION_WIDTH,
+    height: NOTIFICATION_HEIGHT,
+    x: displayX + screenWidth - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN,
+    y: targetDisplay.workArea.y + NOTIFICATION_MARGIN,
+    resizable: false,
+    movable: false,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    hasShadow: false,
+    focusable: false,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "notificationPreload.js"),
+    },
+  });
+
+  // Default: ignore all mouse events (click-through entire window)
+  notificationWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  if (isDev && !isTest) {
+    notificationWindow.loadURL("http://localhost:5173/notification.html");
+  } else {
+    notificationWindow.loadFile(
+      path.join(__dirname, "../dist/notification.html"),
+    );
+  }
+
+  // Start hidden — will be shown via IPC when notification cards appear
+  notificationWindow.webContents.on("did-finish-load", () => {
+    console.log("[NotificationWindow] Renderer loaded successfully");
+  });
+
+  notificationWindow.webContents.on("did-fail-load", (_event, errorCode, errorDescription) => {
+    console.error(`[NotificationWindow] Failed to load: ${errorCode} ${errorDescription}`);
+  });
+
+  // Log any console messages from the notification renderer
+  notificationWindow.webContents.on("console-message", (_event, level, message) => {
+    const prefix = ["[notif:log]", "[notif:warn]", "[notif:err]"][level] ?? "[notif]";
+    console.log(`${prefix} ${message}`);
+  });
+
+  notificationWindow.on("closed", () => {
+    notificationWindow = null;
+  });
+};
+
+// Send new-prompt-scan to notification window
+const sendToNotificationWindow = (channel: string, data: unknown): void => {
+  if (notificationWindow && !notificationWindow.isDestroyed()) {
+    console.log(`[NotificationWindow] Sending IPC: ${channel}`);
+    notificationWindow.webContents.send(channel, data);
+  } else {
+    console.warn(`[NotificationWindow] Cannot send ${channel}: window is ${notificationWindow ? 'destroyed' : 'null'}`);
+  }
+};
+
+// Debug log from notification renderer
+ipcMain.on("notification-debug-log", (_event, msg: string) => {
+  console.log(`[notif:debug] ${msg}`);
+});
+
+// Toggle click-through on notification window when mouse enters/leaves card
+ipcMain.on("notification-mouse-on-card", (_event, isOnCard: boolean) => {
+  if (notificationWindow && !notificationWindow.isDestroyed()) {
+    notificationWindow.setIgnoreMouseEvents(!isOnCard, { forward: true });
+  }
+});
+
+// Show/hide notification window based on card visibility
+ipcMain.on("notification-set-visible", (_event, visible: boolean) => {
+  if (notificationWindow && !notificationWindow.isDestroyed()) {
+    if (visible) {
+      repositionNotificationWindow();
+      notificationWindow.showInactive();
+    } else {
+      notificationWindow.hide();
+      // Reset click-through state
+      notificationWindow.setIgnoreMouseEvents(true, { forward: true });
+    }
+  }
+});
+
+// Handle notification click → navigate main window to prompt detail
+ipcMain.on(
+  "notification-navigate-to-prompt",
+  (_event, data: { scan: unknown; usage: unknown }) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      // Suppress blur-hide so the window stays visible after notification click
+      trayManager?.suppressBlurHideOnce();
+      mainWindow.webContents.send("notification-navigate-to-prompt", data);
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  },
+);
+
 const registerShortcut = (shortcut: string): boolean => {
   // Unregister existing shortcut
   if (currentShortcut) {
@@ -247,6 +391,7 @@ const initApp = async (): Promise<void> => {
   console.log('[Evidence] Engine initialized, fusion:', evidenceEngine.getConfig().fusion_method);
 
   createWindow();
+  createNotificationWindow();
 
   trayManager = new TrayManager(mainWindow!, store);
   trayManager.init();
@@ -287,6 +432,72 @@ const initApp = async (): Promise<void> => {
     console.error("[TokenWatcher] Failed to start:", err);
   }
 
+  // Start session file watcher (real-time HumanTurn/AssistantTurn detection)
+  try {
+    const sessionWatcher = startSessionFileWatcher({
+      onTurn: (event) => {
+        if (event.type === "human") {
+          // User just sent a prompt → show streaming notification immediately
+          const streamingData = {
+            sessionId: event.sessionId,
+            userPrompt: event.userPrompt ?? "",
+            timestamp: event.timestamp,
+            model: event.model,
+          };
+          sendToNotificationWindow("new-prompt-streaming", streamingData);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("new-prompt-streaming", streamingData);
+          }
+          console.log(`[SessionFileWatcher] HumanTurn detected → streaming notification sent`);
+        } else if (event.type === "assistant") {
+          // Response complete → dismiss streaming state
+          const completeData = {
+            sessionId: event.sessionId,
+            timestamp: event.timestamp,
+            model: event.model,
+          };
+          sendToNotificationWindow("prompt-streaming-complete", completeData);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("prompt-streaming-complete", completeData);
+          }
+          console.log(`[SessionFileWatcher] AssistantTurn detected → streaming complete`);
+
+          // Fetch latest scan from DB and send to notification window
+          // (new-prompt-scan from history watcher may arrive late or not at all)
+          setTimeout(() => {
+            try {
+              const latestScans = dbReader.getSessionPrompts(event.sessionId);
+              if (latestScans.length > 0) {
+                const latestScan = latestScans[latestScans.length - 1];
+                const detail = dbReader.getPromptDetail(latestScan.request_id);
+                if (detail?.scan) {
+                  console.log(`[SessionFileWatcher] Sending enriched scan to notification: ${detail.scan.request_id}, injected=${detail.scan.injected_files?.length}`);
+                  sendToNotificationWindow("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
+                }
+              }
+            } catch (e) {
+              console.error("[SessionFileWatcher] Failed to fetch latest scan for notification:", e);
+            }
+          }, 2000);
+        }
+      },
+      onActivity: (activity) => {
+        // Real-time activity feed → notification window only
+        sendToNotificationWindow("session-activity", activity);
+      },
+    });
+    sessionFileWatcherCleanup = sessionWatcher.cleanup;
+    switchSessionFileWatcher = sessionWatcher.switchSession;
+
+    // Initialize with current active session if available
+    const initialSessionId = getLastActiveSessionId();
+    if (initialSessionId) {
+      sessionWatcher.switchSession(initialSessionId);
+    }
+  } catch (err) {
+    console.error("[SessionFileWatcher] Failed to start:", err);
+  }
+
   // Start history.jsonl watcher (passive session monitoring)
   try {
     startHistoryWatcher({
@@ -294,16 +505,29 @@ const initApp = async (): Promise<void> => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send("new-history-entry", entry);
         }
+
+        // Switch session file watcher to track the active session
+        if (switchSessionFileWatcher) {
+          switchSessionFileWatcher(entry.sessionId);
+        }
+
         // Real-time DB import: parse session file and insert latest prompt
         try {
           const insertedRequestId = importSinglePrompt(entry.sessionId, entry.timestamp);
-          // Notify renderer so All tab picks up the new scan immediately
-          if (insertedRequestId && mainWindow && !mainWindow.isDestroyed()) {
+          const sendScan = (scan: unknown, usage: unknown) => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send("new-prompt-scan", { scan, usage });
+            }
+            sendToNotificationWindow("new-prompt-scan", { scan, usage });
+          };
+
+          if (insertedRequestId) {
             const detail = dbReader.getPromptDetail(insertedRequestId);
             if (detail?.scan) {
-              mainWindow.webContents.send("new-prompt-scan", { scan: detail.scan });
+              sendScan(detail.scan, detail.usage ?? null);
             }
           }
+          // No fallback: don't send stale/previous prompt data
         } catch (e) {
           console.error("[DB] history real-time import error:", e);
         }
@@ -330,6 +554,7 @@ const initApp = async (): Promise<void> => {
       resolveSessionId: () => getLastActiveSessionId(),
       onScanComplete: (scan, usage) => {
         mainWindow?.webContents.send("new-prompt-scan", { scan, usage });
+        sendToNotificationWindow("new-prompt-scan", { scan, usage });
         // Dual-write: also persist to SQLite DB
         try {
           onProxyScanComplete(scan, usage);
@@ -435,6 +660,7 @@ const setupIPC = (): void => {
           resolveSessionId: () => getLastActiveSessionId(),
           onScanComplete: (scan, usage) => {
             mainWindow?.webContents.send("new-prompt-scan", { scan, usage });
+            sendToNotificationWindow("new-prompt-scan", { scan, usage });
             try {
               onProxyScanComplete(scan, usage);
             } catch (e) {
@@ -449,6 +675,22 @@ const setupIPC = (): void => {
     }
 
     return { success: true };
+  });
+
+  // Get connected displays for notification placement settings
+  ipcMain.handle("get-displays", async () => {
+    const { screen } = require("electron");
+    const allDisplays = screen.getAllDisplays();
+    const primary = screen.getPrimaryDisplay();
+    return allDisplays.map((d: Electron.Display) => ({
+      id: d.id,
+      label: d.id === primary.id
+        ? `Built-in Display (${d.bounds.width}×${d.bounds.height})`
+        : `External Display (${d.bounds.width}×${d.bounds.height})`,
+      width: d.bounds.width,
+      height: d.bounds.height,
+      isPrimary: d.id === primary.id,
+    }));
   });
 
   // Add provider
@@ -1454,6 +1696,7 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+    createNotificationWindow();
   }
 });
 
@@ -1478,6 +1721,7 @@ app.on("before-quit", () => {
   }
   usageStore.stopPolling();
   stopGapFillScheduler();
+  if (sessionFileWatcherCleanup) sessionFileWatcherCleanup();
   trayManager?.cleanup();
   stopProxyServer().catch((err) => console.error("Proxy cleanup error:", err));
 });

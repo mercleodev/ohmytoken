@@ -505,6 +505,16 @@ if (!window.api) {
       return () => {};
     },
 
+    onNewPromptStreaming: () => { return () => {}; },
+    onPromptStreamingComplete: () => { return () => {}; },
+
+    navigateToPromptFromNotification: () => {},
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onNotificationNavigate: (_callback: (data: { scan: import('./types/electron').PromptScan; usage: import('./types/electron').UsageLogEntry | null }) => void) => {
+      return () => {};
+    },
+
     // Backfill Mock API
     backfillStart: async () => ({
       totalFiles: 42,
@@ -527,6 +537,7 @@ if (!window.api) {
     onBackfillComplete: (_callback: (result: import('./types/electron').BackfillResult) => void) => {
       return () => {};
     },
+    getDisplays: async () => [],
   };
   console.log('🔧 Mock API loaded for browser testing');
 }

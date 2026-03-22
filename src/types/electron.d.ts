@@ -353,6 +353,38 @@ export type ElectronApi = {
     }) => void,
   ) => () => void;
 
+  // Listen for streaming prompt (user just sent message, processing...)
+  onNewPromptStreaming?: (
+    callback: (data: {
+      sessionId: string;
+      userPrompt: string;
+      timestamp: string;
+      model?: string;
+    }) => void,
+  ) => () => void;
+
+  // Listen for streaming complete (assistant response finished)
+  onPromptStreamingComplete?: (
+    callback: (data: { sessionId: string; timestamp: string; model?: string }) => void,
+  ) => () => void;
+
+  // Navigate from notification overlay window to main window prompt detail
+  navigateToPromptFromNotification: (scan: PromptScan, usage: UsageLogEntry | null) => void;
+
+  // Toggle click-through on notification window (notification window only)
+  setMouseOnCard?: (isOnCard: boolean) => void;
+
+  // Show/hide notification window based on card visibility
+  setNotificationVisible?: (visible: boolean) => void;
+
+  // Listen for notification window click → navigate to prompt detail (main window only)
+  onNotificationNavigate?: (
+    callback: (data: { scan: PromptScan; usage: UsageLogEntry | null }) => void,
+  ) => () => void;
+
+  // Display info for notification placement settings
+  getDisplays: () => Promise<Array<{ id: number; label: string; width: number; height: number; isPrimary: boolean }>>;
+
   // Navigation from tray context menu
   onNavigateTo: (callback: (view: string) => void) => () => void;
 
