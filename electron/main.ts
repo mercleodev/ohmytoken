@@ -462,9 +462,33 @@ const initApp = async (): Promise<void> => {
           }
           console.log(`[SessionFileWatcher] AssistantTurn detected → streaming complete`);
 
-          // NOTE: Do NOT fetch from DB here with a timeout — the DB may not have
-          // the current prompt yet, sending an older scan's data instead.
-          // The history watcher will naturally send new-prompt-scan when it imports.
+          // Import the current prompt from session file and send enriched scan
+          // History watcher only fires on history.jsonl change (session close),
+          // so we must import here for real-time notification data.
+          setTimeout(() => {
+            try {
+              // Try to import — returns null if already in DB
+              const eventTs = typeof event.timestamp === 'number' ? event.timestamp : new Date(event.timestamp).getTime();
+              const requestId = importSinglePrompt(event.sessionId, eventTs);
+
+              // Whether newly imported or already existed, send the latest scan for this session
+              // The notification manager has its own staleness guard (3 min)
+              const scans = dbReader.getSessionPrompts(event.sessionId);
+              if (scans.length > 0) {
+                const latest = scans[scans.length - 1];
+                const detail = dbReader.getPromptDetail(latest.request_id);
+                if (detail?.scan) {
+                  console.log(`[SessionFileWatcher] Enriched scan sent: ${latest.request_id}, injected=${detail.scan.injected_files?.length}, ts=${latest.timestamp}`);
+                  sendToNotificationWindow("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
+                  if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
+                  }
+                }
+              }
+            } catch (e) {
+              console.error("[SessionFileWatcher] Failed to import prompt for notification:", e);
+            }
+          }, 1500);
         }
       },
       onActivity: (activity) => {
