@@ -124,12 +124,8 @@ export const useNotificationManager = (
           };
         }
 
-        // If the existing card is still streaming, keep streaming status
-        // — only completeStreaming() should transition to 'completed'
-        if (existing.status === 'streaming') {
-          notif.status = 'streaming';
-          notif.completedAt = null;
-        }
+        // Real scan data arrived from DB — mark as completed
+        // (overrides streaming status since we now have the actual response data)
       }
       const filtered = prev.filter(
         (n) => n.id !== scan.request_id && n.scan.session_id !== scan.session_id,
@@ -156,9 +152,11 @@ export const useNotificationManager = (
     userPrompt: string;
     timestamp: string;
     model?: string;
+    sessionStats?: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number };
   }) => {
     if (!enabled) return;
 
+    const stats = data.sessionStats;
     const streamingId = `streaming-${data.sessionId}-${data.timestamp}`;
     const partialScan: PromptScan = {
       request_id: streamingId,
@@ -167,7 +165,7 @@ export const useNotificationManager = (
       timestamp: data.timestamp,
       model: data.model ?? 'unknown',
       provider: 'claude',
-      conversation_turns: 0,
+      conversation_turns: stats?.turns ?? 0,
       user_prompt_tokens: 0,
       total_injected_tokens: 0,
       injected_files: [],
@@ -181,10 +179,22 @@ export const useNotificationManager = (
       tool_result_count: 0,
     };
 
+    // Build a temporary usage object from session stats for immediate display
+    const streamingUsage: UsageLogEntry | null = stats ? {
+      request_id: streamingId,
+      cost_usd: stats.costUsd,
+      response: {
+        input_tokens: 0,
+        output_tokens: 0,
+        cache_read_input_tokens: Math.round(stats.totalTokens * stats.cacheReadPct / 100),
+        cache_creation_input_tokens: 0,
+      },
+    } as UsageLogEntry : null;
+
     const notif: PromptNotification = {
       id: streamingId,
       scan: partialScan,
-      usage: null,
+      usage: streamingUsage,
       status: 'streaming',
       createdAt: Date.now(),
       completedAt: null,
@@ -192,6 +202,17 @@ export const useNotificationManager = (
       alerts: [],
       activityLog: [],
     };
+
+    // Async: fetch turn metrics for sparkline (best-effort, won't block card creation)
+    window.api.getSessionTurnMetrics?.(data.sessionId)
+      .then((metrics: TurnMetric[]) => {
+        if (metrics.length > 0) {
+          setNotifications((prev) =>
+            prev.map((n) => n.id === streamingId ? { ...n, turnMetrics: metrics } : n),
+          );
+        }
+      })
+      .catch(() => {});
 
     setNotifications((prev) => {
       // Cancel auto-dismiss timers for existing cards in same session
