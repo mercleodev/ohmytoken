@@ -190,8 +190,8 @@ export const useNotificationManager = (
   }, [enabled]);
 
   // Mark streaming notifications as completed when AssistantTurn arrives
-  // NOTE: Do NOT start auto-dismiss here — agent may spawn more tool_use turns.
-  // Auto-dismiss only starts when addNotification receives the final scan from DB.
+  // Start auto-dismiss timer — if a new tool_use activity arrives later,
+  // appendActivity() will cancel the timer and revert to streaming.
   const completeStreaming = useCallback((data: { sessionId: string; model?: string }) => {
     setNotifications((prev) =>
       prev.map((n) => {
@@ -206,7 +206,16 @@ export const useNotificationManager = (
         return n;
       }),
     );
-  }, []);
+    // Start auto-dismiss for newly completed notifications
+    setNotifications((prev) => {
+      for (const n of prev) {
+        if (n.status === 'completed' && n.scan.session_id === data.sessionId && !timersRef.current.has(n.id)) {
+          startDismissTimer(n.id);
+        }
+      }
+      return prev;
+    });
+  }, [startDismissTimer]);
 
   // Append activity line to matching session's notification
   const appendActivity = useCallback((data: {
