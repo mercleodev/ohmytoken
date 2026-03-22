@@ -98,6 +98,32 @@ const api = {
     };
   },
 
+  onNewPromptStreaming: (
+    callback: (data: { sessionId: string; userPrompt: string; timestamp: string; model?: string }) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: { sessionId: string; userPrompt: string; timestamp: string; model?: string },
+    ) => callback(data);
+    ipcRenderer.on("new-prompt-streaming", handler);
+    return () => {
+      ipcRenderer.removeListener("new-prompt-streaming", handler);
+    };
+  },
+
+  onPromptStreamingComplete: (
+    callback: (data: { sessionId: string; timestamp: string; model?: string }) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: { sessionId: string; timestamp: string; model?: string },
+    ) => callback(data);
+    ipcRenderer.on("prompt-streaming-complete", handler);
+    return () => {
+      ipcRenderer.removeListener("prompt-streaming-complete", handler);
+    };
+  },
+
   // Usage Dashboard API
   getProviderUsage: (provider: string): Promise<any> =>
     ipcRenderer.invoke("get-provider-usage", provider),
@@ -191,6 +217,8 @@ const api = {
       ipcRenderer.removeListener('evidence-scored', handler);
     };
   },
+
+  getDisplays: () => ipcRenderer.invoke("get-displays"),
 
   onNavigateTo: (callback: (view: string) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, view: string) =>

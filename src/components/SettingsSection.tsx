@@ -20,7 +20,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   shortcut: 'CommandOrControl+Shift+T',
   proxyPort: DEFAULT_PROXY_PORT,
   notificationsEnabled: true,
+  notificationDisplayId: 0,
 };
+
+type DisplayInfo = { id: number; label: string; width: number; height: number; isPrimary: boolean };
 
 export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionProps) => {
   const [colorLow, setColorLow] = useState(DEFAULT_SETTINGS.colors.low);
@@ -31,6 +34,8 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
   const [shortcut, setShortcut] = useState(DEFAULT_SETTINGS.shortcut);
   const [proxyPort, setProxyPort] = useState(DEFAULT_SETTINGS.proxyPort);
   const [notificationsEnabled, setNotificationsEnabled] = useState(DEFAULT_SETTINGS.notificationsEnabled ?? true);
+  const [notificationDisplayId, setNotificationDisplayId] = useState(DEFAULT_SETTINGS.notificationDisplayId ?? 0);
+  const [displays, setDisplays] = useState<DisplayInfo[]>([]);
   const [isRecording, setIsRecording] = useState(false);
 
   useEffect(() => {
@@ -43,8 +48,16 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
       setShortcut(settings.shortcut || DEFAULT_SETTINGS.shortcut);
       setProxyPort(settings.proxyPort || DEFAULT_SETTINGS.proxyPort);
       setNotificationsEnabled(settings.notificationsEnabled ?? true);
+      setNotificationDisplayId(settings.notificationDisplayId ?? 0);
     }
   }, [settings]);
+
+  useEffect(() => {
+    window.api.getDisplays?.().then((d) => {
+      console.log('[Settings] displays:', d);
+      setDisplays(d);
+    }).catch((err) => console.error('[Settings] getDisplays error:', err));
+  }, []);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!isRecording) return;
@@ -106,6 +119,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
       shortcut,
       proxyPort,
       notificationsEnabled,
+      notificationDisplayId,
     });
   };
 
@@ -238,6 +252,26 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
             Show an overlay card when a new prompt is detected with token insights, cache growth chart, and live action feed
           </p>
         </div>
+
+        {notificationsEnabled && displays.length > 1 && (
+          <div className="form-group">
+            <label htmlFor="notificationDisplay">Notification Display</label>
+            <select
+              id="notificationDisplay"
+              value={notificationDisplayId}
+              onChange={(e) => setNotificationDisplayId(Number(e.target.value))}
+              style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border-color, #333)', background: 'var(--bg-secondary, #1a1a1a)', color: 'inherit' }}
+            >
+              <option value={0}>Auto (Largest External Display)</option>
+              {displays.map((d) => (
+                <option key={d.id} value={d.id}>{d.label}</option>
+              ))}
+            </select>
+            <p className="hint">
+              Choose which display shows the notification overlay
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="settings-group">

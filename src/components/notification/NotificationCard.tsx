@@ -1,9 +1,8 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import type { PromptNotification } from './types';
+import type { PromptNotification, ActivityLine } from './types';
 import { MiniSparkline } from './MiniSparkline';
 import { getContextLimit } from '../scan/shared';
-import type { InjectedFile, ToolCall, AgentCall } from '../../types/electron';
 
 type Props = {
   notification: PromptNotification;
@@ -34,76 +33,224 @@ const PROVIDER_COLORS: Record<string, string> = {
   gemini: '#6366F1',
 };
 
-// Build activity feed items from scan data
-type ActivityItem = { icon: string; text: string; category: 'injected' | 'action' | 'agent' };
-
-const buildActivityItems = (
-  files: InjectedFile[],
-  tools: ToolCall[],
-  agents: AgentCall[],
-): ActivityItem[] => {
-  const items: ActivityItem[] = [];
-
-  for (const f of files) {
-    const name = f.path.split('/').pop() ?? f.path;
-    items.push({ icon: 'file', text: `Injected ${name}`, category: 'injected' });
-  }
-  for (const a of agents) {
-    items.push({ icon: 'agent', text: `Agent: ${a.subagent_type}`, category: 'agent' });
-  }
-  for (const t of tools) {
-    items.push({ icon: 'tool', text: t.name, category: 'action' });
-  }
-
-  return items;
+// Tool icons
+const TOOL_ICONS: Record<string, string> = {
+  Read: '📖',
+  Write: '✏️',
+  Edit: '✏️',
+  Grep: '🔍',
+  Glob: '📂',
+  Bash: '⚡',
+  Agent: '🤖',
+  WebSearch: '🌐',
+  WebFetch: '🌐',
+  thinking: '💭',
+  response: '💬',
 };
 
-// ── Activity Feed: cycles through items with blinking dot ──
+// Category icons for injected files
+const CATEGORY_ICONS: Record<string, string> = {
+  global: '🌍',
+  project: '📋',
+  rules: '📏',
+  memory: '🧠',
+  skill: '⚡',
+};
 
-const ACTIVITY_INTERVAL_MS = 1_800;
+// ── 1. Injected Files Section ──
 
-const useActivityCycler = (items: ActivityItem[], isStreaming: boolean) => {
-  const [index, setIndex] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+const InjectedSection = ({ files }: {
+  files: Array<{ path: string; category: string; estimated_tokens: number }>;
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (items.length === 0) return;
-
-    // Start from 0 on new items
-    setIndex(0);
-
-    if (isStreaming) {
-      // When streaming, cycle through items to simulate real-time
-      intervalRef.current = setInterval(() => {
-        setIndex((prev) => (prev + 1) % items.length);
-      }, ACTIVITY_INTERVAL_MS);
-    } else {
-      // When completed, fast-cycle through all items then stop at last
-      let current = 0;
-      const fastInterval = setInterval(() => {
-        current++;
-        if (current >= items.length) {
-          clearInterval(fastInterval);
-          setIndex(items.length - 1);
-          return;
-        }
-        setIndex(current);
-      }, 300);
-      intervalRef.current = fastInterval;
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
+  }, [files.length]);
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [items.length, isStreaming]);
+  const totalTokens = files.reduce((sum, f) => sum + f.estimated_tokens, 0);
 
-  return items[index] ?? null;
+  return (
+    <div className="notif-section">
+      <div className="notif-section-header">
+        <span className="notif-section-icon">📎</span>
+        <span className="notif-section-title">Injected</span>
+        <span className="notif-section-badge">{files.length}</span>
+        {totalTokens > 0 && (
+          <span className="notif-section-tokens">{formatTokens(totalTokens)} tok</span>
+        )}
+      </div>
+      <div className="notif-injected-scroll" ref={scrollRef}>
+        {files.length === 0 ? (
+          <div className="notif-section-empty">No injected files</div>
+        ) : (
+          files.map((f, i) => {
+            const fileName = f.path.split('/').pop() ?? f.path;
+            return (
+              <div key={`${f.path}-${i}`} className="notif-injected-item">
+                <span className="notif-injected-icon">{CATEGORY_ICONS[f.category] ?? '📄'}</span>
+                <span className="notif-injected-name" title={f.path}>{truncate(fileName, 28)}</span>
+                <span className="notif-injected-tokens">{formatTokens(f.estimated_tokens)}</span>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
 };
 
-// ── Component ──
+// ── 2. Actions Timeline Section ──
+
+const ActionsTimeline = ({ lines, isStreaming }: {
+  lines: ActivityLine[];
+  isStreaming: boolean;
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [lines.length]);
+
+  // Filter to tool_use actions only
+  const actions = lines.filter((l) => l.kind === 'tool_use');
+
+  return (
+    <div className="notif-section">
+      <div className="notif-section-header">
+        <span className={`notif-section-dot ${isStreaming ? 'notif-section-dot--live' : 'notif-section-dot--done'}`} />
+        <span className="notif-section-title">Actions</span>
+        <span className="notif-section-badge">{actions.length}</span>
+      </div>
+      <div className="notif-actions-scroll" ref={scrollRef}>
+        <div className="notif-actions-timeline">
+          {actions.length === 0 ? (
+            <div className="notif-section-empty">
+              {isStreaming ? 'Waiting for actions...' : 'No actions'}
+            </div>
+          ) : (
+            actions.map((action, i) => {
+              const isLast = i === actions.length - 1;
+              return (
+                <div key={action.id} className={`notif-action-node ${isLast && isStreaming ? 'notif-action-node--active' : ''}`}>
+                  <div className="notif-action-track">
+                    <span className="notif-action-dot" />
+                    {(i < actions.length - 1 || isStreaming) && (
+                      <span className="notif-action-line" />
+                    )}
+                  </div>
+                  <div className="notif-action-content">
+                    <span className="notif-action-icon">
+                      {TOOL_ICONS[action.name] ?? '·'}
+                    </span>
+                    <span className="notif-action-name">{action.name}</span>
+                    {action.detail && (
+                      <span className="notif-action-detail">
+                        {truncate(action.detail, 30)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── 3. Response Section (collapsible) ──
+
+const ResponseSection = ({ text, isStreaming }: { text?: string; isStreaming: boolean }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  const hasText = Boolean(text?.trim());
+  const previewLength = 120;
+  const needsExpand = hasText && text!.length > previewLength;
+  const displayText = hasText
+    ? (expanded ? text! : truncate(text!, previewLength))
+    : null;
+
+  return (
+    <div className="notif-section">
+      <div
+        className={`notif-section-header ${needsExpand ? 'notif-section-header--clickable' : ''}`}
+        onClick={(e) => { if (needsExpand) { e.stopPropagation(); setExpanded(!expanded); } }}
+      >
+        <span className="notif-section-icon">💬</span>
+        <span className="notif-section-title">Response</span>
+        {needsExpand && (
+          <span className="notif-expand-toggle">{expanded ? '▾' : '▸'}</span>
+        )}
+      </div>
+      <div className={`notif-response-body ${expanded ? 'notif-response-body--expanded' : ''}`}>
+        {displayText ?? (
+          <span className="notif-section-empty">
+            {isStreaming ? 'Waiting for response...' : 'No response'}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Context Growth Sparkline ──
+
+const CtxSparkline = ({ turnMetrics, model }: { turnMetrics: PromptNotification['turnMetrics']; model: string }) => {
+  const contextLimit = getContextLimit(model);
+
+  const sparkData = useMemo(() => {
+    if (turnMetrics.length < 2) return null;
+    const data = turnMetrics.map((t) => t.total_context_tokens);
+    const prev = turnMetrics[turnMetrics.length - 2];
+    const curr = turnMetrics[turnMetrics.length - 1];
+    const prevPct = contextLimit > 0 ? (prev.total_context_tokens / contextLimit) * 100 : 0;
+    const currPct = contextLimit > 0 ? (curr.total_context_tokens / contextLimit) * 100 : 0;
+    const delta = currPct - prevPct;
+    const color = delta > 10 ? '#FF3B30' : delta > 3 ? '#FF9500' : '#30D158';
+    return { data, prevPct, currPct, delta, color };
+  }, [turnMetrics, contextLimit]);
+
+  if (!sparkData) return null;
+
+  return (
+    <div className="notif-sparkline-section">
+      <div className="notif-sparkline-header">
+        <span className="notif-sparkline-title">
+          Context · Turn {turnMetrics.length}
+        </span>
+        <span className="notif-sparkline-compare">
+          <span className="notif-ctx-prev">{sparkData.prevPct.toFixed(0)}%</span>
+          <span className="notif-sparkline-arrow">→</span>
+          <span className={`notif-ctx-curr ${sparkData.currPct >= 80 ? 'notif-ctx-warn' : ''}`}>
+            {sparkData.currPct.toFixed(0)}%
+          </span>
+          {sparkData.delta > 0 && (
+            <span className="notif-ctx-delta">+{sparkData.delta.toFixed(0)}</span>
+          )}
+        </span>
+      </div>
+      <MiniSparkline
+        data={sparkData.data}
+        color={sparkData.color}
+        fillColor={`${sparkData.color}15`}
+        width={272}
+        height={28}
+        highlightLastTwo
+      />
+    </div>
+  );
+};
+
+// ── Main Component ──
 
 export const NotificationCard = ({ notification, onDismiss, onClick }: Props) => {
-  const { scan, usage, status, alerts, turnMetrics } = notification;
+  const { scan, usage, status, alerts, turnMetrics, activityLog } = notification;
   const provider = scan.provider ?? 'claude';
   const providerColor = PROVIDER_COLORS[provider] ?? '#8e8e93';
   const isStreaming = status === 'streaming';
@@ -117,28 +264,8 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
   const cacheReadPct = totalTokens > 0 ? (cacheRead / totalTokens) * 100 : 0;
   const outputPct = totalTokens > 0 ? (output / totalTokens) * 100 : 0;
 
-  // Context %
-  const contextLimit = getContextLimit(scan.model);
-  const contextUsed = scan.context_estimate?.total_tokens ?? 0;
-  const contextPct = contextLimit > 0 ? (contextUsed / contextLimit) * 100 : 0;
-
   // Cost
   const cost = usage?.cost_usd ?? 0;
-
-  // Sparkline: cache_read per turn
-  const sparklineData = useMemo(() => {
-    if (turnMetrics.length < 2) return [];
-    return turnMetrics.map((t) => t.cache_read_tokens);
-  }, [turnMetrics]);
-
-  const sparklineColor = useMemo(() => {
-    if (sparklineData.length < 2) return '#8e8e93';
-    const last = sparklineData[sparklineData.length - 1];
-    const prev = sparklineData[sparklineData.length - 2];
-    if (last > prev * 1.5) return '#FF3B30';
-    if (last > prev) return '#FF9500';
-    return '#34C759';
-  }, [sparklineData]);
 
   // Model short name
   const modelShort = scan.model
@@ -146,14 +273,7 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
     .replace(/-202\d{5}/, '')
     ?? 'unknown';
 
-  // Activity feed
-  const activityItems = useMemo(
-    () => buildActivityItems(scan.injected_files, scan.tool_calls, scan.agent_calls),
-    [scan.injected_files, scan.tool_calls, scan.agent_calls],
-  );
-  const currentActivity = useActivityCycler(activityItems, isStreaming);
-
-  // Top alert (simple one-liner)
+  // Top alert
   const topAlert = alerts.find((a) => a.severity === 'warning') ?? alerts[0] ?? null;
 
   return (
@@ -188,52 +308,20 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
         {truncate(scan.user_prompt || '(empty prompt)', 80)}
       </div>
 
-      {/* ── Live Activity Feed (blinking dot + action text) ── */}
-      {activityItems.length > 0 && (
-        <div className="notif-activity">
-          <span className={`notif-activity-dot ${isStreaming ? 'notif-activity-dot--live' : 'notif-activity-dot--done'}`} />
-          <span className="notif-activity-text" key={currentActivity?.text}>
-            {currentActivity?.text ?? ''}
-          </span>
-          <span className="notif-activity-count">
-            {activityItems.length}
-          </span>
-        </div>
-      )}
+      {/* ── 1. Injected Files (always visible) ── */}
+      <InjectedSection files={scan.injected_files ?? []} />
 
-      {/* ── Token composition bar ── */}
-      <div className="notif-token-bar-section">
-        <div className="notif-token-bar">
-          <div className="notif-token-bar-cache" style={{ width: `${cacheReadPct}%` }} />
-          <div className="notif-token-bar-output" style={{ width: `${outputPct}%` }} />
-        </div>
-        <div className="notif-token-bar-labels">
-          <span className="notif-label-cache">Cache {cacheReadPct.toFixed(0)}%</span>
-          <span className="notif-label-output">Output {outputPct.toFixed(1)}%</span>
-        </div>
-      </div>
+      {/* ── 2. Actions Timeline (always visible) ── */}
+      <ActionsTimeline lines={activityLog} isStreaming={isStreaming} />
 
-      {/* ── Turn chart (sparkline) ── */}
-      {sparklineData.length >= 2 && (
-        <div className="notif-sparkline-section">
-          <div className="notif-sparkline-header">
-            <span className="notif-sparkline-title">
-              Turn {scan.conversation_turns} · Cache Growth
-            </span>
-            <span className="notif-sparkline-total">{formatTokens(cacheRead)}</span>
-          </div>
-          <MiniSparkline data={sparklineData} color={sparklineColor} width={256} height={28} />
-        </div>
-      )}
+      {/* ── 3. Response (always visible) ── */}
+      <ResponseSection text={scan.assistant_response} isStreaming={isStreaming} />
 
-      {/* ── Metrics row: context + cost + total tokens ── */}
+      {/* ── Context Growth Sparkline (always visible) ── */}
+      <CtxSparkline turnMetrics={turnMetrics} model={scan.model} />
+
+      {/* ── Metrics Row (always visible) ── */}
       <div className="notif-metrics-row">
-        <span className="notif-metric">
-          <span className="notif-metric-label">Ctx</span>
-          <span className={`notif-metric-value ${contextPct >= 80 ? 'notif-ctx-warn' : ''}`}>
-            {contextPct.toFixed(0)}%
-          </span>
-        </span>
         <span className="notif-metric">
           <span className="notif-metric-label">Turn</span>
           <span className="notif-metric-value">{scan.conversation_turns}</span>
@@ -248,7 +336,19 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
         </span>
       </div>
 
-      {/* ── Alert (simple one-liner) ── */}
+      {/* ── Token composition bar (always visible) ── */}
+      <div className="notif-token-bar-section">
+        <div className="notif-token-bar">
+          <div className="notif-token-bar-cache" style={{ width: `${cacheReadPct}%` }} />
+          <div className="notif-token-bar-output" style={{ width: `${outputPct}%` }} />
+        </div>
+        <div className="notif-token-bar-labels">
+          <span className="notif-label-cache">Cache {cacheReadPct.toFixed(0)}%</span>
+          <span className="notif-label-output">Output {outputPct.toFixed(1)}%</span>
+        </div>
+      </div>
+
+      {/* ── Alert (always visible if exists) ── */}
       {topAlert && (
         <div className={`notif-alert notif-alert-${topAlert.severity}`}>
           {topAlert.severity === 'warning' ? '!' : 'i'} {topAlert.message}

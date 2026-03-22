@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { PromptScan, UsageLogEntry, TurnMetric } from '../../types/electron';
-import type { PromptNotification } from './types';
+import type { PromptNotification, ActivityLine } from './types';
 import { getSessionAlerts } from '../../utils/sessionAlerts';
 
-const AUTO_DISMISS_MS = 60_000;
+const AUTO_DISMISS_MS = 120_000;
 const MAX_VISIBLE = 5;
+const MAX_ACTIVITY_LINES = 50;
 
 type NavigateCallback = (scan: PromptScan, usage: UsageLogEntry | null) => void;
+
+let activityCounter = 0;
 
 export const useNotificationManager = (
   enabled: boolean,
@@ -54,6 +57,15 @@ export const useNotificationManager = (
     usage: UsageLogEntry | null,
   ) => {
     if (!enabled) return;
+    console.log('[NotifMgr] addNotification:', {
+      requestId: scan.request_id,
+      sessionId: scan.session_id,
+      injectedCount: scan.injected_files?.length ?? 0,
+      toolCallsCount: scan.tool_calls?.length ?? 0,
+      turns: scan.conversation_turns,
+      hasResponse: Boolean(scan.assistant_response),
+      costUsd: usage?.cost_usd,
+    });
 
     // Fetch turn metrics for sparkline
     let turnMetrics: TurnMetric[] = [];
@@ -92,32 +104,184 @@ export const useNotificationManager = (
       completedAt: isCompleted ? Date.now() : null,
       turnMetrics,
       alerts,
+      activityLog: [],
     };
 
     setNotifications((prev) => {
-      // Replace if same request_id (update from streaming → completed)
-      const filtered = prev.filter((n) => n.id !== scan.request_id);
-      // Keep only MAX_VISIBLE
-      const next = [notif, ...filtered].slice(0, MAX_VISIBLE);
-      return next;
+      // Preserve activity log and streaming status from existing card for same session
+      const existing = prev.find((n) => n.scan.session_id === scan.session_id);
+      if (existing) {
+        notif.activityLog = existing.activityLog;
+        // If the existing card is still streaming, keep streaming status
+        // — only completeStreaming() should transition to 'completed'
+        if (existing.status === 'streaming') {
+          notif.status = 'streaming';
+          notif.completedAt = null;
+        }
+      }
+      const filtered = prev.filter(
+        (n) => n.id !== scan.request_id && n.scan.session_id !== scan.session_id,
+      );
+      return [notif, ...filtered].slice(0, MAX_VISIBLE);
     });
 
-    // Start auto-dismiss if completed
+    // Start auto-dismiss if completed (and not kept streaming)
     if (isCompleted) {
-      startDismissTimer(scan.request_id);
+      // Check actual status after potential override
+      setNotifications((prev) => {
+        const n = prev.find((x) => x.id === scan.request_id);
+        if (n?.status === 'completed') {
+          startDismissTimer(scan.request_id);
+        }
+        return prev;
+      });
     }
   }, [enabled, startDismissTimer]);
+
+  // Add a streaming (processing) notification when user sends a prompt
+  const addStreamingNotification = useCallback((data: {
+    sessionId: string;
+    userPrompt: string;
+    timestamp: string;
+    model?: string;
+  }) => {
+    if (!enabled) return;
+
+    const streamingId = `streaming-${data.sessionId}-${data.timestamp}`;
+    const partialScan: PromptScan = {
+      request_id: streamingId,
+      session_id: data.sessionId,
+      user_prompt: data.userPrompt,
+      timestamp: data.timestamp,
+      model: data.model ?? 'unknown',
+      provider: 'claude',
+      conversation_turns: 0,
+      user_prompt_tokens: 0,
+      total_injected_tokens: 0,
+      injected_files: [],
+      tool_calls: [],
+      tool_summary: {},
+      agent_calls: [],
+      context_estimate: { system_tokens: 0, messages_tokens: 0, tools_definition_tokens: 0, total_tokens: 0 },
+      max_tokens: 0,
+      user_messages_count: 0,
+      assistant_messages_count: 0,
+      tool_result_count: 0,
+    };
+
+    const notif: PromptNotification = {
+      id: streamingId,
+      scan: partialScan,
+      usage: null,
+      status: 'streaming',
+      createdAt: Date.now(),
+      completedAt: null,
+      turnMetrics: [],
+      alerts: [],
+      activityLog: [],
+    };
+
+    setNotifications((prev) => {
+      const filtered = prev.filter(
+        (n) => n.scan.session_id !== data.sessionId,
+      );
+      return [notif, ...filtered].slice(0, MAX_VISIBLE);
+    });
+  }, [enabled]);
+
+  // Mark streaming notifications as completed when AssistantTurn arrives
+  // NOTE: Do NOT start auto-dismiss here — agent may spawn more tool_use turns.
+  // Auto-dismiss only starts when addNotification receives the final scan from DB.
+  const completeStreaming = useCallback((data: { sessionId: string; model?: string }) => {
+    setNotifications((prev) =>
+      prev.map((n) => {
+        if (n.status === 'streaming' && n.scan.session_id === data.sessionId) {
+          return {
+            ...n,
+            status: 'completed' as const,
+            completedAt: Date.now(),
+            scan: { ...n.scan, model: data.model ?? n.scan.model },
+          };
+        }
+        return n;
+      }),
+    );
+  }, []);
+
+  // Append activity line to matching session's notification
+  const appendActivity = useCallback((data: {
+    sessionId: string;
+    timestamp: string;
+    kind: string;
+    name: string;
+    detail: string;
+  }) => {
+    const line: ActivityLine = {
+      id: `act-${++activityCounter}`,
+      kind: data.kind as ActivityLine['kind'],
+      name: data.name,
+      detail: data.detail,
+      timestamp: data.timestamp,
+    };
+
+    setNotifications((prev) =>
+      prev.map((n) => {
+        if (n.scan.session_id === data.sessionId) {
+          const log = [...n.activityLog, line].slice(-MAX_ACTIVITY_LINES);
+          // If a tool_use activity arrives on a "completed" card, revert to streaming
+          // — this handles premature completion from text-only assistant messages
+          const shouldRestream =
+            n.status === 'completed' && data.kind === 'tool_use';
+          if (shouldRestream) {
+            // Cancel any pending auto-dismiss timer
+            const timer = timersRef.current.get(n.id);
+            if (timer) {
+              clearTimeout(timer);
+              timersRef.current.delete(n.id);
+            }
+          }
+          return {
+            ...n,
+            activityLog: log,
+            ...(shouldRestream ? { status: 'streaming' as const, completedAt: null } : {}),
+          };
+        }
+        return n;
+      }),
+    );
+  }, []);
 
   // Listen to IPC events
   useEffect(() => {
     if (!enabled) return;
 
-    const cleanup = window.api.onNewPromptScan((data: { scan: PromptScan; usage: UsageLogEntry }) => {
+    // Streaming: user just sent a prompt (HumanTurn detected)
+    const cleanupStreaming = window.api.onNewPromptStreaming?.((data) => {
+      addStreamingNotification(data);
+    });
+
+    // Streaming complete: assistant response finished
+    const cleanupComplete = window.api.onPromptStreamingComplete?.((data) => {
+      completeStreaming(data);
+    });
+
+    // Completed: full scan data available (replaces streaming card with full data)
+    const cleanupScan = window.api.onNewPromptScan((data: { scan: PromptScan; usage: UsageLogEntry }) => {
       addNotification(data.scan, data.usage ?? null);
     });
 
-    return cleanup;
-  }, [enabled, addNotification]);
+    // Real-time activity feed (tool_use, text, thinking)
+    const cleanupActivity = (window.api as any).onSessionActivity?.((data: any) => {
+      appendActivity(data);
+    });
+
+    return () => {
+      cleanupStreaming?.();
+      cleanupComplete?.();
+      cleanupScan?.();
+      cleanupActivity?.();
+    };
+  }, [enabled, addNotification, addStreamingNotification, completeStreaming, appendActivity]);
 
   // Cleanup timers on unmount
   useEffect(() => {

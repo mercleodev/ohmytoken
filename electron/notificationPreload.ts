@@ -4,8 +4,14 @@
  */
 import { contextBridge, ipcRenderer } from "electron";
 
+// Debug: log to main process
+const debugLog = (msg: string) => {
+  ipcRenderer.send("notification-debug-log", msg);
+};
+
 contextBridge.exposeInMainWorld("api", {
-  // Listen for new prompt scans
+  debugLog,
+  // Listen for new prompt scans (completed)
   onNewPromptScan: (
     callback: (data: { scan: unknown; usage: unknown }) => void,
   ) => {
@@ -16,6 +22,44 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.on("new-prompt-scan", handler);
     return () => {
       ipcRenderer.removeListener("new-prompt-scan", handler);
+    };
+  },
+
+  // Listen for streaming prompt (user just sent a message, processing...)
+  onNewPromptStreaming: (
+    callback: (data: {
+      sessionId: string;
+      userPrompt: string;
+      timestamp: string;
+      model?: string;
+    }) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: {
+        sessionId: string;
+        userPrompt: string;
+        timestamp: string;
+        model?: string;
+      },
+    ) => callback(data);
+    ipcRenderer.on("new-prompt-streaming", handler);
+    return () => {
+      ipcRenderer.removeListener("new-prompt-streaming", handler);
+    };
+  },
+
+  // Listen for streaming complete (assistant response finished)
+  onPromptStreamingComplete: (
+    callback: (data: { sessionId: string; timestamp: string; model?: string }) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: { sessionId: string; timestamp: string; model?: string },
+    ) => callback(data);
+    ipcRenderer.on("prompt-streaming-complete", handler);
+    return () => {
+      ipcRenderer.removeListener("prompt-streaming-complete", handler);
     };
   },
 
@@ -31,6 +75,37 @@ contextBridge.exposeInMainWorld("api", {
   // Mouse enter/leave on card area → toggle click-through
   setMouseOnCard: (isOnCard: boolean) => {
     ipcRenderer.send("notification-mouse-on-card", isOnCard);
+  },
+
+  // Show/hide notification window based on card visibility
+  setNotificationVisible: (visible: boolean) => {
+    ipcRenderer.send("notification-set-visible", visible);
+  },
+
+  // Listen for real-time session activity (tool_use, text, thinking)
+  onSessionActivity: (
+    callback: (data: {
+      sessionId: string;
+      timestamp: string;
+      kind: string;
+      name: string;
+      detail: string;
+    }) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: {
+        sessionId: string;
+        timestamp: string;
+        kind: string;
+        name: string;
+        detail: string;
+      },
+    ) => callback(data);
+    ipcRenderer.on("session-activity", handler);
+    return () => {
+      ipcRenderer.removeListener("session-activity", handler);
+    };
   },
 
   // Listen for backfill completions

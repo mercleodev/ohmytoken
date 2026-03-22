@@ -3,6 +3,14 @@ import type { SessionAlert } from '../../utils/sessionAlerts';
 
 export type NotificationStatus = 'streaming' | 'completed';
 
+export type ActivityLine = {
+  id: string;
+  kind: 'tool_use' | 'tool_result' | 'text' | 'thinking';
+  name: string;
+  detail: string;
+  timestamp: string;
+};
+
 export type PromptNotification = {
   id: string;
   scan: PromptScan;
@@ -12,4 +20,5 @@ export type PromptNotification = {
   completedAt: number | null;
   turnMetrics: TurnMetric[];
   alerts: SessionAlert[];
+  activityLog: ActivityLine[];
 };

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { NotificationCard } from './NotificationCard';
 import { useNotificationManager } from './useNotificationManager';
@@ -29,11 +29,24 @@ export const NotificationOverlay = ({ enabled, onNavigateToPrompt }: Props) => {
     }
   }, []);
 
+  // Sync notification window visibility with card count (idempotent — safe to call repeatedly)
+  useEffect(() => {
+    const hasCards = notifications.length > 0;
+
+    window.api.setMouseOnCard?.(false);
+    window.api.setNotificationVisible?.(hasCards);
+
+    return () => {
+      // On unmount (or StrictMode cleanup), hide the window
+      window.api.setNotificationVisible?.(false);
+    };
+  }, [notifications.length]);
+
   if (!enabled || notifications.length === 0) return null;
 
   return (
     <div className="notif-overlay">
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence mode="sync">
         {notifications.map((notif) => (
           <div
             key={notif.id}

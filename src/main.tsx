@@ -505,6 +505,9 @@ if (!window.api) {
       return () => {};
     },
 
+    onNewPromptStreaming: () => { return () => {}; },
+    onPromptStreamingComplete: () => { return () => {}; },
+
     navigateToPromptFromNotification: () => {},
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -534,6 +537,7 @@ if (!window.api) {
     onBackfillComplete: (_callback: (result: import('./types/electron').BackfillResult) => void) => {
       return () => {};
     },
+    getDisplays: async () => [],
   };
   console.log('🔧 Mock API loaded for browser testing');
 }

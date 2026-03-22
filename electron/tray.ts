@@ -55,6 +55,7 @@ export class TrayManager {
   private toggleIntervalId: NodeJS.Timeout | null = null;
   private settings: AppSettings = DEFAULT_SETTINGS;
   private loggedOut = false;
+  private suppressBlurHide = false;
 
   private staticIcon: NativeImage;
 
@@ -141,8 +142,18 @@ export class TrayManager {
     );
   }
 
+  /** Temporarily suppress blur-hide (e.g. when showing window from notification click) */
+  suppressBlurHideOnce(): void {
+    this.suppressBlurHide = true;
+    // Auto-reset after a short delay in case focus settles
+    setTimeout(() => {
+      this.suppressBlurHide = false;
+    }, 500);
+  }
+
   private setupClickHandler(): void {
     this.mainWindow.on("blur", () => {
+      if (this.suppressBlurHide) return;
       if (this.isMouseOverTray()) return;
       if (!this.mainWindow.isDestroyed()) {
         this.mainWindow.hide();

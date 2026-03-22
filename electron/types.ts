@@ -42,6 +42,7 @@ export type AppSettings = {
   proxyPort: number;       // Proxy server port (default: 8780)
   contextLimitOverride?: number; // 0 = auto (plan-based), >0 = manual override
   notificationsEnabled?: boolean; // Prompt notification overlay (default: true)
+  notificationDisplayId?: number; // Display id for notification overlay (0 = auto: largest external)
 };
 
 export type StoreData = {
