@@ -57,15 +57,14 @@ export const useNotificationManager = (
     usage: UsageLogEntry | null,
   ) => {
     if (!enabled) return;
-    console.log('[NotifMgr] addNotification:', {
-      requestId: scan.request_id,
-      sessionId: scan.session_id,
-      injectedCount: scan.injected_files?.length ?? 0,
-      toolCallsCount: scan.tool_calls?.length ?? 0,
-      turns: scan.conversation_turns,
-      hasResponse: Boolean(scan.assistant_response),
-      costUsd: usage?.cost_usd,
-    });
+
+    // Skip scans older than 3 minutes — prevents stale DB data from creating ghost cards
+    const scanAge = Date.now() - new Date(scan.timestamp).getTime();
+    if (scanAge > 180_000) {
+      const dbg = (window.api as any).debugLog ?? console.log;
+      dbg('[NotifMgr] Skipping stale scan: age=' + (scanAge / 1000).toFixed(0) + 's');
+      return;
+    }
 
     // Fetch turn metrics for sparkline
     let turnMetrics: TurnMetric[] = [];
@@ -195,6 +194,16 @@ export const useNotificationManager = (
     };
 
     setNotifications((prev) => {
+      // Cancel auto-dismiss timers for existing cards in same session
+      for (const n of prev) {
+        if (n.scan.session_id === data.sessionId) {
+          const timer = timersRef.current.get(n.id);
+          if (timer) {
+            clearTimeout(timer);
+            timersRef.current.delete(n.id);
+          }
+        }
+      }
       const filtered = prev.filter(
         (n) => n.scan.session_id !== data.sessionId,
       );
@@ -277,23 +286,24 @@ export const useNotificationManager = (
   useEffect(() => {
     if (!enabled) return;
 
-    console.log('[NotifMgr] Registering IPC listeners, enabled:', enabled);
+    const dbg = (window.api as any).debugLog ?? console.log;
+    dbg('[NotifMgr] Registering IPC listeners, enabled: ' + enabled);
 
     // Streaming: user just sent a prompt (HumanTurn detected)
     const cleanupStreaming = window.api.onNewPromptStreaming?.((data) => {
-      console.log('[NotifMgr] onNewPromptStreaming:', data.sessionId, data.userPrompt?.slice(0, 40));
+      dbg('[NotifMgr] onNewPromptStreaming: ' + data.sessionId + ' ' + (data.userPrompt?.slice(0, 40) ?? ''));
       addStreamingNotification(data);
     });
 
     // Streaming complete: assistant response finished
     const cleanupComplete = window.api.onPromptStreamingComplete?.((data) => {
-      console.log('[NotifMgr] onPromptStreamingComplete:', data.sessionId);
+      dbg('[NotifMgr] onPromptStreamingComplete: ' + data.sessionId);
       completeStreaming(data);
     });
 
     // Completed: full scan data available (replaces streaming card with full data)
     const cleanupScan = window.api.onNewPromptScan((data: { scan: PromptScan; usage: UsageLogEntry }) => {
-      console.log('[NotifMgr] onNewPromptScan:', data.scan?.request_id, 'injected:', data.scan?.injected_files?.length);
+      dbg('[NotifMgr] onNewPromptScan: ' + (data.scan?.request_id ?? 'none') + ' injected=' + (data.scan?.injected_files?.length ?? 0));
       addNotification(data.scan, data.usage ?? null);
     });
 
