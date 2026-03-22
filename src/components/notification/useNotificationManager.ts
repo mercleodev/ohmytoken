@@ -112,6 +112,19 @@ export const useNotificationManager = (
       const existing = prev.find((n) => n.scan.session_id === scan.session_id);
       if (existing) {
         notif.activityLog = existing.activityLog;
+
+        // If the incoming scan is OLDER than the existing card's prompt,
+        // preserve the current user_prompt and timestamp (don't regress to old prompt)
+        const existingTs = new Date(existing.scan.timestamp).getTime();
+        const incomingTs = new Date(scan.timestamp).getTime();
+        if (incomingTs < existingTs && existing.scan.user_prompt) {
+          notif.scan = {
+            ...notif.scan,
+            user_prompt: existing.scan.user_prompt,
+            timestamp: existing.scan.timestamp,
+          };
+        }
+
         // If the existing card is still streaming, keep streaming status
         // — only completeStreaming() should transition to 'completed'
         if (existing.status === 'streaming') {
@@ -264,18 +277,23 @@ export const useNotificationManager = (
   useEffect(() => {
     if (!enabled) return;
 
+    console.log('[NotifMgr] Registering IPC listeners, enabled:', enabled);
+
     // Streaming: user just sent a prompt (HumanTurn detected)
     const cleanupStreaming = window.api.onNewPromptStreaming?.((data) => {
+      console.log('[NotifMgr] onNewPromptStreaming:', data.sessionId, data.userPrompt?.slice(0, 40));
       addStreamingNotification(data);
     });
 
     // Streaming complete: assistant response finished
     const cleanupComplete = window.api.onPromptStreamingComplete?.((data) => {
+      console.log('[NotifMgr] onPromptStreamingComplete:', data.sessionId);
       completeStreaming(data);
     });
 
     // Completed: full scan data available (replaces streaming card with full data)
     const cleanupScan = window.api.onNewPromptScan((data: { scan: PromptScan; usage: UsageLogEntry }) => {
+      console.log('[NotifMgr] onNewPromptScan:', data.scan?.request_id, 'injected:', data.scan?.injected_files?.length);
       addNotification(data.scan, data.usage ?? null);
     });
 
