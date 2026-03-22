@@ -43,6 +43,8 @@ import { runDedupCleanup } from "./backfill/dedup-cleanup-backfill";
 import { startGapFillScheduler, stopGapFillScheduler } from "./backfill/scheduler";
 import { startProviderSessionWatcher } from "./watcher/providerSessionWatcher";
 import { startSessionFileWatcher } from "./watcher/sessionFileWatcher";
+import { startCodexSessionFileWatcher } from "./watcher/codexSessionFileWatcher";
+import { findSessionFileBySessionId as findCodexSessionFile } from "./backfill/codex-scanner";
 
 // Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
 process.stdout?.on("error", (err: NodeJS.ErrnoException) => {
@@ -629,6 +631,129 @@ const initApp = async (): Promise<void> => {
     startProviderSessionWatcher(() => mainWindow);
   } catch (err) {
     console.error("[SessionWatcher] Failed to start:", err);
+  }
+
+  // Start Codex session file watcher (real-time notification for Codex prompts)
+  try {
+    startCodexSessionFileWatcher({
+      onTurn: (event) => {
+        if (event.type === "human") {
+          // Fetch session stats from DB (same pattern as Claude watcher)
+          let sessionStats: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number } | undefined;
+          try {
+            const scans = dbReader.getSessionPrompts(event.sessionId);
+            let totalCost = 0, totalTokens = 0, totalCacheRead = 0;
+            for (const s of scans) {
+              const detail = dbReader.getPromptDetail(s.request_id);
+              if (detail?.usage) {
+                totalCost += detail.usage.cost_usd ?? 0;
+                const r = detail.usage.response;
+                totalTokens += (r.input_tokens ?? 0) + (r.output_tokens ?? 0) + (r.cache_read_input_tokens ?? 0) + (r.cache_creation_input_tokens ?? 0);
+                totalCacheRead += r.cache_read_input_tokens ?? 0;
+              }
+            }
+            sessionStats = {
+              turns: scans.length,
+              costUsd: totalCost,
+              totalTokens,
+              cacheReadPct: totalTokens > 0 ? (totalCacheRead / totalTokens) * 100 : 0,
+            };
+          } catch (e) {
+            console.error("[CodexSessionWatcher] Failed to fetch session stats:", e);
+          }
+
+          // projectFolder: Codex session_meta.cwd gives exact path (no decode needed)
+          // We retrieve it from the event model field — the watcher caches cwd internally
+          // and passes model via the event. For projectFolder we need to extract from
+          // the session file directly. Use a simpler approach: check DB for existing scans.
+          let projectFolder: string | undefined;
+          try {
+            const scans = dbReader.getSessionPrompts(event.sessionId);
+            if (scans.length > 0) {
+              const lastScan = scans[scans.length - 1];
+              const detailData = dbReader.getPromptDetail(lastScan.request_id);
+              if (detailData?.scan?.git_branch) {
+                // Use git_branch as folder hint if available
+              }
+            }
+          } catch { /* ignore */ }
+
+          // If no DB data yet, try reading session file header for cwd
+          if (!projectFolder) {
+            try {
+              const sessionFile = findCodexSessionFile(event.sessionId);
+              if (sessionFile) {
+                const fd = fs.openSync(sessionFile, "r");
+                const buf = Buffer.alloc(4096);
+                const bytesRead = fs.readSync(fd, buf, 0, 4096, 0);
+                fs.closeSync(fd);
+                const firstLine = buf.subarray(0, bytesRead).toString("utf-8").split("\n")[0];
+                const meta = JSON.parse(firstLine);
+                if (meta.type === "session_meta" && meta.payload?.cwd) {
+                  projectFolder = path.basename(meta.payload.cwd);
+                }
+              }
+            } catch { /* ignore */ }
+          }
+
+          const streamingData = {
+            sessionId: event.sessionId,
+            userPrompt: event.userPrompt ?? "",
+            timestamp: event.timestamp,
+            model: event.model,
+            sessionStats,
+            injectedFiles: [] as Array<{ path: string; category: string; estimated_tokens: number }>,
+            projectFolder,
+          };
+          sendToNotificationWindow("new-prompt-streaming", streamingData);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("new-prompt-streaming", streamingData);
+          }
+          console.log(`[CodexSessionWatcher] HumanTurn → streaming sent (model=${event.model}, folder=${projectFolder})`);
+        } else if (event.type === "assistant") {
+          const completeData = {
+            sessionId: event.sessionId,
+            timestamp: event.timestamp,
+            model: event.model,
+          };
+          sendToNotificationWindow("prompt-streaming-complete", completeData);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("prompt-streaming-complete", completeData);
+          }
+          console.log("[CodexSessionWatcher] AssistantTurn → streaming complete");
+
+          // After delay, import prompt to DB and send enriched scan
+          setTimeout(() => {
+            try {
+              const eventTs = typeof event.timestamp === "number"
+                ? event.timestamp
+                : new Date(event.timestamp).getTime();
+              importSinglePrompt(event.sessionId, eventTs);
+
+              const scans = dbReader.getSessionPrompts(event.sessionId);
+              if (scans.length > 0) {
+                const latest = scans[scans.length - 1];
+                const detail = dbReader.getPromptDetail(latest.request_id);
+                if (detail?.scan) {
+                  console.log(`[CodexSessionWatcher] Enriched scan sent: ${latest.request_id}`);
+                  sendToNotificationWindow("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
+                  if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
+                  }
+                }
+              }
+            } catch (e) {
+              console.error("[CodexSessionWatcher] Failed to import prompt for notification:", e);
+            }
+          }, 1500);
+        }
+      },
+      onActivity: (activity) => {
+        sendToNotificationWindow("session-activity", activity);
+      },
+    });
+  } catch (err) {
+    console.error("[CodexSessionWatcher] Failed to start:", err);
   }
 
   // Auto-start proxy server (saved port or default 8780)
