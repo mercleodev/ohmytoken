@@ -111,6 +111,10 @@ export const useNotificationManager = (
       const existing = prev.find((n) => n.scan.session_id === scan.session_id);
       if (existing) {
         notif.activityLog = existing.activityLog;
+        // Preserve project folder from streaming card
+        if (!notif.projectFolder && existing.projectFolder) {
+          notif.projectFolder = existing.projectFolder;
+        }
 
         // Preserve injected_files from streaming card if enriched scan has none
         // (DB may not have injected_files for old imports; streaming card reads from disk)
@@ -166,6 +170,7 @@ export const useNotificationManager = (
     model?: string;
     sessionStats?: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number };
     injectedFiles?: Array<{ path: string; category: string; estimated_tokens: number }>;
+    projectFolder?: string;
   }) => {
     if (!enabled) return;
 
@@ -214,6 +219,7 @@ export const useNotificationManager = (
       turnMetrics: [],
       alerts: [],
       activityLog: [],
+      projectFolder: data.projectFolder,
     };
 
     // Async: fetch turn metrics for sparkline (best-effort, won't block card creation)
