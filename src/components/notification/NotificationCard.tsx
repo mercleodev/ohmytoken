@@ -347,6 +347,14 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
       onClick={() => onClick(notification.id)}
     >
+      {/* ── Project folder label ── */}
+      {notification.projectFolder && (
+        <div className="notif-project-label">
+          <span className="notif-project-icon">📁</span>
+          <span className="notif-project-name">{notification.projectFolder}</span>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <div className="notif-header">
         <div className="notif-provider-row">

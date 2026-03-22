@@ -21,4 +21,5 @@ export type PromptNotification = {
   turnMetrics: TurnMetric[];
   alerts: SessionAlert[];
   activityLog: ActivityLine[];
+  projectFolder?: string;
 };

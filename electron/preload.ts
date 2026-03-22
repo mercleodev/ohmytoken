@@ -103,6 +103,7 @@ const api = {
       sessionId: string; userPrompt: string; timestamp: string; model?: string;
       sessionStats?: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number };
       injectedFiles?: Array<{ path: string; category: string; estimated_tokens: number }>;
+      projectFolder?: string;
     }) => void,
   ) => {
     const handler = (

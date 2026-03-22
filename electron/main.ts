@@ -462,8 +462,9 @@ const initApp = async (): Promise<void> => {
             console.error("[SessionFileWatcher] Failed to fetch session stats:", e);
           }
 
-          // Read injected files from disk for immediate display
+          // Read injected files from disk + extract project folder name
           let injectedFiles: Array<{ path: string; category: string; estimated_tokens: number }> = [];
+          let projectFolder: string | undefined;
           try {
             const projectsDir = path.join(homedir(), ".claude", "projects");
             const dirs = fs.readdirSync(projectsDir).filter((f: string) => {
@@ -473,6 +474,7 @@ const initApp = async (): Promise<void> => {
               if (fs.existsSync(path.join(projectsDir, dir, `${event.sessionId}.jsonl`))) {
                 const projectPath = dir.replace(/^-/, "/").replace(/-/g, "/");
                 injectedFiles = readInjectedFiles(projectPath);
+                projectFolder = projectPath.split("/").filter(Boolean).pop();
                 break;
               }
             }
@@ -487,6 +489,7 @@ const initApp = async (): Promise<void> => {
             model: event.model,
             sessionStats,
             injectedFiles,
+            projectFolder,
           };
           sendToNotificationWindow("new-prompt-streaming", streamingData);
           if (mainWindow && !mainWindow.isDestroyed()) {
