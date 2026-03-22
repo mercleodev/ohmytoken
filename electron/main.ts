@@ -472,9 +472,27 @@ const initApp = async (): Promise<void> => {
             });
             for (const dir of dirs) {
               if (fs.existsSync(path.join(projectsDir, dir, `${event.sessionId}.jsonl`))) {
-                const projectPath = dir.replace(/^-/, "/").replace(/-/g, "/");
-                injectedFiles = readInjectedFiles(projectPath);
-                projectFolder = projectPath.split("/").filter(Boolean).pop();
+                const naivePath = dir.replace(/^-/, "/").replace(/-/g, "/");
+                injectedFiles = readInjectedFiles(naivePath);
+
+                // Decode project folder name: naive decode breaks hyphenated folder names
+                // (e.g. "tving-insight" becomes "tving/insight"). Check filesystem to resolve.
+                if (fs.existsSync(naivePath)) {
+                  projectFolder = path.basename(naivePath);
+                } else {
+                  const parts = naivePath.split("/").filter(Boolean);
+                  for (let i = parts.length - 2; i >= 0; i--) {
+                    const prefix = "/" + parts.slice(0, i).join("/");
+                    const suffix = parts.slice(i).join("-");
+                    if (fs.existsSync(prefix + "/" + suffix)) {
+                      projectFolder = suffix;
+                      break;
+                    }
+                  }
+                  if (!projectFolder) {
+                    projectFolder = parts[parts.length - 1];
+                  }
+                }
                 break;
               }
             }
@@ -482,11 +500,23 @@ const initApp = async (): Promise<void> => {
             console.error("[SessionFileWatcher] Failed to read injected files:", e);
           }
 
+          // Resolve model: HumanTurn doesn't carry model, so fall back to last known from DB
+          let resolvedModel = event.model;
+          if (!resolvedModel) {
+            try {
+              const scans = dbReader.getSessionPrompts(event.sessionId);
+              if (scans.length > 0) {
+                const lastScan = scans[scans.length - 1];
+                resolvedModel = lastScan.model;
+              }
+            } catch { /* ignore */ }
+          }
+
           const streamingData = {
             sessionId: event.sessionId,
             userPrompt: event.userPrompt ?? "",
             timestamp: event.timestamp,
-            model: event.model,
+            model: resolvedModel,
             sessionStats,
             injectedFiles,
             projectFolder,
