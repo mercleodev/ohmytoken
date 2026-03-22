@@ -156,7 +156,7 @@ const createWindow = (): void => {
   });
 };
 
-const NOTIFICATION_WIDTH = 320;
+const NOTIFICATION_WIDTH = 346;
 const NOTIFICATION_HEIGHT = 900;
 const NOTIFICATION_MARGIN = 12;
 
