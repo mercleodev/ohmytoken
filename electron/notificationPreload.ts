@@ -32,16 +32,13 @@ contextBridge.exposeInMainWorld("api", {
       userPrompt: string;
       timestamp: string;
       model?: string;
+      sessionStats?: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number };
+      injectedFiles?: Array<{ path: string; category: string; estimated_tokens: number }>;
     }) => void,
   ) => {
     const handler = (
       _event: Electron.IpcRendererEvent,
-      data: {
-        sessionId: string;
-        userPrompt: string;
-        timestamp: string;
-        model?: string;
-      },
+      data: any,
     ) => callback(data);
     ipcRenderer.on("new-prompt-streaming", handler);
     return () => {

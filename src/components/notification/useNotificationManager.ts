@@ -112,6 +112,18 @@ export const useNotificationManager = (
       if (existing) {
         notif.activityLog = existing.activityLog;
 
+        // Preserve injected_files from streaming card if enriched scan has none
+        // (DB may not have injected_files for old imports; streaming card reads from disk)
+        if (
+          (!notif.scan.injected_files || notif.scan.injected_files.length === 0) &&
+          existing.scan.injected_files && existing.scan.injected_files.length > 0
+        ) {
+          notif.scan = {
+            ...notif.scan,
+            injected_files: existing.scan.injected_files,
+          };
+        }
+
         // If the incoming scan is OLDER than the existing card's prompt,
         // preserve the current user_prompt and timestamp (don't regress to old prompt)
         const existingTs = new Date(existing.scan.timestamp).getTime();
@@ -153,6 +165,7 @@ export const useNotificationManager = (
     timestamp: string;
     model?: string;
     sessionStats?: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number };
+    injectedFiles?: Array<{ path: string; category: string; estimated_tokens: number }>;
   }) => {
     if (!enabled) return;
 
@@ -168,7 +181,7 @@ export const useNotificationManager = (
       conversation_turns: stats?.turns ?? 0,
       user_prompt_tokens: 0,
       total_injected_tokens: 0,
-      injected_files: [],
+      injected_files: (data.injectedFiles ?? []) as PromptScan['injected_files'],
       tool_calls: [],
       tool_summary: {},
       agent_calls: [],

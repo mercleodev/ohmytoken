@@ -29,6 +29,7 @@ import { calculateCost } from "./utils/costCalculator";
 import {
   importHistorySessions,
   importSinglePrompt,
+  readInjectedFiles,
 } from "./importer/historyImporter";
 import { EvidenceEngine } from "./evidence/engine";
 import { mergeConfig } from "./evidence/config";
@@ -461,12 +462,31 @@ const initApp = async (): Promise<void> => {
             console.error("[SessionFileWatcher] Failed to fetch session stats:", e);
           }
 
+          // Read injected files from disk for immediate display
+          let injectedFiles: Array<{ path: string; category: string; estimated_tokens: number }> = [];
+          try {
+            const projectsDir = path.join(homedir(), ".claude", "projects");
+            const dirs = fs.readdirSync(projectsDir).filter((f: string) => {
+              try { return fs.statSync(path.join(projectsDir, f)).isDirectory(); } catch { return false; }
+            });
+            for (const dir of dirs) {
+              if (fs.existsSync(path.join(projectsDir, dir, `${event.sessionId}.jsonl`))) {
+                const projectPath = dir.replace(/^-/, "/").replace(/-/g, "/");
+                injectedFiles = readInjectedFiles(projectPath);
+                break;
+              }
+            }
+          } catch (e) {
+            console.error("[SessionFileWatcher] Failed to read injected files:", e);
+          }
+
           const streamingData = {
             sessionId: event.sessionId,
             userPrompt: event.userPrompt ?? "",
             timestamp: event.timestamp,
             model: event.model,
             sessionStats,
+            injectedFiles,
           };
           sendToNotificationWindow("new-prompt-streaming", streamingData);
           if (mainWindow && !mainWindow.isDestroyed()) {
