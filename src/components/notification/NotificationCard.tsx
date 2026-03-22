@@ -57,9 +57,9 @@ const CATEGORY_ICONS: Record<string, string> = {
   skill: '⚡',
 };
 
-// ── 1. Injected Files Section ──
+// ── 1. Context Files Section ──
 
-const InjectedSection = ({ files }: {
+const ContextFilesSection = ({ files }: {
   files: Array<{ path: string; category: string; estimated_tokens: number }>;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -76,7 +76,7 @@ const InjectedSection = ({ files }: {
     <div className="notif-section">
       <div className="notif-section-header">
         <span className="notif-section-icon">📎</span>
-        <span className="notif-section-title">Injected</span>
+        <span className="notif-section-title">Context Files</span>
         <span className="notif-section-badge">{files.length}</span>
         {totalTokens > 0 && (
           <span className="notif-section-tokens">{formatTokens(totalTokens)} tok</span>
@@ -84,7 +84,7 @@ const InjectedSection = ({ files }: {
       </div>
       <div className="notif-injected-scroll" ref={scrollRef}>
         {files.length === 0 ? (
-          <div className="notif-section-empty">No injected files</div>
+          <div className="notif-section-empty">No context files</div>
         ) : (
           files.map((f, i) => {
             const fileName = f.path.split('/').pop() ?? f.path;
@@ -173,20 +173,39 @@ const ResponseSection = ({ text, streamingTexts, isStreaming }: {
 }) => {
   const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [userScrolled, setUserScrolled] = useState(false);
 
-  // Auto-scroll to bottom on new streaming text
+  // Auto-scroll to bottom on new streaming text (unless user scrolled up)
   useEffect(() => {
-    if (scrollRef.current && isStreaming) {
+    if (scrollRef.current && isStreaming && !userScrolled) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [streamingTexts.length, isStreaming]);
+  }, [streamingTexts.length, isStreaming, userScrolled]);
+
+  // Reset user-scrolled flag when new streaming session starts
+  useEffect(() => {
+    if (isStreaming && streamingTexts.length <= 1) {
+      setUserScrolled(false);
+    }
+  }, [isStreaming, streamingTexts.length]);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const el = scrollRef.current;
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 20;
+    setUserScrolled(!isAtBottom);
+  };
 
   // Combine: final response text takes priority, else show streaming fragments
   const finalText = text?.trim();
-  const liveText = streamingTexts.length > 0 ? streamingTexts.join('\n') : '';
+  // Merge consecutive streaming texts, deduplicate overlapping fragments
+  const liveText = useMemo(() => {
+    if (streamingTexts.length === 0) return '';
+    return streamingTexts.join('\n\n');
+  }, [streamingTexts]);
   const displayText = finalText || liveText;
   const hasText = displayText.length > 0;
-  const needsExpand = hasText && displayText.length > 120;
+  const needsExpand = hasText && displayText.length > 150;
 
   return (
     <div className="notif-section">
@@ -196,6 +215,9 @@ const ResponseSection = ({ text, streamingTexts, isStreaming }: {
       >
         <span className="notif-section-icon">💬</span>
         <span className="notif-section-title">Response</span>
+        {streamingTexts.length > 0 && isStreaming && (
+          <span className="notif-section-badge">{streamingTexts.length}</span>
+        )}
         {needsExpand && (
           <span className="notif-expand-toggle">{expanded ? '▾' : '▸'}</span>
         )}
@@ -203,9 +225,10 @@ const ResponseSection = ({ text, streamingTexts, isStreaming }: {
       <div
         ref={scrollRef}
         className={`notif-response-body ${expanded ? 'notif-response-body--expanded' : ''}`}
+        onScroll={handleScroll}
       >
         {hasText ? (
-          expanded ? displayText : truncate(displayText, 120)
+          expanded ? displayText : truncate(displayText, 150)
         ) : (
           <span className="notif-section-empty">
             {isStreaming ? 'Waiting for response...' : 'No response'}
@@ -325,8 +348,8 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
         {truncate(scan.user_prompt || '(empty prompt)', 80)}
       </div>
 
-      {/* ── 1. Injected Files (always visible) ── */}
-      <InjectedSection files={scan.injected_files ?? []} />
+      {/* ── 1. Context Files (always visible) ── */}
+      <ContextFilesSection files={scan.injected_files ?? []} />
 
       {/* ── 2. Actions Timeline (always visible) ── */}
       <ActionsTimeline lines={activityLog} isStreaming={isStreaming} />

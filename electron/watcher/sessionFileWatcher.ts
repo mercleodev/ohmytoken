@@ -278,15 +278,17 @@ export const startSessionFileWatcher = (
                     detail,
                   });
                 } else if (block.type === "text" && typeof block.text === "string" && block.text.trim()) {
-                  // Short text snippet from assistant
-                  const snippet = block.text.trim().slice(0, 80);
-                  options.onActivity({
-                    sessionId,
-                    timestamp: ts,
-                    kind: "text",
-                    name: "response",
-                    detail: snippet,
-                  });
+                  // Text snippet from assistant response (longer for Response section display)
+                  const cleaned = block.text.trim();
+                  if (cleaned.length >= 5) {
+                    options.onActivity({
+                      sessionId,
+                      timestamp: ts,
+                      kind: "text",
+                      name: "response",
+                      detail: cleaned.slice(0, 200),
+                    });
+                  }
                 } else if (block.type === "thinking" && typeof block.thinking === "string") {
                   const snippet = block.thinking.trim().slice(0, 80);
                   if (snippet) {
