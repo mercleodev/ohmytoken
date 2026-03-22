@@ -289,11 +289,31 @@ const CtxSparkline = ({ turnMetrics, model }: { turnMetrics: PromptNotification[
 
 // ── Main Component ──
 
+const AUTO_DISMISS_MS = 120_000;
+
 export const NotificationCard = ({ notification, onDismiss, onClick }: Props) => {
   const { scan, usage, status, alerts, turnMetrics, activityLog } = notification;
   const provider = scan.provider ?? 'claude';
   const providerColor = PROVIDER_COLORS[provider] ?? '#8e8e93';
   const isStreaming = status === 'streaming';
+  const isCompleted = status === 'completed';
+  const [seen, setSeen] = useState(false);
+
+  // Dismiss countdown progress (0 → 1 over AUTO_DISMISS_MS)
+  const [dismissProgress, setDismissProgress] = useState(0);
+  useEffect(() => {
+    if (!isCompleted || !notification.completedAt) {
+      setDismissProgress(0);
+      return;
+    }
+    const tick = () => {
+      const elapsed = Date.now() - notification.completedAt!;
+      setDismissProgress(Math.min(1, elapsed / AUTO_DISMISS_MS));
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [isCompleted, notification.completedAt]);
 
   // Token composition
   const cacheRead = usage?.response.cache_read_input_tokens ?? 0;
@@ -318,10 +338,11 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
 
   return (
     <motion.div
-      className="notif-card"
+      className={`notif-card ${isCompleted && !seen ? 'notif-card--completed' : ''} ${isCompleted && dismissProgress > 0.6 ? 'notif-card--fading' : ''}`}
+      onMouseEnter={() => { if (isCompleted) setSeen(true); }}
       layout
       initial={{ opacity: 0, x: 60, scale: 0.95 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
+      animate={{ opacity: isCompleted ? 1 - dismissProgress * 0.5 : 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 60, scale: 0.95 }}
       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
       onClick={() => onClick(notification.id)}
@@ -399,10 +420,34 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
         </div>
       )}
 
-      {/* ── Streaming progress bar ── */}
+      {/* ── Status footer: streaming progress or completion summary ── */}
       {isStreaming && (
         <div className="notif-progress-bar">
           <div className="notif-progress-bar-fill" />
+        </div>
+      )}
+      {!isStreaming && (
+        <div className="notif-completion-row">
+          <span className="notif-completion-check">✓</span>
+          <span className="notif-completion-label">Done</span>
+          {usage?.duration_ms != null && usage.duration_ms > 0 && (
+            <span className="notif-completion-stat">
+              {(usage.duration_ms / 1000).toFixed(1)}s
+            </span>
+          )}
+          {cost > 0 && (
+            <span className="notif-completion-stat">${cost.toFixed(3)}</span>
+          )}
+          {output > 0 && (
+            <span className="notif-completion-stat">{formatTokens(output)} out</span>
+          )}
+          {/* Dismiss countdown bar */}
+          <div className="notif-dismiss-track">
+            <div
+              className="notif-dismiss-fill"
+              style={{ width: `${(1 - dismissProgress) * 100}%` }}
+            />
+          </div>
         </div>
       )}
     </motion.div>
