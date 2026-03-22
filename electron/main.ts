@@ -462,23 +462,9 @@ const initApp = async (): Promise<void> => {
           }
           console.log(`[SessionFileWatcher] AssistantTurn detected → streaming complete`);
 
-          // Fetch latest scan from DB and send to notification window
-          // (new-prompt-scan from history watcher may arrive late or not at all)
-          setTimeout(() => {
-            try {
-              const latestScans = dbReader.getSessionPrompts(event.sessionId);
-              if (latestScans.length > 0) {
-                const latestScan = latestScans[latestScans.length - 1];
-                const detail = dbReader.getPromptDetail(latestScan.request_id);
-                if (detail?.scan) {
-                  console.log(`[SessionFileWatcher] Sending enriched scan to notification: ${detail.scan.request_id}, injected=${detail.scan.injected_files?.length}`);
-                  sendToNotificationWindow("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
-                }
-              }
-            } catch (e) {
-              console.error("[SessionFileWatcher] Failed to fetch latest scan for notification:", e);
-            }
-          }, 2000);
+          // NOTE: Do NOT fetch from DB here with a timeout — the DB may not have
+          // the current prompt yet, sending an older scan's data instead.
+          // The history watcher will naturally send new-prompt-scan when it imports.
         }
       },
       onActivity: (activity) => {
