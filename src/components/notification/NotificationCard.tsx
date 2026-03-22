@@ -282,6 +282,8 @@ const CtxSparkline = ({ turnMetrics, model }: { turnMetrics: PromptNotification[
         width={272}
         height={28}
         highlightLastTwo
+        threshold={contextLimit > 0 ? contextLimit * 0.8 : undefined}
+        thresholdLabel="compact"
       />
     </div>
   );
