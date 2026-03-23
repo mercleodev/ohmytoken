@@ -7,3 +7,8 @@ AGENTS.md
 .github/ISSUE_TEMPLATE/bug_report.md
 .github/ISSUE_TEMPLATE/feature_request.md
 docs/decisions/ADR-0003-provider-agnostic-session-detail.md
+docs/sdd/README.md
+docs/sdd/methodology.md
+docs/sdd/issue-workflow.md
+docs/sdd/testing.md
+docs/sdd/style-checklist.md

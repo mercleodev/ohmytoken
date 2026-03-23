@@ -60,3 +60,4 @@ docs/decisions/
 !SECURITY.md
 !LICENSE
 !.github/**/*.md
+!docs/sdd/*.md
