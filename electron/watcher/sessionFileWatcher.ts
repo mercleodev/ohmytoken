@@ -17,6 +17,8 @@ export type SessionTurnEvent = {
   userPrompt?: string;
   timestamp: string;
   model?: string;
+  provider?: string;
+  projectFolder?: string;
   usage?: {
     input_tokens?: number;
     output_tokens?: number;

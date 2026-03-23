@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld("api", {
       userPrompt: string;
       timestamp: string;
       model?: string;
+      provider?: string;
       sessionStats?: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number };
       injectedFiles?: Array<{ path: string; category: string; estimated_tokens: number }>;
       projectFolder?: string;

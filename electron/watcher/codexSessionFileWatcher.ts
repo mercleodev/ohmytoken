@@ -23,8 +23,13 @@ import { findSessionFileBySessionId, findCodexSessionFiles } from "../backfill/c
 
 const CODEX_HISTORY_PATH = path.join(homedir(), ".codex", "history.jsonl");
 const POLL_INTERVAL_MS = 500;
-/** Debounce for token_count → AssistantTurn (handles duplicate pairs) */
-const TOKEN_COUNT_DEBOUNCE_MS = 300;
+/**
+ * Debounce for token_count → AssistantTurn.
+ * Codex emits token_count after EACH API call within a turn (not just at the end).
+ * Tool executions can take seconds, so we need a long enough window to avoid
+ * premature completion. Any new activity (tool call, agent message) resets this timer.
+ */
+const TOKEN_COUNT_DEBOUNCE_MS = 3000;
 
 const USER_PROMPT_LIMIT = 500;
 const ACTIVITY_DETAIL_LIMIT = 200;
@@ -151,6 +156,10 @@ export const startCodexSessionFileWatcher = (
   // Turn state machine
   let inTurn = false;
   let currentTurnTimestamp: string | null = null;
+  // Tracks whether any actual response content (response_item, agent_message)
+  // has been observed during the current turn. Prevents premature "Done" when
+  // only token_count fires (before any real content arrives).
+  let turnHasContent = false;
 
   // token_count debounce (handles duplicate pairs)
   let tokenCountTimer: ReturnType<typeof setTimeout> | null = null;
@@ -174,6 +183,8 @@ export const startCodexSessionFileWatcher = (
       sessionId: currentSessionId,
       timestamp: ts,
       model: cachedModel ?? undefined,
+      provider: "codex",
+      projectFolder: cachedCwd ? path.basename(cachedCwd) : undefined,
       usage: usage ? {
         input_tokens: usage.input_tokens,
         output_tokens: usage.output_tokens,
@@ -225,6 +236,7 @@ export const startCodexSessionFileWatcher = (
 
       if (trimmed) {
         inTurn = true;
+        turnHasContent = false;
         currentTurnTimestamp = ev.timestamp ?? new Date().toISOString();
 
         options.onTurn({
@@ -233,9 +245,19 @@ export const startCodexSessionFileWatcher = (
           userPrompt: trimmed,
           timestamp: currentTurnTimestamp,
           model: cachedModel ?? undefined,
+          provider: "codex",
+          projectFolder: cachedCwd ? path.basename(cachedCwd) : undefined,
         });
       }
       return;
+    }
+
+    // ── Any response_item = turn still active → cancel token_count timer ──
+    // Codex emits token_count BETWEEN API calls (after function_call but before
+    // function_call_output/reasoning). Any response_item proves more work is coming.
+    if (ev.type === "response_item" && inTurn && tokenCountTimer) {
+      clearTimeout(tokenCountTimer);
+      tokenCountTimer = null;
     }
 
     // ── response_item(function_call / custom_tool_call) → Activity ──
@@ -244,6 +266,7 @@ export const startCodexSessionFileWatcher = (
       (ev.payload?.type === "function_call" || ev.payload?.type === "custom_tool_call") &&
       ev.payload.name
     ) {
+      turnHasContent = true;
       options.onActivity?.({
         sessionId,
         timestamp: ev.timestamp ?? new Date().toISOString(),
@@ -255,7 +278,11 @@ export const startCodexSessionFileWatcher = (
     }
 
     // ── event_msg(agent_message) → Activity (text) ──
+    // NOTE: Do NOT cancel token_count timer here. agent_message can arrive
+    // AFTER the final token_count. Only function_call cancels the timer,
+    // because tool calls guarantee more API calls (and thus more token_counts).
     if (ev.type === "event_msg" && ev.payload?.type === "agent_message" && ev.payload.message) {
+      turnHasContent = true;
       const text = ev.payload.message.trim();
       if (text.length >= 5) {
         options.onActivity?.({
@@ -270,12 +297,18 @@ export const startCodexSessionFileWatcher = (
     }
 
     // ── event_msg(token_count) → AssistantTurn (debounced) ──
+    // Only emit completion if actual response content has been observed.
+    // Early token_count events (before any response_item/agent_message)
+    // are stored but won't trigger premature "Done" in the UI.
     if (ev.type === "event_msg" && ev.payload?.type === "token_count" && inTurn) {
       pendingTokenCountEvent = ev;
       if (tokenCountTimer) clearTimeout(tokenCountTimer);
       tokenCountTimer = setTimeout(() => {
         tokenCountTimer = null;
-        emitAssistantTurn();
+        if (turnHasContent) {
+          emitAssistantTurn();
+        }
+        // No content yet — keep inTurn=true; next token_count will retry
       }, TOKEN_COUNT_DEBOUNCE_MS);
       return;
     }
@@ -348,16 +381,17 @@ export const startCodexSessionFileWatcher = (
       lastSize = 0;
     }
 
-    // Rewind a small chunk to catch session_meta + turn_context for cwd/model
+    // Read session_meta + turn_context from file header for cwd/model.
+    // session_meta can be very large (>20KB due to base_instructions), so
+    // we read a generous chunk from the start.
     try {
       const fileSize = fs.statSync(filePath).size;
       if (fileSize > 0) {
-        const REWIND_BYTES = 4096;
-        const metaReadStart = 0; // Always read from start for session_meta
-        const metaReadSize = Math.min(REWIND_BYTES, fileSize);
+        const HEADER_READ_BYTES = 65536; // 64KB — enough for session_meta + a few events
+        const readSize = Math.min(HEADER_READ_BYTES, fileSize);
         const fd = fs.openSync(filePath, "r");
-        const buf = Buffer.alloc(metaReadSize);
-        fs.readSync(fd, buf, 0, metaReadSize, metaReadStart);
+        const buf = Buffer.alloc(readSize);
+        fs.readSync(fd, buf, 0, readSize, 0);
         fs.closeSync(fd);
 
         const headerContent = buf.toString("utf-8");
@@ -369,7 +403,9 @@ export const startCodexSessionFileWatcher = (
             if (ev.type === "session_meta" || ev.type === "turn_context") {
               processEvent(ev);
             }
-          } catch { /* skip */ }
+          } catch { /* skip truncated/malformed lines */ }
+          // Stop once we have both
+          if (cachedCwd && cachedModel) break;
         }
       }
     } catch { /* ignore */ }
@@ -388,11 +424,20 @@ export const startCodexSessionFileWatcher = (
     }
 
     // Polling fallback
+    let pollCount = 0;
     pollTimer = setInterval(() => {
       processNewData(filePath);
+      pollCount++;
+      // Log every 60 polls (~30s) to confirm polling is alive
+      if (pollCount % 60 === 0) {
+        try {
+          const currentSize = fs.statSync(filePath).size;
+          console.log(`[CodexSessionWatcher] poll alive: lastSize=${lastSize}, fileSize=${currentSize}, diff=${currentSize - lastSize}`);
+        } catch { /* ignore */ }
+      }
     }, POLL_INTERVAL_MS);
 
-    console.log(`[CodexSessionWatcher] Watching session: ${sessionId.slice(0, 12)}… (model=${cachedModel ?? "unknown"}, cwd=${cachedCwd ?? "unknown"})`);
+    console.log(`[CodexSessionWatcher] Watching session: ${sessionId.slice(0, 12)}… (model=${cachedModel ?? "unknown"}, cwd=${cachedCwd ?? "unknown"}, lastSize=${lastSize})`);
   };
 
   // ── History.jsonl Trigger ──

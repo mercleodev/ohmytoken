@@ -168,6 +168,7 @@ export const useNotificationManager = (
     userPrompt: string;
     timestamp: string;
     model?: string;
+    provider?: string;
     sessionStats?: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number };
     injectedFiles?: Array<{ path: string; category: string; estimated_tokens: number }>;
     projectFolder?: string;
@@ -182,7 +183,7 @@ export const useNotificationManager = (
       user_prompt: data.userPrompt,
       timestamp: data.timestamp,
       model: data.model ?? 'unknown',
-      provider: 'claude',
+      provider: data.provider ?? 'claude',
       conversation_turns: stats?.turns ?? 0,
       user_prompt_tokens: 0,
       total_injected_tokens: 0,
@@ -251,17 +252,21 @@ export const useNotificationManager = (
     });
   }, [enabled]);
 
-  // Mark streaming notifications as completed when AssistantTurn arrives
+  // Mark streaming notifications as completed when AssistantTurn arrives.
   // Start auto-dismiss timer — if a new tool_use activity arrives later,
   // appendActivity() will cancel the timer and revert to streaming.
+  // Safety: only mark completed if the card has actual content (activity log
+  // entries or response data). Prevents empty "Done" flicker when token_count
+  // fires before any real response arrives.
   const completeStreaming = useCallback((data: { sessionId: string; model?: string }) => {
     setNotifications((prev) =>
       prev.map((n) => {
         if (n.status === 'streaming' && n.scan.session_id === data.sessionId) {
+          const hasContent = n.activityLog.length > 0 || Boolean(n.scan.assistant_response?.trim());
           return {
             ...n,
-            status: 'completed' as const,
-            completedAt: Date.now(),
+            status: hasContent ? 'completed' as const : 'streaming' as const,
+            completedAt: hasContent ? Date.now() : null,
             scan: { ...n.scan, model: data.model ?? n.scan.model },
           };
         }
