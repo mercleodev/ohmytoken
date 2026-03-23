@@ -44,7 +44,7 @@ import { startGapFillScheduler, stopGapFillScheduler } from "./backfill/schedule
 import { startProviderSessionWatcher } from "./watcher/providerSessionWatcher";
 import { startSessionFileWatcher } from "./watcher/sessionFileWatcher";
 import { startCodexSessionFileWatcher } from "./watcher/codexSessionFileWatcher";
-import { findSessionFileBySessionId as findCodexSessionFile } from "./backfill/codex-scanner";
+
 
 // Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
 process.stdout?.on("error", (err: NodeJS.ErrnoException) => {
@@ -519,6 +519,7 @@ const initApp = async (): Promise<void> => {
             userPrompt: event.userPrompt ?? "",
             timestamp: event.timestamp,
             model: resolvedModel,
+            provider: "claude",
             sessionStats,
             injectedFiles,
             projectFolder,
@@ -662,54 +663,21 @@ const initApp = async (): Promise<void> => {
             console.error("[CodexSessionWatcher] Failed to fetch session stats:", e);
           }
 
-          // projectFolder: Codex session_meta.cwd gives exact path (no decode needed)
-          // We retrieve it from the event model field — the watcher caches cwd internally
-          // and passes model via the event. For projectFolder we need to extract from
-          // the session file directly. Use a simpler approach: check DB for existing scans.
-          let projectFolder: string | undefined;
-          try {
-            const scans = dbReader.getSessionPrompts(event.sessionId);
-            if (scans.length > 0) {
-              const lastScan = scans[scans.length - 1];
-              const detailData = dbReader.getPromptDetail(lastScan.request_id);
-              if (detailData?.scan?.git_branch) {
-                // Use git_branch as folder hint if available
-              }
-            }
-          } catch { /* ignore */ }
-
-          // If no DB data yet, try reading session file header for cwd
-          if (!projectFolder) {
-            try {
-              const sessionFile = findCodexSessionFile(event.sessionId);
-              if (sessionFile) {
-                const fd = fs.openSync(sessionFile, "r");
-                const buf = Buffer.alloc(4096);
-                const bytesRead = fs.readSync(fd, buf, 0, 4096, 0);
-                fs.closeSync(fd);
-                const firstLine = buf.subarray(0, bytesRead).toString("utf-8").split("\n")[0];
-                const meta = JSON.parse(firstLine);
-                if (meta.type === "session_meta" && meta.payload?.cwd) {
-                  projectFolder = path.basename(meta.payload.cwd);
-                }
-              }
-            } catch { /* ignore */ }
-          }
-
           const streamingData = {
             sessionId: event.sessionId,
             userPrompt: event.userPrompt ?? "",
             timestamp: event.timestamp,
             model: event.model,
+            provider: "codex",
             sessionStats,
             injectedFiles: [] as Array<{ path: string; category: string; estimated_tokens: number }>,
-            projectFolder,
+            projectFolder: event.projectFolder,
           };
           sendToNotificationWindow("new-prompt-streaming", streamingData);
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send("new-prompt-streaming", streamingData);
           }
-          console.log(`[CodexSessionWatcher] HumanTurn → streaming sent (model=${event.model}, folder=${projectFolder})`);
+          console.log(`[CodexSessionWatcher] HumanTurn → streaming sent (model=${event.model}, folder=${event.projectFolder})`);
         } else if (event.type === "assistant") {
           const completeData = {
             sessionId: event.sessionId,
