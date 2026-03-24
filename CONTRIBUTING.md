@@ -11,6 +11,7 @@ Project entry references:
 2. `.claude/docs/AUTONOMOUS-OSS-OPS.md`
 3. `.claude/docs/GIT-IDENTITY-POLICY.md`
 4. `policy/RULES-CATALOG.txt`
+5. `docs/sdd/README.md`
 
 ---
 
