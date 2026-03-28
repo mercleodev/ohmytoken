@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { BrowserWindow } from 'electron';
-import { TOKEN_FILE_PATHS } from './credentialReader';
+import { TOKEN_FILE_PATHS, getProviderTokenStatus } from './credentialReader';
 import { UsageProviderType } from './types';
 
 type WatcherCleanup = () => void;
@@ -16,6 +16,10 @@ type WatcherOptions = {
  * Watches token file changes for all 3 providers.
  * When a file is created/modified, sends a 'provider-token-changed' event to mainWindow,
  * and also calls the onTokenChanged callback if provided (for tray sync).
+ *
+ * For providers that store credentials in macOS Keychain (claude),
+ * a periodic poll supplements file watching since Keychain changes
+ * do not trigger filesystem events.
  */
 export const startTokenFileWatcher = (
   getMainWindowOrOptions: (() => BrowserWindow | null) | WatcherOptions
@@ -28,6 +32,18 @@ export const startTokenFileWatcher = (
   const lastEmit: Record<string, number> = {};
 
   const providers: UsageProviderType[] = ['claude', 'codex', 'gemini'];
+
+  const emitChange = (provider: UsageProviderType) => {
+    const now = Date.now();
+    if (lastEmit[provider] && now - lastEmit[provider] < DEBOUNCE_MS) return;
+    lastEmit[provider] = now;
+
+    const mainWindow = options.getMainWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('provider-token-changed', provider);
+    }
+    options.onTokenChanged?.(provider);
+  };
 
   for (const provider of providers) {
     const filePath = TOKEN_FILE_PATHS[provider];
@@ -44,18 +60,8 @@ export const startTokenFileWatcher = (
       const watcher = fs.watch(dir, (eventType, changedFile) => {
         if (changedFile !== filename) return;
 
-        // Debounce: ignore duplicate events within 1 second
-        const now = Date.now();
-        if (lastEmit[provider] && now - lastEmit[provider] < DEBOUNCE_MS) return;
-        lastEmit[provider] = now;
-
         console.log(`[TokenWatcher] ${provider} token file changed (${eventType})`);
-        const mainWindow = options.getMainWindow();
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('provider-token-changed', provider);
-        }
-        // Tray sync callback
-        options.onTokenChanged?.(provider);
+        emitChange(provider);
       });
 
       watchers.push(watcher);
@@ -65,8 +71,38 @@ export const startTokenFileWatcher = (
     }
   }
 
+  // Keychain poll: claude stores credentials in macOS Keychain as priority 1.
+  // File watcher cannot detect Keychain changes, so poll every 10s.
+  const KEYCHAIN_POLL_MS = 10_000;
+  let lastKeychainHasToken: boolean | null = null;
+  let lastKeychainExpired: boolean | null = null;
+
+  const pollKeychain = () => {
+    try {
+      const status = getProviderTokenStatus('claude');
+      const changed =
+        lastKeychainHasToken !== null &&
+        (status.hasToken !== lastKeychainHasToken || status.tokenExpired !== lastKeychainExpired);
+
+      lastKeychainHasToken = status.hasToken;
+      lastKeychainExpired = status.tokenExpired;
+
+      if (changed) {
+        console.log(`[TokenWatcher] claude keychain status changed (hasToken=${status.hasToken}, expired=${status.tokenExpired})`);
+        emitChange('claude');
+      }
+    } catch {
+      // Keychain poll error — ignore silently
+    }
+  };
+
+  // Initialize baseline state immediately
+  pollKeychain();
+  const keychainTimer = setInterval(pollKeychain, KEYCHAIN_POLL_MS);
+
   // Return cleanup function
   return () => {
+    clearInterval(keychainTimer);
     for (const watcher of watchers) {
       watcher.close();
     }
