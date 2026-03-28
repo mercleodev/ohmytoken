@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { toLocalDateKey } from '../../utils/format';
 
 type HeatmapDay = { date: string; count: number };
@@ -100,6 +100,7 @@ const buildMonthLabels = (weeks: WeekColumn[]): Array<{ label: string; colIndex:
 export const PromptHeatmap = ({ provider }: PromptHeatmapProps) => {
   const [data, setData] = useState<HeatmapDay[]>([]);
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
+  const gridScrollRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -113,6 +114,13 @@ export const PromptHeatmap = ({ provider }: PromptHeatmapProps) => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Auto-scroll to current date (rightmost) on load
+  useEffect(() => {
+    if (data.length > 0 && gridScrollRef.current) {
+      gridScrollRef.current.scrollLeft = gridScrollRef.current.scrollWidth;
+    }
+  }, [data]);
 
   const { weeks, totalPrompts } = useMemo(() => buildGrid(data), [data]);
   const monthLabels = useMemo(() => buildMonthLabels(weeks), [weeks]);
@@ -154,7 +162,7 @@ export const PromptHeatmap = ({ provider }: PromptHeatmapProps) => {
           ))}
         </div>
         {/* Grid area */}
-        <div className="heatmap-grid-scroll" style={{ position: 'relative' }}>
+        <div ref={gridScrollRef} className="heatmap-grid-scroll" style={{ position: 'relative' }}>
           {/* Month labels */}
           <div className="heatmap-month-labels" style={{ height: 16, marginBottom: 2 }}>
             {monthLabels.map((m) => (
