@@ -19,6 +19,7 @@ import { EvidenceGroup } from "./prompt-detail/EvidenceGroup";
 import { ActionFilterChips } from "./prompt-detail/ActionFilterChips";
 import { FilePreviewOverlay } from "./prompt-detail/FilePreviewOverlay";
 import { ContextGauge } from "./prompt-detail/ContextGauge";
+import { GuardrailSummary } from "./prompt-detail/GuardrailSummary";
 import { JourneySummary } from "./prompt-detail/JourneySummary";
 
 type PromptDetailViewProps = {
@@ -37,7 +38,7 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
   const [showEvidenceSettings, setShowEvidenceSettings] = useState(false);
   const [activeTools, setActiveTools] = useState<Set<string> | "all">("all");
 
-  const { enrichedScan, sessionCompactions, handleRescore } = usePromptDetail(scan);
+  const { enrichedScan, sessionCompactions, guardrailAssessment, handleRescore } = usePromptDetail(scan, usage);
 
   // Use enrichedScan as primary data source (may have richer JSONL-parsed data)
   const displayScan = enrichedScan;
@@ -167,6 +168,9 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
 
       <ContextGauge scan={displayScan} usage={usage} cacheHitPct={cacheHitPct} />
       <ContextTreemap scan={displayScan} onFileClick={(path) => setPreviewFile(path)} />
+
+      {/* Guardrail Summary (after ContextGauge, before JourneySummary) */}
+      <GuardrailSummary assessment={guardrailAssessment} />
 
       {/* Provider data limitation notice */}
       {isLimitedProvider && (
