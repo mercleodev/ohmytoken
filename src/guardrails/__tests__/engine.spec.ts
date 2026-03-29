@@ -10,6 +10,12 @@ import {
 } from '../constants';
 import { buildContext } from '../buildContext';
 import { evaluate } from '../engine';
+import { compactNowRule } from '../rules/compactNow';
+import { toolLoopRule } from '../rules/toolLoop';
+import { splitSessionRule } from '../rules/splitSession';
+import { cacheExplosionRule } from '../rules/cacheExplosion';
+import { lowValueInjectedFilesRule } from '../rules/lowValueInjectedFiles';
+import { MVP_RULES } from '../rules';
 
 // ---------------------------------------------------------------------------
 // Test helpers — minimal fixtures
@@ -447,5 +453,348 @@ describe('evaluate', () => {
 
     expect(result.summary.topRiskIds).toContain('a');
     expect(result.summary.topRiskIds).toContain('b');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// MVP Rules — individual rule tests
+// ---------------------------------------------------------------------------
+
+describe('compactNow rule', () => {
+  it('does not fire on healthy session', () => {
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, total_context_tokens: 10_000 }),
+      makeTurnMetric({ turnIndex: 1, total_context_tokens: 15_000 }),
+    ];
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    expect(compactNowRule.evaluate(ctx)).toBeNull();
+  });
+
+  it('fires warning when context >= 80%', () => {
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, total_context_tokens: 150_000 }),
+      makeTurnMetric({ turnIndex: 1, total_context_tokens: 165_000 }), // 82.5% of 200K
+    ];
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    const rec = compactNowRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    expect(rec!.id).toBe('compact-now');
+    expect(rec!.severity).toBe('warning');
+    expect(rec!.confidence).toBeGreaterThanOrEqual(0.60);
+  });
+
+  it('fires critical when context >= 90%', () => {
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, total_context_tokens: 170_000 }),
+      makeTurnMetric({ turnIndex: 1, total_context_tokens: 185_000 }), // 92.5% of 200K
+    ];
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    const rec = compactNowRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    expect(rec!.severity).toBe('critical');
+    expect(rec!.confidence).toBeGreaterThanOrEqual(0.85);
+  });
+
+  it('increases confidence with steep growth', () => {
+    // Growth = 20K / 200K = 10% > STEEP_GROWTH_PCT (8%)
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, total_context_tokens: 140_000 }),
+      makeTurnMetric({ turnIndex: 1, total_context_tokens: 160_000 }), // 80%
+    ];
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    const rec = compactNowRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    // Base 0.60 + steep growth 0.10 = 0.70
+    expect(rec!.confidence).toBeGreaterThanOrEqual(0.70);
+  });
+
+  it('fires on projected next turn crossing 90%', () => {
+    // Current: 75%, growth: 16% → projected: 91%
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, total_context_tokens: 118_000 }),
+      makeTurnMetric({ turnIndex: 1, total_context_tokens: 150_000 }), // 75%, growth=16%
+    ];
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    const rec = compactNowRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+  });
+
+  it('returns null with empty turnMetrics', () => {
+    const ctx = buildContext(baseScan, baseUsage, []);
+    expect(compactNowRule.evaluate(ctx)).toBeNull();
+  });
+});
+
+describe('toolLoop rule', () => {
+  it('does not fire without redundant patterns or dominant tools', () => {
+    const ctx = buildContext(baseScan, baseUsage, [makeTurnMetric({ turnIndex: 0 })], emptyMcp);
+    expect(toolLoopRule.evaluate(ctx)).toBeNull();
+  });
+
+  it('fires when redundant patterns exist', () => {
+    const mcp: SessionMcpAnalysis = {
+      totalToolCalls: 20,
+      mcpCalls: 15,
+      toolResultTokens: 5000,
+      toolBreakdown: {},
+      redundantPatterns: [
+        { toolName: 'mcp:read', count: 5, description: 'repeated reads' },
+      ],
+    };
+    const ctx = buildContext(baseScan, baseUsage, [makeTurnMetric({ turnIndex: 0 })], mcp);
+    const rec = toolLoopRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    expect(rec!.id).toBe('tool-loop');
+    expect(rec!.confidence).toBeGreaterThanOrEqual(0.70);
+  });
+
+  it('higher confidence with 3+ redundant patterns', () => {
+    const mcp: SessionMcpAnalysis = {
+      totalToolCalls: 30,
+      mcpCalls: 25,
+      toolResultTokens: 8000,
+      toolBreakdown: {},
+      redundantPatterns: [
+        { toolName: 'mcp:read', count: 5, description: 'a' },
+        { toolName: 'mcp:write', count: 3, description: 'b' },
+        { toolName: 'mcp:search', count: 4, description: 'c' },
+      ],
+    };
+    const ctx = buildContext(baseScan, baseUsage, [makeTurnMetric({ turnIndex: 0 })], mcp);
+    const rec = toolLoopRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    expect(rec!.confidence).toBeGreaterThanOrEqual(0.80);
+    expect(rec!.severity).toBe('warning');
+  });
+
+  it('fires on dominant tool with flat output', () => {
+    const scan: PromptScan = {
+      ...baseScan,
+      tool_summary: { Read: 8, Edit: 1, Bash: 1 },
+    };
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, output_tokens: 50 }), // flat output
+    ];
+    const ctx = buildContext(scan, baseUsage, metrics, emptyMcp);
+    const rec = toolLoopRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+  });
+});
+
+describe('splitSession rule', () => {
+  it('does not fire on short session', () => {
+    const metrics = Array.from({ length: 5 }, (_, i) =>
+      makeTurnMetric({ turnIndex: i, cache_read_tokens: 8000, input_tokens: 1000, output_tokens: 500, cache_create_tokens: 500 }),
+    );
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    expect(splitSessionRule.evaluate(ctx)).toBeNull();
+  });
+
+  it('fires when >= 12 turns and cache read >= 70%', () => {
+    const metrics = Array.from({ length: 14 }, (_, i) =>
+      makeTurnMetric({ turnIndex: i, cache_read_tokens: 8000, input_tokens: 1000, output_tokens: 500, cache_create_tokens: 500 }),
+    );
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    const rec = splitSessionRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    expect(rec!.id).toBe('split-session');
+  });
+
+  it('fires when >= 20 turns regardless of cache ratio', () => {
+    const metrics = Array.from({ length: 22 }, (_, i) =>
+      makeTurnMetric({ turnIndex: i, cache_read_tokens: 100, input_tokens: 5000, output_tokens: 3000, cache_create_tokens: 100 }),
+    );
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    const rec = splitSessionRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    expect(rec!.severity).toBe('warning');
+    expect(rec!.confidence).toBeGreaterThanOrEqual(0.80);
+  });
+});
+
+describe('cacheExplosion rule', () => {
+  it('does not fire below 85% cache read', () => {
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, cache_read_tokens: 7000, input_tokens: 2000, output_tokens: 1000, cache_create_tokens: 500 }),
+    ];
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    // 7000 / (7000+2000+1000+500) = 66.7% < 85%
+    expect(cacheExplosionRule.evaluate(ctx)).toBeNull();
+  });
+
+  it('fires warning at >= 85% cache read', () => {
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, cache_read_tokens: 9000, input_tokens: 500, output_tokens: 200, cache_create_tokens: 100 }),
+    ];
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    // 9000 / (9000+500+200+100) = 91.8% > 85%
+    const rec = cacheExplosionRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    expect(rec!.id).toBe('cache-explosion');
+    expect(rec!.severity).toBe('warning');
+  });
+
+  it('fires critical at >= 95% cache read', () => {
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, cache_read_tokens: 9700, input_tokens: 100, output_tokens: 100, cache_create_tokens: 50 }),
+    ];
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    // 9700 / (9700+100+100+50) = 97.5% > 95%
+    const rec = cacheExplosionRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    expect(rec!.severity).toBe('critical');
+    expect(rec!.confidence).toBeGreaterThanOrEqual(0.90);
+  });
+});
+
+describe('lowValueInjectedFiles rule', () => {
+  it('does not fire without low-value candidates', () => {
+    const ctx = buildContext(baseScan, baseUsage, [makeTurnMetric({ turnIndex: 0 })]);
+    expect(lowValueInjectedFilesRule.evaluate(ctx)).toBeNull();
+  });
+
+  it('does not fire when candidate share < 20%', () => {
+    const evidenceReport: EvidenceReport = {
+      request_id: 'req-1',
+      timestamp: '2026-03-29T12:00:00Z',
+      engine_version: '1.0',
+      fusion_method: 'weighted',
+      files: [
+        { filePath: '/big.ts', category: 'project', signals: [], rawScore: 0.9, normalizedScore: 0.9, classification: 'confirmed' },
+        { filePath: '/small.md', category: 'memory', signals: [], rawScore: 0.2, normalizedScore: 0.2, classification: 'unverified' },
+      ],
+      thresholds: { confirmed_min: 0.7, likely_min: 0.4 },
+    };
+    const scan: PromptScan = {
+      ...baseScan,
+      injected_files: [
+        { path: '/big.ts', category: 'project', estimated_tokens: 5000 },
+        { path: '/small.md', category: 'memory', estimated_tokens: 100 },
+      ] as PromptScan['injected_files'],
+      total_injected_tokens: 5100,
+      evidence_report: evidenceReport,
+    };
+    const ctx = buildContext(scan, baseUsage, [makeTurnMetric({ turnIndex: 0 })]);
+    // 100 / 5100 = 1.96% < 20%
+    expect(lowValueInjectedFilesRule.evaluate(ctx)).toBeNull();
+  });
+
+  it('fires when candidate share >= 20%', () => {
+    const evidenceReport: EvidenceReport = {
+      request_id: 'req-1',
+      timestamp: '2026-03-29T12:00:00Z',
+      engine_version: '1.0',
+      fusion_method: 'weighted',
+      files: [
+        { filePath: '/a.ts', category: 'project', signals: [], rawScore: 0.9, normalizedScore: 0.9, classification: 'confirmed' },
+        { filePath: '/b.md', category: 'memory', signals: [], rawScore: 0.2, normalizedScore: 0.2, classification: 'unverified' },
+        { filePath: '/c.md', category: 'rules', signals: [], rawScore: 0.3, normalizedScore: 0.3, classification: 'likely' },
+      ],
+      thresholds: { confirmed_min: 0.7, likely_min: 0.4 },
+    };
+    const scan: PromptScan = {
+      ...baseScan,
+      injected_files: [
+        { path: '/a.ts', category: 'project', estimated_tokens: 3000 },
+        { path: '/b.md', category: 'memory', estimated_tokens: 1200 },
+        { path: '/c.md', category: 'rules', estimated_tokens: 800 },
+      ] as PromptScan['injected_files'],
+      total_injected_tokens: 5000,
+      evidence_report: evidenceReport,
+    };
+    const ctx = buildContext(scan, baseUsage, [makeTurnMetric({ turnIndex: 0 })]);
+    // Candidates: /b.md (1200) + /c.md (800) = 2000 / 5000 = 40% >= 20%
+    const rec = lowValueInjectedFilesRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    expect(rec!.id).toBe('low-value-injected-files');
+    expect(rec!.estimatedSavings).toBeDefined();
+    expect(rec!.estimatedSavings!.tokens).toBe(2000);
+  });
+
+  it('includes unverified bonus in confidence', () => {
+    const evidenceReport: EvidenceReport = {
+      request_id: 'req-1',
+      timestamp: '2026-03-29T12:00:00Z',
+      engine_version: '1.0',
+      fusion_method: 'weighted',
+      files: [
+        { filePath: '/x.ts', category: 'project', signals: [], rawScore: 0.1, normalizedScore: 0.1, classification: 'unverified' },
+      ],
+      thresholds: { confirmed_min: 0.7, likely_min: 0.4 },
+    };
+    const scan: PromptScan = {
+      ...baseScan,
+      injected_files: [
+        { path: '/x.ts', category: 'project', estimated_tokens: 3000 },
+      ] as PromptScan['injected_files'],
+      total_injected_tokens: 3000,
+      evidence_report: evidenceReport,
+    };
+    const ctx = buildContext(scan, baseUsage, [makeTurnMetric({ turnIndex: 0 })]);
+    const rec = lowValueInjectedFilesRule.evaluate(ctx);
+
+    expect(rec).not.toBeNull();
+    // Base 0.65 + unverified 0.10 + share>=0.40 (100%) 0.10 = 0.85
+    expect(rec!.confidence).toBeGreaterThanOrEqual(0.85);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Integration: MVP_RULES with evaluate
+// ---------------------------------------------------------------------------
+
+describe('MVP rules integration', () => {
+  it('returns healthy for a clean short session', () => {
+    const metrics = [
+      makeTurnMetric({ turnIndex: 0, total_context_tokens: 10_000, cache_read_tokens: 1000, input_tokens: 3000, output_tokens: 2000, cache_create_tokens: 500 }),
+      makeTurnMetric({ turnIndex: 1, total_context_tokens: 15_000, cache_read_tokens: 2000, input_tokens: 3000, output_tokens: 2500, cache_create_tokens: 500 }),
+    ];
+    const ctx = buildContext(baseScan, baseUsage, metrics, emptyMcp);
+    const result = evaluate(ctx, MVP_RULES);
+
+    expect(result.summary.sessionHealth).toBe('healthy');
+    expect(result.primary).toBeNull();
+  });
+
+  it('detects multiple issues and ranks correctly', () => {
+    // High context (92%) + long session (15 turns) + high cache (90%+)
+    const metrics = Array.from({ length: 15 }, (_, i) =>
+      makeTurnMetric({
+        turnIndex: i,
+        total_context_tokens: 180_000 + i * 500,
+        cache_read_tokens: 9500,
+        input_tokens: 200,
+        output_tokens: 100,
+        cache_create_tokens: 100,
+      }),
+    );
+    const ctx = buildContext(baseScan, baseUsage, metrics, emptyMcp);
+    const result = evaluate(ctx, MVP_RULES);
+
+    // Should fire multiple rules
+    expect(result.all.length).toBeGreaterThan(1);
+    // Primary should be the highest severity+confidence (compact-now or cache-explosion)
+    expect(['compact-now', 'cache-explosion']).toContain(result.primary!.id);
+    expect(result.summary.sessionHealth).not.toBe('healthy');
+  });
+
+  it('handles missing data gracefully (null usage, empty metrics)', () => {
+    const ctx = buildContext(baseScan, null, [], emptyMcp);
+    const result = evaluate(ctx, MVP_RULES);
+
+    // No rule should crash
+    expect(result.summary.sessionHealth).toBe('healthy');
   });
 });
