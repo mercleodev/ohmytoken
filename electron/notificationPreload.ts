@@ -66,6 +66,10 @@ contextBridge.exposeInMainWorld("api", {
   getSessionTurnMetrics: (sessionId: string) =>
     ipcRenderer.invoke("get-session-turn-metrics", sessionId),
 
+  // Batch fetch for guardrail engine (turnMetrics + mcpAnalysis in one round-trip)
+  getGuardrailContext: (sessionId: string) =>
+    ipcRenderer.invoke("get-guardrail-context", sessionId),
+
   // Navigate to prompt detail (sends to main window via main process)
   navigateToPromptFromNotification: (scan: unknown, usage: unknown) => {
     ipcRenderer.send("notification-navigate-to-prompt", { scan, usage });

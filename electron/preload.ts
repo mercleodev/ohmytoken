@@ -191,6 +191,9 @@ const api = {
     sessionId: string,
   ) => ipcRenderer.invoke('get-session-mcp-analysis', sessionId),
 
+  getGuardrailContext: (sessionId: string) =>
+    ipcRenderer.invoke('get-guardrail-context', sessionId),
+
   // Evidence Scoring API
   getEvidenceReport: (
     requestId: string,

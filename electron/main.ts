@@ -1814,6 +1814,24 @@ const setupIPC = (): void => {
     }
   });
 
+  // === Guardrail Engine IPC ===
+
+  ipcMain.handle("get-guardrail-context", async (_event, sessionId: string) => {
+    try {
+      const [turnMetrics, mcpAnalysis] = await Promise.all([
+        dbReader.getSessionTurnMetrics(sessionId),
+        dbReader.getSessionMcpAnalysis(sessionId),
+      ]);
+      return { turnMetrics, mcpAnalysis };
+    } catch (error) {
+      console.error("get-guardrail-context error:", error);
+      return {
+        turnMetrics: [],
+        mcpAnalysis: { totalToolCalls: 0, mcpCalls: 0, toolResultTokens: 0, toolBreakdown: {}, redundantPatterns: [] },
+      };
+    }
+  });
+
   // === Evidence Scoring IPC ===
 
   ipcMain.handle("get-evidence-report", async (_event, requestId: string) => {
