@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { PromptScan, UsageLogEntry, TurnMetric } from '../../types/electron';
 import type { PromptNotification, ActivityLine } from './types';
+import type { GuardrailAssessment } from '../../guardrails/types';
 import { getSessionAlerts } from '../../utils/sessionAlerts';
+import { buildContext } from '../../guardrails/buildContext';
+import { evaluate } from '../../guardrails/engine';
+import { MVP_RULES } from '../../guardrails/rules';
 
 const AUTO_DISMISS_MS = 120_000;
 const MAX_VISIBLE = 5;
@@ -63,17 +67,24 @@ export const useNotificationManager = (
     // Skip scans older than 3 minutes — prevents stale DB data from creating ghost cards
     const scanAge = Date.now() - new Date(scan.timestamp).getTime();
     if (scanAge > 180_000) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dbg = (window.api as any).debugLog ?? console.log;
       dbg('[NotifMgr] Skipping stale scan: age=' + (scanAge / 1000).toFixed(0) + 's');
       return;
     }
 
-    // Fetch turn metrics for sparkline
+    // Fetch turn metrics + MCP analysis in one batch IPC call
     let turnMetrics: TurnMetric[] = [];
+    let guardrailAssessment: GuardrailAssessment | undefined;
     try {
-      turnMetrics = await window.api.getSessionTurnMetrics(scan.session_id);
+      const batch = await window.api.getGuardrailContext(scan.session_id);
+      turnMetrics = batch.turnMetrics;
+
+      // Compute guardrail assessment
+      const ctx = buildContext(scan, usage, batch.turnMetrics, batch.mcpAnalysis);
+      guardrailAssessment = evaluate(ctx, MVP_RULES);
     } catch {
-      // Best-effort: sparkline won't show if metrics unavailable
+      // Best-effort: sparkline and guardrails won't show if batch IPC fails
     }
 
     // Compute session alerts
@@ -106,6 +117,7 @@ export const useNotificationManager = (
       turnMetrics,
       alerts,
       activityLog: [],
+      guardrailAssessment,
     };
 
     setNotifications((prev) => {
@@ -225,12 +237,16 @@ export const useNotificationManager = (
       projectFolder: data.projectFolder,
     };
 
-    // Async: fetch turn metrics for sparkline (best-effort, won't block card creation)
-    window.api.getSessionTurnMetrics?.(data.sessionId)
-      .then((metrics: TurnMetric[]) => {
-        if (metrics.length > 0) {
+    // Async: fetch turn metrics + guardrail assessment (best-effort, won't block card creation)
+    window.api.getGuardrailContext(data.sessionId)
+      .then((batch) => {
+        if (batch.turnMetrics.length > 0) {
+          const partialCtx = buildContext(partialScan, streamingUsage, batch.turnMetrics, batch.mcpAnalysis);
+          const assessment = evaluate(partialCtx, MVP_RULES);
           setNotifications((prev) =>
-            prev.map((n) => n.id === streamingId ? { ...n, turnMetrics: metrics } : n),
+            prev.map((n) => n.id === streamingId
+              ? { ...n, turnMetrics: batch.turnMetrics, guardrailAssessment: assessment }
+              : n),
           );
         }
       })
@@ -359,6 +375,7 @@ export const useNotificationManager = (
   useEffect(() => {
     if (!enabled) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dbg = (window.api as any).debugLog ?? console.log;
     dbg('[NotifMgr] Registering IPC listeners, enabled: ' + enabled);
 
@@ -381,6 +398,7 @@ export const useNotificationManager = (
     });
 
     // Real-time activity feed (tool_use, text, thinking)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cleanupActivity = (window.api as any).onSessionActivity?.((data: any) => {
       appendActivity(data);
     });
