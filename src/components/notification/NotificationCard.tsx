@@ -253,13 +253,41 @@ const CtxSparkline = ({ turnMetrics, model }: { turnMetrics: PromptNotification[
     const currPct = contextLimit > 0 ? (curr.total_context_tokens / contextLimit) * 100 : 0;
     const delta = currPct - prevPct;
     const color = delta > 10 ? '#FF3B30' : delta > 3 ? '#FF9500' : '#30D158';
-    return { data, prevPct, currPct, delta, color };
+
+    // Per-turn cost data
+    const costData = turnMetrics.map((t) => t.cost_usd);
+    const totalSessionCost = costData.reduce((s, c) => s + c, 0);
+    const currTurnCost = curr.cost_usd;
+
+    // Output token trend
+    const outputData = turnMetrics.map((t) => t.output_tokens);
+    const currOutput = curr.output_tokens;
+
+    // Cache efficiency (cache_read / total_input)
+    const currCacheRead = curr.cache_read_tokens;
+    const currTotalInput = curr.input_tokens + curr.cache_read_tokens + curr.cache_create_tokens;
+    const cacheHitPct = currTotalInput > 0 ? (currCacheRead / currTotalInput) * 100 : 0;
+
+    return {
+      data, prevPct, currPct, delta, color,
+      costData, totalSessionCost, currTurnCost,
+      outputData, currOutput,
+      cacheHitPct,
+      currTokens: curr.total_context_tokens,
+    };
   }, [turnMetrics, contextLimit]);
 
   if (!sparkData) return null;
 
+  const formatTokensShort = (n: number) => {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+    if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+    return String(n);
+  };
+
   return (
     <div className="notif-sparkline-section">
+      {/* Context growth chart */}
       <div className="notif-sparkline-header">
         <span className="notif-sparkline-title">
           Context · Turn {turnMetrics.length}
@@ -270,6 +298,7 @@ const CtxSparkline = ({ turnMetrics, model }: { turnMetrics: PromptNotification[
           <span className={`notif-ctx-curr ${sparkData.currPct >= 80 ? 'notif-ctx-warn' : ''}`}>
             {sparkData.currPct.toFixed(0)}%
           </span>
+          <span className="notif-ctx-abs">{formatTokensShort(sparkData.currTokens)}</span>
           {sparkData.delta > 0 && (
             <span className="notif-ctx-delta">+{sparkData.delta.toFixed(0)}</span>
           )}
@@ -280,11 +309,78 @@ const CtxSparkline = ({ turnMetrics, model }: { turnMetrics: PromptNotification[
         color={sparkData.color}
         fillColor={`${sparkData.color}15`}
         width={272}
-        height={28}
+        height={32}
         highlightLastTwo
         threshold={contextLimit > 0 ? contextLimit * 0.8 : undefined}
-        thresholdLabel="compact"
+        thresholdLabel={contextLimit > 0 ? `compact ${formatTokensShort(contextLimit * 0.8)}` : undefined}
+        showCurrentValue
+        formatValue={formatTokensShort}
       />
+
+      {/* Cost trend chart */}
+      {sparkData.costData.length >= 2 && (
+        <>
+          <div className="notif-sparkline-header notif-sparkline-header--sub">
+            <span className="notif-sparkline-title">Cost / Turn</span>
+            <span className="notif-sparkline-compare">
+              <span className="notif-ctx-abs">${sparkData.currTurnCost.toFixed(3)}</span>
+              <span className="notif-ctx-total">session ${sparkData.totalSessionCost.toFixed(3)}</span>
+            </span>
+          </div>
+          <MiniSparkline
+            data={sparkData.costData}
+            color="#FFD60A"
+            fillColor="rgba(255, 214, 10, 0.1)"
+            width={272}
+            height={24}
+            showCurrentValue
+            formatValue={(v) => `$${v.toFixed(3)}`}
+          />
+        </>
+      )}
+
+      {/* Output tokens trend chart */}
+      {sparkData.outputData.length >= 2 && (
+        <>
+          <div className="notif-sparkline-header notif-sparkline-header--sub">
+            <span className="notif-sparkline-title">Output Tokens</span>
+            <span className="notif-sparkline-compare">
+              <span className="notif-ctx-abs">{formatTokensShort(sparkData.currOutput)}</span>
+            </span>
+          </div>
+          <MiniSparkline
+            data={sparkData.outputData}
+            color="#64D2FF"
+            fillColor="rgba(100, 210, 255, 0.1)"
+            width={272}
+            height={24}
+            showCurrentValue
+            formatValue={formatTokensShort}
+          />
+        </>
+      )}
+
+      {/* Cache hit rate badge */}
+      <div className="notif-sparkline-stats">
+        <span className="notif-spark-stat">
+          <span className="notif-spark-stat-label">Cache Hit</span>
+          <span className={`notif-spark-stat-value ${sparkData.cacheHitPct >= 70 ? 'notif-spark-stat--good' : sparkData.cacheHitPct >= 40 ? 'notif-spark-stat--mid' : 'notif-spark-stat--low'}`}>
+            {sparkData.cacheHitPct.toFixed(0)}%
+          </span>
+        </span>
+        {contextLimit > 0 && (
+          <span className="notif-spark-stat">
+            <span className="notif-spark-stat-label">Limit</span>
+            <span className="notif-spark-stat-value">{formatTokensShort(contextLimit)}</span>
+          </span>
+        )}
+        <span className="notif-spark-stat">
+          <span className="notif-spark-stat-label">Avg Cost</span>
+          <span className="notif-spark-stat-value">
+            ${(sparkData.totalSessionCost / turnMetrics.length).toFixed(3)}
+          </span>
+        </span>
+      </div>
     </div>
   );
 };

@@ -454,6 +454,59 @@
   margin-left: 2px;
 }
 
+.notif-ctx-abs {
+  font-size: 8px;
+  color: #aeaeb2;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-left: 2px;
+}
+
+.notif-ctx-total {
+  font-size: 7px;
+  color: #636366;
+  margin-left: 4px;
+}
+
+.notif-sparkline-header--sub {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.notif-sparkline-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.notif-spark-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.notif-spark-stat-label {
+  font-size: 7px;
+  color: #636366;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.notif-spark-stat-value {
+  font-size: 9px;
+  color: #aeaeb2;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.notif-spark-stat--good { color: #30D158; }
+.notif-spark-stat--mid { color: #FFD60A; }
+.notif-spark-stat--low { color: #FF453A; }
+
 /* ── Metrics Row ── */
 .notif-metrics-row {
   display: flex;

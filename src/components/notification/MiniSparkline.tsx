@@ -12,6 +12,10 @@ type Props = {
   threshold?: number;
   /** Label for the threshold line */
   thresholdLabel?: string;
+  /** Show the current (last) value label on the chart */
+  showCurrentValue?: boolean;
+  /** Format function for the current value label */
+  formatValue?: (v: number) => string;
 };
 
 const THRESHOLD_COLOR = '#FF9500';
@@ -25,6 +29,8 @@ export const MiniSparkline = ({
   highlightLastTwo = false,
   threshold,
   thresholdLabel,
+  showCurrentValue = false,
+  formatValue,
 }: Props) => {
   const computed = useMemo(() => {
     if (data.length < 2) return null;
@@ -122,6 +128,20 @@ export const MiniSparkline = ({
       ) : (
         /* Default: just latest point dot */
         <circle cx={points[lastIdx].x} cy={points[lastIdx].y} r={2.5} fill={color} />
+      )}
+
+      {/* Current value label near the last data point */}
+      {showCurrentValue && data.length > 0 && (
+        <text
+          x={Math.min(points[lastIdx].x, width - padding - 2)}
+          y={Math.max(points[lastIdx].y - 5, 9)}
+          textAnchor="end"
+          fill={color}
+          fontSize={8}
+          fontWeight={600}
+        >
+          {formatValue ? formatValue(data[data.length - 1]) : data[data.length - 1].toLocaleString()}
+        </text>
       )}
     </svg>
   );

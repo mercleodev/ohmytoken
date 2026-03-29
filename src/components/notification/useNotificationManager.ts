@@ -6,6 +6,7 @@ import { getSessionAlerts } from '../../utils/sessionAlerts';
 const AUTO_DISMISS_MS = 120_000;
 const MAX_VISIBLE = 5;
 const MAX_ACTIVITY_LINES = 50;
+const COMPLETE_DEBOUNCE_MS = 3_000;
 
 type NavigateCallback = (scan: PromptScan, usage: UsageLogEntry | null) => void;
 
@@ -17,6 +18,7 @@ export const useNotificationManager = (
 ) => {
   const [notifications, setNotifications] = useState<PromptNotification[]>([]);
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const completeDebounceRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Start auto-dismiss timer for a notification
   const startDismissTimer = useCallback((id: string) => {
@@ -253,35 +255,53 @@ export const useNotificationManager = (
   }, [enabled]);
 
   // Mark streaming notifications as completed when AssistantTurn arrives.
-  // Start auto-dismiss timer — if a new tool_use activity arrives later,
-  // appendActivity() will cancel the timer and revert to streaming.
-  // Safety: only mark completed if the card has actual content (activity log
-  // entries or response data). Prevents empty "Done" flicker when token_count
-  // fires before any real response arrives.
+  // Uses a debounce: waits COMPLETE_DEBOUNCE_MS before marking as completed.
+  // If a new tool_use activity arrives during the debounce window, the completion
+  // is cancelled — this prevents premature "Done" when Claude sends a text message
+  // followed by tool calls in separate assistant turns.
   const completeStreaming = useCallback((data: { sessionId: string; model?: string }) => {
+    // Update model immediately (non-destructive)
     setNotifications((prev) =>
       prev.map((n) => {
-        if (n.status === 'streaming' && n.scan.session_id === data.sessionId) {
-          const hasContent = n.activityLog.length > 0 || Boolean(n.scan.assistant_response?.trim());
-          return {
-            ...n,
-            status: hasContent ? 'completed' as const : 'streaming' as const,
-            completedAt: hasContent ? Date.now() : null,
-            scan: { ...n.scan, model: data.model ?? n.scan.model },
-          };
+        if (n.scan.session_id === data.sessionId) {
+          return { ...n, scan: { ...n.scan, model: data.model ?? n.scan.model } };
         }
         return n;
       }),
     );
-    // Start auto-dismiss for newly completed notifications
-    setNotifications((prev) => {
-      for (const n of prev) {
-        if (n.status === 'completed' && n.scan.session_id === data.sessionId && !timersRef.current.has(n.id)) {
-          startDismissTimer(n.id);
+
+    // Cancel any existing debounce for this session
+    const existingDebounce = completeDebounceRef.current.get(data.sessionId);
+    if (existingDebounce) clearTimeout(existingDebounce);
+
+    // Schedule completion after debounce
+    const debounceTimer = setTimeout(() => {
+      completeDebounceRef.current.delete(data.sessionId);
+      setNotifications((prev) =>
+        prev.map((n) => {
+          if (n.status === 'streaming' && n.scan.session_id === data.sessionId) {
+            const hasContent = n.activityLog.length > 0 || Boolean(n.scan.assistant_response?.trim());
+            return {
+              ...n,
+              status: hasContent ? 'completed' as const : 'streaming' as const,
+              completedAt: hasContent ? Date.now() : null,
+            };
+          }
+          return n;
+        }),
+      );
+      // Start auto-dismiss for newly completed notifications
+      setNotifications((prev) => {
+        for (const n of prev) {
+          if (n.status === 'completed' && n.scan.session_id === data.sessionId && !timersRef.current.has(n.id)) {
+            startDismissTimer(n.id);
+          }
         }
-      }
-      return prev;
-    });
+        return prev;
+      });
+    }, COMPLETE_DEBOUNCE_MS);
+
+    completeDebounceRef.current.set(data.sessionId, debounceTimer);
   }, [startDismissTimer]);
 
   // Append activity line to matching session's notification
@@ -306,6 +326,14 @@ export const useNotificationManager = (
           const log = [...n.activityLog, line].slice(-MAX_ACTIVITY_LINES);
           // If a tool_use activity arrives on a "completed" card, revert to streaming
           // — this handles premature completion from text-only assistant messages
+          // Cancel pending completion debounce if tool_use arrives
+          if (data.kind === 'tool_use') {
+            const pendingComplete = completeDebounceRef.current.get(data.sessionId);
+            if (pendingComplete) {
+              clearTimeout(pendingComplete);
+              completeDebounceRef.current.delete(data.sessionId);
+            }
+          }
           const shouldRestream =
             n.status === 'completed' && data.kind === 'tool_use';
           if (shouldRestream) {
@@ -370,6 +398,8 @@ export const useNotificationManager = (
     return () => {
       timersRef.current.forEach((timer) => clearTimeout(timer));
       timersRef.current.clear();
+      completeDebounceRef.current.forEach((timer) => clearTimeout(timer));
+      completeDebounceRef.current.clear();
     };
   }, []);
 
