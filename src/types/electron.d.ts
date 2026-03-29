@@ -339,6 +339,12 @@ export type ElectronApi = {
   getMcpInsights: (period: 'today' | '7d' | '30d', provider?: string) => Promise<McpInsightsResult>;
   getSessionMcpAnalysis: (sessionId: string) => Promise<SessionMcpAnalysis>;
 
+  // Guardrail Engine API (batch fetch)
+  getGuardrailContext: (sessionId: string) => Promise<{
+    turnMetrics: TurnMetric[];
+    mcpAnalysis: SessionMcpAnalysis;
+  }>;
+
   // Evidence Scoring API
   getEvidenceReport: (requestId: string) => Promise<EvidenceReport | null>;
   getEvidenceConfig: () => Promise<EvidenceEngineConfig>;

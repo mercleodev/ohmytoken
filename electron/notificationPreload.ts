@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Preload script for the notification overlay window.
  * Exposes only the APIs needed by the notification UI.
@@ -65,6 +66,10 @@ contextBridge.exposeInMainWorld("api", {
   // Fetch turn metrics for sparkline
   getSessionTurnMetrics: (sessionId: string) =>
     ipcRenderer.invoke("get-session-turn-metrics", sessionId),
+
+  // Batch fetch for guardrail engine (turnMetrics + mcpAnalysis in one round-trip)
+  getGuardrailContext: (sessionId: string) =>
+    ipcRenderer.invoke("get-guardrail-context", sessionId),
 
   // Navigate to prompt detail (sends to main window via main process)
   navigateToPromptFromNotification: (scan: unknown, usage: unknown) => {

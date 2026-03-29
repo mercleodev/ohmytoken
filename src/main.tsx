@@ -485,6 +485,19 @@ if (!window.api) {
       redundantPatterns: [],
     }),
 
+    // Guardrail Engine Mock API
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getGuardrailContext: async (_sessionId: string) => ({
+      turnMetrics: [],
+      mcpAnalysis: {
+        totalToolCalls: 0,
+        mcpCalls: 0,
+        toolResultTokens: 0,
+        toolBreakdown: {},
+        redundantPatterns: [],
+      },
+    }),
+
     // Evidence Scoring Mock API
     getEvidenceReport: async () => null,
     getEvidenceConfig: async () => ({

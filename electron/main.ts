@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars, no-control-regex */
 import { app, BrowserWindow, ipcMain, globalShortcut } from "electron";
 import * as path from "path";
 import * as fs from "fs";
@@ -1811,6 +1811,24 @@ const setupIPC = (): void => {
     } catch (error) {
       console.error("get-session-mcp-analysis error:", error);
       return { totalToolCalls: 0, mcpCalls: 0, toolResultTokens: 0, toolBreakdown: {}, redundantPatterns: [] };
+    }
+  });
+
+  // === Guardrail Engine IPC ===
+
+  ipcMain.handle("get-guardrail-context", async (_event, sessionId: string) => {
+    try {
+      const [turnMetrics, mcpAnalysis] = await Promise.all([
+        dbReader.getSessionTurnMetrics(sessionId),
+        dbReader.getSessionMcpAnalysis(sessionId),
+      ]);
+      return { turnMetrics, mcpAnalysis };
+    } catch (error) {
+      console.error("get-guardrail-context error:", error);
+      return {
+        turnMetrics: [],
+        mcpAnalysis: { totalToolCalls: 0, mcpCalls: 0, toolResultTokens: 0, toolBreakdown: {}, redundantPatterns: [] },
+      };
     }
   });
 
