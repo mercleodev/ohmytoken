@@ -3,6 +3,13 @@ import { motion } from 'framer-motion';
 import type { PromptNotification, ActivityLine } from './types';
 import { MiniSparkline } from './MiniSparkline';
 import { getContextLimit } from '../scan/shared';
+import {
+  getSeverityColor,
+  getSeverityIcon,
+  formatSavings,
+  getVisibleRecommendations,
+  getHealthLabel,
+} from './guardrailCardHelpers';
 
 type Props = {
   notification: PromptNotification;
@@ -385,6 +392,64 @@ const CtxSparkline = ({ turnMetrics, model }: { turnMetrics: PromptNotification[
   );
 };
 
+// ── Guardrail Recommendations Section ──
+
+const GuardrailSection = ({ notification }: { notification: PromptNotification }) => {
+  const { guardrailAssessment } = notification;
+  const { primary, secondary } = getVisibleRecommendations(guardrailAssessment);
+  const healthLabel = getHealthLabel(guardrailAssessment);
+
+  if (!primary && secondary.length === 0) return null;
+
+  return (
+    <div className="notif-guardrail-section">
+      {/* Session health badge */}
+      {healthLabel && healthLabel !== 'Healthy' && (
+        <div className={`notif-guardrail-health notif-guardrail-health--${guardrailAssessment!.summary.sessionHealth}`}>
+          {healthLabel}
+        </div>
+      )}
+
+      {/* Primary recommendation banner */}
+      {primary && (
+        <div
+          className="notif-guardrail-primary"
+          style={{ borderLeftColor: getSeverityColor(primary.severity) }}
+        >
+          <div className="notif-guardrail-primary-header">
+            <span className="notif-guardrail-icon">{getSeverityIcon(primary.severity)}</span>
+            <span className="notif-guardrail-title">{primary.title}</span>
+          </div>
+          <div className="notif-guardrail-reason">{primary.reason}</div>
+          <div className="notif-guardrail-action">{primary.action}</div>
+          {primary.estimatedSavings && (
+            <div className="notif-guardrail-savings">
+              {formatSavings(primary.estimatedSavings)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Secondary recommendation chips */}
+      {secondary.length > 0 && (
+        <div className="notif-guardrail-chips">
+          {secondary.map((rec) => (
+            <div
+              key={rec.id}
+              className="notif-guardrail-chip"
+              style={{ borderColor: getSeverityColor(rec.severity) }}
+              title={`${rec.reason}\n${rec.action}`}
+            >
+              <span className="notif-guardrail-chip-icon">{getSeverityIcon(rec.severity)}</span>
+              <span className="notif-guardrail-chip-text">{rec.title}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Main Component ──
 
 const AUTO_DISMISS_MS = 120_000;
@@ -474,6 +539,9 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
       <div className="notif-prompt-text">
         {truncate(scan.user_prompt || '(empty prompt)', 80)}
       </div>
+
+      {/* ── Guardrail Recommendations (shown when available) ── */}
+      <GuardrailSection notification={notification} />
 
       {/* ── 1. Context Files (always visible) ── */}
       <ContextFilesSection files={scan.injected_files ?? []} />
