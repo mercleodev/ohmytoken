@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Preload script for the notification overlay window.
  * Exposes only the APIs needed by the notification UI.

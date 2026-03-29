@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars, no-control-regex */
 import { app, BrowserWindow, ipcMain, globalShortcut } from "electron";
 import * as path from "path";
 import * as fs from "fs";
