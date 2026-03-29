@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import type { PromptScan } from "../../../types";
+import type { PromptScan, UsageLogEntry } from "../../../types";
+import type { GuardrailAssessment } from "../../../guardrails/types";
+import { buildContext } from "../../../guardrails/buildContext";
+import { evaluate } from "../../../guardrails/engine";
+import { MVP_RULES } from "../../../guardrails/rules";
 import {
   CONTINUATION_PROMPT_MARKER,
   SESSION_SCAN_DEDUP_MS,
@@ -10,6 +14,7 @@ import {
 type UsePromptDetailReturn = {
   enrichedScan: PromptScan;
   sessionCompactions: number | null;
+  guardrailAssessment: GuardrailAssessment | undefined;
   handleRescore: () => Promise<void>;
 };
 
@@ -29,9 +34,10 @@ const isIncompleteScan = (s: PromptScan): boolean => {
   return missingBreakdown || missingApiMeta;
 };
 
-export function usePromptDetail(scan: PromptScan): UsePromptDetailReturn {
+export function usePromptDetail(scan: PromptScan, usage?: UsageLogEntry | null): UsePromptDetailReturn {
   const [enrichedScan, setEnrichedScan] = useState<PromptScan>(scan);
   const [sessionCompactions, setSessionCompactions] = useState<number | null>(null);
+  const [guardrailAssessment, setGuardrailAssessment] = useState<GuardrailAssessment | undefined>();
 
   // Enrich incomplete batch-imported scans with full JSONL data
   useEffect(() => {
@@ -178,6 +184,27 @@ export function usePromptDetail(scan: PromptScan): UsePromptDetailReturn {
     };
   }, [scan.request_id, scan.session_id, scan.timestamp]);
 
+  // Compute guardrail assessment via batch IPC
+  useEffect(() => {
+    if (!scan.session_id) return;
+    let cancelled = false;
+
+    const computeAssessment = async () => {
+      try {
+        const batch = await window.api.getGuardrailContext(scan.session_id);
+        if (cancelled) return;
+        const ctx = buildContext(scan, usage ?? null, batch.turnMetrics, batch.mcpAnalysis);
+        const assessment = evaluate(ctx, MVP_RULES);
+        setGuardrailAssessment(assessment);
+      } catch {
+        // Best-effort: guardrail summary won't show if IPC fails
+      }
+    };
+
+    computeAssessment();
+    return () => { cancelled = true; };
+  }, [scan.request_id, scan.session_id, usage]);
+
   const handleRescore = useCallback(async () => {
     const report = await window.api?.rescoreEvidence?.(scan.request_id);
     if (report) {
@@ -185,5 +212,5 @@ export function usePromptDetail(scan: PromptScan): UsePromptDetailReturn {
     }
   }, [scan.request_id]);
 
-  return { enrichedScan, sessionCompactions, handleRescore };
+  return { enrichedScan, sessionCompactions, guardrailAssessment, handleRescore };
 }
