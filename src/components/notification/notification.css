@@ -146,6 +146,119 @@
   -webkit-box-orient: vertical;
 }
 
+/* ── Guardrail Recommendations ── */
+.notif-guardrail-section {
+  margin-bottom: 6px;
+}
+
+.notif-guardrail-health {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  width: fit-content;
+  margin-bottom: 4px;
+}
+
+.notif-guardrail-health--watch {
+  background: rgba(255, 149, 0, 0.12);
+  color: #FF9500;
+}
+
+.notif-guardrail-health--risky {
+  background: rgba(255, 59, 48, 0.12);
+  color: #FF3B30;
+}
+
+.notif-guardrail-primary {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-left: 3px solid;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+}
+
+.notif-guardrail-primary-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.notif-guardrail-icon {
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.notif-guardrail-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notif-guardrail-reason {
+  font-size: 9px;
+  color: #aeaeb2;
+  line-height: 1.3;
+  margin-bottom: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notif-guardrail-action {
+  font-size: 9px;
+  color: #5AC8FA;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.notif-guardrail-savings {
+  font-size: 8px;
+  color: #30D158;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.notif-guardrail-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.notif-guardrail-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border: 1px solid;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  cursor: default;
+}
+
+.notif-guardrail-chip-icon {
+  font-size: 8px;
+  flex-shrink: 0;
+}
+
+.notif-guardrail-chip-text {
+  font-size: 8px;
+  color: #aeaeb2;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
 /* ── Shared Section Style ── */
 .notif-section {
   margin-bottom: 6px;
