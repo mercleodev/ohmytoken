@@ -4,6 +4,7 @@ import type { GuardrailAssessment } from "../../../guardrails/types";
 import { buildContext } from "../../../guardrails/buildContext";
 import { evaluate } from "../../../guardrails/engine";
 import { MVP_RULES } from "../../../guardrails/rules";
+import { FEATURE_FLAGS } from "../../../config/featureFlags";
 import {
   CONTINUATION_PROMPT_MARKER,
   SESSION_SCAN_DEDUP_MS,
@@ -186,6 +187,7 @@ export function usePromptDetail(scan: PromptScan, usage?: UsageLogEntry | null):
 
   // Compute guardrail assessment via batch IPC
   useEffect(() => {
+    if (!FEATURE_FLAGS.GUARDRAILS) return;
     if (!scan.session_id) return;
     let cancelled = false;
 

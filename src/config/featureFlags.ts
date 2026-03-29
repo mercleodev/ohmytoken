@@ -10,4 +10,7 @@ export const FEATURE_FLAGS = {
 
   /** Output Productivity card on UsageView */
   OUTPUT_PRODUCTIVITY: false,
+
+  /** Guardrail engine — session recommendations on notification cards + prompt detail */
+  GUARDRAILS: import.meta.env.DEV as boolean,
 } as const;

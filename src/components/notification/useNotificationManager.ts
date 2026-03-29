@@ -6,6 +6,7 @@ import { getSessionAlerts } from '../../utils/sessionAlerts';
 import { buildContext } from '../../guardrails/buildContext';
 import { evaluate } from '../../guardrails/engine';
 import { MVP_RULES } from '../../guardrails/rules';
+import { FEATURE_FLAGS } from '../../config/featureFlags';
 
 const AUTO_DISMISS_MS = 120_000;
 const MAX_VISIBLE = 5;
@@ -80,9 +81,11 @@ export const useNotificationManager = (
       const batch = await window.api.getGuardrailContext(scan.session_id);
       turnMetrics = batch.turnMetrics;
 
-      // Compute guardrail assessment
-      const ctx = buildContext(scan, usage, batch.turnMetrics, batch.mcpAnalysis);
-      guardrailAssessment = evaluate(ctx, MVP_RULES);
+      // Compute guardrail assessment (only when feature flag is enabled)
+      if (FEATURE_FLAGS.GUARDRAILS) {
+        const ctx = buildContext(scan, usage, batch.turnMetrics, batch.mcpAnalysis);
+        guardrailAssessment = evaluate(ctx, MVP_RULES);
+      }
     } catch {
       // Best-effort: sparkline and guardrails won't show if batch IPC fails
     }
@@ -241,8 +244,9 @@ export const useNotificationManager = (
     window.api.getGuardrailContext(data.sessionId)
       .then((batch) => {
         if (batch.turnMetrics.length > 0) {
-          const partialCtx = buildContext(partialScan, streamingUsage, batch.turnMetrics, batch.mcpAnalysis);
-          const assessment = evaluate(partialCtx, MVP_RULES);
+          const assessment = FEATURE_FLAGS.GUARDRAILS
+            ? evaluate(buildContext(partialScan, streamingUsage, batch.turnMetrics, batch.mcpAnalysis), MVP_RULES)
+            : undefined;
           setNotifications((prev) =>
             prev.map((n) => n.id === streamingId
               ? { ...n, turnMetrics: batch.turnMetrics, guardrailAssessment: assessment }
