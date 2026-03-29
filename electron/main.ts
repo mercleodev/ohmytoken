@@ -160,7 +160,6 @@ const createWindow = (): void => {
 };
 
 const NOTIFICATION_WIDTH = 346;
-const NOTIFICATION_HEIGHT = 900;
 const NOTIFICATION_MARGIN = 12;
 
 /** Find the target display based on saved settings (0/undefined = auto: largest external) */
@@ -186,22 +185,25 @@ const getNotificationDisplay = (): Electron.Display => {
 const repositionNotificationWindow = (): void => {
   if (!notificationWindow || notificationWindow.isDestroyed()) return;
   const targetDisplay = getNotificationDisplay();
-  const { x, y, width } = targetDisplay.workArea;
+  const { x, y, width, height } = targetDisplay.workArea;
   const newX = x + width - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN;
   const newY = y + NOTIFICATION_MARGIN;
-  console.log(`[NotificationWindow] Target: id=${targetDisplay.id} (${targetDisplay.bounds.width}x${targetDisplay.bounds.height}) → position (${newX}, ${newY})`);
+  const newHeight = height - NOTIFICATION_MARGIN * 2;
+  console.log(`[NotificationWindow] Target: id=${targetDisplay.id} (${targetDisplay.bounds.width}x${targetDisplay.bounds.height}) → position (${newX}, ${newY}) height=${newHeight}`);
   notificationWindow.setPosition(newX, newY);
+  notificationWindow.setSize(NOTIFICATION_WIDTH, newHeight);
 };
 
 const createNotificationWindow = (): void => {
   const targetDisplay = getNotificationDisplay();
-  const { x: displayX, width: screenWidth } = targetDisplay.workArea;
+  const { x: displayX, width: screenWidth, height: screenHeight, y: displayY } = targetDisplay.workArea;
+  const notificationHeight = screenHeight - NOTIFICATION_MARGIN * 2;
 
   notificationWindow = new BrowserWindow({
     width: NOTIFICATION_WIDTH,
-    height: NOTIFICATION_HEIGHT,
+    height: notificationHeight,
     x: displayX + screenWidth - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN,
-    y: targetDisplay.workArea.y + NOTIFICATION_MARGIN,
+    y: displayY + NOTIFICATION_MARGIN,
     resizable: false,
     movable: false,
     frame: false,
