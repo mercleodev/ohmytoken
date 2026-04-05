@@ -251,7 +251,11 @@ const ResponseSection = ({ text, streamingTexts, isStreaming }: {
 // ── Context Growth Sparkline ──
 
 const CtxSparkline = ({ turnMetrics, model }: { turnMetrics: PromptNotification['turnMetrics']; model: string }) => {
-  const contextLimit = getContextLimit(model);
+  const observedMax = useMemo(
+    () => Math.max(...turnMetrics.map((t) => t.total_context_tokens), 0),
+    [turnMetrics],
+  );
+  const contextLimit = getContextLimit(model, observedMax);
 
   const sparkData = useMemo(() => {
     if (turnMetrics.length < 2) return null;

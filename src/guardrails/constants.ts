@@ -56,6 +56,12 @@ const MODEL_CONTEXT_LIMITS: Record<string, number> = {
 
 export const DEFAULT_CONTEXT_LIMIT = 200_000;
 
-export function getContextLimit(model: string): number {
-  return MODEL_CONTEXT_LIMITS[model] ?? DEFAULT_CONTEXT_LIMIT;
+export function getContextLimit(model: string, observedMax?: number): number {
+  const staticLimit = MODEL_CONTEXT_LIMITS[model] ?? DEFAULT_CONTEXT_LIMIT;
+  // Auto-promote: if observed tokens exceed the static limit, bump to next tier
+  if (observedMax && observedMax > staticLimit) {
+    if (observedMax > 500_000) return 1_000_000;
+    if (observedMax > 200_000) return 500_000;
+  }
+  return staticLimit;
 }

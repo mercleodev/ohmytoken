@@ -75,10 +75,15 @@ export const setContextLimitOverride = (v: number) => {
 
 export const getContextLimitOverride = () => _contextLimitOverride;
 
-export const getContextLimit = (model: string): number => {
+export const getContextLimit = (model: string, observedMax?: number): number => {
   if (_contextLimitOverride > 0) return _contextLimitOverride;
-  if (MODEL_CONTEXT_LIMITS[model]) return MODEL_CONTEXT_LIMITS[model];
-  return DEFAULT_CONTEXT_LIMIT;
+  const staticLimit = MODEL_CONTEXT_LIMITS[model] ?? DEFAULT_CONTEXT_LIMIT;
+  // Auto-promote: if observed tokens exceed the static limit, bump to next tier
+  if (observedMax && observedMax > staticLimit) {
+    if (observedMax > 500_000) return 1_000_000;
+    if (observedMax > 200_000) return 500_000;
+  }
+  return staticLimit;
 };
 
 // Action (tool call) colors and helpers
