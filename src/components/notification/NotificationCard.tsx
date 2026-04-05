@@ -15,6 +15,8 @@ type Props = {
   notification: PromptNotification;
   onDismiss: (id: string) => void;
   onClick: (id: string) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 };
 
 // ── Helpers ──
@@ -454,7 +456,7 @@ const GuardrailSection = ({ notification }: { notification: PromptNotification }
 
 const AUTO_DISMISS_MS = 120_000;
 
-export const NotificationCard = ({ notification, onDismiss, onClick }: Props) => {
+export const NotificationCard = ({ notification, onDismiss, onClick, onMouseEnter, onMouseLeave }: Props) => {
   const { scan, usage, status, alerts, turnMetrics, activityLog } = notification;
   const provider = scan.provider ?? 'claude';
   const providerColor = PROVIDER_COLORS[provider] ?? '#8e8e93';
@@ -502,12 +504,23 @@ export const NotificationCard = ({ notification, onDismiss, onClick }: Props) =>
   return (
     <motion.div
       className={`notif-card ${isCompleted && !seen ? 'notif-card--completed' : ''} ${isCompleted && dismissProgress > 0.6 ? 'notif-card--fading' : ''}`}
-      onMouseEnter={() => { if (isCompleted) setSeen(true); }}
-      layout
-      initial={{ opacity: 0, x: 60, scale: 0.95 }}
-      animate={{ opacity: isCompleted ? 1 - dismissProgress * 0.5 : 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 60, scale: 0.95 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+      onMouseEnter={() => { onMouseEnter?.(); if (isCompleted) setSeen(true); }}
+      onMouseLeave={onMouseLeave}
+      layout="position"
+      initial={{ opacity: 0, y: 12, scale: 0.98 }}
+      animate={{
+        opacity: isCompleted ? 1 - dismissProgress * 0.5 : 1,
+        y: 0,
+        scale: 1,
+      }}
+      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+      transition={{
+        layout: { type: 'tween', ease: [0.25, 0.1, 0.25, 1], duration: 0.35 },
+        opacity: { type: 'tween', ease: 'easeOut', duration: 0.25 },
+        y: { type: 'tween', ease: [0.22, 1, 0.36, 1], duration: 0.4 },
+        scale: { type: 'tween', ease: [0.22, 1, 0.36, 1], duration: 0.4 },
+      }}
+      style={{ willChange: 'transform, opacity' }}
       onClick={() => onClick(notification.id)}
     >
       {/* ── Project folder label ── */}

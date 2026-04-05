@@ -46,19 +46,16 @@ export const NotificationOverlay = ({ enabled, onNavigateToPrompt }: Props) => {
 
   return (
     <div className="notif-overlay">
-      <AnimatePresence mode="sync">
+      <AnimatePresence mode="popLayout">
         {notifications.map((notif) => (
-          <div
+          <NotificationCard
             key={notif.id}
+            notification={notif}
+            onDismiss={dismiss}
+            onClick={handleClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-          >
-            <NotificationCard
-              notification={notif}
-              onDismiss={dismiss}
-              onClick={handleClick}
-            />
-          </div>
+          />
         ))}
       </AnimatePresence>
     </div>
