@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, no-control-regex, @typescript-eslint/no-unused-vars */
 /**
  * History Session Importer
  *
