@@ -14,6 +14,7 @@ export const VERY_LONG_SESSION_TURNS = 20;
 // Cache ratios
 export const CACHE_WARNING_PCT = 0.85;
 export const CACHE_CRITICAL_PCT = 0.95;
+export const CACHE_MIN_TURNS = 4; // Early turns have high cache read from system prompt — skip
 
 // Output efficiency
 export const LOW_OUTPUT_RATIO = 0.01;

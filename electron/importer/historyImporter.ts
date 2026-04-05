@@ -764,6 +764,10 @@ export const importSinglePrompt = (
 
     if (!assistantEntry?.message?.usage) return null;
 
+    // Skip cancelled/incomplete prompts with zero output tokens
+    const outputTokens = assistantEntry.message.usage.output_tokens ?? 0;
+    if (outputTokens === 0) return null;
+
     const userText = extractUserText(userEntry);
     if (!userText) return null;
 

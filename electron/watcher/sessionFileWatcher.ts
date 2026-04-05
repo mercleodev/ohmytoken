@@ -254,9 +254,12 @@ export const startSessionFileWatcher = (
             const hasToolUse = Array.isArray(raw.message.content) &&
               raw.message.content.some((b: any) => b.type === "tool_use");
 
+            // Skip cancelled/incomplete responses with zero output tokens
+            const assistantOutputTokens = raw.message?.usage?.output_tokens ?? 0;
+
             // Only emit AssistantTurn (complete) when there are NO tool_use blocks
-            // (meaning this is the final text response, not a mid-turn tool call)
-            if (!hasToolUse) {
+            // and the response actually produced output (not cancelled)
+            if (!hasToolUse && assistantOutputTokens > 0) {
               options.onTurn({
                 type: "assistant",
                 sessionId,

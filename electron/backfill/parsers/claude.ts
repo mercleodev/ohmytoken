@@ -233,8 +233,9 @@ export const parseClaudeSessionFile = (
     const cacheRead = usage.cache_read_input_tokens ?? 0;
     const cacheWrite = usage.cache_creation_input_tokens ?? 0;
 
-    // Skip entries with zero total tokens
-    if (inputTokens + outputTokens + cacheRead + cacheWrite === 0) continue;
+    // Skip cancelled/incomplete prompts (zero output or zero total tokens)
+    if (outputTokens === 0) continue;
+    if (inputTokens + cacheRead + cacheWrite === 0) continue;
 
     const model = bestAssistant.message.model ?? "unknown";
 

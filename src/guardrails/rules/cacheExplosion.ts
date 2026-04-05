@@ -1,5 +1,5 @@
 import type { GuardrailRule, GuardrailContext, GuardrailRecommendation } from '../types';
-import { CACHE_WARNING_PCT, CACHE_CRITICAL_PCT } from '../constants';
+import { CACHE_WARNING_PCT, CACHE_CRITICAL_PCT, CACHE_MIN_TURNS } from '../constants';
 
 /**
  * cache-explosion: fires when cache read dominates total tokens.
@@ -14,6 +14,8 @@ export const cacheExplosionRule: GuardrailRule = {
     const { sessionCacheReadPct, turnCount } = ctx.derived;
     const { turnMetrics } = ctx;
 
+    // Early turns naturally have high cache read from system prompt/context — skip
+    if (turnCount < CACHE_MIN_TURNS) return null;
     if (sessionCacheReadPct < CACHE_WARNING_PCT) return null;
 
     // Dynamic confidence
