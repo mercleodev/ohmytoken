@@ -631,10 +631,19 @@ describe('cacheExplosion rule', () => {
     expect(cacheExplosionRule.evaluate(ctx)).toBeNull();
   });
 
-  it('fires warning at >= 85% cache read', () => {
+  it('does not fire on early turns even with high cache read', () => {
+    // Turn 1-3: high cache read is normal (system prompt loading)
     const metrics = [
-      makeTurnMetric({ turnIndex: 0, cache_read_tokens: 9000, input_tokens: 500, output_tokens: 200, cache_create_tokens: 100 }),
+      makeTurnMetric({ turnIndex: 0, cache_read_tokens: 9700, input_tokens: 100, output_tokens: 100, cache_create_tokens: 50 }),
     ];
+    const ctx = buildContext(baseScan, baseUsage, metrics);
+    expect(cacheExplosionRule.evaluate(ctx)).toBeNull();
+  });
+
+  it('fires warning at >= 85% cache read after enough turns', () => {
+    const metrics = Array.from({ length: 5 }, (_, i) =>
+      makeTurnMetric({ turnIndex: i, cache_read_tokens: 9000, input_tokens: 500, output_tokens: 200, cache_create_tokens: 100 }),
+    );
     const ctx = buildContext(baseScan, baseUsage, metrics);
     // 9000 / (9000+500+200+100) = 91.8% > 85%
     const rec = cacheExplosionRule.evaluate(ctx);
@@ -644,10 +653,10 @@ describe('cacheExplosion rule', () => {
     expect(rec!.severity).toBe('warning');
   });
 
-  it('fires critical at >= 95% cache read', () => {
-    const metrics = [
-      makeTurnMetric({ turnIndex: 0, cache_read_tokens: 9700, input_tokens: 100, output_tokens: 100, cache_create_tokens: 50 }),
-    ];
+  it('fires critical at >= 95% cache read after enough turns', () => {
+    const metrics = Array.from({ length: 5 }, (_, i) =>
+      makeTurnMetric({ turnIndex: i, cache_read_tokens: 9700, input_tokens: 100, output_tokens: 100, cache_create_tokens: 50 }),
+    );
     const ctx = buildContext(baseScan, baseUsage, metrics);
     // 9700 / (9700+100+100+50) = 97.5% > 95%
     const rec = cacheExplosionRule.evaluate(ctx);
