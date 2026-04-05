@@ -79,8 +79,9 @@ export function buildContext(
   turnMetrics: TurnMetric[],
   mcpAnalysis?: SessionMcpAnalysis,
 ): GuardrailContext {
-  const contextLimit = getContextLimit(scan.model);
   const len = turnMetrics.length;
+  const observedMax = len > 0 ? Math.max(...turnMetrics.map((t) => t.total_context_tokens)) : 0;
+  const contextLimit = getContextLimit(scan.model, observedMax);
 
   // Latest turn values
   const latest = len > 0 ? turnMetrics[len - 1] : null;
