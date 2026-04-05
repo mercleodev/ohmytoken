@@ -32,7 +32,7 @@
     0 8px 32px rgba(0, 0, 0, 0.4),
     0 2px 8px rgba(0, 0, 0, 0.2),
     inset 0 0.5px 0 rgba(255, 255, 255, 0.06);
-  transition: background 0.15s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .notif-card::-webkit-scrollbar {
@@ -44,7 +44,7 @@
 }
 
 .notif-card:active {
-  transform: scale(0.98);
+  /* scale handled by framer-motion — avoid CSS transform conflict */
 }
 
 /* ── Project Folder Label ── */
