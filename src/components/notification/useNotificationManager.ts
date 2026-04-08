@@ -107,8 +107,9 @@ export const useNotificationManager = (
     });
 
     const hasResponse = Boolean(scan.assistant_response?.trim());
-    const hasOutput = (usage?.response.output_tokens ?? 0) > 0;
-    const isCompleted = hasResponse || hasOutput;
+    // Output tokens alone can come from tool calls while the turn is still in progress.
+    // Only treat as completed when there's actual assistant response text.
+    const isCompleted = hasResponse;
 
     const notif: PromptNotification = {
       id: scan.request_id,
@@ -157,8 +158,15 @@ export const useNotificationManager = (
           };
         }
 
-        // Real scan data arrived from DB — mark as completed
-        // (overrides streaming status since we now have the actual response data)
+        // If the new scan has no response text, preserve existing card's status.
+        // This prevents overriding a streaming card with "completed" just because
+        // output_tokens > 0 from mid-turn tool calls.
+        // If existing was already completed (e.g. by completeStreaming with activity),
+        // preserve that completed status too.
+        if (!hasResponse) {
+          notif.status = existing.status;
+          notif.completedAt = existing.completedAt;
+        }
       }
       const filtered = prev.filter(
         (n) => n.id !== scan.request_id && n.scan.session_id !== scan.session_id,
