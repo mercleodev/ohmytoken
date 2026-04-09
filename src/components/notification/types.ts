@@ -1,4 +1,4 @@
-import type { PromptScan, UsageLogEntry, TurnMetric } from '../../types/electron';
+import type { PromptScan, UsageLogEntry, TurnMetric, HarnessCandidate } from '../../types/electron';
 import type { SessionAlert } from '../../utils/sessionAlerts';
 import type { GuardrailAssessment } from '../../guardrails/types';
 
@@ -24,4 +24,5 @@ export type PromptNotification = {
   activityLog: ActivityLine[];
   projectFolder?: string;
   guardrailAssessment?: GuardrailAssessment;
+  harnessCandidates?: HarnessCandidate[];
 };

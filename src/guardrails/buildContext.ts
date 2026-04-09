@@ -1,4 +1,4 @@
-import type { PromptScan, UsageLogEntry, TurnMetric, SessionMcpAnalysis } from '../types/electron';
+import type { PromptScan, UsageLogEntry, TurnMetric, SessionMcpAnalysis, HarnessCandidate } from '../types/electron';
 import type { GuardrailContext, EvidenceSummary } from './types';
 import { getContextLimit, COMPACTION_DROP_PCT } from './constants';
 
@@ -78,6 +78,7 @@ export function buildContext(
   usage: UsageLogEntry | null,
   turnMetrics: TurnMetric[],
   mcpAnalysis?: SessionMcpAnalysis,
+  harnessCandidates?: HarnessCandidate[],
 ): GuardrailContext {
   const len = turnMetrics.length;
   const observedMax = len > 0 ? Math.max(...turnMetrics.map((t) => t.total_context_tokens)) : 0;
@@ -114,6 +115,7 @@ export function buildContext(
     usage,
     turnMetrics,
     mcpAnalysis,
+    harnessCandidates,
     contextLimit,
     sessionCompactions: countSessionCompactions(turnMetrics),
     derived: {

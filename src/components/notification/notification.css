@@ -259,6 +259,122 @@
   max-width: 120px;
 }
 
+/* ── Workflow Insights Section ── */
+.notif-workflow-section {
+  margin: 4px 0 6px;
+  padding: 5px 6px;
+  background: rgba(88, 86, 214, 0.06);
+  border-radius: 5px;
+  border: 1px solid rgba(88, 86, 214, 0.12);
+}
+.notif-workflow-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.notif-workflow-header-icon {
+  font-size: 7px;
+  color: #5856d6;
+  line-height: 1;
+}
+.notif-workflow-header-title {
+  font-size: 8px;
+  font-weight: 600;
+  color: #c7c7cc;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.notif-workflow-header-count {
+  font-size: 7px;
+  font-weight: 700;
+  color: #5856d6;
+  background: rgba(88, 86, 214, 0.15);
+  border-radius: 6px;
+  padding: 0 4px;
+  line-height: 14px;
+}
+.notif-workflow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.notif-wf-item {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 4px 5px;
+}
+.notif-wf-item-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+.notif-wf-kind-badge {
+  font-size: 7px;
+  font-weight: 600;
+  color: #fff;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+.notif-wf-repeat {
+  font-size: 8px;
+  font-weight: 700;
+  color: #ff9f0a;
+}
+.notif-wf-sessions {
+  font-size: 7px;
+  color: #8e8e93;
+}
+.notif-wf-signature {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 2px;
+  overflow: hidden;
+}
+.notif-wf-tool-name {
+  font-size: 8px;
+  font-weight: 600;
+  color: #e5e5ea;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+.notif-wf-input {
+  font-size: 7.5px;
+  color: #aeaeb2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+.notif-wf-conf-bar {
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1px;
+  margin-bottom: 2px;
+  overflow: hidden;
+}
+.notif-wf-conf-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 0.3s ease;
+}
+.notif-wf-reason {
+  font-size: 7.5px;
+  color: #8e8e93;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ── Shared Section Style ── */
 .notif-section {
   margin-bottom: 6px;

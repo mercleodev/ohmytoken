@@ -194,6 +194,26 @@ const api = {
   getGuardrailContext: (sessionId: string) =>
     ipcRenderer.invoke('get-guardrail-context', sessionId),
 
+  getHarnessCandidates: (query?: {
+    sessionId?: string; provider?: string; period?: 'today' | '7d' | '30d'; limit?: number;
+  }) => ipcRenderer.invoke('get-harness-candidates', query),
+
+  previewWorkflowDraft: (candidate: {
+    toolName: string; inputSummary: string; candidateKind: string;
+    repeatCount: number; promptCount: number; sessionCount: number;
+    totalCostUsd: number; provider: string; sampleRequestIds?: string[];
+  }) => ipcRenderer.invoke('preview-workflow-draft', candidate),
+
+  exportWorkflowDraft: (options: {
+    suggestedPath: string; content: string; projectPath: string; overwrite?: boolean;
+  }) => ipcRenderer.invoke('export-workflow-draft', options),
+
+  recordWorkflowAction: (input: {
+    candidateId: string; requestId?: string; sessionId?: string; projectPath?: string;
+    actionType: 'previewed' | 'exported' | 'dismissed' | 'marked_adopted';
+    artifactKind?: string; artifactPath?: string;
+  }) => ipcRenderer.invoke('record-workflow-action', input),
+
   // Evidence Scoring API
   getEvidenceReport: (
     requestId: string,

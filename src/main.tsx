@@ -498,6 +498,12 @@ if (!window.api) {
       },
     }),
 
+    // Harness Candidate Mock API
+    getHarnessCandidates: async () => [],
+    previewWorkflowDraft: async () => null,
+    exportWorkflowDraft: async () => ({ success: false, exportedPath: '', overwritten: false, error: 'Mock mode' }),
+    recordWorkflowAction: async () => ({ success: false, error: 'Mock mode' }),
+
     // Evidence Scoring Mock API
     getEvidenceReport: async () => null,
     getEvidenceConfig: async () => ({

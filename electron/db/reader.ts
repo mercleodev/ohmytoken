@@ -1134,3 +1134,321 @@ export const getSessionMcpAnalysis = (sessionId: string): SessionMcpAnalysis => 
     redundantPatterns,
   };
 };
+
+// --- Harness Candidate Detection (Workflow Change Recommendations) ---
+
+type HarnessCandidateKind =
+  | 'script'
+  | 'cdp'
+  | 'prompt_template'
+  | 'checklist'
+  | 'unknown';
+
+type HarnessCandidate = {
+  toolName: string;
+  inputSummary: string;
+  signature: string;
+  provider: string;
+  repeatCount: number;
+  promptCount: number;
+  sessionCount: number;
+  firstSeen: string;
+  lastSeen: string;
+  totalCostUsd: number;
+  totalToolResultTokens: number;
+  isMcp: boolean;
+  candidateKind: HarnessCandidateKind;
+  confidence: number;
+  score: number;
+  reason: string;
+  suggestedAction: string;
+  sampleRequestIds?: string[];
+};
+
+type HarnessCandidateQuery = {
+  sessionId?: string;
+  provider?: string;
+  period?: 'today' | '7d' | '30d';
+  limit?: number;
+};
+
+// --- Classification helpers ---
+
+const SCRIPT_TOOLS = new Set([
+  'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep',
+]);
+
+const CDP_TOOL_PATTERNS = [
+  'mcp__playwright',
+  'playwright_',
+  'browser_',
+  'screenshot',
+];
+
+function classifyCandidateKind(toolName: string): HarnessCandidateKind {
+  if (SCRIPT_TOOLS.has(toolName)) return 'script';
+
+  const lower = toolName.toLowerCase();
+  if (lower.includes('exec_command')) return 'script';
+
+  for (const pattern of CDP_TOOL_PATTERNS) {
+    if (lower.includes(pattern.toLowerCase())) return 'cdp';
+  }
+
+  return 'unknown';
+}
+
+function scoreCandidate(
+  repeatCount: number,
+  promptCount: number,
+  sessionCount: number,
+  totalCostUsd: number,
+): number {
+  return (
+    repeatCount * 2 +
+    sessionCount * 5 +
+    promptCount +
+    Math.min(totalCostUsd * 10, 50)
+  );
+}
+
+function computeConfidence(
+  repeatCount: number,
+  promptCount: number,
+  sessionCount: number,
+  totalCostUsd: number,
+  kind: HarnessCandidateKind,
+): number {
+  let conf = 0;
+  if (repeatCount >= 5) conf += 0.3;
+  else if (repeatCount >= 3) conf += 0.2;
+  else conf += 0.1;
+
+  if (sessionCount >= 3) conf += 0.3;
+  else if (sessionCount >= 2) conf += 0.2;
+
+  if (promptCount >= 5) conf += 0.2;
+  else if (promptCount >= 3) conf += 0.15;
+  else conf += 0.05;
+
+  if (totalCostUsd >= 1.0) conf += 0.2;
+  else if (totalCostUsd >= 0.1) conf += 0.1;
+
+  if (kind === 'unknown') conf *= 0.5;
+
+  return Math.min(1.0, conf);
+}
+
+/** Map internal tool names to user-friendly display names */
+function friendlyToolName(toolName: string): string {
+  if (toolName === 'exec_command') return 'Shell';
+  if (toolName.startsWith('mcp__playwright__')) {
+    return toolName.replace('mcp__playwright__', '').replace(/_/g, ' ');
+  }
+  if (toolName.startsWith('mcp__')) {
+    const parts = toolName.split('__');
+    return parts.length >= 3 ? `${parts[1]}: ${parts[2]}` : parts[1] ?? toolName;
+  }
+  return toolName;
+}
+
+/** Generate a slug from input summary for file path suggestions */
+function inputToSlug(input: string): string {
+  return input
+    .split(/[\s/\\]+/)
+    .filter(Boolean)
+    .slice(0, 4)
+    .join('-')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 30) || 'untitled';
+}
+
+function buildReason(
+  kind: HarnessCandidateKind,
+  toolName: string,
+  inputSummary: string,
+  repeatCount: number,
+  sessionCount: number,
+): string {
+  const friendly = friendlyToolName(toolName);
+  const cmd = inputSummary.length > 50 ? inputSummary.slice(0, 47) + '...' : inputSummary;
+
+  switch (kind) {
+    case 'script':
+      return `"${cmd}" ran ${repeatCount}x across ${sessionCount} session(s). Extract to a reusable script.`;
+    case 'cdp':
+      return `"${friendly}" repeated ${repeatCount}x. Move into browser automation.`;
+    case 'prompt_template':
+      return `"${cmd}" repeats with varying targets. Turn into a reusable command.`;
+    case 'checklist':
+      return `This diagnostic flow repeated ${repeatCount}x across ${sessionCount} session(s). Save as a checklist.`;
+    default:
+      return `"${friendly}: ${cmd}" repeated ${repeatCount}x across ${sessionCount} session(s).`;
+  }
+}
+
+function buildSuggestedAction(kind: HarnessCandidateKind, inputSummary: string): string {
+  const slug = inputToSlug(inputSummary);
+  switch (kind) {
+    case 'script':
+      return `Extract into scripts/${slug}.sh`;
+    case 'cdp':
+      return `Extract into automation/${slug}.md`;
+    case 'prompt_template':
+      return `Extract into .claude/commands/${slug}.md`;
+    case 'checklist':
+      return `Extract into .claude/checklists/${slug}.md`;
+    default:
+      return 'Review for potential reuse';
+  }
+}
+
+// --- Main reader function ---
+
+type CandidateDbRow = {
+  tool_name: string;
+  input_summary: string;
+  repeat_count: number;
+  prompt_count: number;
+  session_count: number;
+  providers: string;
+  first_seen: string;
+  last_seen: string;
+  total_cost_usd: number;
+  total_tool_result_tokens: number;
+  sample_request_ids: string | null;
+};
+
+export const getHarnessCandidates = (query: HarnessCandidateQuery = {}): HarnessCandidate[] => {
+  const db = getDatabase();
+  const { sessionId, provider, period, limit = 20 } = query;
+
+  // Build dynamic WHERE conditions
+  const conditions: string[] = [
+    "tc.input_summary IS NOT NULL",
+    "tc.input_summary != ''",
+  ];
+  const params: Record<string, string | number> = { limit };
+
+  if (sessionId) {
+    conditions.push("p.session_id = @sessionId");
+    params.sessionId = sessionId;
+  }
+  if (provider) {
+    conditions.push("p.provider = @provider");
+    params.provider = provider;
+  }
+  if (period) {
+    switch (period) {
+      case 'today':
+        conditions.push("substr(datetime(p.timestamp, 'localtime'), 1, 10) = date('now', 'localtime')");
+        break;
+      case '7d':
+        conditions.push("p.timestamp >= date('now', 'localtime', '-7 days')");
+        break;
+      case '30d':
+        conditions.push("p.timestamp >= date('now', 'localtime', '-30 days')");
+        break;
+    }
+  }
+
+  const whereClause = `WHERE ${conditions.join(' AND ')}`;
+
+  const rows = db
+    .prepare(`
+      WITH sig_prompts AS (
+        SELECT DISTINCT
+          tc.name AS tool_name,
+          tc.input_summary,
+          p.id AS prompt_id,
+          p.request_id,
+          p.session_id,
+          p.provider,
+          p.timestamp,
+          p.cost_usd,
+          p.tool_result_tokens
+        FROM tool_calls tc
+        JOIN prompts p ON tc.prompt_id = p.id
+        ${whereClause}
+      ),
+      candidates AS (
+        SELECT
+          tool_name,
+          input_summary,
+          COUNT(*) AS repeat_count,
+          COUNT(DISTINCT prompt_id) AS prompt_count,
+          COUNT(DISTINCT session_id) AS session_count,
+          GROUP_CONCAT(DISTINCT provider) AS providers,
+          MIN(timestamp) AS first_seen,
+          MAX(timestamp) AS last_seen,
+          SUM(cost_usd) AS total_cost_usd,
+          SUM(tool_result_tokens) AS total_tool_result_tokens
+        FROM sig_prompts
+        GROUP BY tool_name, input_summary
+        HAVING COUNT(*) >= 2
+      ),
+      with_samples AS (
+        SELECT
+          c.*,
+          (
+            SELECT GROUP_CONCAT(sp.request_id)
+            FROM (
+              SELECT DISTINCT request_id
+              FROM sig_prompts sp2
+              WHERE sp2.tool_name = c.tool_name
+                AND sp2.input_summary = c.input_summary
+              LIMIT 3
+            ) sp
+          ) AS sample_request_ids
+        FROM candidates c
+      )
+      SELECT * FROM with_samples
+      ORDER BY repeat_count DESC
+      LIMIT @limit
+    `)
+    .all(params) as CandidateDbRow[];
+
+  return rows.map((row): HarnessCandidate => {
+    const mcp = isMcpTool(row.tool_name);
+    const kind = classifyCandidateKind(row.tool_name);
+    const score = scoreCandidate(
+      row.repeat_count,
+      row.prompt_count,
+      row.session_count,
+      row.total_cost_usd,
+    );
+    const confidence = computeConfidence(
+      row.repeat_count,
+      row.prompt_count,
+      row.session_count,
+      row.total_cost_usd,
+      kind,
+    );
+
+    return {
+      toolName: row.tool_name,
+      inputSummary: row.input_summary,
+      signature: `${row.tool_name}::${row.input_summary.trim()}`,
+      provider: row.providers ?? '',
+      repeatCount: row.repeat_count,
+      promptCount: row.prompt_count,
+      sessionCount: row.session_count,
+      firstSeen: row.first_seen,
+      lastSeen: row.last_seen,
+      totalCostUsd: row.total_cost_usd,
+      totalToolResultTokens: row.total_tool_result_tokens,
+      isMcp: mcp,
+      candidateKind: kind,
+      confidence,
+      score,
+      reason: buildReason(kind, row.tool_name, row.input_summary, row.repeat_count, row.session_count),
+      suggestedAction: buildSuggestedAction(kind, row.input_summary),
+      sampleRequestIds: row.sample_request_ids
+        ? row.sample_request_ids.split(',').filter(Boolean)
+        : undefined,
+    };
+  });
+};

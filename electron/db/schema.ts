@@ -259,6 +259,28 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 8,
+    up: (db) => {
+      db.exec(/* v8: workflow change action tracking */ `
+        CREATE TABLE workflow_change_actions (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          candidate_id  TEXT NOT NULL,
+          request_id    TEXT,
+          session_id    TEXT,
+          project_path  TEXT,
+          action_type   TEXT NOT NULL,
+          artifact_kind TEXT,
+          artifact_path TEXT,
+          created_at    TEXT NOT NULL
+        );
+
+        CREATE INDEX idx_wca_candidate ON workflow_change_actions(candidate_id);
+        CREATE INDEX idx_wca_action_type ON workflow_change_actions(action_type);
+        CREATE INDEX idx_wca_created_at ON workflow_change_actions(created_at);
+      `);
+    },
+  },
 ];
 
 export const runMigrations = (db: Database.Database): void => {

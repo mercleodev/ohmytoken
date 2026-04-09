@@ -1,4 +1,4 @@
-import type { PromptScan, UsageLogEntry, TurnMetric, SessionMcpAnalysis } from '../types/electron';
+import type { PromptScan, UsageLogEntry, TurnMetric, SessionMcpAnalysis, HarnessCandidate } from '../types/electron';
 
 // ---------------------------------------------------------------------------
 // Severity & confidence
@@ -65,6 +65,7 @@ export type GuardrailContext = {
   usage: UsageLogEntry | null;
   turnMetrics: TurnMetric[];
   mcpAnalysis?: SessionMcpAnalysis;
+  harnessCandidates?: HarnessCandidate[];
   contextLimit: number;
   sessionCompactions: number;
   derived: {

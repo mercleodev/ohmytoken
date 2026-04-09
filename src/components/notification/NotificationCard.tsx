@@ -1,6 +1,7 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { PromptNotification, ActivityLine } from './types';
+import type { HarnessCandidate, HarnessCandidateKind } from '../../types/electron';
 import { MiniSparkline } from './MiniSparkline';
 import { getContextLimit } from '../scan/shared';
 import {
@@ -456,6 +457,97 @@ const GuardrailSection = ({ notification }: { notification: PromptNotification }
   );
 };
 
+// ── Workflow Insights Section ──
+
+const CANDIDATE_LABELS: Record<HarnessCandidateKind, string> = {
+  script: 'Reusable Script',
+  cdp: 'Browser Automation',
+  prompt_template: 'Reusable Command',
+  checklist: 'Reusable Checklist',
+  unknown: 'Pattern Detected',
+};
+
+const CANDIDATE_COLORS: Record<HarnessCandidateKind, string> = {
+  script: '#5856d6',
+  cdp: '#af52de',
+  prompt_template: '#007aff',
+  checklist: '#34c759',
+  unknown: '#8e8e93',
+};
+
+const MAX_WORKFLOW_CANDIDATES = 3;
+
+const FRIENDLY_TOOL_NAMES: Record<string, string> = {
+  exec_command: 'Shell',
+};
+
+function friendlyTool(name: string): string {
+  if (FRIENDLY_TOOL_NAMES[name]) return FRIENDLY_TOOL_NAMES[name];
+  if (name.startsWith('mcp__playwright__')) return name.replace('mcp__playwright__', '').replace(/_/g, ' ');
+  if (name.startsWith('mcp__')) {
+    const parts = name.split('__');
+    return parts.length >= 3 ? `${parts[1]}: ${parts[2]}` : parts[1] ?? name;
+  }
+  return name;
+}
+
+const ConfidenceBar = ({ value }: { value: number }) => {
+  const pct = Math.round(value * 100);
+  const color = pct >= 70 ? '#34c759' : pct >= 40 ? '#ff9f0a' : '#8e8e93';
+  return (
+    <div className="notif-wf-conf-bar" title={`Confidence: ${pct}%`}>
+      <div className="notif-wf-conf-fill" style={{ width: `${pct}%`, background: color }} />
+    </div>
+  );
+};
+
+const WorkflowInsightsSection = ({ candidates }: { candidates?: HarnessCandidate[] }) => {
+  const visible = useMemo(() => {
+    if (!candidates || candidates.length === 0) return [];
+    return candidates
+      .filter((c) => c.candidateKind !== 'unknown')
+      .slice(0, MAX_WORKFLOW_CANDIDATES);
+  }, [candidates]);
+
+  if (visible.length === 0) return null;
+
+  return (
+    <div className="notif-workflow-section">
+      <div className="notif-workflow-header">
+        <span className="notif-workflow-header-icon">&#9670;</span>
+        <span className="notif-workflow-header-title">Workflow Change Candidates</span>
+        <span className="notif-workflow-header-count">{visible.length}</span>
+      </div>
+      <div className="notif-workflow-list">
+        {visible.map((c) => {
+          const label = CANDIDATE_LABELS[c.candidateKind] ?? 'Pattern';
+          const color = CANDIDATE_COLORS[c.candidateKind] ?? '#8e8e93';
+          const inputShort = c.inputSummary.length > 60
+            ? c.inputSummary.slice(0, 57) + '...'
+            : c.inputSummary;
+          return (
+            <div key={c.signature} className="notif-wf-item">
+              <div className="notif-wf-item-row">
+                <span className="notif-wf-kind-badge" style={{ background: color }}>
+                  {label}
+                </span>
+                <span className="notif-wf-repeat">{c.repeatCount}x</span>
+                <span className="notif-wf-sessions">{c.sessionCount} sessions</span>
+              </div>
+              <div className="notif-wf-signature" title={`${c.toolName}: ${c.inputSummary}`}>
+                <span className="notif-wf-tool-name">{friendlyTool(c.toolName)}</span>
+                <span className="notif-wf-input">{inputShort}</span>
+              </div>
+              <ConfidenceBar value={c.confidence} />
+              <div className="notif-wf-reason">{c.reason}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // ── Main Component ──
 
 const AUTO_DISMISS_MS = 120_000;
@@ -559,6 +651,9 @@ export const NotificationCard = ({ notification, onDismiss, onClick, onMouseEnte
 
       {/* ── Guardrail Recommendations (shown when available) ── */}
       <GuardrailSection notification={notification} />
+
+      {/* ── Workflow Change Candidates (30d analysis) ── */}
+      <WorkflowInsightsSection candidates={notification.harnessCandidates} />
 
       {/* ── 1. Context Files (always visible) ── */}
       <ContextFilesSection files={scan.injected_files ?? []} />

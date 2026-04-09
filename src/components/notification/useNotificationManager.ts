@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { PromptScan, UsageLogEntry, TurnMetric } from '../../types/electron';
+import type { PromptScan, UsageLogEntry, TurnMetric, HarnessCandidate } from '../../types/electron';
 import type { PromptNotification, ActivityLine } from './types';
 import type { GuardrailAssessment } from '../../guardrails/types';
 import { getSessionAlerts } from '../../utils/sessionAlerts';
@@ -77,13 +77,18 @@ export const useNotificationManager = (
     // Fetch turn metrics + MCP analysis in one batch IPC call
     let turnMetrics: TurnMetric[] = [];
     let guardrailAssessment: GuardrailAssessment | undefined;
+    let harnessCandidates: HarnessCandidate[] = [];
     try {
-      const batch = await window.api.getGuardrailContext(scan.session_id);
+      const [batch, periodCandidates] = await Promise.all([
+        window.api.getGuardrailContext(scan.session_id),
+        window.api.getHarnessCandidates({ period: '30d', limit: 5 }),
+      ]);
       turnMetrics = batch.turnMetrics;
+      harnessCandidates = periodCandidates ?? [];
 
       // Compute guardrail assessment (only when feature flag is enabled)
       if (FEATURE_FLAGS.GUARDRAILS) {
-        const ctx = buildContext(scan, usage, batch.turnMetrics, batch.mcpAnalysis);
+        const ctx = buildContext(scan, usage, batch.turnMetrics, batch.mcpAnalysis, harnessCandidates);
         guardrailAssessment = evaluate(ctx, MVP_RULES);
       }
     } catch {
@@ -122,6 +127,7 @@ export const useNotificationManager = (
       alerts,
       activityLog: [],
       guardrailAssessment,
+      harnessCandidates,
     };
 
     setNotifications((prev) => {
@@ -248,19 +254,21 @@ export const useNotificationManager = (
       projectFolder: data.projectFolder,
     };
 
-    // Async: fetch turn metrics + guardrail assessment (best-effort, won't block card creation)
-    window.api.getGuardrailContext(data.sessionId)
-      .then((batch) => {
-        if (batch.turnMetrics.length > 0) {
-          const assessment = FEATURE_FLAGS.GUARDRAILS
-            ? evaluate(buildContext(partialScan, streamingUsage, batch.turnMetrics, batch.mcpAnalysis), MVP_RULES)
-            : undefined;
-          setNotifications((prev) =>
-            prev.map((n) => n.id === streamingId
-              ? { ...n, turnMetrics: batch.turnMetrics, guardrailAssessment: assessment }
-              : n),
-          );
-        }
+    // Async: fetch turn metrics + guardrail assessment + workflow candidates (best-effort)
+    Promise.all([
+      window.api.getGuardrailContext(data.sessionId),
+      window.api.getHarnessCandidates({ period: '30d', limit: 5 }),
+    ])
+      .then(([batch, periodCandidates]) => {
+        const candidates = periodCandidates ?? [];
+        const assessment = FEATURE_FLAGS.GUARDRAILS && batch.turnMetrics.length > 0
+          ? evaluate(buildContext(partialScan, streamingUsage, batch.turnMetrics, batch.mcpAnalysis, candidates), MVP_RULES)
+          : undefined;
+        setNotifications((prev) =>
+          prev.map((n) => n.id === streamingId
+            ? { ...n, turnMetrics: batch.turnMetrics, guardrailAssessment: assessment, harnessCandidates: candidates }
+            : n),
+        );
       })
       .catch(() => {});
 
