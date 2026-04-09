@@ -1,85 +1,80 @@
 # OhMyToken
 
-OhMyToken is a real-time AI agent token usage monitor.
+**Real-time AI agent token usage monitor** — intercepts Claude, Codex & Gemini API calls and visualizes cost, context window, and prompt patterns.
 
-It intercepts Claude/Codex/Gemini API calls via a local proxy, parses SSE streams, and visualizes context window usage, injected files, tool calls, and cost breakdowns.
-
----
-
-## Start
-
-1. Read `.claude/docs/START-HERE.md`
-2. Follow contribution and testing gates before merge
+Built with Electron + React. Runs locally on macOS.
 
 ---
 
-## Core Documents
+## What It Does
 
-1. `CONTRIBUTING.md`
-2. `OPEN-SOURCE-WORKFLOW.md`
-3. `.claude/docs/AUTONOMOUS-OSS-OPS.md`
-4. `.claude/docs/GIT-IDENTITY-POLICY.md`
-5. `.claude/qa/README.md` (private)
-6. `docs/decisions/README.md` (public ADRs)
-7. `policy/RULES-CATALOG.txt`
+OhMyToken sits between your AI coding agent and the API provider. It captures every request and response via a local HTTP proxy, then gives you a live dashboard to understand where your tokens go.
 
-## Policy Precedence
+### Key Features
 
-Use this precedence when policies overlap:
-
-1. `CONTRIBUTING.md` is the merge policy of record.
-2. `OPEN-SOURCE-WORKFLOW.md` defines execution flow and CI gate mapping.
-
-If there is a conflict, follow the highest document in this list.
-
-Runtime note:
-
-1. `CLAUDE.md`, `AGENTS.md`, or provider-specific prompts are advisory instructions only.
-2. Enforcement is done by repository pipeline gates (hooks + CI + PR policy checks), not by agent claims.
-
-## Top-Level Enforcement Pipeline
-
-This pipeline is provider-agnostic and agent-agnostic (`claude`, `codex`, `gemini`, or manual).
-
-1. Task start: run `bash scripts/set-active-rules-ack.sh <task-id>`.
-2. Local commit gate: `pre-commit` runs identity/content checks plus applicable-rules acknowledgement validation.
-3. PR gate: `policy-gate` workflow requires `Applicable Rules` section with checked doc/section references.
-4. CI gate: `ci` workflow requires content guard, markdown allowlist, typecheck, lint, and test.
-5. Merge rule: branch protection must require `policy-gate`, `content-guard`, and `ci` before merge.
-
-## Operator Setup Checklist
-
-Run once per clone:
-
-1. `bash scripts/setup-git-identity-lock.sh`
-2. `bash scripts/verify-git-identity-lock.sh`
-3. `git config core.hooksPath .githooks`
-
-Run once per task/issue:
-
-1. `bash scripts/set-active-rules-ack.sh <task-id>`
-2. Start implementation only after the ack file is generated.
-
-GitHub repository settings (mandatory):
-
-1. Enable branch protection on `main`.
-2. Require pull request before merge.
-3. Require status checks: `policy-gate`, `content-guard`, `ci`.
-4. Disable force push on `main`.
+- **Multi-provider support** — Claude, Codex, and Gemini in a single unified view
+- **Real-time proxy interception** — captures API calls on `localhost:8780`, parses SSE streams
+- **Token usage dashboard** — radial gauge, cost breakdown (today / 30d), credit balance tracking
+- **Context window visualization** — see exactly how your context fills up turn by turn
+- **Cache growth chart** — track cache-read vs cache-create tokens over time, with compaction markers
+- **Cost treemap** — visual breakdown of cost by prompt/query
+- **Prompt heatmap** — 365-day activity calendar showing usage patterns
+- **Token composition** — pie chart of cache-read, cache-create, input, and output tokens
+- **Session & prompt detail** — drill into any session, inspect tool calls, injected files, evidence scores
+- **MCP insights** — tool call analysis with optimization suggestions
+- **Session alerts** — warnings for cache explosion, low efficiency, long sessions
+- **Guardrail assessment** — evidence-based scoring with signal breakdown
+- **Workflow change recommendations** — detects repeated manual patterns and suggests automation
+- **Backfill engine** — recover historical usage data from provider session logs
 
 ---
 
-## Principles
+## Quick Start
 
-1. Real-time token monitoring with proxy-based interception
-2. Multi-provider support (Claude, Codex, Gemini)
-3. English-only repository-facing artifacts
-4. Regression-safe shipping discipline
-5. Reuse-first migration from validated legacy behavior; rewrite only with explicit technical justification
-6. Repository-local git identity lock is mandatory
-7. Public markdown publishing is allowlist-based (`.public-docs-allowlist`)
+```bash
+# Prerequisites: Node.js 22, macOS
+nvm use 22
+npm install
+
+# Development
+npm run electron:dev
+
+# Production build (DMG)
+npm run build
+```
 
 ---
+
+## Architecture
+
+```
+electron/          Electron main process
+  proxy/           HTTP proxy — intercept, parse SSE, calculate cost
+  db/              SQLite persistence layer
+  providers/       Multi-provider usage fetchers (Claude, Codex, Gemini)
+src/               React frontend — usage dashboard & visualizations
+assets/            Tray icons and sprites
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Desktop | Electron 28 |
+| Frontend | React 18, TypeScript, Tailwind CSS |
+| Charts | Recharts |
+| Animations | Framer Motion |
+| Database | better-sqlite3 |
+| Tokenizer | js-tiktoken |
+| Runtime | Node.js 22 |
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for commit conventions, quality gates, and PR requirements.
 
 ## License
 

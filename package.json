@@ -1,7 +1,7 @@
 {
   "name": "ohmytoken",
   "version": "0.1.0",
-  "description": "Real-time AI agent token usage monitor and prompt CT scan tool",
+  "description": "Real-time AI agent token usage monitor for Claude, Codex & Gemini",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
