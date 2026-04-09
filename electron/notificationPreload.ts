@@ -67,9 +67,13 @@ contextBridge.exposeInMainWorld("api", {
   getSessionTurnMetrics: (sessionId: string) =>
     ipcRenderer.invoke("get-session-turn-metrics", sessionId),
 
-  // Batch fetch for guardrail engine (turnMetrics + mcpAnalysis in one round-trip)
+  // Batch fetch for guardrail engine (turnMetrics + mcpAnalysis + harnessCandidates)
   getGuardrailContext: (sessionId: string) =>
     ipcRenderer.invoke("get-guardrail-context", sessionId),
+
+  getHarnessCandidates: (query?: {
+    sessionId?: string; provider?: string; period?: 'today' | '7d' | '30d'; limit?: number;
+  }) => ipcRenderer.invoke('get-harness-candidates', query),
 
   // Navigate to prompt detail (sends to main window via main process)
   navigateToPromptFromNotification: (scan: unknown, usage: unknown) => {

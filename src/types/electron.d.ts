@@ -200,6 +200,54 @@ export type SessionMcpAnalysis = {
   redundantPatterns: RedundantPattern[];
 };
 
+// --- Harness Candidate Types (Workflow Change Recommendations) ---
+
+export type HarnessCandidateKind =
+  | 'script'
+  | 'cdp'
+  | 'prompt_template'
+  | 'checklist'
+  | 'unknown';
+
+export type HarnessCandidate = {
+  toolName: string;
+  inputSummary: string;
+  signature: string;
+  provider: string;
+  repeatCount: number;
+  promptCount: number;
+  sessionCount: number;
+  firstSeen: string;
+  lastSeen: string;
+  totalCostUsd: number;
+  totalToolResultTokens: number;
+  isMcp: boolean;
+  candidateKind: HarnessCandidateKind;
+  confidence: number;
+  score: number;
+  reason: string;
+  suggestedAction: string;
+  sampleRequestIds?: string[];
+};
+
+export type ArtifactKind = 'script' | 'command' | 'checklist' | 'context_profile' | 'markdown_brief';
+
+export type PreviewWorkflowDraftResult = {
+  artifactKind: ArtifactKind;
+  title: string;
+  suggestedPath: string;
+  content: string;
+};
+
+export type ExportWorkflowDraftResult = {
+  success: boolean;
+  exportedPath: string;
+  overwritten: boolean;
+  error?: string;
+};
+
+export type WorkflowActionType = 'previewed' | 'exported' | 'dismissed' | 'marked_adopted';
+
 // --- Backfill Types ---
 
 export type BackfillProgress = {
@@ -343,7 +391,42 @@ export type ElectronApi = {
   getGuardrailContext: (sessionId: string) => Promise<{
     turnMetrics: TurnMetric[];
     mcpAnalysis: SessionMcpAnalysis;
+    harnessCandidates?: HarnessCandidate[];
   }>;
+
+  // Harness Candidate API (Workflow Change Recommendations)
+  getHarnessCandidates: (query?: {
+    sessionId?: string;
+    provider?: string;
+    period?: 'today' | '7d' | '30d';
+    limit?: number;
+  }) => Promise<HarnessCandidate[]>;
+
+  // Workflow Draft Preview API
+  previewWorkflowDraft: (candidate: {
+    toolName: string; inputSummary: string; candidateKind: string;
+    repeatCount: number; promptCount: number; sessionCount: number;
+    totalCostUsd: number; provider: string; sampleRequestIds?: string[];
+  }) => Promise<PreviewWorkflowDraftResult | null>;
+
+  // Workflow Action Tracking API
+  recordWorkflowAction: (input: {
+    candidateId: string;
+    requestId?: string;
+    sessionId?: string;
+    projectPath?: string;
+    actionType: WorkflowActionType;
+    artifactKind?: string;
+    artifactPath?: string;
+  }) => Promise<{ success: boolean; id?: number; error?: string }>;
+
+  // Workflow Draft Export API
+  exportWorkflowDraft: (options: {
+    suggestedPath: string;
+    content: string;
+    projectPath: string;
+    overwrite?: boolean;
+  }) => Promise<ExportWorkflowDraftResult>;
 
   // Evidence Scoring API
   getEvidenceReport: (requestId: string) => Promise<EvidenceReport | null>;

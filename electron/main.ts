@@ -32,9 +32,11 @@ import {
   readInjectedFiles,
 } from "./importer/historyImporter";
 import { EvidenceEngine } from "./evidence/engine";
+import { generateWorkflowDraft } from "./draftGenerator";
+import { exportWorkflowDraft } from "./draftExporter";
 import { mergeConfig } from "./evidence/config";
 import { parseSystemFieldWithContent } from "./proxy/systemParser";
-import { insertEvidenceReport } from "./db/writer";
+import { insertEvidenceReport, recordWorkflowAction } from "./db/writer";
 import type { EvidenceEngineConfig } from "./evidence/types";
 import { runGapFill, registerBackfillIPC } from "./backfill/index";
 import { backfillCodexToolCalls } from "./backfill/codex-tool-backfill";
@@ -1818,17 +1820,68 @@ const setupIPC = (): void => {
 
   ipcMain.handle("get-guardrail-context", async (_event, sessionId: string) => {
     try {
-      const [turnMetrics, mcpAnalysis] = await Promise.all([
+      const [turnMetrics, mcpAnalysis, harnessCandidates] = await Promise.all([
         dbReader.getSessionTurnMetrics(sessionId),
         dbReader.getSessionMcpAnalysis(sessionId),
+        Promise.resolve(dbReader.getHarnessCandidates({ sessionId, limit: 5 })),
       ]);
-      return { turnMetrics, mcpAnalysis };
+      return { turnMetrics, mcpAnalysis, harnessCandidates };
     } catch (error) {
       console.error("get-guardrail-context error:", error);
       return {
         turnMetrics: [],
         mcpAnalysis: { totalToolCalls: 0, mcpCalls: 0, toolResultTokens: 0, toolBreakdown: {}, redundantPatterns: [] },
+        harnessCandidates: [],
       };
+    }
+  });
+
+  ipcMain.handle("get-harness-candidates", async (_event, query?: {
+    sessionId?: string; provider?: string; period?: 'today' | '7d' | '30d'; limit?: number;
+  }) => {
+    try {
+      return dbReader.getHarnessCandidates(query ?? {});
+    } catch (error) {
+      console.error("get-harness-candidates error:", error);
+      return [];
+    }
+  });
+
+  ipcMain.handle("preview-workflow-draft", async (_event, candidate: {
+    toolName: string; inputSummary: string; candidateKind: string;
+    repeatCount: number; promptCount: number; sessionCount: number;
+    totalCostUsd: number; provider: string; sampleRequestIds?: string[];
+  }) => {
+    try {
+      return generateWorkflowDraft(candidate);
+    } catch (error) {
+      console.error("preview-workflow-draft error:", error);
+      return null;
+    }
+  });
+
+  ipcMain.handle("export-workflow-draft", async (_event, options: {
+    suggestedPath: string; content: string; projectPath: string; overwrite?: boolean;
+  }) => {
+    try {
+      return exportWorkflowDraft(options);
+    } catch (error) {
+      console.error("export-workflow-draft error:", error);
+      return { success: false, exportedPath: options.suggestedPath, overwritten: false, error: String(error) };
+    }
+  });
+
+  ipcMain.handle("record-workflow-action", async (_event, input: {
+    candidateId: string; requestId?: string; sessionId?: string; projectPath?: string;
+    actionType: 'previewed' | 'exported' | 'dismissed' | 'marked_adopted';
+    artifactKind?: string; artifactPath?: string;
+  }) => {
+    try {
+      const id = recordWorkflowAction(input);
+      return { success: true, id };
+    } catch (error) {
+      console.error("record-workflow-action error:", error);
+      return { success: false, error: String(error) };
     }
   });
 

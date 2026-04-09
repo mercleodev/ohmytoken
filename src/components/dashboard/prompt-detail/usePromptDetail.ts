@@ -195,7 +195,7 @@ export function usePromptDetail(scan: PromptScan, usage?: UsageLogEntry | null):
       try {
         const batch = await window.api.getGuardrailContext(scan.session_id);
         if (cancelled) return;
-        const ctx = buildContext(scan, usage ?? null, batch.turnMetrics, batch.mcpAnalysis);
+        const ctx = buildContext(scan, usage ?? null, batch.turnMetrics, batch.mcpAnalysis, batch.harnessCandidates);
         const assessment = evaluate(ctx, MVP_RULES);
         setGuardrailAssessment(assessment);
       } catch {

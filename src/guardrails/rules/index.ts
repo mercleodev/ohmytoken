@@ -4,6 +4,7 @@ import { toolLoopRule } from './toolLoop';
 import { splitSessionRule } from './splitSession';
 import { cacheExplosionRule } from './cacheExplosion';
 import { lowValueInjectedFilesRule } from './lowValueInjectedFiles';
+import { harnessCandidateRule } from './harnessCandidate';
 
 /**
  * MVP rule set — ordered by priority (used as tiebreaker in ranking).
@@ -15,4 +16,5 @@ export const MVP_RULES: GuardrailRule[] = [
   splitSessionRule,
   cacheExplosionRule,
   lowValueInjectedFilesRule,
+  harnessCandidateRule,
 ];

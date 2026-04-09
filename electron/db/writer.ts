@@ -368,6 +368,43 @@ export const insertEvidenceReport = (
   return reportId;
 };
 
+// --- Workflow change action tracking ---
+
+type WorkflowActionType = 'previewed' | 'exported' | 'dismissed' | 'marked_adopted';
+
+type WorkflowActionInput = {
+  candidateId: string;
+  requestId?: string;
+  sessionId?: string;
+  projectPath?: string;
+  actionType: WorkflowActionType;
+  artifactKind?: string;
+  artifactPath?: string;
+};
+
+export const recordWorkflowAction = (input: WorkflowActionInput): number => {
+  const db = getDatabase();
+  const result = db.prepare(`
+    INSERT INTO workflow_change_actions (
+      candidate_id, request_id, session_id, project_path,
+      action_type, artifact_kind, artifact_path, created_at
+    ) VALUES (
+      @candidateId, @requestId, @sessionId, @projectPath,
+      @actionType, @artifactKind, @artifactPath, @createdAt
+    )
+  `).run({
+    candidateId: input.candidateId,
+    requestId: input.requestId ?? null,
+    sessionId: input.sessionId ?? null,
+    projectPath: input.projectPath ?? null,
+    actionType: input.actionType,
+    artifactKind: input.artifactKind ?? null,
+    artifactPath: input.artifactPath ?? null,
+    createdAt: new Date().toISOString(),
+  });
+  return result.lastInsertRowid as number;
+};
+
 export const clearStatementCache = (): void => {
   stmtCache = {};
 };
