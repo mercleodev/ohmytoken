@@ -53,7 +53,24 @@ export const useNotificationManager = (
   const handleClick = useCallback((id: string) => {
     const notif = notifications.find((n) => n.id === id);
     if (notif) {
-      onNavigate(notif.scan, notif.usage);
+      // Merge activityLog tool_use entries into scan.tool_calls when scan has none
+      // (notification shows actions from activityLog, but prompt detail reads scan.tool_calls)
+      let scan = notif.scan;
+      if ((scan.tool_calls ?? []).length === 0 && notif.activityLog.length > 0) {
+        const toolActions = notif.activityLog.filter((l) => l.kind === 'tool_use');
+        if (toolActions.length > 0) {
+          scan = {
+            ...scan,
+            tool_calls: toolActions.map((a, i) => ({
+              index: i,
+              name: a.name,
+              input_summary: a.detail,
+              timestamp: a.timestamp,
+            })),
+          };
+        }
+      }
+      onNavigate(scan, notif.usage);
       dismiss(id);
     }
   }, [notifications, onNavigate, dismiss]);
