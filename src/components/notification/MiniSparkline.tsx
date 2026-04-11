@@ -58,7 +58,7 @@ export const MiniSparkline = ({
 
   if (!computed || data.length < 2) {
     return (
-      <svg width={width} height={height} className="mini-sparkline">
+      <svg viewBox={`0 0 ${width} ${height}`} className="mini-sparkline" preserveAspectRatio="xMidYMid meet">
         <text x={width / 2} y={height / 2} textAnchor="middle" dominantBaseline="middle"
           fill="#8e8e93" fontSize={9}>No data</text>
       </svg>
@@ -71,7 +71,7 @@ export const MiniSparkline = ({
   const padding = 2;
 
   return (
-    <svg width={width} height={height} className="mini-sparkline">
+    <svg viewBox={`0 0 ${width} ${height}`} className="mini-sparkline" preserveAspectRatio="xMidYMid meet">
       <path d={computed.fill} fill={fillColor} />
 
       {/* Compact recommendation threshold line */}
