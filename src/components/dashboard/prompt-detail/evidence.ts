@@ -1,6 +1,12 @@
 import type { PromptScan, EvidenceReport, SignalResult } from "../../../types";
 import type { EvidenceStatus, InjectedEvidenceItem } from "./types";
-import { DIRECT_FILE_ACTIONS, normalizeText, getFileName } from "./constants";
+import { DIRECT_FILE_ACTIONS, INDIRECT_FILE_TOOLS, normalizeText, getFileName } from "./constants";
+
+const getFileStem = (filePath: string): string => {
+  const fileName = getFileName(filePath);
+  const dotIndex = fileName.lastIndexOf(".");
+  return dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName;
+};
 
 /**
  * Build evidence classification from either:
@@ -92,6 +98,24 @@ const buildLegacyEvidence = (scan: PromptScan): Record<
       };
     }
 
+    // Indirect tool check: Bash/exec_command/ToolSearch or any tool with full path
+    const indirectToolRef = toolCalls.find((toolCall) => {
+      const inputLower = normalizeText(toolCall.input_summary ?? "");
+      if (INDIRECT_FILE_TOOLS.has(toolCall.name)) {
+        return inputLower.includes(filePathLower) ||
+          (fileNameLower.length >= 4 && inputLower.includes(fileNameLower));
+      }
+      return inputLower.includes(filePathLower);
+    });
+
+    if (indirectToolRef) {
+      return {
+        ...file,
+        status: "likely" as const,
+        reason: `${indirectToolRef.name} input contains reference to this file`,
+      };
+    }
+
     const mentionByTool = toolCalls.find((toolCall) => {
       const inputLower = normalizeText(toolCall.input_summary ?? "");
       return fileNameLower.length >= 4 && inputLower.includes(fileNameLower);
@@ -101,12 +125,21 @@ const buildLegacyEvidence = (scan: PromptScan): Record<
     const mentionByPrompt =
       fileNameLower.length >= 4 && userPromptLower.includes(fileNameLower);
 
-    if (mentionByResponse || mentionByTool || mentionByPrompt) {
+    // File stem check (e.g. "EvidenceGroup" from "EvidenceGroup.tsx")
+    const fileStem = normalizeText(getFileStem(file.path));
+    const mentionByStem = fileStem.length >= 6 && (
+      responseLower.includes(fileStem) ||
+      userPromptLower.includes(fileStem)
+    );
+
+    if (mentionByResponse || mentionByTool || mentionByPrompt || mentionByStem) {
       const reason = mentionByResponse
         ? "Assistant response mentions this file"
         : mentionByTool
           ? `${mentionByTool.name} input references this file`
-          : "User prompt references this file";
+          : mentionByPrompt
+            ? "User prompt references this file"
+            : `Response references identifier "${getFileStem(file.path)}"`;
       return {
         ...file,
         status: "likely" as const,

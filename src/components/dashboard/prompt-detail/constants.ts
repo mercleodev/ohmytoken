@@ -6,7 +6,9 @@ export const CONTINUATION_PROMPT_MARKER =
 export const SESSION_SCAN_DEDUP_MS = 5_000;
 export const COMPACTION_DROP_RATIO = 0.8;
 export const MIN_COMPACTION_BASE_TOKENS = 30_000;
-export const DIRECT_FILE_ACTIONS = new Set(["Read", "Write", "Edit"]);
+export const DIRECT_FILE_ACTIONS = new Set(["Read", "Write", "Edit", "Glob", "Grep"]);
+export const INDIRECT_FILE_TOOLS = new Set(["Bash", "exec_command", "ToolSearch"]);
+export const LOW_UTILIZATION_LOOKBACK = 3;
 
 export const EVIDENCE_STATUS_COLORS: Record<EvidenceStatus, string> = {
   confirmed: "#1f7a57",

@@ -10,13 +10,16 @@ import {
   SESSION_SCAN_DEDUP_MS,
   COMPACTION_DROP_RATIO,
   MIN_COMPACTION_BASE_TOKENS,
+  LOW_UTILIZATION_LOOKBACK,
 } from "./constants";
+import { buildInjectedEvidence } from "./evidence";
 
 type UsePromptDetailReturn = {
   enrichedScan: PromptScan;
   sessionCompactions: number | null;
   guardrailAssessment: GuardrailAssessment | undefined;
   handleRescore: () => Promise<void>;
+  lowUtilizationPaths: Set<string>;
 };
 
 /** Check if scan is missing detailed data that JSONL enrichment can provide */
@@ -44,6 +47,7 @@ export function usePromptDetail(scan: PromptScan, usage?: UsageLogEntry | null):
   const [enrichedScan, setEnrichedScan] = useState<PromptScan>(scan);
   const [sessionCompactions, setSessionCompactions] = useState<number | null>(null);
   const [guardrailAssessment, setGuardrailAssessment] = useState<GuardrailAssessment | undefined>();
+  const [lowUtilizationPaths, setLowUtilizationPaths] = useState<Set<string>>(new Set());
 
   // Enrich incomplete batch-imported scans with full JSONL data
   useEffect(() => {
@@ -179,6 +183,29 @@ export function usePromptDetail(scan: PromptScan, usage?: UsageLogEntry | null):
         }
 
         if (isActive) setSessionCompactions(count);
+
+        // Compute low-utilization files
+        const currentIdx = dedupedUntilTarget.length - 1;
+        if (currentIdx >= 1) {
+          const lookbackScans = dedupedUntilTarget.slice(
+            Math.max(0, currentIdx - LOW_UTILIZATION_LOOKBACK + 1),
+            currentIdx + 1,
+          );
+          if (lookbackScans.length >= 2) {
+            const currentFiles = scan.injected_files ?? [];
+            const lowUtil = new Set<string>();
+            for (const file of currentFiles) {
+              const unverifiedInAll = lookbackScans.every((s) => {
+                const evidence = buildInjectedEvidence(s);
+                const isPresent = (s.injected_files ?? []).some((f) => f.path === file.path);
+                const isUnverified = evidence.unverified.some((e) => e.path === file.path);
+                return isPresent && isUnverified;
+              });
+              if (unverifiedInAll) lowUtil.add(file.path);
+            }
+            if (isActive) setLowUtilizationPaths(lowUtil);
+          }
+        }
       } catch {
         if (isActive) setSessionCompactions(0);
       }
@@ -220,5 +247,5 @@ export function usePromptDetail(scan: PromptScan, usage?: UsageLogEntry | null):
     }
   }, [scan.request_id]);
 
-  return { enrichedScan, sessionCompactions, guardrailAssessment, handleRescore };
+  return { enrichedScan, sessionCompactions, guardrailAssessment, handleRescore, lowUtilizationPaths };
 }
