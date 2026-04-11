@@ -5,7 +5,6 @@ import {
   getContextLimit,
   getGaugeColor,
   getModelShort,
-  CATEGORY_COLORS,
 } from "../scan/shared";
 import { ContextTreemap } from "./ContextTreemap";
 import { ActionFlowList } from "./ActionFlowList";
@@ -15,7 +14,7 @@ import { usePromptDetail } from "./prompt-detail/usePromptDetail";
 import { buildInjectedEvidence } from "./prompt-detail/evidence";
 import { StatPill } from "./prompt-detail/StatPill";
 import { Section } from "./prompt-detail/Section";
-import { EvidenceGroup } from "./prompt-detail/EvidenceGroup";
+import { ContextFileList } from "./prompt-detail/ContextFileList";
 import { ActionFilterChips } from "./prompt-detail/ActionFilterChips";
 import { FilePreviewOverlay } from "./prompt-detail/FilePreviewOverlay";
 import { ContextGauge } from "./prompt-detail/ContextGauge";
@@ -30,7 +29,7 @@ type PromptDetailViewProps = {
 
 export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    () => new Set(["injected-evidence"]),
+    () => new Set(["context-files"]),
   );
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [promptExpanded, setPromptExpanded] = useState(false);
@@ -38,7 +37,7 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
   const [showEvidenceSettings, setShowEvidenceSettings] = useState(false);
   const [activeTools, setActiveTools] = useState<Set<string> | "all">("all");
 
-  const { enrichedScan, sessionCompactions, guardrailAssessment, handleRescore } = usePromptDetail(scan, usage);
+  const { enrichedScan, sessionCompactions, guardrailAssessment, handleRescore, lowUtilizationPaths } = usePromptDetail(scan, usage);
 
   // Use enrichedScan as primary data source (may have richer JSONL-parsed data)
   const displayScan = enrichedScan;
@@ -190,50 +189,35 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
 
       <JourneySummary scan={displayScan} usage={usage} cacheHitPct={cacheHitPct} onFileClick={setPreviewFile} />
 
-      {/* Injected Evidence — hidden when no injected files (e.g. Codex) */}
+      {/* Context Files (merged evidence + files) */}
       {hasInjectedFiles && (
         <Section
-          title={`Injected Evidence (C ${injectedEvidence.confirmed.length} · L ${injectedEvidence.likely.length} · U ${injectedEvidence.unverified.length})`}
-          id="injected-evidence"
+          title={`Context Files (${injectedFiles.length}) · ${formatTokens(injectedFiles.reduce((sum, f) => sum + f.estimated_tokens, 0))}`}
+          id="context-files"
           expanded={expandedSections}
           onToggle={toggle}
           headerExtra={
-            <button className="evidence-settings-btn" onClick={(e) => { e.stopPropagation(); setShowEvidenceSettings(true); }} aria-label="Evidence scoring settings">
-              &#x2699;
-            </button>
+            <>
+              <span className="injected-evidence-badge confirmed">C {injectedEvidence.confirmed.length}</span>
+              <span className="injected-evidence-badge likely">L {injectedEvidence.likely.length}</span>
+              <span className="injected-evidence-badge unverified">U {injectedEvidence.unverified.length}</span>
+              <button className="evidence-settings-btn" onClick={(e) => { e.stopPropagation(); setShowEvidenceSettings(true); }} aria-label="Evidence scoring settings">
+                &#x2699;
+              </button>
+            </>
           }
         >
-          <div className="injected-evidence-summary">
-            <span className="injected-evidence-badge confirmed">Confirmed {injectedEvidence.confirmed.length}</span>
-            <span className="injected-evidence-badge likely">Likely {injectedEvidence.likely.length}</span>
-            <span className="injected-evidence-badge unverified">Unverified {injectedEvidence.unverified.length}</span>
-          </div>
-          <EvidenceGroup title="Confirmed" status="confirmed" items={injectedEvidence.confirmed} onOpenFile={setPreviewFile} />
-          <EvidenceGroup title="Likely" status="likely" items={injectedEvidence.likely} onOpenFile={setPreviewFile} />
-          <EvidenceGroup title="Unverified" status="unverified" items={injectedEvidence.unverified} onOpenFile={setPreviewFile} />
+          <ContextFileList
+            evidence={injectedEvidence}
+            lowUtilizationPaths={lowUtilizationPaths}
+            onOpenFile={setPreviewFile}
+          />
         </Section>
       )}
 
       <AnimatePresence>
         {showEvidenceSettings && <EvidenceSettings onClose={() => setShowEvidenceSettings(false)} onSave={handleRescore} />}
       </AnimatePresence>
-
-      {/* Injected Files */}
-      <Section title={`Injected Files (${injectedFiles.length})${injectedFiles.length > 0 ? ` · ${formatTokens(injectedFiles.reduce((sum, f) => sum + f.estimated_tokens, 0))}` : ""}`} id="files" expanded={expandedSections} onToggle={toggle}>
-        {injectedFiles.length > 0 ? (
-          <div className="file-list">
-            {injectedFiles.map((f, i) => (
-              <button key={i} className="file-item" onClick={() => setPreviewFile(f.path)}>
-                <span className="file-dot" style={{ background: CATEGORY_COLORS[f.category] || "#8e8e93" }} />
-                <span className="file-path">{f.path.split("/").slice(-2).join("/")}</span>
-                <span className="file-tokens">{formatTokens(f.estimated_tokens)}</span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="section-empty">No injected files</div>
-        )}
-      </Section>
 
       {/* Actions */}
       <Section title={`Actions (${toolCalls.length})`} id="tools" expanded={expandedSections} onToggle={toggle}>

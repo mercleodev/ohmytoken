@@ -12,6 +12,7 @@
 import type { SignalPlugin } from './types';
 
 const DIRECT_FILE_TOOLS = new Set(['Read', 'Write', 'Edit', 'Glob', 'Grep']);
+const INDIRECT_FILE_TOOLS = new Set(['Bash', 'exec_command', 'ToolSearch']);
 
 export const toolReferenceSignal: SignalPlugin = {
   id: 'tool-reference',
@@ -66,9 +67,29 @@ export const toolReferenceSignal: SignalPlugin = {
         }
       }
 
+      // Indirect: Bash/exec_command/ToolSearch with file path in input
+      if (INDIRECT_FILE_TOOLS.has(tc.name)) {
+        if (summary.includes(filePathLower) || (fileNameLower.length >= 4 && summary.includes(fileNameLower))) {
+          hasIndirect = true;
+        }
+      }
+
       // Indirect: filename mentioned in any tool's input
       if (fileNameLower.length >= 4 && summary.includes(fileNameLower)) {
         hasIndirect = true;
+      }
+    }
+
+    // Content identifier check: exported function/class names from file content
+    if (!hasDirect && !hasIndirect && input.file.content) {
+      const EXPORT_PATTERN = /export\s+(?:function|const|class|type|interface|enum|default\s+(?:function|class))\s+(\w+)/g;
+      const responseLower = (input.scan.assistant_response ?? '').toLowerCase();
+      let match: RegExpExecArray | null;
+      while ((match = EXPORT_PATTERN.exec(input.file.content)) !== null) {
+        if (match[1].length >= 6 && responseLower.includes(match[1].toLowerCase())) {
+          hasIndirect = true;
+          break;
+        }
       }
     }
 
