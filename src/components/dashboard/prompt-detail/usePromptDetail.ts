@@ -32,7 +32,12 @@ const isIncompleteScan = (s: PromptScan): boolean => {
     (!s.model || s.model === "unknown") &&
     (s.context_estimate?.total_tokens ?? 0) === 0;
 
-  return missingBreakdown || missingApiMeta;
+  // Case 3: has token data but missing tool_calls (e.g. from notification scan)
+  const missingToolCalls =
+    (s.tool_calls ?? []).length === 0 &&
+    (s.context_estimate?.total_tokens ?? 0) > 0;
+
+  return missingBreakdown || missingApiMeta || missingToolCalls;
 };
 
 export function usePromptDetail(scan: PromptScan, usage?: UsageLogEntry | null): UsePromptDetailReturn {
@@ -58,7 +63,8 @@ export function usePromptDetail(scan: PromptScan, usage?: UsageLogEntry | null):
           (enriched.injected_files?.length ?? 0) > 0 ||
           (enriched.context_estimate?.system_tokens ?? 0) > 0 ||
           (enriched.model != null && enriched.model !== "unknown") ||
-          (enriched.context_estimate?.total_tokens ?? 0) > 0;
+          (enriched.context_estimate?.total_tokens ?? 0) > 0 ||
+          (enriched.tool_calls?.length ?? 0) > 0;
         if (hasMoreData) {
           setEnrichedScan((prev) => ({
             ...enriched,
