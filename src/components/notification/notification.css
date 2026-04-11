@@ -456,7 +456,7 @@
   flex-shrink: 0;
 }
 
-/* ── 1. Injected Files ── */
+/* ── 1. Context Files with Evidence ── */
 .notif-injected-scroll {
   max-height: 72px;
   overflow-y: auto;
@@ -476,11 +476,28 @@
   animation: notif-slide-in 0.2s ease-out;
 }
 
-.notif-injected-icon {
-  font-size: 9px;
+.notif-evidence-dot {
+  font-size: 8px;
+  font-weight: 700;
   flex-shrink: 0;
-  width: 14px;
+  width: 12px;
   text-align: center;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  line-height: 12px;
+  background: transparent;
+}
+
+.notif-evidence-summary {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.notif-evidence-count {
+  font-size: 8px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .notif-injected-name {
