@@ -2,8 +2,12 @@ import { useMemo, useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { PromptNotification, ActivityLine } from './types';
 import type { HarnessCandidate, HarnessCandidateKind } from '../../types/electron';
+import type { PromptScan } from '../../types';
+import type { EvidenceStatus } from '../dashboard/prompt-detail/types';
 import { MiniSparkline } from './MiniSparkline';
 import { getContextLimit } from '../scan/shared';
+import { buildInjectedEvidence } from '../dashboard/prompt-detail/evidence';
+import { EVIDENCE_STATUS_COLORS } from '../dashboard/prompt-detail/constants';
 import {
   getSeverityColor,
   getSeverityIcon,
@@ -58,27 +62,40 @@ const TOOL_ICONS: Record<string, string> = {
   response: '💬',
 };
 
-// Category icons for injected files
-const CATEGORY_ICONS: Record<string, string> = {
-  global: '🌍',
-  project: '📋',
-  rules: '📏',
-  memory: '🧠',
-  skill: '⚡',
-};
+
+// Evidence status labels & sort order for notification
+const EVIDENCE_LABELS: Record<EvidenceStatus, string> = { confirmed: 'C', likely: 'L', unverified: 'U' };
+const EVIDENCE_ORDER: Record<EvidenceStatus, number> = { confirmed: 0, likely: 1, unverified: 2 };
 
 // ── 1. Context Files Section ──
 
-const ContextFilesSection = ({ files }: {
-  files: Array<{ path: string; category: string; estimated_tokens: number }>;
+const ContextFilesSection = ({ scan }: {
+  scan: PromptScan;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const files = scan.injected_files ?? [];
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [files.length]);
+
+  const evidence = useMemo(() => buildInjectedEvidence(scan), [scan]);
+
+  const allItems = useMemo(() => {
+    const items = [
+      ...evidence.confirmed,
+      ...evidence.likely,
+      ...evidence.unverified,
+    ];
+    items.sort((a, b) => {
+      const statusDiff = EVIDENCE_ORDER[a.status] - EVIDENCE_ORDER[b.status];
+      if (statusDiff !== 0) return statusDiff;
+      return b.estimated_tokens - a.estimated_tokens;
+    });
+    return items;
+  }, [evidence]);
 
   const totalTokens = files.reduce((sum, f) => sum + f.estimated_tokens, 0);
 
@@ -91,18 +108,32 @@ const ContextFilesSection = ({ files }: {
         {totalTokens > 0 && (
           <span className="notif-section-tokens">{formatTokens(totalTokens)} tok</span>
         )}
+        {allItems.length > 0 && (
+          <span className="notif-evidence-summary">
+            <span className="notif-evidence-count" style={{ color: EVIDENCE_STATUS_COLORS.confirmed }}>C {evidence.confirmed.length}</span>
+            <span className="notif-evidence-count" style={{ color: EVIDENCE_STATUS_COLORS.likely }}>L {evidence.likely.length}</span>
+            <span className="notif-evidence-count" style={{ color: EVIDENCE_STATUS_COLORS.unverified }}>U {evidence.unverified.length}</span>
+          </span>
+        )}
       </div>
       <div className="notif-injected-scroll" ref={scrollRef}>
-        {files.length === 0 ? (
+        {allItems.length === 0 ? (
           <div className="notif-section-empty">No context files</div>
         ) : (
-          files.map((f, i) => {
-            const fileName = f.path.split('/').pop() ?? f.path;
+          allItems.map((item, i) => {
+            const fileName = item.path.split('/').pop() ?? item.path;
+            const statusColor = EVIDENCE_STATUS_COLORS[item.status];
             return (
-              <div key={`${f.path}-${i}`} className="notif-injected-item">
-                <span className="notif-injected-icon">{CATEGORY_ICONS[f.category] ?? '📄'}</span>
-                <span className="notif-injected-name" title={f.path}>{truncate(fileName, 28)}</span>
-                <span className="notif-injected-tokens">{formatTokens(f.estimated_tokens)}</span>
+              <div key={`${item.path}-${i}`} className="notif-injected-item">
+                <span
+                  className="notif-evidence-dot"
+                  style={{ color: statusColor }}
+                  title={`${item.status}: ${item.reason}`}
+                >
+                  {EVIDENCE_LABELS[item.status]}
+                </span>
+                <span className="notif-injected-name" title={item.path}>{truncate(fileName, 26)}</span>
+                <span className="notif-injected-tokens">{formatTokens(item.estimated_tokens)}</span>
               </div>
             );
           })
@@ -655,8 +686,8 @@ export const NotificationCard = ({ notification, onDismiss, onClick, onMouseEnte
       {/* ── Workflow Change Candidates (30d analysis) ── */}
       <WorkflowInsightsSection candidates={notification.harnessCandidates} />
 
-      {/* ── 1. Context Files (always visible) ── */}
-      <ContextFilesSection files={scan.injected_files ?? []} />
+      {/* ── 1. Context Files with evidence status (always visible) ── */}
+      <ContextFilesSection scan={scan} />
 
       {/* ── 2. Actions Timeline (always visible) ── */}
       <ActionsTimeline lines={activityLog} isStreaming={isStreaming} />
