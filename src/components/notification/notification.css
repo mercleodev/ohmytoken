@@ -662,6 +662,8 @@
 .mini-sparkline {
   display: block;
   width: 100%;
+  height: auto;
+  max-height: 36px;
 }
 
 .notif-ctx-prev {
