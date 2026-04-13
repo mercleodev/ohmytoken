@@ -32,6 +32,8 @@ import {
   readInjectedFiles,
 } from "./importer/historyImporter";
 import { EvidenceEngine } from "./evidence/engine";
+import { makeEmitScoredScan } from "./evidence/emitScoredScan";
+import type { EmitScoredScan } from "./evidence/emitScoredScan";
 import { generateWorkflowDraft } from "./draftGenerator";
 import { exportWorkflowDraft } from "./draftExporter";
 import { mergeConfig } from "./evidence/config";
@@ -261,6 +263,34 @@ const sendToNotificationWindow = (channel: string, data: unknown): void => {
   } else {
     console.warn(`[NotificationWindow] Cannot send ${channel}: window is ${notificationWindow ? 'destroyed' : 'null'}`);
   }
+};
+
+const sendToMainWindow = (channel: string, data: unknown): void => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, data);
+  }
+};
+
+/**
+ * Load → score-if-no-existing → persist → emit. Centralized so the three
+ * watcher paths (Claude session, Codex session, history importer) do not
+ * each re-implement the emit-with-anti-downgrade dance.
+ * See docs/idea/notification-evidence-all-unverified.md §5.1 G1-3.
+ */
+const emitScoredScan: EmitScoredScan = (requestId, reason) => {
+  const helper = makeEmitScoredScan({
+    reader: {
+      getPromptDetail: dbReader.getPromptDetail,
+      getEvidenceReport: dbReader.getEvidenceReport,
+      getPromptIdByRequestId: dbReader.getPromptIdByRequestId,
+      getSessionFileScores: dbReader.getSessionFileScores,
+    },
+    writer: { insertEvidenceReport },
+    engine: evidenceEngine,
+    sendToMain: sendToMainWindow,
+    sendToNotification: sendToNotificationWindow,
+  });
+  helper(requestId, reason);
 };
 
 // Debug log from notification renderer
@@ -553,21 +583,14 @@ const initApp = async (): Promise<void> => {
             try {
               // Try to import — returns null if already in DB
               const eventTs = typeof event.timestamp === 'number' ? event.timestamp : new Date(event.timestamp).getTime();
-              const requestId = importSinglePrompt(event.sessionId, eventTs);
+              importSinglePrompt(event.sessionId, eventTs);
 
               // Whether newly imported or already existed, send the latest scan for this session
               // The notification manager has its own staleness guard (3 min)
               const scans = dbReader.getSessionPrompts(event.sessionId);
               if (scans.length > 0) {
                 const latest = scans[scans.length - 1];
-                const detail = dbReader.getPromptDetail(latest.request_id);
-                if (detail?.scan) {
-                  console.log(`[SessionFileWatcher] Enriched scan sent: ${latest.request_id}, injected=${detail.scan.injected_files?.length}, ts=${latest.timestamp}`);
-                  sendToNotificationWindow("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
-                  if (mainWindow && !mainWindow.isDestroyed()) {
-                    mainWindow.webContents.send("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
-                  }
-                }
+                emitScoredScan(latest.request_id, "session");
               }
             } catch (e) {
               console.error("[SessionFileWatcher] Failed to import prompt for notification:", e);
@@ -608,18 +631,8 @@ const initApp = async (): Promise<void> => {
         // Real-time DB import: parse session file and insert latest prompt
         try {
           const insertedRequestId = importSinglePrompt(entry.sessionId, entry.timestamp);
-          const sendScan = (scan: unknown, usage: unknown) => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send("new-prompt-scan", { scan, usage });
-            }
-            sendToNotificationWindow("new-prompt-scan", { scan, usage });
-          };
-
           if (insertedRequestId) {
-            const detail = dbReader.getPromptDetail(insertedRequestId);
-            if (detail?.scan) {
-              sendScan(detail.scan, detail.usage ?? null);
-            }
+            emitScoredScan(insertedRequestId, "history");
           }
           // No fallback: don't send stale/previous prompt data
         } catch (e) {
@@ -705,14 +718,7 @@ const initApp = async (): Promise<void> => {
               const scans = dbReader.getSessionPrompts(event.sessionId);
               if (scans.length > 0) {
                 const latest = scans[scans.length - 1];
-                const detail = dbReader.getPromptDetail(latest.request_id);
-                if (detail?.scan) {
-                  console.log(`[CodexSessionWatcher] Enriched scan sent: ${latest.request_id}`);
-                  sendToNotificationWindow("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
-                  if (mainWindow && !mainWindow.isDestroyed()) {
-                    mainWindow.webContents.send("new-prompt-scan", { scan: detail.scan, usage: detail.usage ?? null });
-                  }
-                }
+                emitScoredScan(latest.request_id, "codex");
               }
             } catch (e) {
               console.error("[CodexSessionWatcher] Failed to import prompt for notification:", e);
