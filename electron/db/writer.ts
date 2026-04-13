@@ -315,15 +315,30 @@ export const insertEvidenceReport = (
 ): number | null => {
   const db = getDatabase();
 
-  const insertReport = db.prepare(`
-    INSERT OR IGNORE INTO evidence_reports (
+  // Upsert on UNIQUE(request_id). On conflict, overwrite scalar columns and
+  // return the existing row id via RETURNING so we can cascade-replace the
+  // related file_evidence_scores rows below.
+  const upsertReport = db.prepare(`
+    INSERT INTO evidence_reports (
       prompt_id, request_id, timestamp, engine_version,
       fusion_method, confirmed_min, likely_min
     ) VALUES (
       @prompt_id, @request_id, @timestamp, @engine_version,
       @fusion_method, @confirmed_min, @likely_min
     )
+    ON CONFLICT(request_id) DO UPDATE SET
+      prompt_id      = excluded.prompt_id,
+      timestamp      = excluded.timestamp,
+      engine_version = excluded.engine_version,
+      fusion_method  = excluded.fusion_method,
+      confirmed_min  = excluded.confirmed_min,
+      likely_min     = excluded.likely_min
+    RETURNING id
   `);
+
+  const deleteOldFileScores = db.prepare(
+    `DELETE FROM file_evidence_scores WHERE report_id = @report_id`,
+  );
 
   const insertFileScore = db.prepare(`
     INSERT INTO file_evidence_scores (
@@ -338,7 +353,7 @@ export const insertEvidenceReport = (
   let reportId: number | null = null;
 
   const tx = db.transaction(() => {
-    const result = insertReport.run({
+    const row = upsertReport.get({
       prompt_id: promptId,
       request_id: report.request_id,
       timestamp: report.timestamp,
@@ -346,10 +361,13 @@ export const insertEvidenceReport = (
       fusion_method: report.fusion_method,
       confirmed_min: report.thresholds.confirmed_min,
       likely_min: report.thresholds.likely_min,
-    });
+    }) as { id: number } | undefined;
 
-    if (result.changes === 0) return;
-    reportId = result.lastInsertRowid as number;
+    if (!row) return;
+    reportId = row.id;
+
+    // Replace file scores atomically (old rows gone, new rows inserted).
+    deleteOldFileScores.run({ report_id: reportId });
 
     for (const f of report.files) {
       insertFileScore.run({
