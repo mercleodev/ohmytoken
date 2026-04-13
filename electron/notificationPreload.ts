@@ -125,4 +125,26 @@ contextBridge.exposeInMainWorld("api", {
       ipcRenderer.removeListener("backfill:complete", handler);
     };
   },
+
+  // Listen for async evidence scoring completion (proxy path) so the
+  // overlay can merge the report into an already-visible card.
+  // See docs/idea/notification-evidence-all-unverified.md §5.1 G1-2.
+  onEvidenceScored: (
+    callback: (data: {
+      requestId: string;
+      report: import("./evidence/types").EvidenceReport;
+    }) => void,
+  ) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: {
+        requestId: string;
+        report: import("./evidence/types").EvidenceReport;
+      },
+    ) => callback(data);
+    ipcRenderer.on("evidence-scored", handler);
+    return () => {
+      ipcRenderer.removeListener("evidence-scored", handler);
+    };
+  },
 });
