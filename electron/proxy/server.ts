@@ -12,7 +12,7 @@ import { PendingUsage, PromptScan, ProxyStatus, UsageLogEntry } from "./types";
 const DEFAULT_PORT = 8780;
 const ANTHROPIC_HOST = "api.anthropic.com";
 
-type ProxyOptions = {
+export type ProxyOptions = {
   port?: number;
   upstream?: string; // 'host:port' (http) or 'api.anthropic.com' (https)
   resolveSessionId?: () => string;

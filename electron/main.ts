@@ -34,6 +34,7 @@ import {
 import { EvidenceEngine } from "./evidence/engine";
 import { makeEmitScoredScan } from "./evidence/emitScoredScan";
 import type { EmitScoredScan } from "./evidence/emitScoredScan";
+import { buildProxyOptions } from "./proxy/buildProxyOptions";
 import { generateWorkflowDraft } from "./draftGenerator";
 import { exportWorkflowDraft } from "./draftExporter";
 import { mergeConfig } from "./evidence/config";
@@ -738,59 +739,41 @@ const initApp = async (): Promise<void> => {
   const proxyPort = settings?.proxyPort || DEFAULT_PROXY_PORT;
   const proxyUpstream = process.env.PROXY_UPSTREAM || "api.anthropic.com";
   try {
-    startProxyServer({
-      port: proxyPort,
-      upstream: proxyUpstream,
-      resolveSessionId: () => getLastActiveSessionId(),
-      onScanComplete: (scan, usage) => {
-        mainWindow?.webContents.send("new-prompt-scan", { scan, usage });
-        sendToNotificationWindow("new-prompt-scan", { scan, usage });
-        // Dual-write: also persist to SQLite DB
-        try {
-          onProxyScanComplete(scan, usage);
-        } catch (e) {
-          console.error("[DB] proxy write error:", e);
-        }
-      },
-      // Evidence scoring integration
-      evidenceEngine: evidenceEngine ?? undefined,
-      getSystemContents: (body: string) => {
-        try {
-          const parsed = JSON.parse(body);
-          if (parsed.system) {
-            return parseSystemFieldWithContent(parsed.system).contents;
-          }
-        } catch { /* ignore parse errors */ }
-        return {};
-      },
-      getPreviousScores: (sessionId: string) => {
-        try {
-          return dbReader.getSessionFileScores(sessionId);
-        } catch { return {}; }
-      },
-      onEvidenceScored: (scan) => {
-        if (scan.evidence_report) {
-          // Persist evidence report to DB
+    startProxyServer(
+      buildProxyOptions({
+        port: proxyPort,
+        upstream: proxyUpstream,
+        resolveSessionId: () => getLastActiveSessionId(),
+        sendToMain: sendToMainWindow,
+        sendToNotification: sendToNotificationWindow,
+        onProxyScanComplete,
+        parseSystemContents: (body: string) => {
           try {
-            const promptId = dbReader.getPromptIdByRequestId(scan.request_id);
-            if (promptId !== null) {
-              insertEvidenceReport(promptId, scan.evidence_report);
+            const parsed = JSON.parse(body);
+            if (parsed.system) {
+              return parseSystemFieldWithContent(parsed.system).contents;
             }
-          } catch (e) {
-            console.error("[Evidence] DB write error:", e);
+          } catch {
+            /* ignore parse errors */
           }
-          const payload = {
-            requestId: scan.request_id,
-            report: scan.evidence_report,
-          };
-          mainWindow?.webContents.send("evidence-scored", payload);
-          // Also notify the notification overlay so already-visible cards can
-          // merge the freshly-scored report (G1-2). Without this the overlay
-          // shows "U" forever on the proxy path.
-          sendToNotificationWindow("evidence-scored", payload);
-        }
-      },
-    });
+          return {};
+        },
+        getPreviousScores: (sessionId: string) => {
+          try {
+            return dbReader.getSessionFileScores(sessionId);
+          } catch {
+            return {};
+          }
+        },
+        evidenceEngine,
+        persistEvidence: (requestId, report) => {
+          const promptId = dbReader.getPromptIdByRequestId(requestId);
+          if (promptId !== null) {
+            insertEvidenceReport(promptId, report);
+          }
+        },
+      }),
+    );
     console.log(`Proxy server auto-started on :${proxyPort}`);
   } catch (err) {
     console.error("Failed to auto-start proxy:", err);
@@ -844,21 +827,42 @@ const setupIPC = (): void => {
     if (prevPort !== newPort) {
       try {
         await stopProxyServer();
-        startProxyServer({
-          port: newPort,
-          upstream: "api.anthropic.com",
-          resolveSessionId: () => getLastActiveSessionId(),
-          onScanComplete: (scan, usage) => {
-            mainWindow?.webContents.send("new-prompt-scan", { scan, usage });
-            sendToNotificationWindow("new-prompt-scan", { scan, usage });
-            try {
-              onProxyScanComplete(scan, usage);
-            } catch (e) {
-              console.error("[DB] proxy write error:", e);
-            }
-          },
-        });
-        console.log(`Proxy restarted on :${newPort}`);
+        startProxyServer(
+          buildProxyOptions({
+            port: newPort,
+            upstream: process.env.PROXY_UPSTREAM || "api.anthropic.com",
+            resolveSessionId: () => getLastActiveSessionId(),
+            sendToMain: sendToMainWindow,
+            sendToNotification: sendToNotificationWindow,
+            onProxyScanComplete,
+            parseSystemContents: (body: string) => {
+              try {
+                const parsed = JSON.parse(body);
+                if (parsed.system) {
+                  return parseSystemFieldWithContent(parsed.system).contents;
+                }
+              } catch {
+                /* ignore parse errors */
+              }
+              return {};
+            },
+            getPreviousScores: (sessionId: string) => {
+              try {
+                return dbReader.getSessionFileScores(sessionId);
+              } catch {
+                return {};
+              }
+            },
+            evidenceEngine,
+            persistEvidence: (requestId, report) => {
+              const promptId = dbReader.getPromptIdByRequestId(requestId);
+              if (promptId !== null) {
+                insertEvidenceReport(promptId, report);
+              }
+            },
+          }),
+        );
+        console.log(`Proxy restarted on :${newPort} (evidence hooks restored)`);
       } catch (err) {
         console.error("Failed to restart proxy:", err);
       }
