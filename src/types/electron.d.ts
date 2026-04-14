@@ -202,6 +202,23 @@ export type SessionMcpAnalysis = {
 
 // --- Harness Candidate Types (Workflow Change Recommendations) ---
 
+export type MemoryFile = {
+  fileName: string;
+  name: string;
+  description: string;
+  type: string;
+  lineCount: number;
+  content: string;
+};
+
+export type MemoryStatus = {
+  indexLineCount: number;
+  indexMaxLines: number;
+  indexContent: string;
+  files: MemoryFile[];
+  memoryDir: string;
+};
+
 export type HarnessCandidateKind =
   | 'script'
   | 'cdp'
@@ -401,6 +418,9 @@ export type ElectronApi = {
     period?: 'today' | '7d' | '30d';
     limit?: number;
   }) => Promise<HarnessCandidate[]>;
+
+  // Memory Monitor API
+  getMemoryStatus: () => Promise<MemoryStatus | null>;
 
   // Workflow Draft Preview API
   previewWorkflowDraft: (candidate: {

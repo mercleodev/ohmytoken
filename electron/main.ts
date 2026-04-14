@@ -1880,6 +1880,73 @@ const setupIPC = (): void => {
     }
   });
 
+  // Memory monitor: read Claude Code memory files
+  ipcMain.handle("get-memory-status", async () => {
+    try {
+      const projectsDir = path.join(homedir(), ".claude", "projects");
+      if (!fs.existsSync(projectsDir)) return null;
+
+      // Find memory dir for the current working directory
+      const cwd = process.cwd();
+      const encodedCwd = cwd.replace(/\//g, "-");
+      const memoryDir = path.join(projectsDir, encodedCwd, "memory");
+      if (!fs.existsSync(memoryDir)) return null;
+
+      // Read MEMORY.md (index file)
+      const indexPath = path.join(memoryDir, "MEMORY.md");
+      const indexContent = fs.existsSync(indexPath)
+        ? fs.readFileSync(indexPath, "utf-8")
+        : "";
+      const indexLineCount = indexContent.split("\n").length;
+
+      // Read all memory files
+      const files = fs.readdirSync(memoryDir)
+        .filter((f: string) => f.endsWith(".md") && f !== "MEMORY.md")
+        .map((f: string) => {
+          const filePath = path.join(memoryDir, f);
+          const content = fs.readFileSync(filePath, "utf-8");
+          const lines = content.split("\n");
+
+          // Parse frontmatter
+          let name = f.replace(".md", "");
+          let description = "";
+          let type = "unknown";
+          if (lines[0] === "---") {
+            const endIdx = lines.indexOf("---", 1);
+            if (endIdx > 0) {
+              const frontmatter = lines.slice(1, endIdx).join("\n");
+              const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
+              const descMatch = frontmatter.match(/^description:\s*(.+)$/m);
+              const typeMatch = frontmatter.match(/^type:\s*(.+)$/m);
+              if (nameMatch) name = nameMatch[1].trim();
+              if (descMatch) description = descMatch[1].trim();
+              if (typeMatch) type = typeMatch[1].trim();
+            }
+          }
+
+          return {
+            fileName: f,
+            name,
+            description,
+            type,
+            lineCount: lines.length,
+            content,
+          };
+        });
+
+      return {
+        indexLineCount,
+        indexMaxLines: 200,
+        indexContent,
+        files,
+        memoryDir,
+      };
+    } catch (error) {
+      console.error("get-memory-status error:", error);
+      return null;
+    }
+  });
+
   ipcMain.handle("preview-workflow-draft", async (_event, candidate: {
     toolName: string; inputSummary: string; candidateKind: string;
     repeatCount: number; promptCount: number; sessionCount: number;
