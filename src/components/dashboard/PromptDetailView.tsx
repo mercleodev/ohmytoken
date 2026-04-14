@@ -30,7 +30,7 @@ type PromptDetailViewProps = {
 
 export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    () => new Set(["context-files"]),
+    () => new Set(["context-files", "memory", "tools"]),
   );
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [promptExpanded, setPromptExpanded] = useState(false);
@@ -188,7 +188,7 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
         {usage && <StatPill label="Duration" value={`${(usage.duration_ms / 1000).toFixed(1)}s`} />}
       </div>
 
-      <JourneySummary scan={displayScan} usage={usage} cacheHitPct={cacheHitPct} onFileClick={setPreviewFile} />
+      <JourneySummary scan={displayScan} usage={usage} cacheHitPct={cacheHitPct} />
 
       {/* Context Files (merged evidence + files) */}
       {hasInjectedFiles && (
