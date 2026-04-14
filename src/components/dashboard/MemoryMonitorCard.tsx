@@ -43,7 +43,7 @@ const MemoryFileItem = ({ file, isExpanded, onToggle }: {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
             style={{ overflow: 'hidden' }}
           >
             <pre className="memory-file-content">{file.content}</pre>
@@ -228,7 +228,7 @@ export const MemoryMonitorCard = () => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
             style={{ overflow: 'hidden' }}
           >
             <div className="memory-stats">

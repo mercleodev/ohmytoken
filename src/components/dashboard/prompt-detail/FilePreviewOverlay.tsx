@@ -59,7 +59,7 @@ export const FilePreviewOverlay = ({
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ type: 'spring', stiffness: 450, damping: 35 }}
         onClick={(e) => e.stopPropagation()}
         ref={overlayRef}
       >

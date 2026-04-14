@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ProviderUsageSnapshot, ProviderTokenStatus, CreditBalance } from '../../types';
 import { UsageGaugeCard } from './UsageGaugeCard';
 import { formatTimeAgo } from '../../utils/format';
@@ -190,14 +190,22 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
         )}
 
         {/* Notice */}
-        <div className="prepaid-notice">
-          <div className="prepaid-notice-icon">i</div>
-          <div className="prepaid-notice-text">
-            {snapshot.notice.split('\n').map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
-          </div>
-        </div>
+        <AnimatePresence>
+          <motion.div
+            className="prepaid-notice"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+          >
+            <div className="prepaid-notice-icon">i</div>
+            <div className="prepaid-notice-text">
+              {snapshot.notice.split('\n').map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Output Productivity */}
         {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}

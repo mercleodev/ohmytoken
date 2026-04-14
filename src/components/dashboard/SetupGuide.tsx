@@ -58,7 +58,7 @@ export const SetupGuide = ({ status }: SetupGuideProps) => {
       className="setup-guide"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
     >
       <div className="setup-guide-icon">{PROVIDER_ICONS[status.provider]}</div>
       <div className="setup-guide-title">{title}</div>

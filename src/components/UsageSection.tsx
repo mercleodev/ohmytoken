@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from 'framer-motion';
 import { CurrentUsageData, AppSettings } from '../types';
 import { ProgressBar } from './ProgressBar';
 
@@ -33,7 +34,19 @@ export const UsageSection = ({ usageData, settings, onEdit, onSettings, onAnalyz
 
   return (
     <section className="usage-section">
-      {error && <div className="error-msg">{error}</div>}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            className="error-msg"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="usage-card">
         <div className="card-header">

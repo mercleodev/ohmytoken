@@ -27,7 +27,7 @@ export const UsageGaugeCard = ({ windows }: UsageGaugeCardProps) => {
           className="gauge-item"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: i * 0.04, duration: 0.2 }}
+          transition={{ delay: i * 0.04, type: 'spring', stiffness: 350, damping: 30 }}
         >
           <div className="gauge-label">{w.label}</div>
           <div className="gauge-bar-track">
@@ -36,7 +36,7 @@ export const UsageGaugeCard = ({ windows }: UsageGaugeCardProps) => {
               style={{ background: getGaugeColor(i, w.usedPercent) }}
               initial={{ width: 0 }}
               animate={{ width: `${w.usedPercent}%` }}
-              transition={{ duration: 0.6, ease: 'easeOut', delay: i * 0.08 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30, delay: i * 0.08 }}
             />
           </div>
           <div className="gauge-info">

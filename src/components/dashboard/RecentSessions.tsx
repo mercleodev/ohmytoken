@@ -465,7 +465,7 @@ export const RecentSessions = ({
                   initial={{ opacity: 0, height: 0, marginBottom: 0 }}
                   animate={{ opacity: 1, height: "auto", marginBottom: 6 }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                 >
                   <div className="session-card-row">
                     <MiniCtxGauge pct={ctxPct} noData={!hasCtx} />
