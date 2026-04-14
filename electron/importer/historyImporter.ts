@@ -759,12 +759,11 @@ export const importSinglePrompt = (
     const userEntry = entries[bestUserIdx];
     const requestId = userEntry.uuid || `history-${sessionId}-${bestUserIdx}`;
 
-    // Check for duplicate
+    // Check for duplicate — but allow patching missing fields
     const db = getDatabase();
     const existing = db
-      .prepare("SELECT id FROM prompts WHERE request_id = @rid")
-      .get({ rid: requestId });
-    if (existing) return null;
+      .prepare("SELECT id, assistant_response FROM prompts WHERE request_id = @rid")
+      .get({ rid: requestId }) as { id: number; assistant_response: string | null } | undefined;
 
     // Find next real user prompt for range bounding
     let nextUserIdx = entries.length;
@@ -792,6 +791,36 @@ export const importSinglePrompt = (
 
     const userText = extractUserText(userEntry);
     if (!userText) return null;
+
+    // If prompt already exists, patch missing assistant_response and injected_files
+    if (existing) {
+      const assistantText = extractAssistantText(assistantEntry);
+      const needsResponsePatch = !existing.assistant_response && assistantText;
+      const existingFileCount = (db
+        .prepare("SELECT COUNT(*) as n FROM injected_files WHERE prompt_id = @pid")
+        .get({ pid: existing.id }) as { n: number }).n;
+      const needsFilesPatch = existingFileCount === 0 && projectPath;
+
+      if (needsResponsePatch) {
+        db.prepare("UPDATE prompts SET assistant_response = @resp WHERE id = @id")
+          .run({ resp: assistantText.slice(0, 2000), id: existing.id });
+      }
+      if (needsFilesPatch) {
+        const files = readInjectedFiles(projectPath);
+        const insertFile = db.prepare(
+          "INSERT INTO injected_files (prompt_id, path, category, estimated_tokens) VALUES (@pid, @path, @category, @tokens)",
+        );
+        for (const f of files) {
+          insertFile.run({
+            pid: existing.id,
+            path: f.path,
+            category: f.category,
+            tokens: f.estimated_tokens,
+          });
+        }
+      }
+      return (needsResponsePatch || needsFilesPatch) ? requestId : null;
+    }
 
     const data = buildPromptData(
       requestId,
