@@ -38,6 +38,7 @@ export type AppSettings = {
   contextLimitOverride?: number; // 0 = auto (plan-based), >0 = manual override
   notificationsEnabled?: boolean; // prompt notification overlay (default: true)
   notificationDisplayId?: number; // display id for notification overlay (0 = auto: largest external)
+  showAllProjectsMemory?: boolean; // show memory from all projects in dashboard (default: false)
 };
 
 export type Config = {
