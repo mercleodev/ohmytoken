@@ -488,6 +488,32 @@
   background: transparent;
 }
 
+/* G2-C.1 pending: grey skeleton while scoring is in-flight. */
+.notif-evidence-dot--pending {
+  color: #9aa0a6;
+  border-color: #9aa0a6;
+  opacity: 0.6;
+  animation: notif-pending-pulse 1.2s ease-in-out infinite;
+}
+
+.notif-injected-item--pending {
+  opacity: 0.7;
+}
+
+.notif-evidence-pending {
+  margin-left: auto;
+  font-size: 8px;
+  font-weight: 600;
+  color: #9aa0a6;
+  letter-spacing: 0.04em;
+  animation: notif-pending-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes notif-pending-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.95; }
+}
+
 .notif-evidence-summary {
   display: flex;
   gap: 4px;

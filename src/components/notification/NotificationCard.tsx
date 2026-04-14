@@ -8,6 +8,7 @@ import { MiniSparkline } from './MiniSparkline';
 import { getContextLimit } from '../scan/shared';
 import { buildInjectedEvidence } from '../dashboard/prompt-detail/evidence';
 import { EVIDENCE_STATUS_COLORS } from '../dashboard/prompt-detail/constants';
+import { resolveEvidenceView, PENDING_WINDOW_MS } from './pendingEvidence';
 import {
   getSeverityColor,
   getSeverityIcon,
@@ -69,8 +70,9 @@ const EVIDENCE_ORDER: Record<EvidenceStatus, number> = { confirmed: 0, likely: 1
 
 // ── 1. Context Files Section ──
 
-const ContextFilesSection = ({ scan }: {
+const ContextFilesSection = ({ scan, createdAt }: {
   scan: PromptScan;
+  createdAt: number;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const files = scan.injected_files ?? [];
@@ -81,23 +83,86 @@ const ContextFilesSection = ({ scan }: {
     }
   }, [files.length]);
 
-  const evidence = useMemo(() => buildInjectedEvidence(scan), [scan]);
+  // Pending window: once the notification is older than PENDING_WINDOW_MS and
+  // no evidence_report has arrived (neither attached nor via evidence-scored
+  // IPC), fall through to the legacy buildInjectedEvidence output. Re-render
+  // at the window boundary so the skeleton flips to the legacy bucket UI
+  // without requiring a later IPC to unblock.
+  const [pendingTimedOut, setPendingTimedOut] = useState(
+    Date.now() - createdAt >= PENDING_WINDOW_MS,
+  );
+  useEffect(() => {
+    if (pendingTimedOut || scan.evidence_report) return;
+    const elapsed = Date.now() - createdAt;
+    const remaining = PENDING_WINDOW_MS - elapsed;
+    if (remaining <= 0) {
+      setPendingTimedOut(true);
+      return;
+    }
+    const t = setTimeout(() => setPendingTimedOut(true), remaining);
+    return () => clearTimeout(t);
+  }, [pendingTimedOut, scan.evidence_report, createdAt]);
 
-  const allItems = useMemo(() => {
-    const items = [
-      ...evidence.confirmed,
-      ...evidence.likely,
-      ...evidence.unverified,
-    ];
-    items.sort((a, b) => {
-      const statusDiff = EVIDENCE_ORDER[a.status] - EVIDENCE_ORDER[b.status];
-      if (statusDiff !== 0) return statusDiff;
-      return b.estimated_tokens - a.estimated_tokens;
-    });
-    return items;
-  }, [evidence]);
+  const view = useMemo(
+    () =>
+      resolveEvidenceView({
+        scan,
+        pendingTimedOut,
+        ageMs: Date.now() - createdAt,
+      }),
+    [scan, pendingTimedOut, createdAt],
+  );
 
   const totalTokens = files.reduce((sum, f) => sum + f.estimated_tokens, 0);
+
+  // G2-C.1 contract: do NOT call buildInjectedEvidence in the pending branch,
+  // so a missing report cannot silently render as the legacy `U` bucket.
+  if (view.kind === 'pending') {
+    return (
+      <div className="notif-section">
+        <div className="notif-section-header">
+          <span className="notif-section-icon">📎</span>
+          <span className="notif-section-title">Context Files</span>
+          <span className="notif-section-badge">{files.length}</span>
+          {totalTokens > 0 && (
+            <span className="notif-section-tokens">{formatTokens(totalTokens)} tok</span>
+          )}
+          <span className="notif-evidence-pending" title="Scoring in progress">scoring…</span>
+        </div>
+        <div className="notif-injected-scroll" ref={scrollRef}>
+          {files.length === 0 ? (
+            <div className="notif-section-empty">No context files</div>
+          ) : (
+            files.map((f, i) => {
+              const fileName = f.path.split('/').pop() ?? f.path;
+              return (
+                <div key={`${f.path}-${i}`} className="notif-injected-item notif-injected-item--pending">
+                  <span className="notif-evidence-dot notif-evidence-dot--pending" title="Scoring in progress">·</span>
+                  <span className="notif-injected-name" title={f.path}>{truncate(fileName, 26)}</span>
+                  <span className="notif-injected-tokens">{formatTokens(f.estimated_tokens)}</span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Scored or legacy: both go through buildInjectedEvidence. When no report
+  // is attached, buildInjectedEvidence falls through to buildLegacyEvidence
+  // internally. The user-visible distinction is the title/tooltip on U items.
+  const evidence = buildInjectedEvidence(scan);
+  const allItems = [
+    ...evidence.confirmed,
+    ...evidence.likely,
+    ...evidence.unverified,
+  ].sort((a, b) => {
+    const statusDiff = EVIDENCE_ORDER[a.status] - EVIDENCE_ORDER[b.status];
+    if (statusDiff !== 0) return statusDiff;
+    return b.estimated_tokens - a.estimated_tokens;
+  });
+  const isLegacy = view.kind === 'legacy';
 
   return (
     <div className="notif-section">
@@ -123,12 +188,15 @@ const ContextFilesSection = ({ scan }: {
           allItems.map((item, i) => {
             const fileName = item.path.split('/').pop() ?? item.path;
             const statusColor = EVIDENCE_STATUS_COLORS[item.status];
+            const title = isLegacy && item.status === 'unverified'
+              ? `no score available — ${item.reason}`
+              : `${item.status}: ${item.reason}`;
             return (
               <div key={`${item.path}-${i}`} className="notif-injected-item">
                 <span
                   className="notif-evidence-dot"
                   style={{ color: statusColor }}
-                  title={`${item.status}: ${item.reason}`}
+                  title={title}
                 >
                   {EVIDENCE_LABELS[item.status]}
                 </span>
@@ -687,7 +755,7 @@ export const NotificationCard = ({ notification, onDismiss, onClick, onMouseEnte
       <WorkflowInsightsSection candidates={notification.harnessCandidates} />
 
       {/* ── 1. Context Files with evidence status (always visible) ── */}
-      <ContextFilesSection scan={scan} />
+      <ContextFilesSection scan={scan} createdAt={notification.createdAt} />
 
       {/* ── 2. Actions Timeline (always visible) ── */}
       <ActionsTimeline lines={activityLog} isStreaming={isStreaming} />
