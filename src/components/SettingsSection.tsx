@@ -35,6 +35,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
   const [proxyPort, setProxyPort] = useState(DEFAULT_SETTINGS.proxyPort);
   const [notificationsEnabled, setNotificationsEnabled] = useState(DEFAULT_SETTINGS.notificationsEnabled ?? true);
   const [notificationDisplayId, setNotificationDisplayId] = useState(DEFAULT_SETTINGS.notificationDisplayId ?? 0);
+  const [showAllProjectsMemory, setShowAllProjectsMemory] = useState(false);
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -49,6 +50,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
       setProxyPort(settings.proxyPort || DEFAULT_SETTINGS.proxyPort);
       setNotificationsEnabled(settings.notificationsEnabled ?? true);
       setNotificationDisplayId(settings.notificationDisplayId ?? 0);
+      setShowAllProjectsMemory(settings.showAllProjectsMemory ?? false);
     }
   }, [settings]);
 
@@ -120,6 +122,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
       proxyPort,
       notificationsEnabled,
       notificationDisplayId,
+      showAllProjectsMemory,
     });
   };
 
@@ -272,6 +275,25 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
             </p>
           </div>
         )}
+      </div>
+
+      <div className="settings-group">
+        <h3>Claude Memory</h3>
+        <div className="form-group">
+          <label htmlFor="showAllProjectsMemory" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              id="showAllProjectsMemory"
+              checked={showAllProjectsMemory}
+              onChange={(e) => setShowAllProjectsMemory(e.target.checked)}
+              style={{ width: 16, height: 16 }}
+            />
+            <span>Show All Projects Memory</span>
+          </label>
+          <p className="hint">
+            Display memory summaries from all Claude Code projects in the dashboard, not just the current project
+          </p>
+        </div>
       </div>
 
       <div className="settings-group">
