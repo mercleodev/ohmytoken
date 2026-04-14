@@ -113,12 +113,13 @@ describe("emitScoredScan", () => {
     expect(deps.writer.insertEvidenceReport).not.toHaveBeenCalled();
   });
 
-  it("(branch 1) no existing report → scoring runs, DB insert fires, emitted payload carries evidence_report", () => {
+  it("(branch 1) no existing report → scoring runs with fileContents, DB insert fires, emitted payload carries evidence_report", () => {
     const scan = makeScan("req-a");
     const usage = makeUsage();
     const freshReport = makeReport("req-a");
 
     const engine = { score: vi.fn(() => freshReport) };
+    const readFileContents = vi.fn(() => ({ "CLAUDE.md": "# CLAUDE.md content" }));
 
     const deps = makeDeps({
       reader: {
@@ -128,15 +129,20 @@ describe("emitScoredScan", () => {
         getSessionFileScores: vi.fn(() => ({ "CLAUDE.md": [0.3] })),
       },
       engine,
+      readFileContents,
     });
 
     const emit = makeEmitScoredScan(deps);
     emit("req-a", "session");
 
+    expect(readFileContents).toHaveBeenCalled();
     expect(engine.score).toHaveBeenCalledTimes(1);
     expect(engine.score).toHaveBeenCalledWith(
       expect.objectContaining({ request_id: "req-a" }),
-      { previousScores: { "CLAUDE.md": [0.3] } },
+      {
+        previousScores: { "CLAUDE.md": [0.3] },
+        fileContents: { "CLAUDE.md": "# CLAUDE.md content" },
+      },
     );
     expect(deps.writer.insertEvidenceReport).toHaveBeenCalledWith(42, freshReport);
     expect(deps.sendToNotification).toHaveBeenCalledWith("new-prompt-scan", {
