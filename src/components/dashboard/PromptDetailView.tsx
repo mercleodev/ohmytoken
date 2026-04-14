@@ -75,10 +75,8 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
   const hasDetailedBreakdown = (displayScan.context_estimate?.system_tokens ?? 0) > 0
     || (displayScan.context_estimate?.messages_tokens ?? 0) > 0;
   const hasInjectedFiles = injectedFiles.length > 0;
-  const hasToolCalls = toolCalls.length > 0;
-  const hasAnyData = hasDetailedBreakdown || hasInjectedFiles || hasToolCalls
-    || (displayScan.context_estimate?.total_tokens ?? 0) > 0;
-  const isLimitedProvider = !hasAnyData;
+  const isLimitedProvider = !hasDetailedBreakdown && !hasInjectedFiles
+    && (displayScan.context_estimate?.total_tokens ?? 0) === 0;
 
   const toolNameOptions = useMemo(() => {
     const freq: Record<string, number> = {};
@@ -175,7 +173,7 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
       {/* Provider data limitation notice */}
       {isLimitedProvider && (
         <div className="provider-data-notice">
-          Token breakdown and file/action details are not available for this provider.
+          Token breakdown and context file details are not available for this provider.
         </div>
       )}
 
