@@ -5,18 +5,14 @@ type JourneySummaryProps = {
   scan: PromptScan;
   usage: UsageLogEntry | null;
   cacheHitPct: number | null;
-  onFileClick: (path: string) => void;
 };
 
-export const JourneySummary = ({ scan, usage, cacheHitPct, onFileClick }: JourneySummaryProps) => {
+export const JourneySummary = ({ scan, usage, cacheHitPct }: JourneySummaryProps) => {
   const isClaude = (scan.provider ?? "claude") === "claude";
   const injectedFiles = scan.injected_files ?? [];
   const toolCalls = scan.tool_calls ?? [];
   const actionCounts = Object.entries(scan.tool_summary ?? {})
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 3);
-  const topInjectedFiles = [...injectedFiles]
-    .sort((a, b) => b.estimated_tokens - a.estimated_tokens)
     .slice(0, 3);
 
   // For non-Claude providers without individual tool_calls, derive count from tool_summary
@@ -63,24 +59,6 @@ export const JourneySummary = ({ scan, usage, cacheHitPct, onFileClick }: Journe
           </div>
         )}
       </div>
-      {topInjectedFiles.length > 0 && (
-        <div className="journey-summary-files">
-          {topInjectedFiles.map((file) => (
-            <button
-              key={file.path}
-              className="journey-summary-file"
-              onClick={() => onFileClick(file.path)}
-            >
-              <span className="journey-summary-file-name">
-                {file.path.split("/").slice(-2).join("/")}
-              </span>
-              <span className="journey-summary-file-tokens">
-                {formatTokens(file.estimated_tokens)}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 };
