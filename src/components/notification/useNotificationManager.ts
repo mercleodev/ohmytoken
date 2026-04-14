@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { PromptScan, UsageLogEntry, TurnMetric, HarnessCandidate } from '../../types/electron';
+import type { PromptScan, UsageLogEntry, TurnMetric, HarnessCandidate, EvidenceReport } from '../../types/electron';
 import type { PromptNotification, ActivityLine } from './types';
 import type { GuardrailAssessment } from '../../guardrails/types';
 import { getSessionAlerts } from '../../utils/sessionAlerts';
@@ -7,6 +7,7 @@ import { buildContext } from '../../guardrails/buildContext';
 import { evaluate } from '../../guardrails/engine';
 import { MVP_RULES } from '../../guardrails/rules';
 import { FEATURE_FLAGS } from '../../config/featureFlags';
+import { mergeEvidenceReport } from './mergeEvidence';
 
 const AUTO_DISMISS_MS = 120_000;
 const MAX_VISIBLE = 5;
@@ -440,11 +441,23 @@ export const useNotificationManager = (
       appendActivity(data);
     });
 
+    // Async evidence scoring result from the proxy path. Merges the fresh
+    // report into the matching card; no-op if the card already dismissed.
+    // See docs/idea/notification-evidence-all-unverified.md §5.1 G1-2.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cleanupEvidence = (window.api as any).onEvidenceScored?.(
+      (data: { requestId: string; report: EvidenceReport }) => {
+        dbg('[NotifMgr] onEvidenceScored: ' + data.requestId);
+        setNotifications((prev) => mergeEvidenceReport(prev, data));
+      },
+    );
+
     return () => {
       cleanupStreaming?.();
       cleanupComplete?.();
       cleanupScan?.();
       cleanupActivity?.();
+      cleanupEvidence?.();
     };
   }, [enabled, addNotification, addStreamingNotification, completeStreaming, appendActivity]);
 

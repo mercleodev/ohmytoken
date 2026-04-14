@@ -773,10 +773,15 @@ const initApp = async (): Promise<void> => {
           } catch (e) {
             console.error("[Evidence] DB write error:", e);
           }
-          mainWindow?.webContents.send("evidence-scored", {
+          const payload = {
             requestId: scan.request_id,
             report: scan.evidence_report,
-          });
+          };
+          mainWindow?.webContents.send("evidence-scored", payload);
+          // Also notify the notification overlay so already-visible cards can
+          // merge the freshly-scored report (G1-2). Without this the overlay
+          // shows "U" forever on the proxy path.
+          sendToNotificationWindow("evidence-scored", payload);
         }
       },
     });
