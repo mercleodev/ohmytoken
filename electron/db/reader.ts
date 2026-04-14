@@ -260,28 +260,52 @@ export const getPromptDetail = (
     )
     .all({ pid: row.id }) as AgentCallDbRow[];
 
+  const scan = rowToPromptScan(
+    row,
+    files.map((f) => ({
+      path: f.path,
+      category: f.category as InjectedFile["category"],
+      estimated_tokens: f.estimated_tokens,
+    })),
+    tools.map((t) => ({
+      index: t.call_index,
+      name: t.name,
+      input_summary: t.input_summary ?? "",
+      timestamp: t.timestamp ?? undefined,
+    })),
+    agents.map((a) => ({
+      index: a.call_index,
+      subagent_type: a.subagent_type ?? "",
+      description: a.description ?? "",
+    })),
+  );
+
+  // Attach evidence_report on detail reads only (not list queries — see
+  // docs/idea/notification-evidence-all-unverified.md §5.1 G1-1). This
+  // closes the transport gap where a proxy-path scoring persisted a
+  // report but a subsequent detail read dropped it.
+  const evidenceReport = getEvidenceReport(requestId);
+  if (evidenceReport) {
+    scan.evidence_report = evidenceReport;
+  }
+
   return {
-    scan: rowToPromptScan(
-      row,
-      files.map((f) => ({
-        path: f.path,
-        category: f.category as InjectedFile["category"],
-        estimated_tokens: f.estimated_tokens,
-      })),
-      tools.map((t) => ({
-        index: t.call_index,
-        name: t.name,
-        input_summary: t.input_summary ?? "",
-        timestamp: t.timestamp ?? undefined,
-      })),
-      agents.map((a) => ({
-        index: a.call_index,
-        subagent_type: a.subagent_type ?? "",
-        description: a.description ?? "",
-      })),
-    ),
+    scan,
     usage: rowToUsageLogEntry(row),
   };
+};
+
+/**
+ * Resolve a request_id to its numeric prompt id, or null if unknown.
+ * Extracted so callers outside the reader module (e.g. the centralized
+ * emit helper in main.ts) do not need to reach through raw SQL.
+ */
+export const getPromptIdByRequestId = (requestId: string): number | null => {
+  const db = getDatabase();
+  const row = db
+    .prepare("SELECT id FROM prompts WHERE request_id = @request_id")
+    .get({ request_id: requestId }) as { id: number } | undefined;
+  return row?.id ?? null;
 };
 
 export const getSessionPrompts = (sessionId: string): PromptScan[] =>

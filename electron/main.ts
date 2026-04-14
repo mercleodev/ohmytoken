@@ -766,14 +766,9 @@ const initApp = async (): Promise<void> => {
         if (scan.evidence_report) {
           // Persist evidence report to DB
           try {
-            const detail = dbReader.getPromptDetail(scan.request_id);
-            if (detail) {
-              // Get prompt_id from DB by request_id
-              const db = require('./db/index').getDatabase();
-              const row = db.prepare('SELECT id FROM prompts WHERE request_id = ?').get(scan.request_id) as { id: number } | undefined;
-              if (row) {
-                insertEvidenceReport(row.id, scan.evidence_report);
-              }
+            const promptId = dbReader.getPromptIdByRequestId(scan.request_id);
+            if (promptId !== null) {
+              insertEvidenceReport(promptId, scan.evidence_report);
             }
           } catch (e) {
             console.error("[Evidence] DB write error:", e);
