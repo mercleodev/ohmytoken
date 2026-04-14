@@ -605,16 +605,17 @@ const initApp = async (): Promise<void> => {
           // so we must import here for real-time notification data.
           setTimeout(() => {
             try {
-              // Try to import — returns null if already in DB
               const eventTs = typeof event.timestamp === 'number' ? event.timestamp : new Date(event.timestamp).getTime();
-              importSinglePrompt(event.sessionId, eventTs);
-
-              // Whether newly imported or already existed, send the latest scan for this session
-              // The notification manager has its own staleness guard (3 min)
-              const scans = dbReader.getSessionPrompts(event.sessionId);
-              if (scans.length > 0) {
-                const latest = scans[scans.length - 1];
-                emitScoredScan(latest.request_id, "session");
+              const importedId = importSinglePrompt(event.sessionId, eventTs);
+              if (importedId) {
+                emitScoredScan(importedId, "session");
+              } else {
+                // Fallback: emit the latest scan for the session
+                const scans = dbReader.getSessionPrompts(event.sessionId);
+                if (scans.length > 0) {
+                  const latest = scans[scans.length - 1];
+                  emitScoredScan(latest.request_id, "session");
+                }
               }
             } catch (e) {
               console.error("[SessionFileWatcher] Failed to import prompt for notification:", e);
