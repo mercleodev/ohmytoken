@@ -307,7 +307,7 @@ export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: Dashbo
                   center: { opacity: 1, x: 0 },
                   exit: (dir: number) => ({ opacity: 0, x: dir * -40 }),
                 }}
-                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                transition={{ type: 'spring', stiffness: 400, damping: 40, mass: 1 }}
               >
                 {/* Main: usage view */}
                 {nav.screen === 'main' && (

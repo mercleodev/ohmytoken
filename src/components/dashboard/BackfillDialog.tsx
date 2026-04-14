@@ -84,7 +84,7 @@ export const BackfillDialog = ({ onComplete, onDismiss }: BackfillDialogProps) =
           className="backfill-dialog"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.2 }}
+          transition={{ type: 'spring', stiffness: 450, damping: 35 }}
         >
           {state.phase === 'prompt' && (
             <PromptView
@@ -158,7 +158,7 @@ const ProgressView = ({
           className="backfill-progress-bar-fill"
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.3 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         />
       </div>
       <div className="backfill-progress-stats">

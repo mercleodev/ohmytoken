@@ -42,8 +42,10 @@ const SYSTEM_PROMPT_PATTERNS = [
   "Read the output file to retrieve the result:",
 ];
 
+// eslint-disable-next-line no-control-regex
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
 const stripAnsi = (text: string): string =>
-  text.replace(/\x1b\[[0-9;]*m/g, "").replace(/\[[\d;]*m/g, "");
+  text.replace(ANSI_RE, "").replace(/\[[\d;]*m/g, "");
 
 const isSystemPrompt = (text: string): boolean => {
   const clean = stripAnsi(text).trim();
@@ -465,7 +467,7 @@ export const RecentSessions = ({
                   initial={{ opacity: 0, height: 0, marginBottom: 0 }}
                   animate={{ opacity: 1, height: "auto", marginBottom: 6 }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                 >
                   <div className="session-card-row">
                     <MiniCtxGauge pct={ctxPct} noData={!hasCtx} />

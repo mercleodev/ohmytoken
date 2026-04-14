@@ -59,10 +59,10 @@ const App = () => {
         {view === "dashboard" && (
           <motion.div
             key="dashboard"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
             className="app-view"
           >
             <UsageDashboard
@@ -78,7 +78,7 @@ const App = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
             className="app-view"
           >
             <SettingsSection

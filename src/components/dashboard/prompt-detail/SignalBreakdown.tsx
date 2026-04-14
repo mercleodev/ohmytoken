@@ -8,7 +8,7 @@ export const SignalBreakdown = ({ signals }: { signals: SignalResult[] }) => (
     initial={{ height: 0, opacity: 0 }}
     animate={{ height: "auto", opacity: 1 }}
     exit={{ height: 0, opacity: 0 }}
-    transition={{ duration: 0.2 }}
+    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
     style={{ overflow: "hidden" }}
   >
     {signals.map((signal) => {
