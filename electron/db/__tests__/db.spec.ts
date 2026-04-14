@@ -169,7 +169,7 @@ describe("schema", () => {
   it("sets user_version to latest migration version", () => {
     const db = getDatabase();
     const ver = db.pragma("user_version", { simple: true });
-    expect(ver).toBe(8);
+    expect(ver).toBe(9);
   });
 
   it("sets WAL mode (memory DB reports 'memory')", () => {

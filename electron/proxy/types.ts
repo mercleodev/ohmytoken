@@ -137,6 +137,9 @@ export type PromptScan = {
   /** Git branch name from the session (e.g. "main", "feature-x"). */
   git_branch?: string;
 
+  /** Canonical project path resolved during prompt ingest. */
+  project_path?: string;
+
   /** Evidence scoring report (attached asynchronously after scan completion) */
   evidence_report?: import('../evidence/types').EvidenceReport;
 };
