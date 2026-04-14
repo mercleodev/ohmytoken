@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { MemoryStatus, MemoryFile } from '../../types/electron';
+import type { MemoryStatus, MemoryFile, ProjectMemorySummary } from '../../types/electron';
 
 const TYPE_COLORS: Record<string, string> = {
   user: '#007AFF',
@@ -54,17 +54,118 @@ const MemoryFileItem = ({ file, isExpanded, onToggle }: {
   );
 };
 
+const ProjectMemoryChip = ({ project, onExpand }: {
+  project: ProjectMemorySummary;
+  onExpand: () => void;
+}) => {
+  const pct = Math.round((project.indexLineCount / project.indexMaxLines) * 100);
+  const barColor = pct >= 95 ? '#FF3B30' : pct >= 80 ? '#FF9500' : '#34C759';
+
+  return (
+    <div className="memory-project-chip" onClick={onExpand}>
+      <div className="memory-project-chip-header">
+        <span className="memory-project-chip-name">{project.projectName}</span>
+        <span className="memory-project-chip-count" style={{ color: barColor }}>
+          {project.indexLineCount}/{project.indexMaxLines}
+        </span>
+      </div>
+      <div className="memory-bar-track" style={{ margin: '4px 0 0' }}>
+        <div
+          className="memory-bar-fill"
+          style={{ width: `${Math.min(pct, 100)}%`, background: barColor }}
+        />
+      </div>
+      <div className="memory-project-chip-meta">
+        {project.fileCount} files · {project.totalLines} lines
+      </div>
+    </div>
+  );
+};
+
+const ProjectMemoryDetail = ({ projectPath, onClose }: {
+  projectPath: string;
+  onClose: () => void;
+}) => {
+  const [status, setStatus] = useState<MemoryStatus | null>(null);
+  const [expandedFile, setExpandedFile] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    window.api.getMemoryStatus(projectPath)
+      .then(setStatus)
+      .catch(() => setStatus(null))
+      .finally(() => setLoading(false));
+  }, [projectPath]);
+
+  if (loading) {
+    return <div className="memory-project-detail-loading">Loading...</div>;
+  }
+
+  if (!status) {
+    return <div className="memory-project-detail-loading">No memory data</div>;
+  }
+
+  return (
+    <div className="memory-project-detail">
+      <div className="memory-project-detail-header">
+        <span className="memory-project-detail-back" onClick={onClose}>←</span>
+        <span className="memory-project-detail-title">
+          {projectPath.split('/').filter(Boolean).pop()}
+        </span>
+      </div>
+      <div className="memory-project-detail-banner">
+        Viewing memory for a different project
+      </div>
+      <div className="memory-stats">
+        <span>{status.files.length} memory files</span>
+        <span className="memory-stats-sep">·</span>
+        <span>{status.files.reduce((s, f) => s + f.lineCount, 0)} total lines</span>
+      </div>
+      <div className="memory-file-list">
+        {status.files.map((file) => (
+          <MemoryFileItem
+            key={file.fileName}
+            file={file}
+            isExpanded={expandedFile === file.fileName}
+            onToggle={() => setExpandedFile(
+              expandedFile === file.fileName ? null : file.fileName,
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const MemoryMonitorCard = () => {
   const [status, setStatus] = useState<MemoryStatus | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Multi-project state
+  const [showAllProjects, setShowAllProjects] = useState(false);
+  const [allProjects, setAllProjects] = useState<ProjectMemorySummary[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
   useEffect(() => {
     const load = async () => {
       try {
-        const result = await window.api.getMemoryStatus();
+        const [result, config] = await Promise.all([
+          window.api.getMemoryStatus(),
+          window.api.getConfig(),
+        ]);
         setStatus(result);
+
+        const enabled = config?.settings?.showAllProjectsMemory ?? false;
+        setShowAllProjects(enabled);
+
+        if (enabled) {
+          const summary = await window.api.getAllProjectsMemorySummary();
+          if (summary?.projects) {
+            setAllProjects(summary.projects.filter((p) => !p.isCurrentProject));
+          }
+        }
       } catch {
         setStatus(null);
       } finally {
@@ -80,6 +181,18 @@ export const MemoryMonitorCard = () => {
   const isWarning = pct >= 80;
   const isCritical = pct >= 95;
   const barColor = isCritical ? '#FF3B30' : isWarning ? '#FF9500' : '#34C759';
+
+  // Viewing a non-current project's detail
+  if (selectedProject) {
+    return (
+      <div className="memory-card">
+        <ProjectMemoryDetail
+          projectPath={selectedProject}
+          onClose={() => setSelectedProject(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="memory-card">
@@ -136,6 +249,22 @@ export const MemoryMonitorCard = () => {
                 />
               ))}
             </div>
+
+            {/* Other projects (gated by setting) */}
+            {showAllProjects && allProjects.length > 0 && (
+              <div className="memory-other-projects">
+                <div className="memory-other-projects-label">Other Projects</div>
+                <div className="memory-project-chips">
+                  {allProjects.map((p) => (
+                    <ProjectMemoryChip
+                      key={p.encodedDir}
+                      project={p}
+                      onExpand={() => setSelectedProject(p.projectPath)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -220,6 +220,22 @@ export type MemoryStatus = {
   memoryDir: string;
 };
 
+export type ProjectMemorySummary = {
+  projectPath: string;
+  projectName: string;
+  encodedDir: string;
+  indexLineCount: number;
+  indexMaxLines: number;
+  fileCount: number;
+  totalLines: number;
+  types: Record<string, number>;
+  isCurrentProject: boolean;
+};
+
+export type AllProjectsMemorySummary = {
+  projects: ProjectMemorySummary[];
+};
+
 export type HarnessCandidateKind =
   | 'script'
   | 'cdp'
@@ -421,7 +437,8 @@ export type ElectronApi = {
   }) => Promise<HarnessCandidate[]>;
 
   // Memory Monitor API
-  getMemoryStatus: () => Promise<MemoryStatus | null>;
+  getMemoryStatus: (projectPath?: string) => Promise<MemoryStatus | null>;
+  getAllProjectsMemorySummary: () => Promise<AllProjectsMemorySummary | null>;
 
   // Workflow Draft Preview API
   previewWorkflowDraft: (candidate: {
