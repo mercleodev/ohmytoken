@@ -79,6 +79,21 @@ const extractUserText = (entry: RawEntry): string => {
   return "";
 };
 
+const extractAssistantText = (entry: RawEntry): string => {
+  const content = entry.message?.content;
+  if (!content) return "";
+  if (typeof content === "string") return content.slice(0, 2000);
+  if (Array.isArray(content)) {
+    return content
+      .filter((b: Record<string, unknown>) => b.type === "text" && typeof b.text === "string")
+      .map((b: Record<string, unknown>) => String(b.text || ""))
+      .join("\n")
+      .trim()
+      .slice(0, 2000);
+  }
+  return "";
+};
+
 /**
  * Fields used to extract a human-readable summary from tool_use input.
  */
@@ -260,6 +275,7 @@ export const parseClaudeSessionFile = (
     );
 
     const userText = extractUserText(userEntry);
+    const assistantText = extractAssistantText(bestAssistant);
     const { toolCalls, toolSummary } = extractToolInfo(entries, userIdx + 1, nextUserIdx);
 
     // Extract git branch from the user entry (or nearest assistant)
@@ -280,6 +296,7 @@ export const parseClaudeSessionFile = (
       },
       costUsd: cost,
       userPrompt: userText || undefined,
+      assistantResponse: assistantText || undefined,
       toolSummary,
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
       gitBranch,
