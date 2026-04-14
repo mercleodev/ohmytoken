@@ -20,6 +20,7 @@ import { FilePreviewOverlay } from "./prompt-detail/FilePreviewOverlay";
 import { ContextGauge } from "./prompt-detail/ContextGauge";
 import { GuardrailSummary } from "./prompt-detail/GuardrailSummary";
 import { JourneySummary } from "./prompt-detail/JourneySummary";
+import { PromptMemorySection } from "./prompt-detail/PromptMemorySection";
 
 type PromptDetailViewProps = {
   scan: PromptScan;
@@ -218,6 +219,9 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
       <AnimatePresence>
         {showEvidenceSettings && <EvidenceSettings onClose={() => setShowEvidenceSettings(false)} onSave={handleRescore} />}
       </AnimatePresence>
+
+      {/* Claude Memory */}
+      <PromptMemorySection projectPath={displayScan.project_path} expanded={expandedSections} onToggle={toggle} />
 
       {/* Actions */}
       <Section title={`Actions (${toolCalls.length})`} id="tools" expanded={expandedSections} onToggle={toggle}>
