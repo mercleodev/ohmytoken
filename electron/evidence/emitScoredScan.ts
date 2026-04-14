@@ -38,9 +38,16 @@ export type EmitScoredScanDeps = {
   engine: {
     score: (
       scan: PromptScan,
-      opts: { previousScores: Record<string, number[]> },
+      opts: {
+        previousScores: Record<string, number[]>;
+        fileContents?: Record<string, string>;
+      },
     ) => EvidenceReport;
   } | null;
+  /** Read injected file contents from disk (best-effort; errors per-file are
+   *  swallowed). Unlocks instruction-compliance and text-overlap signals that
+   *  would otherwise return 0 on the watcher path. */
+  readFileContents?: (paths: string[]) => Record<string, string>;
   sendToMain: (channel: string, data: unknown) => void;
   sendToNotification: (channel: string, data: unknown) => void;
   logger?: { error: (...args: unknown[]) => void };
@@ -67,7 +74,18 @@ export const makeEmitScoredScan = (deps: EmitScoredScanDeps): EmitScoredScan => 
         const previousScores = deps.reader.getSessionFileScores(
           detail.scan.session_id,
         );
-        const report = deps.engine.score(detail.scan, { previousScores });
+        // Read injected file contents from disk to unlock content-dependent
+        // signals (instruction-compliance, text-overlap) that return 0 without
+        // file.content. Best-effort: missing or unreadable files are simply
+        // omitted, leaving those signals at 0 for that file.
+        const filePaths = (detail.scan.injected_files ?? []).map((f) => f.path);
+        const fileContents = deps.readFileContents
+          ? deps.readFileContents(filePaths)
+          : {};
+        const report = deps.engine.score(detail.scan, {
+          previousScores,
+          fileContents,
+        });
         detail.scan.evidence_report = report;
         const promptId = deps.reader.getPromptIdByRequestId(requestId);
         if (promptId !== null) {
