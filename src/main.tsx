@@ -500,6 +500,7 @@ if (!window.api) {
 
     // Memory Monitor Mock API
     getMemoryStatus: async () => null,
+    getAllProjectsMemorySummary: async () => ({ projects: [] }),
 
     // Harness Candidate Mock API
     getHarnessCandidates: async () => [],

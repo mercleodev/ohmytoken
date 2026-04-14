@@ -1881,70 +1881,139 @@ const setupIPC = (): void => {
     }
   });
 
-  // Memory monitor: read Claude Code memory files
-  ipcMain.handle("get-memory-status", async () => {
+  // Memory monitor: read Claude Code memory files for a project
+  const readMemoryDir = (memoryDir: string) => {
+    const indexPath = path.join(memoryDir, "MEMORY.md");
+    const indexContent = fs.existsSync(indexPath)
+      ? fs.readFileSync(indexPath, "utf-8")
+      : "";
+    const indexLineCount = indexContent.split("\n").length;
+
+    const files = fs.readdirSync(memoryDir)
+      .filter((f: string) => f.endsWith(".md") && f !== "MEMORY.md")
+      .map((f: string) => {
+        const filePath = path.join(memoryDir, f);
+        const content = fs.readFileSync(filePath, "utf-8");
+        const lines = content.split("\n");
+
+        let name = f.replace(".md", "");
+        let description = "";
+        let type = "unknown";
+        if (lines[0] === "---") {
+          const endIdx = lines.indexOf("---", 1);
+          if (endIdx > 0) {
+            const frontmatter = lines.slice(1, endIdx).join("\n");
+            const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
+            const descMatch = frontmatter.match(/^description:\s*(.+)$/m);
+            const typeMatch = frontmatter.match(/^type:\s*(.+)$/m);
+            if (nameMatch) name = nameMatch[1].trim();
+            if (descMatch) description = descMatch[1].trim();
+            if (typeMatch) type = typeMatch[1].trim();
+          }
+        }
+
+        return { fileName: f, name, description, type, lineCount: lines.length, content };
+      });
+
+    return { indexLineCount, indexMaxLines: 200, indexContent, files, memoryDir };
+  };
+
+  ipcMain.handle("get-memory-status", async (_event, projectPath?: string) => {
     try {
       const projectsDir = path.join(homedir(), ".claude", "projects");
       if (!fs.existsSync(projectsDir)) return null;
 
-      // Find memory dir for the current working directory
-      const cwd = process.cwd();
-      const encodedCwd = cwd.replace(/\//g, "-");
+      const targetPath = projectPath || process.cwd();
+      const encodedCwd = targetPath.replace(/\//g, "-");
       const memoryDir = path.join(projectsDir, encodedCwd, "memory");
       if (!fs.existsSync(memoryDir)) return null;
 
-      // Read MEMORY.md (index file)
-      const indexPath = path.join(memoryDir, "MEMORY.md");
-      const indexContent = fs.existsSync(indexPath)
-        ? fs.readFileSync(indexPath, "utf-8")
-        : "";
-      const indexLineCount = indexContent.split("\n").length;
+      return readMemoryDir(memoryDir);
+    } catch (error) {
+      console.error("get-memory-status error:", error);
+      return null;
+    }
+  });
 
-      // Read all memory files
-      const files = fs.readdirSync(memoryDir)
-        .filter((f: string) => f.endsWith(".md") && f !== "MEMORY.md")
-        .map((f: string) => {
+  ipcMain.handle("get-all-projects-memory-summary", async () => {
+    try {
+      const projectsDir = path.join(homedir(), ".claude", "projects");
+      if (!fs.existsSync(projectsDir)) return { projects: [] };
+
+      const cwd = process.cwd();
+      const currentEncoded = cwd.replace(/\//g, "-");
+
+      const dirs = fs.readdirSync(projectsDir).filter((d: string) => {
+        if (d.includes("--claude-worktrees-")) return false;
+        const full = path.join(projectsDir, d);
+        return fs.statSync(full).isDirectory();
+      });
+
+      const projects = dirs.map((encodedDir: string) => {
+        const memoryDir = path.join(projectsDir, encodedDir, "memory");
+        const decoded = encodedDir.replace(/^-/, "/").replace(/-/g, "/");
+        const projectName = decoded.split("/").filter(Boolean).pop() || encodedDir;
+
+        if (!fs.existsSync(memoryDir)) {
+          return {
+            projectPath: decoded,
+            projectName,
+            encodedDir,
+            indexLineCount: 0,
+            indexMaxLines: 200,
+            fileCount: 0,
+            totalLines: 0,
+            types: {},
+            isCurrentProject: encodedDir === currentEncoded,
+          };
+        }
+
+        const indexPath = path.join(memoryDir, "MEMORY.md");
+        const indexContent = fs.existsSync(indexPath)
+          ? fs.readFileSync(indexPath, "utf-8")
+          : "";
+        const indexLineCount = indexContent.split("\n").length;
+
+        const mdFiles = fs.readdirSync(memoryDir)
+          .filter((f: string) => f.endsWith(".md") && f !== "MEMORY.md");
+
+        const types: Record<string, number> = {};
+        let totalLines = indexLineCount;
+
+        for (const f of mdFiles) {
           const filePath = path.join(memoryDir, f);
           const content = fs.readFileSync(filePath, "utf-8");
           const lines = content.split("\n");
+          totalLines += lines.length;
 
-          // Parse frontmatter
-          let name = f.replace(".md", "");
-          let description = "";
           let type = "unknown";
           if (lines[0] === "---") {
             const endIdx = lines.indexOf("---", 1);
             if (endIdx > 0) {
-              const frontmatter = lines.slice(1, endIdx).join("\n");
-              const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
-              const descMatch = frontmatter.match(/^description:\s*(.+)$/m);
-              const typeMatch = frontmatter.match(/^type:\s*(.+)$/m);
-              if (nameMatch) name = nameMatch[1].trim();
-              if (descMatch) description = descMatch[1].trim();
+              const typeMatch = lines.slice(1, endIdx).join("\n").match(/^type:\s*(.+)$/m);
               if (typeMatch) type = typeMatch[1].trim();
             }
           }
+          types[type] = (types[type] || 0) + 1;
+        }
 
-          return {
-            fileName: f,
-            name,
-            description,
-            type,
-            lineCount: lines.length,
-            content,
-          };
-        });
+        return {
+          projectPath: decoded,
+          projectName,
+          encodedDir,
+          indexLineCount,
+          indexMaxLines: 200,
+          fileCount: mdFiles.length,
+          totalLines,
+          types,
+          isCurrentProject: encodedDir === currentEncoded,
+        };
+      });
 
-      return {
-        indexLineCount,
-        indexMaxLines: 200,
-        indexContent,
-        files,
-        memoryDir,
-      };
+      return { projects };
     } catch (error) {
-      console.error("get-memory-status error:", error);
-      return null;
+      console.error("get-all-projects-memory-summary error:", error);
+      return { projects: [] };
     }
   });
 

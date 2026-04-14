@@ -4164,3 +4164,102 @@
   line-height: 1.4;
   font-family: 'SF Mono', 'Menlo', monospace;
 }
+
+/* Multi-project memory */
+
+.memory-other-projects {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.memory-other-projects-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.memory-project-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.memory-project-chip {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.memory-project-chip:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.memory-project-chip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.memory-project-chip-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: #1d1d1f;
+}
+
+.memory-project-chip-count {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.memory-project-chip-meta {
+  font-size: 9px;
+  color: #8e8e93;
+  margin-top: 2px;
+}
+
+.memory-project-detail {
+  padding: 0;
+}
+
+.memory-project-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.memory-project-detail-back {
+  font-size: 14px;
+  cursor: pointer;
+  color: #007AFF;
+  user-select: none;
+}
+
+.memory-project-detail-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.memory-project-detail-banner {
+  font-size: 10px;
+  color: #8e8e93;
+  background: rgba(0, 122, 255, 0.06);
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-bottom: 8px;
+}
+
+.memory-project-detail-loading {
+  font-size: 11px;
+  color: #8e8e93;
+  padding: 12px 0;
+  text-align: center;
+}
