@@ -76,6 +76,7 @@ export type PromptScan = {
   tool_result_count: number;
   provider?: string;
   git_branch?: string;
+  project_path?: string;
   evidence_report?: EvidenceReport;
 };
 

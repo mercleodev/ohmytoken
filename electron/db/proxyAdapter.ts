@@ -41,6 +41,7 @@ export const onProxyScanComplete = (
       req_messages_count: usage.request.messages_count,
       req_tools_count: usage.request.tools_count,
       req_has_system: usage.request.has_system,
+      project_path: process.cwd(),
     },
     injected_files: scan.injected_files.map((f) => ({
       path: f.path,

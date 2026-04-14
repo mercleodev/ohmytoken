@@ -35,6 +35,7 @@ export type PromptRow = {
   req_tools_count?: number;
   req_has_system?: boolean;
   git_branch?: string;
+  project_path?: string;
 };
 
 export type InjectedFileRow = {
@@ -89,7 +90,7 @@ const getStatements = () => {
         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
         cost_usd, duration_ms,
         req_messages_count, req_tools_count, req_has_system,
-        git_branch
+        git_branch, project_path
       ) VALUES (
         @request_id, @session_id, @timestamp, @source, @provider,
         @user_prompt, @user_prompt_tokens, @assistant_response,
@@ -101,7 +102,7 @@ const getStatements = () => {
         @input_tokens, @output_tokens, @cache_creation_input_tokens, @cache_read_input_tokens,
         @cost_usd, @duration_ms,
         @req_messages_count, @req_tools_count, @req_has_system,
-        @git_branch
+        @git_branch, @project_path
       )
     `);
 
@@ -185,6 +186,7 @@ export const insertPrompt = (
       req_tools_count: p.req_tools_count ?? 0,
       req_has_system: p.req_has_system ? 1 : 0,
       git_branch: p.git_branch ?? null,
+      project_path: p.project_path ?? null,
     });
 
     // INSERT OR IGNORE returns changes=0 if duplicate request_id

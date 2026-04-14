@@ -382,6 +382,7 @@ const buildPromptData = (
       req_messages_count: userCount + assistantCount,
       req_tools_count: 0,
       req_has_system: true,
+      project_path: projectPath || undefined,
     },
     injected_files: projectPath ? readInjectedFiles(projectPath) : [],
     tool_calls: toolCalls.map((t) => ({

@@ -281,6 +281,15 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 9,
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE prompts ADD COLUMN project_path TEXT;
+        CREATE INDEX idx_prompts_project_path ON prompts(project_path);
+      `);
+    },
+  },
 ];
 
 export const runMigrations = (db: Database.Database): void => {
