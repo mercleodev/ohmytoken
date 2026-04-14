@@ -11,6 +11,7 @@ import { OutputProductivityCard } from './OutputProductivityCard';
 import { McpInsightsCard } from './McpInsightsCard';
 import { FEATURE_FLAGS } from '../../config/featureFlags';
 import { PromptHeatmap } from './PromptHeatmap';
+import { MemoryMonitorCard } from './MemoryMonitorCard';
 
 type UsageViewProps = {
   snapshot: ProviderUsageSnapshot | null;
@@ -103,6 +104,9 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
   if (isAllView) {
     return (
       <div>
+        {/* Claude Memory Monitor */}
+        <MemoryMonitorCard />
+
         {/* Aggregated Cost (all providers) */}
         <CostCard cost={allCost} />
 

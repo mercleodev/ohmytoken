@@ -4003,3 +4003,164 @@
 .heatmap-legend-cell {
   flex-shrink: 0;
 }
+
+/* ===================================
+   Memory Monitor Card
+   =================================== */
+
+.memory-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.memory-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.memory-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  flex: 1;
+}
+
+.memory-line-count {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-right: 6px;
+}
+
+.memory-chevron {
+  font-size: 14px;
+  color: #999;
+  transition: transform 0.2s;
+  transform: rotate(0deg);
+}
+
+.memory-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.memory-bar-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 2px;
+  margin: 8px 0 4px;
+  overflow: hidden;
+}
+
+.memory-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.memory-warning {
+  font-size: 10px;
+  color: #FF9500;
+  padding: 4px 0;
+  line-height: 1.3;
+}
+
+.memory-warning--critical {
+  color: #FF3B30;
+  font-weight: 600;
+}
+
+.memory-stats {
+  font-size: 10px;
+  color: #8e8e93;
+  padding: 6px 0 4px;
+}
+
+.memory-stats-sep {
+  margin: 0 4px;
+}
+
+.memory-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.memory-file-item {
+  border-radius: 6px;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.memory-file-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.memory-file-type {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  min-width: 52px;
+}
+
+.memory-file-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: #1d1d1f;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memory-file-lines {
+  font-size: 9px;
+  color: #8e8e93;
+  font-variant-numeric: tabular-nums;
+}
+
+.memory-file-chevron {
+  font-size: 11px;
+  color: #999;
+  transition: transform 0.15s;
+  transform: rotate(0deg);
+}
+
+.memory-file-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.memory-file-desc {
+  font-size: 9px;
+  color: #8e8e93;
+  padding: 2px 0 0 58px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memory-file-content {
+  font-size: 9px;
+  color: #555;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin: 4px 0 2px;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}

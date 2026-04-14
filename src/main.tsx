@@ -498,6 +498,9 @@ if (!window.api) {
       },
     }),
 
+    // Memory Monitor Mock API
+    getMemoryStatus: async () => null,
+
     // Harness Candidate Mock API
     getHarnessCandidates: async () => [],
     previewWorkflowDraft: async () => null,

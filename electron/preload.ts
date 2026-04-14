@@ -198,6 +198,8 @@ const api = {
     sessionId?: string; provider?: string; period?: 'today' | '7d' | '30d'; limit?: number;
   }) => ipcRenderer.invoke('get-harness-candidates', query),
 
+  getMemoryStatus: () => ipcRenderer.invoke('get-memory-status'),
+
   previewWorkflowDraft: (candidate: {
     toolName: string; inputSummary: string; candidateKind: string;
     repeatCount: number; promptCount: number; sessionCount: number;
