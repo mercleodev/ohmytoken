@@ -109,6 +109,25 @@ const extractUserText = (entry: RawEntry): string => {
 };
 
 /**
+ * Extract assistant response text from an assistant entry's content blocks.
+ * Mirrors the proxy path's extractAssistantText in messagesAnalyzer.ts.
+ * Needed for evidence scoring signals (text-overlap, instruction-compliance).
+ */
+const extractAssistantText = (entry: RawEntry): string => {
+  const content = entry.message?.content;
+  if (!content) return "";
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter((b: any) => b.type === "text" && typeof b.text === "string")
+      .map((b: any) => b.text)
+      .join("\n")
+      .trim();
+  }
+  return "";
+};
+
+/**
  * Parse a session JSONL file into raw entries
  */
 const parseSessionFile = (filePath: string): RawEntry[] => {
@@ -302,6 +321,7 @@ const buildPromptData = (
   projectPath?: string,
 ): InsertPromptData => {
   const userText = extractUserText(userEntry);
+  const assistantText = extractAssistantText(assistantEntry);
   const usage = assistantEntry.message!.usage!;
   const model = assistantEntry.message!.model || "unknown";
   const inputTokens = usage.input_tokens || 0;
@@ -337,6 +357,7 @@ const buildPromptData = (
       source: "history",
       user_prompt: userText.slice(0, 500),
       user_prompt_tokens: countTokens(userText),
+      assistant_response: assistantText ? assistantText.slice(0, 2000) : undefined,
       model,
       max_tokens: 16000,
       conversation_turns: userCount,

@@ -27,9 +27,9 @@ export const DEFAULT_ENGINE_CONFIG: EvidenceEngineConfig = {
   signals: {
     'category-prior': defaultSignal('category-prior', 1.0, {
       prior_global: 25,
-      prior_project: 25,
-      prior_rules: 25,
-      prior_memory: 20,
+      prior_project: 50,
+      prior_rules: 45,
+      prior_memory: 25,
       prior_skill: 10,
       max_score: 30,
     }),
@@ -66,15 +66,15 @@ export const DEFAULT_ENGINE_CONFIG: EvidenceEngineConfig = {
   fusion_method: 'weighted_sum',
 
   thresholds: {
-    confirmed_min: 0.7,
-    likely_min: 0.4,
+    confirmed_min: 0.45,
+    likely_min: 0.2,
   },
 };
 
 /**
  * Validate and clamp a single param against its bounds.
  */
-const clampNumber = (value: number, min?: number, max?: number): number => {
+export const clampNumber = (value: number, min?: number, max?: number): number => {
   let v = value;
   if (min !== undefined && v < min) v = min;
   if (max !== undefined && v > max) v = max;

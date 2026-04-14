@@ -39,8 +39,8 @@ describe('EvidenceEngine', () => {
     expect(report.engine_version).toBe('1.0.0');
     expect(report.fusion_method).toBe('weighted_sum');
     expect(report.files).toHaveLength(4);
-    expect(report.thresholds.confirmed_min).toBe(0.7);
-    expect(report.thresholds.likely_min).toBe(0.4);
+    expect(report.thresholds.confirmed_min).toBe(0.45);
+    expect(report.thresholds.likely_min).toBe(0.2);
   });
 
   it('classifies files into C/L/U based on thresholds', () => {
@@ -56,20 +56,24 @@ describe('EvidenceEngine', () => {
     expect(classifications).toContain('confirmed');
   });
 
-  it('CLAUDE.md with direct Read reference scores higher than unreferenced files', () => {
+  it('tool-referenced CLAUDE.md scores higher than unreferenced files', () => {
     const engine = new EvidenceEngine();
     const scan = makeScan();
     const report = engine.score(scan);
 
-    const globalFile = report.files.find(
-      (f) => f.filePath === 'CLAUDE.md',
+    // Both CLAUDE.md files match the "Read CLAUDE.md" tool call.
+    // project/CLAUDE.md has a higher category-prior (project=50 vs global=25).
+    const projectFile = report.files.find(
+      (f) => f.filePath === 'project/CLAUDE.md',
     );
-    expect(globalFile).toBeDefined();
-    // Tool reference (15/15) + category prior + position primacy = notable score
-    expect(globalFile!.normalizedScore).toBeGreaterThan(0.2);
-    // Should be the highest scored file (has direct Read reference)
-    const maxScore = Math.max(...report.files.map((f) => f.normalizedScore));
-    expect(globalFile!.normalizedScore).toBe(maxScore);
+    const memoryFile = report.files.find(
+      (f) => f.filePath.includes('MEMORY.md'),
+    );
+    expect(projectFile).toBeDefined();
+    expect(memoryFile).toBeDefined();
+    // Tool reference + higher prior → project CLAUDE.md notably higher than unreferenced memory
+    expect(projectFile!.normalizedScore).toBeGreaterThan(0.2);
+    expect(projectFile!.normalizedScore).toBeGreaterThan(memoryFile!.normalizedScore);
   });
 
   it('file without tool reference gets lower score', () => {
@@ -166,7 +170,7 @@ describe('Config', () => {
   it('mergeConfig preserves defaults for missing fields', () => {
     const merged = mergeConfig({ fusion_method: 'dempster_shafer' });
     expect(merged.fusion_method).toBe('dempster_shafer');
-    expect(merged.thresholds.confirmed_min).toBe(0.7);
+    expect(merged.thresholds.confirmed_min).toBe(0.45);
     expect(Object.keys(merged.signals)).toHaveLength(
       Object.keys(DEFAULT_ENGINE_CONFIG.signals).length,
     );
@@ -186,7 +190,7 @@ describe('Config', () => {
     expect(merged.signals['category-prior'].weight).toBe(0.5);
     expect(merged.signals['category-prior'].params.prior_global).toBe(50);
     // Unset params preserved from default
-    expect(merged.signals['category-prior'].params.prior_project).toBe(25);
+    expect(merged.signals['category-prior'].params.prior_project).toBe(50);
   });
 
   it('validateConfig detects invalid thresholds', () => {
