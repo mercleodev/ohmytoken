@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { formatCost, formatTokens } from '../../utils/format';
 
 type CostData = {
@@ -24,24 +23,16 @@ export const CostCard = ({ cost }: CostCardProps) => {
         <span className="cost-title">Cost</span>
         <span className={`cost-chevron ${expanded ? 'expanded' : ''}`}>›</span>
       </div>
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div className="cost-row">
-              Today: {formatCost(cost.todayCostUSD)} <span>· {formatTokens(cost.todayTokens)} tokens</span>
-            </div>
-            <div className="cost-row">
-              Last 30 days: {formatCost(cost.last30DaysCostUSD)} <span>· {formatTokens(cost.last30DaysTokens)} tokens</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className={`collapsible ${expanded ? 'open' : ''}`} aria-hidden={!expanded}>
+        <div className="collapsible-inner">
+          <div className="cost-row">
+            Today: {formatCost(cost.todayCostUSD)} <span>· {formatTokens(cost.todayTokens)} tokens</span>
+          </div>
+          <div className="cost-row">
+            Last 30 days: {formatCost(cost.last30DaysCostUSD)} <span>· {formatTokens(cost.last30DaysTokens)} tokens</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

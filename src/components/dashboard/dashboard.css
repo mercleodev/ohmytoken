@@ -4282,3 +4282,36 @@
   padding: 8px 0;
   text-align: center;
 }
+
+/* ────────────────────────────────────────────────
+ * GPU-friendly collapsible (grid-template-rows trick)
+ * Replaces framer-motion height: 0 ↔ 'auto' which forces
+ * main-thread layout on every frame.
+ * ──────────────────────────────────────────────── */
+.collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.2s ease;
+}
+
+.collapsible.open {
+  grid-template-rows: 1fr;
+}
+
+.collapsible-inner {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.collapsible.open > .collapsible-inner {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapsible,
+  .collapsible-inner {
+    transition: none;
+  }
+}

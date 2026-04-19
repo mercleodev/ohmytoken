@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { MemoryStatus, MemoryFile } from '../../../types/electron';
 
 const TYPE_COLORS: Record<string, string> = {
@@ -37,19 +36,14 @@ const MemoryFileRow = ({ file, isExpanded, onToggle }: {
       {file.description && (
         <div className="memory-file-desc">{file.description}</div>
       )}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <pre className="memory-file-content">{file.content}</pre>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div
+        className={`collapsible ${isExpanded ? 'open' : ''}`}
+        aria-hidden={!isExpanded}
+      >
+        <div className="collapsible-inner">
+          <pre className="memory-file-content">{file.content}</pre>
+        </div>
+      </div>
     </div>
   );
 };
@@ -95,29 +89,25 @@ export const PromptMemorySection = ({ projectPath, provider, expanded, onToggle 
   if (needsProjectPath && !projectPath) {
     return (
       <div className="detail-section">
-        <button className="detail-section-header" onClick={() => onToggle('memory')}>
+        <button
+          className="detail-section-header"
+          onClick={() => onToggle('memory')}
+          aria-expanded={isOpen}
+        >
           <span>{label}</span>
           <span className="detail-section-header-right">
             <span className={`detail-section-chevron ${isOpen ? 'expanded' : ''}`}>›</span>
           </span>
         </button>
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              style={{ overflow: 'hidden' }}
-            >
-              <div className="detail-section-body">
-                <div className="prompt-memory-notice">
-                  Project unknown — memory not available for this prompt
-                </div>
+        <div className={`collapsible ${isOpen ? 'open' : ''}`} aria-hidden={!isOpen}>
+          <div className="collapsible-inner">
+            <div className="detail-section-body">
+              <div className="prompt-memory-notice">
+                Project unknown — memory not available for this prompt
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -127,50 +117,46 @@ export const PromptMemorySection = ({ projectPath, provider, expanded, onToggle 
 
   return (
     <div className="detail-section">
-      <button className="detail-section-header" onClick={() => onToggle('memory')}>
+      <button
+        className="detail-section-header"
+        onClick={() => onToggle('memory')}
+        aria-expanded={isOpen}
+      >
         <span>{title}</span>
         <span className="detail-section-header-right">
           <span className={`detail-section-chevron ${isOpen ? 'expanded' : ''}`}>›</span>
         </span>
       </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div className="detail-section-body">
-              <div className="prompt-memory-disclaimer">
-                Showing current memory for this project (may differ from when this prompt ran)
-              </div>
-              {loading && <div className="prompt-memory-notice">Loading...</div>}
-              {!loading && !status && (
-                <div className="prompt-memory-notice">No memory data for this project</div>
-              )}
-              {!loading && status && status.files.length === 0 && (
-                <div className="prompt-memory-notice">No memory files</div>
-              )}
-              {!loading && status && status.files.length > 0 && (
-                <div className="memory-file-list">
-                  {status.files.map((file) => (
-                    <MemoryFileRow
-                      key={file.fileName}
-                      file={file}
-                      isExpanded={expandedFile === file.fileName}
-                      onToggle={() => setExpandedFile(
-                        expandedFile === file.fileName ? null : file.fileName,
-                      )}
-                    />
-                  ))}
-                </div>
-              )}
+      <div className={`collapsible ${isOpen ? 'open' : ''}`} aria-hidden={!isOpen}>
+        <div className="collapsible-inner">
+          <div className="detail-section-body">
+            <div className="prompt-memory-disclaimer">
+              Showing current memory for this project (may differ from when this prompt ran)
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {loading && <div className="prompt-memory-notice">Loading...</div>}
+            {!loading && !status && (
+              <div className="prompt-memory-notice">No memory data for this project</div>
+            )}
+            {!loading && status && status.files.length === 0 && (
+              <div className="prompt-memory-notice">No memory files</div>
+            )}
+            {!loading && status && status.files.length > 0 && (
+              <div className="memory-file-list">
+                {status.files.map((file) => (
+                  <MemoryFileRow
+                    key={file.fileName}
+                    file={file}
+                    isExpanded={expandedFile === file.fileName}
+                    onToggle={() => setExpandedFile(
+                      expandedFile === file.fileName ? null : file.fileName,
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { formatTokens } from '../../utils/format';
 import type { OutputProductivityResult } from '../../types/electron';
 
@@ -42,15 +41,8 @@ export const OutputProductivityCard = ({ scanRevision, provider }: OutputProduct
         <span className="cost-title">Output Productivity</span>
         <span className={`cost-chevron ${expanded ? 'expanded' : ''}`}>›</span>
       </button>
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
-          >
+      <div className={`collapsible ${expanded ? 'open' : ''}`} aria-hidden={!expanded}>
+        <div className="collapsible-inner">
             {hasTodayOutput ? (
               <>
                 <div className="output-card-headline">
@@ -75,9 +67,8 @@ export const OutputProductivityCard = ({ scanRevision, provider }: OutputProduct
                 7d avg: {formatTokens(avg7dOutput)} output/day
               </div>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 };

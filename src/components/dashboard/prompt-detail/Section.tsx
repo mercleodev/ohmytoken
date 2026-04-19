@@ -1,5 +1,3 @@
-import { motion, AnimatePresence } from "framer-motion";
-
 type SectionProps = {
   title: string;
   id: string;
@@ -13,28 +11,27 @@ export const Section = ({ title, id, expanded, onToggle, children, headerExtra }
   const isOpen = expanded.has(id);
   return (
     <div className="detail-section">
-      <button className="detail-section-header" onClick={() => onToggle(id)}>
+      <button
+        className="detail-section-header"
+        onClick={() => onToggle(id)}
+        aria-expanded={isOpen}
+        aria-controls={`section-body-${id}`}
+      >
         <span>{title}</span>
         <span className="detail-section-header-right">
           {headerExtra}
-          <span className={`detail-section-chevron ${isOpen ? "expanded" : ""}`}>
-            ›
-          </span>
+          <span className={`detail-section-chevron ${isOpen ? "expanded" : ""}`}>›</span>
         </span>
       </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ overflow: "hidden" }}
-          >
-            <div className="detail-section-body">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div
+        id={`section-body-${id}`}
+        className={`collapsible ${isOpen ? "open" : ""}`}
+        aria-hidden={!isOpen}
+      >
+        <div className="collapsible-inner">
+          <div className="detail-section-body">{children}</div>
+        </div>
+      </div>
     </div>
   );
 };
