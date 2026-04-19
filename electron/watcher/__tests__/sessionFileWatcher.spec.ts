@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { shouldEmitAssistantTurn } from "../sessionFileWatcher";
+import { isSystemMessage, shouldEmitAssistantTurn } from "../sessionFileWatcher";
 
 describe("shouldEmitAssistantTurn", () => {
   it("returns false when stop_reason is tool_use and block is thinking-only", () => {
@@ -97,5 +97,38 @@ describe("shouldEmitAssistantTurn", () => {
 
   it("returns false when message is missing entirely", () => {
     expect(shouldEmitAssistantTurn({ type: "assistant" })).toBe(false);
+  });
+});
+
+// #265 — Claude writes a secondary user JSONL entry for image attachments
+// with the "[Image: source: <path>]" cache-reference prefix. That entry must
+// be filtered so HumanTurn fires once per prompt.
+describe("isSystemMessage — image attachment reference", () => {
+  it("flags the [Image: source: ...] cache reference", () => {
+    const line = "[Image: source: ~/.claude/image-cache/abc.png]";
+    expect(isSystemMessage(line)).toBe(true);
+  });
+
+  it("flags the reference even when surrounded by whitespace", () => {
+    expect(
+      isSystemMessage("  [Image: source: ~/cache/foo.png]  "),
+    ).toBe(true);
+  });
+
+  it("does not flag a user-authored '[Image #1] ...' message", () => {
+    // Users can legitimately paste text like "[Image #1] what is this?".
+    // Only the "[Image: source:" prefix is the cache reference.
+    expect(isSystemMessage("[Image #1] what is this?")).toBe(false);
+  });
+
+  it("does not flag plain user text", () => {
+    expect(isSystemMessage("why is the notification still waiting?")).toBe(false);
+  });
+
+  it("still flags pre-existing system patterns (no regression)", () => {
+    expect(isSystemMessage("Compacted (ctrl+o to see full summary)")).toBe(true);
+    expect(
+      isSystemMessage("This session is being continued from a previous conversation..."),
+    ).toBe(true);
   });
 });

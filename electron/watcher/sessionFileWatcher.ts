@@ -54,11 +54,21 @@ const SYSTEM_PATTERNS = [
   "The user sent a new message while you were working",
 ];
 
+/**
+ * Image attachments produce a secondary `type:"user"` JSONL entry whose text
+ * is the local image-cache reference, not something the user typed. The
+ * literal prefix is `[Image: source:` (note the colon after `source`), which
+ * is distinct from the legitimate `[Image #N]` label users can paste. See
+ * #265.
+ */
+const IMAGE_CACHE_REF_PREFIX = "[Image: source:";
+
 const stripAnsi = (text: string): string =>
   text.replace(/\x1b\[[0-9;]*m/g, "").replace(/\[[\d;]*m/g, "");
 
-const isSystemMessage = (text: string): boolean => {
+export const isSystemMessage = (text: string): boolean => {
   const clean = stripAnsi(text).trim();
+  if (clean.startsWith(IMAGE_CACHE_REF_PREFIX)) return true;
   return SYSTEM_PATTERNS.some((p) => clean.includes(p));
 };
 
