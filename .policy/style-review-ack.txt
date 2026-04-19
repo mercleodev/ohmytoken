@@ -1,8 +1,13 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-19T14:17:08Z
-fingerprint=caf43664a84ceed9ca07caf3b692ae19c0b83ae97c4ca48eba278d334cbe4b3b
+# updated_at_utc: 2026-04-19T14:23:20Z
+fingerprint=773ddda0d045a94d052d7572af04412e646da2363cd36e90a3469f2eceafc7c0
 source=docs/sdd/style-checklist.md
-note=sessionFileWatcher: add IMAGE_CACHE_REF_PREFIX filter to isSystemMessage, export it. 5 new Vitest cases (13 total) cover prefix match + whitespace + negative (user-authored [Image #1] + plain text) + regression on existing SYSTEM_PATTERNS. No IPC/DB/UI change.
+note=#268 provider-aware memory section: Codex reads ~/.codex/memories, Claude unchanged; label/IPC signature updated; 11 new tests green
 
-electron/watcher/__tests__/sessionFileWatcher.spec.ts
-electron/watcher/sessionFileWatcher.ts
+electron/main.ts
+electron/memory/__tests__/providerMemory.spec.ts
+electron/memory/providerMemory.ts
+electron/preload.ts
+src/components/dashboard/prompt-detail/PromptMemorySection.tsx
+src/components/dashboard/PromptDetailView.tsx
+src/types/electron.d.ts

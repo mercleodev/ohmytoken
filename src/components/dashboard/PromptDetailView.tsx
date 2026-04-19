@@ -218,8 +218,13 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
         {showEvidenceSettings && <EvidenceSettings onClose={() => setShowEvidenceSettings(false)} onSave={handleRescore} />}
       </AnimatePresence>
 
-      {/* Claude Memory */}
-      <PromptMemorySection projectPath={displayScan.project_path} expanded={expandedSections} onToggle={toggle} />
+      {/* Provider Memory */}
+      <PromptMemorySection
+        projectPath={displayScan.project_path}
+        provider={displayScan.provider}
+        expanded={expandedSections}
+        onToggle={toggle}
+      />
 
       {/* Actions */}
       <Section title={`Actions (${toolCalls.length})`} id="tools" expanded={expandedSections} onToggle={toggle}>
