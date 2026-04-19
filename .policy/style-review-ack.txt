@@ -1,17 +1,9 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-19T15:27:37Z
-fingerprint=0be970deab6baaf6b62216eb8d5e5c6bbc070c8a858b849279c9bb2740d0d883
+# updated_at_utc: 2026-04-19T15:57:17Z
+fingerprint=4061c18c635dc31395db21e63ef10cb920e650508c0e6c7de6e63b1984b0e103
 source=docs/sdd/style-checklist.md
-note=#270 collapsible perf: framer-motion height-auto → CSS grid-rows across 8 components (+1 test file); reuse-first with CSS-only GPU-friendly pattern
+note=#272 layout prop + residual height-auto cleanup on realtime lists (RecentSessions, ActionFlowList); ProviderTabs/NotificationCard untouched; 3 new SSR tests
 
-src/components/dashboard/CostCard.tsx
-src/components/dashboard/dashboard.css
-src/components/dashboard/McpInsightsCard.tsx
-src/components/dashboard/MemoryMonitorCard.tsx
-src/components/dashboard/OutputProductivityCard.tsx
-src/components/dashboard/prompt-detail/__tests__/section.spec.tsx
-src/components/dashboard/prompt-detail/ContextFileList.tsx
-src/components/dashboard/prompt-detail/EvidenceGroup.tsx
-src/components/dashboard/prompt-detail/PromptMemorySection.tsx
-src/components/dashboard/prompt-detail/Section.tsx
-src/components/dashboard/prompt-detail/SignalBreakdown.tsx
+src/components/dashboard/__tests__/actionFlowList.spec.tsx
+src/components/dashboard/ActionFlowList.tsx
+src/components/dashboard/RecentSessions.tsx
