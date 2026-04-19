@@ -200,6 +200,26 @@ const findMostRecentSessionFile = (): { sessionId: string; filePath: string } | 
 };
 
 /**
+ * Decides whether a raw assistant JSONL line should emit an AssistantTurn
+ * (i.e. "response complete").
+ *
+ * Claude writes each content block (thinking / text / tool_use) as its own
+ * JSONL line. The authoritative completion signal is `stop_reason` on the
+ * assistant message: anything other than `tool_use` ends the turn. We also
+ * require positive `output_tokens` so cancelled/empty responses stay skipped
+ * (#216).
+ */
+export const shouldEmitAssistantTurn = (raw: any): boolean => {
+  const message = raw?.message;
+  if (!message) return false;
+  const stopReason: unknown = message.stop_reason;
+  if (typeof stopReason !== "string") return false;
+  if (stopReason === "tool_use") return false;
+  const output = message?.usage?.output_tokens ?? 0;
+  return output > 0;
+};
+
+/**
  * Watches a specific session JSONL file for new entries.
  * Uses fs.watch + polling for reliable fast detection.
  */
@@ -251,16 +271,12 @@ export const startSessionFileWatcher = (
               });
             }
           } else if (raw.type === "assistant" && raw.message) {
-            // Check if this assistant message has tool_use (still working)
-            const hasToolUse = Array.isArray(raw.message.content) &&
-              raw.message.content.some((b: any) => b.type === "tool_use");
-
-            // Skip cancelled/incomplete responses with zero output tokens
-            const assistantOutputTokens = raw.message?.usage?.output_tokens ?? 0;
-
-            // Only emit AssistantTurn (complete) when there are NO tool_use blocks
-            // and the response actually produced output (not cancelled)
-            if (!hasToolUse && assistantOutputTokens > 0) {
+            // Claude splits a single assistant message into separate JSONL
+            // lines per content block (thinking / text / tool_use). Using
+            // content-block presence to decide completion mis-classifies the
+            // thinking/text lines of a tool_use turn. stop_reason is the
+            // authoritative per-message signal — see #263.
+            if (shouldEmitAssistantTurn(raw)) {
               options.onTurn({
                 type: "assistant",
                 sessionId,
