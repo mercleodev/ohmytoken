@@ -43,6 +43,7 @@ const SYSTEM_PROMPT_PATTERNS = [
 ];
 
 const stripAnsi = (text: string): string =>
+  // eslint-disable-next-line no-control-regex
   text.replace(/\x1b\[[0-9;]*m/g, "").replace(/\[[\d;]*m/g, "");
 
 const isSystemPrompt = (text: string): boolean => {
@@ -448,7 +449,7 @@ export const RecentSessions = ({
         </div>
       ) : (
         <>
-          <AnimatePresence mode="popLayout" initial={false}>
+          <AnimatePresence initial={false}>
             {displayPrompts.map((p) => {
               const hasCtx = (p.totalTokens ?? 0) > 0 && p.model;
               const ctxLimit = p.model ? getContextLimit(p.model) : 0;
@@ -458,14 +459,13 @@ export const RecentSessions = ({
               return (
                 <motion.button
                   key={p.key}
-                  layout
                   className="session-card"
                   aria-label={`${p.text.slice(0, 50)} - ${p.model ? getModelShort(p.model) : 'unknown model'} ${formatTimeAgo(p.timestamp)}`}
                   onClick={() => onSelectSession(p.sessionId)}
-                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: "auto", marginBottom: 6 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
                 >
                   <div className="session-card-row">
                     <MiniCtxGauge pct={ctxPct} noData={!hasCtx} />
