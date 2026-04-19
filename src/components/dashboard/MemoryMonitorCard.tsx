@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { MemoryStatus, MemoryFile, ProjectMemorySummary } from '../../types/electron';
 
 const TYPE_COLORS: Record<string, string> = {
@@ -37,19 +36,14 @@ const MemoryFileItem = ({ file, isExpanded, onToggle }: {
       {file.description && (
         <div className="memory-file-desc">{file.description}</div>
       )}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <pre className="memory-file-content">{file.content}</pre>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div
+        className={`collapsible ${isExpanded ? 'open' : ''}`}
+        aria-hidden={!isExpanded}
+      >
+        <div className="collapsible-inner">
+          <pre className="memory-file-content">{file.content}</pre>
+        </div>
+      </div>
     </div>
   );
 };
@@ -222,15 +216,11 @@ export const MemoryMonitorCard = () => {
         </div>
       )}
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
-          >
+      <div
+        className={`collapsible ${expanded ? 'open' : ''}`}
+        aria-hidden={!expanded}
+      >
+        <div className="collapsible-inner">
             <div className="memory-stats">
               <span>{status.files.length} memory files</span>
               <span className="memory-stats-sep">·</span>
@@ -265,9 +255,8 @@ export const MemoryMonitorCard = () => {
                 </div>
               </div>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 };

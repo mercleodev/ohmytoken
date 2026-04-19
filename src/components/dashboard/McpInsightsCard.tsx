@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { formatTokens } from '../../utils/format';
 import type { McpInsightsResult } from '../../types/electron';
 import { getMcpServerName } from '../../utils/mcpTools';
@@ -119,15 +118,8 @@ export const McpInsightsCard = ({ scanRevision, provider }: McpInsightsCardProps
           ))}
         </div>
       </div>
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
-          >
+      <div className={`collapsible ${expanded ? 'open' : ''}`} aria-hidden={!expanded}>
+        <div className="collapsible-inner">
             {data.totalMcpCalls > 0 ? (
               <>
                 <div className="mcp-card-headline">
@@ -191,9 +183,8 @@ export const McpInsightsCard = ({ scanRevision, provider }: McpInsightsCardProps
                 </div>
               </>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 };

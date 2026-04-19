@@ -1,13 +1,17 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-19T14:23:20Z
-fingerprint=773ddda0d045a94d052d7572af04412e646da2363cd36e90a3469f2eceafc7c0
+# updated_at_utc: 2026-04-19T15:27:37Z
+fingerprint=0be970deab6baaf6b62216eb8d5e5c6bbc070c8a858b849279c9bb2740d0d883
 source=docs/sdd/style-checklist.md
-note=#268 provider-aware memory section: Codex reads ~/.codex/memories, Claude unchanged; label/IPC signature updated; 11 new tests green
+note=#270 collapsible perf: framer-motion height-auto → CSS grid-rows across 8 components (+1 test file); reuse-first with CSS-only GPU-friendly pattern
 
-electron/main.ts
-electron/memory/__tests__/providerMemory.spec.ts
-electron/memory/providerMemory.ts
-electron/preload.ts
+src/components/dashboard/CostCard.tsx
+src/components/dashboard/dashboard.css
+src/components/dashboard/McpInsightsCard.tsx
+src/components/dashboard/MemoryMonitorCard.tsx
+src/components/dashboard/OutputProductivityCard.tsx
+src/components/dashboard/prompt-detail/__tests__/section.spec.tsx
+src/components/dashboard/prompt-detail/ContextFileList.tsx
+src/components/dashboard/prompt-detail/EvidenceGroup.tsx
 src/components/dashboard/prompt-detail/PromptMemorySection.tsx
-src/components/dashboard/PromptDetailView.tsx
-src/types/electron.d.ts
+src/components/dashboard/prompt-detail/Section.tsx
+src/components/dashboard/prompt-detail/SignalBreakdown.tsx

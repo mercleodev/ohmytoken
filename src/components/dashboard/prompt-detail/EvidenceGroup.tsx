@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import { AnimatePresence } from "framer-motion";
 import { formatTokens } from "../../scan/shared";
 import type { EvidenceStatus, InjectedEvidenceItem } from "./types";
 import { EVIDENCE_STATUS_COLORS } from "./constants";
@@ -86,11 +85,9 @@ export const EvidenceGroup = ({
                   />
                 </div>
               )}
-              <AnimatePresence>
-                {isExpanded && item.signals && (
-                  <SignalBreakdown signals={item.signals} />
-                )}
-              </AnimatePresence>
+              {item.signals && (
+                <SignalBreakdown signals={item.signals} isOpen={isExpanded} />
+              )}
             </div>
           );
         })}
