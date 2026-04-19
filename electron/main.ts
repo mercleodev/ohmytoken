@@ -37,6 +37,7 @@ import type { EmitScoredScan } from "./evidence/emitScoredScan";
 import { buildProxyOptions } from "./proxy/buildProxyOptions";
 import { generateWorkflowDraft } from "./draftGenerator";
 import { exportWorkflowDraft } from "./draftExporter";
+import { getMemoryStatusForProvider } from "./memory/providerMemory";
 import { mergeConfig } from "./evidence/config";
 import { parseSystemFieldWithContent } from "./proxy/systemParser";
 import { insertEvidenceReport, recordWorkflowAction } from "./db/writer";
@@ -1881,59 +1882,18 @@ const setupIPC = (): void => {
     }
   });
 
-  // Memory monitor: read Claude Code memory files for a project
-  const readMemoryDir = (memoryDir: string) => {
-    const indexPath = path.join(memoryDir, "MEMORY.md");
-    const indexContent = fs.existsSync(indexPath)
-      ? fs.readFileSync(indexPath, "utf-8")
-      : "";
-    const indexLineCount = indexContent.split("\n").length;
-
-    const files = fs.readdirSync(memoryDir)
-      .filter((f: string) => f.endsWith(".md") && f !== "MEMORY.md")
-      .map((f: string) => {
-        const filePath = path.join(memoryDir, f);
-        const content = fs.readFileSync(filePath, "utf-8");
-        const lines = content.split("\n");
-
-        let name = f.replace(".md", "");
-        let description = "";
-        let type = "unknown";
-        if (lines[0] === "---") {
-          const endIdx = lines.indexOf("---", 1);
-          if (endIdx > 0) {
-            const frontmatter = lines.slice(1, endIdx).join("\n");
-            const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
-            const descMatch = frontmatter.match(/^description:\s*(.+)$/m);
-            const typeMatch = frontmatter.match(/^type:\s*(.+)$/m);
-            if (nameMatch) name = nameMatch[1].trim();
-            if (descMatch) description = descMatch[1].trim();
-            if (typeMatch) type = typeMatch[1].trim();
-          }
-        }
-
-        return { fileName: f, name, description, type, lineCount: lines.length, content };
-      });
-
-    return { indexLineCount, indexMaxLines: 200, indexContent, files, memoryDir };
-  };
-
-  ipcMain.handle("get-memory-status", async (_event, projectPath?: string) => {
-    try {
-      const projectsDir = path.join(homedir(), ".claude", "projects");
-      if (!fs.existsSync(projectsDir)) return null;
-
-      const targetPath = projectPath || process.cwd();
-      const encodedCwd = targetPath.replace(/\//g, "-");
-      const memoryDir = path.join(projectsDir, encodedCwd, "memory");
-      if (!fs.existsSync(memoryDir)) return null;
-
-      return readMemoryDir(memoryDir);
-    } catch (error) {
-      console.error("get-memory-status error:", error);
-      return null;
-    }
-  });
+  // Memory monitor: read provider-specific memory files for a prompt's project
+  ipcMain.handle(
+    "get-memory-status",
+    async (_event, projectPath?: string, provider?: string) => {
+      try {
+        return getMemoryStatusForProvider({ provider, projectPath });
+      } catch (error) {
+        console.error("get-memory-status error:", error);
+        return null;
+      }
+    },
+  );
 
   ipcMain.handle("get-all-projects-memory-summary", async () => {
     try {

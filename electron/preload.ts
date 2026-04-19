@@ -198,7 +198,7 @@ const api = {
     sessionId?: string; provider?: string; period?: 'today' | '7d' | '30d'; limit?: number;
   }) => ipcRenderer.invoke('get-harness-candidates', query),
 
-  getMemoryStatus: (projectPath?: string) => ipcRenderer.invoke('get-memory-status', projectPath),
+  getMemoryStatus: (projectPath?: string, provider?: string) => ipcRenderer.invoke('get-memory-status', projectPath, provider),
   getAllProjectsMemorySummary: () => ipcRenderer.invoke('get-all-projects-memory-summary'),
 
   previewWorkflowDraft: (candidate: {

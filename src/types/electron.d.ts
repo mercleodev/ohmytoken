@@ -437,7 +437,7 @@ export type ElectronApi = {
   }) => Promise<HarnessCandidate[]>;
 
   // Memory Monitor API
-  getMemoryStatus: (projectPath?: string) => Promise<MemoryStatus | null>;
+  getMemoryStatus: (projectPath?: string, provider?: string) => Promise<MemoryStatus | null>;
   getAllProjectsMemorySummary: () => Promise<AllProjectsMemorySummary | null>;
 
   // Workflow Draft Preview API

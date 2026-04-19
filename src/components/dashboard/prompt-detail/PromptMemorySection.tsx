@@ -56,33 +56,47 @@ const MemoryFileRow = ({ file, isExpanded, onToggle }: {
 
 type PromptMemorySectionProps = {
   projectPath: string | undefined;
+  provider: string | undefined;
   expanded: Set<string>;
   onToggle: (id: string) => void;
 };
 
-export const PromptMemorySection = ({ projectPath, expanded, onToggle }: PromptMemorySectionProps) => {
+const memoryLabel = (provider: string | undefined): string => {
+  const p = (provider ?? 'claude').toLowerCase();
+  if (p === 'codex') return 'Codex Memory';
+  return 'Claude Memory';
+};
+
+const isProviderWithoutProjectScope = (provider: string | undefined): boolean => {
+  const p = (provider ?? 'claude').toLowerCase();
+  return p === 'codex';
+};
+
+export const PromptMemorySection = ({ projectPath, provider, expanded, onToggle }: PromptMemorySectionProps) => {
   const [status, setStatus] = useState<MemoryStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
   const isOpen = expanded.has('memory');
+  const label = memoryLabel(provider);
+  const needsProjectPath = !isProviderWithoutProjectScope(provider);
 
   useEffect(() => {
-    if (!projectPath) {
+    if (needsProjectPath && !projectPath) {
       setLoading(false);
       return;
     }
-    window.api.getMemoryStatus(projectPath)
+    window.api.getMemoryStatus(projectPath, provider)
       .then(setStatus)
       .catch(() => setStatus(null))
       .finally(() => setLoading(false));
-  }, [projectPath]);
+  }, [projectPath, provider, needsProjectPath]);
 
-  // No project_path → show placeholder
-  if (!projectPath) {
+  // Claude needs project_path; Codex reads from global ~/.codex/memories
+  if (needsProjectPath && !projectPath) {
     return (
       <div className="detail-section">
         <button className="detail-section-header" onClick={() => onToggle('memory')}>
-          <span>Claude Memory</span>
+          <span>{label}</span>
           <span className="detail-section-header-right">
             <span className={`detail-section-chevron ${isOpen ? 'expanded' : ''}`}>›</span>
           </span>
@@ -109,7 +123,7 @@ export const PromptMemorySection = ({ projectPath, expanded, onToggle }: PromptM
   }
 
   const fileCount = status?.files.length ?? 0;
-  const title = loading ? 'Claude Memory (...)' : `Claude Memory (${fileCount})`;
+  const title = loading ? `${label} (...)` : `${label} (${fileCount})`;
 
   return (
     <div className="detail-section">
