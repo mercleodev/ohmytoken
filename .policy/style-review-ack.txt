@@ -1,18 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-14T04:23:07Z
-fingerprint=0b713b11e4cb00a9b33edab8040ce71110be5bc030ab1b5c99cef28c31cb1373
+# updated_at_utc: 2026-04-19T05:13:30Z
+fingerprint=caf43664a84ceed9ca07caf3b692ae19c0b83ae97c4ca48eba278d334cbe4b3b
 source=docs/sdd/style-checklist.md
-note=Phase 1 memory monitor: card style matches existing dashboard cards, macOS-native design tokens used throughout
+note=sessionFileWatcher: stop_reason gate for AssistantTurn. Pure helper shouldEmitAssistantTurn with Vitest coverage (8 cases). No dependency/IPC/DB change; renderer untouched. Behavior change documented in issue #263 and test spec header.
 
-.gitignore
-.policy/style-review-ack.txt
-.public-docs-allowlist
-docs/idea/guardrail-engine-mvp.md
-docs/idea/harness-candidate-detector.md
-docs/idea/implementation-action-items-roadmap.md
-docs/idea/product-direction-agent-workflow-to-harness-conversion.md
-scripts/ack-style-review.sh
-scripts/agent-discuss.sh
-scripts/check-style-review-ack.sh
-scripts/collect-style-review-items.sh
-scripts/list-meaningful-changed-files.sh
+electron/watcher/__tests__/sessionFileWatcher.spec.ts
+electron/watcher/sessionFileWatcher.ts
