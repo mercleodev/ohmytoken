@@ -4,26 +4,35 @@ import { BrowserWindow } from 'electron';
 import { TOKEN_FILE_PATHS, getProviderTokenStatus } from './credentialReader';
 import { UsageProviderType } from './types';
 
-type WatcherCleanup = () => void;
 type TokenChangeCallback = (provider: UsageProviderType) => void;
 
 type WatcherOptions = {
   getMainWindow: () => BrowserWindow | null;
   onTokenChanged?: TokenChangeCallback;
+  // Phase 3 — Keychain polling is opt-in only. If omitted, poll stays off
+  // at boot and must be started explicitly via `startKeychainPoll()`.
+  isClaudeInsightsEnabled?: () => boolean;
+};
+
+export type TokenFileWatcherHandle = {
+  cleanup: () => void;
+  startKeychainPoll: () => void;
+  stopKeychainPoll: () => void;
+  isKeychainPollActive: () => boolean;
 };
 
 /**
  * Watches token file changes for all 3 providers.
- * When a file is created/modified, sends a 'provider-token-changed' event to mainWindow,
- * and also calls the onTokenChanged callback if provided (for tray sync).
  *
- * For providers that store credentials in macOS Keychain (claude),
- * a periodic poll supplements file watching since Keychain changes
- * do not trigger filesystem events.
+ * Passive file watchers (Codex auth, Gemini oauth_creds) always run — they
+ * cannot trigger Keychain prompts. Claude's credentials live primarily in
+ * macOS Keychain, so a 10s poll is required to detect changes there; that
+ * poll is gated behind the Phase 3 account-insights opt-in and can be
+ * toggled at runtime via `startKeychainPoll()` / `stopKeychainPoll()`.
  */
 export const startTokenFileWatcher = (
-  getMainWindowOrOptions: (() => BrowserWindow | null) | WatcherOptions
-): WatcherCleanup => {
+  getMainWindowOrOptions: (() => BrowserWindow | null) | WatcherOptions,
+): TokenFileWatcherHandle => {
   const options: WatcherOptions = typeof getMainWindowOrOptions === 'function'
     ? { getMainWindow: getMainWindowOrOptions }
     : getMainWindowOrOptions;
@@ -50,7 +59,6 @@ export const startTokenFileWatcher = (
     const dir = path.dirname(filePath);
     const filename = path.basename(filePath);
 
-    // Skip if directory doesn't exist (CLI not installed)
     if (!fs.existsSync(dir)) {
       console.log(`[TokenWatcher] Skip ${provider}: directory ${dir} not found`);
       continue;
@@ -59,7 +67,6 @@ export const startTokenFileWatcher = (
     try {
       const watcher = fs.watch(dir, (eventType, changedFile) => {
         if (changedFile !== filename) return;
-
         console.log(`[TokenWatcher] ${provider} token file changed (${eventType})`);
         emitChange(provider);
       });
@@ -71,9 +78,10 @@ export const startTokenFileWatcher = (
     }
   }
 
-  // Keychain poll: claude stores credentials in macOS Keychain as priority 1.
-  // File watcher cannot detect Keychain changes, so poll every 10s.
+  // Keychain poll (Claude) — opt-in gated. We do NOT start `setInterval`
+  // at boot unless the user has explicitly enabled Claude account insights.
   const KEYCHAIN_POLL_MS = 10_000;
+  let keychainTimer: NodeJS.Timeout | null = null;
   let lastKeychainHasToken: boolean | null = null;
   let lastKeychainExpired: boolean | null = null;
 
@@ -82,13 +90,16 @@ export const startTokenFileWatcher = (
       const status = getProviderTokenStatus('claude');
       const changed =
         lastKeychainHasToken !== null &&
-        (status.hasToken !== lastKeychainHasToken || status.tokenExpired !== lastKeychainExpired);
+        (status.hasToken !== lastKeychainHasToken ||
+          status.tokenExpired !== lastKeychainExpired);
 
       lastKeychainHasToken = status.hasToken;
       lastKeychainExpired = status.tokenExpired;
 
       if (changed) {
-        console.log(`[TokenWatcher] claude keychain status changed (hasToken=${status.hasToken}, expired=${status.tokenExpired})`);
+        console.log(
+          `[TokenWatcher] claude keychain status changed (hasToken=${status.hasToken}, expired=${status.tokenExpired})`,
+        );
         emitChange('claude');
       }
     } catch {
@@ -96,16 +107,35 @@ export const startTokenFileWatcher = (
     }
   };
 
-  // Initialize baseline state immediately
-  pollKeychain();
-  const keychainTimer = setInterval(pollKeychain, KEYCHAIN_POLL_MS);
+  const startKeychainPoll = () => {
+    if (keychainTimer !== null) return;
+    pollKeychain(); // establish baseline immediately
+    keychainTimer = setInterval(pollKeychain, KEYCHAIN_POLL_MS);
+    console.log('[TokenWatcher] Keychain poll started (Claude opt-in)');
+  };
 
-  // Return cleanup function
-  return () => {
+  const stopKeychainPoll = () => {
+    if (keychainTimer === null) return;
     clearInterval(keychainTimer);
-    for (const watcher of watchers) {
-      watcher.close();
-    }
+    keychainTimer = null;
+    lastKeychainHasToken = null;
+    lastKeychainExpired = null;
+    console.log('[TokenWatcher] Keychain poll stopped');
+  };
+
+  const isKeychainPollActive = () => keychainTimer !== null;
+
+  // If Claude insights are already opted in (e.g., after a restart), start the
+  // poll. Otherwise stay quiet until the renderer invokes `:connect`.
+  if (options.isClaudeInsightsEnabled?.() === true) {
+    startKeychainPoll();
+  }
+
+  const cleanup = () => {
+    stopKeychainPoll();
+    for (const watcher of watchers) watcher.close();
     console.log('[TokenWatcher] All watchers closed');
   };
+
+  return { cleanup, startKeychainPoll, stopKeychainPoll, isKeychainPollActive };
 };

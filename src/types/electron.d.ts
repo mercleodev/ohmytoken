@@ -6,6 +6,7 @@ import {
   UsageProviderType,
   ProviderUsageSnapshot,
   ProviderConnectionStatus,
+  AccountInsightsState,
 } from "./index";
 
 export type HistoryEntry = {
@@ -392,6 +393,17 @@ export type ElectronApi = {
   ) => Promise<ProviderUsageSnapshot | null>;
   getAllProviderConnectionStatus: () => Promise<ProviderConnectionStatus[]>;
   refreshProviderUsage: (provider?: UsageProviderType) => Promise<void>;
+
+  // Phase 3 — account insights opt-in.
+  accountInsightsConnect: (
+    provider: UsageProviderType,
+  ) => Promise<{ success: boolean; state: AccountInsightsState; message?: string }>;
+  accountInsightsDisconnect: (
+    provider: UsageProviderType,
+  ) => Promise<{ success: boolean; state: AccountInsightsState; message?: string }>;
+  accountInsightsReconnect: (
+    provider: UsageProviderType,
+  ) => Promise<{ success: boolean; state: AccountInsightsState; message?: string }>;
   onProviderTokenChanged: (
     callback: (provider: UsageProviderType) => void,
   ) => () => void;

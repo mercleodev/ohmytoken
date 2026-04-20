@@ -1,3 +1,5 @@
+import type { UsageProviderType } from './providers/usage/types';
+
 export type ProviderType = 'claude' | 'openai' | 'gemini';
 
 export type ProviderConfig = {
@@ -44,6 +46,9 @@ export type AppSettings = {
   notificationsEnabled?: boolean; // Prompt notification overlay (default: true)
   notificationDisplayId?: number; // Display id for notification overlay (0 = auto: largest external)
   showAllProjectsMemory?: boolean; // Show memory from all projects in dashboard (default: false)
+  // Phase 3 — per-provider opt-in for account insights (quota/plan/credit lookups).
+  // Missing or false means tracking-only mode; no eager credential probing.
+  accountInsights?: Partial<Record<UsageProviderType, boolean>>;
 };
 
 export type StoreData = {

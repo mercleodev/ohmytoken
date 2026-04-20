@@ -139,6 +139,22 @@ const api = {
   refreshProviderUsage: (provider?: string): Promise<void> =>
     ipcRenderer.invoke("refresh-provider-usage", provider),
 
+  // Phase 3 — account insights opt-in (explicit, user-initiated).
+  accountInsightsConnect: (
+    provider: string,
+  ): Promise<{ success: boolean; state: string; message?: string }> =>
+    ipcRenderer.invoke("account-insights:connect", provider),
+
+  accountInsightsDisconnect: (
+    provider: string,
+  ): Promise<{ success: boolean; state: string; message?: string }> =>
+    ipcRenderer.invoke("account-insights:disconnect", provider),
+
+  accountInsightsReconnect: (
+    provider: string,
+  ): Promise<{ success: boolean; state: string; message?: string }> =>
+    ipcRenderer.invoke("account-insights:reconnect", provider),
+
   onProviderTokenChanged: (callback: (provider: string) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, provider: string) =>
       callback(provider);

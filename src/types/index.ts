@@ -39,6 +39,8 @@ export type AppSettings = {
   notificationsEnabled?: boolean; // prompt notification overlay (default: true)
   notificationDisplayId?: number; // display id for notification overlay (0 = auto: largest external)
   showAllProjectsMemory?: boolean; // show memory from all projects in dashboard (default: false)
+  // Phase 3 — per-provider opt-in for account insights (quota/plan/credit lookups).
+  accountInsights?: Partial<Record<UsageProviderType, boolean>>;
 };
 
 export type Config = {

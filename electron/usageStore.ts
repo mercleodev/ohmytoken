@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { ProviderUsageSnapshot, UsageProviderType } from './providers/usage/types';
 import { getProviderCostSummary } from './db/reader';
 
@@ -86,17 +87,34 @@ const refresh = async (provider: UsageProviderType): Promise<ProviderUsageSnapsh
   }
 };
 
+const ALL_PROVIDERS: UsageProviderType[] = ['claude', 'codex', 'gemini'];
+
+// Phase 3 — polling iterates only opted-in providers. The getter is read
+// every tick so opt-in changes take effect on the next interval.
+let getPollingProviders: () => UsageProviderType[] = () => ALL_PROVIDERS;
+
 const refreshAll = async (): Promise<void> => {
-  const providers: UsageProviderType[] = ['claude', 'codex', 'gemini'];
+  const providers = getPollingProviders();
+  if (providers.length === 0) return;
   await Promise.allSettled(providers.map((p) => refresh(p)));
 };
 
-const startPolling = (intervalMin: number): void => {
+const startPolling = (
+  intervalMin: number,
+  providersGetter: () => UsageProviderType[] = () => ALL_PROVIDERS,
+): void => {
   stopPolling();
+  getPollingProviders = providersGetter;
   const ms = intervalMin * 60 * 1000;
   pollingTimer = setInterval(() => {
     refreshAll();
   }, ms);
+};
+
+const clearSnapshot = (provider: UsageProviderType): void => {
+  if (!(provider in snapshotCache)) return;
+  delete snapshotCache[provider];
+  emitChange(provider, null);
 };
 
 const stopPolling = (): void => {
@@ -124,5 +142,6 @@ export const usageStore = {
   refreshAll,
   startPolling,
   stopPolling,
+  clearSnapshot,
   onChange,
 };

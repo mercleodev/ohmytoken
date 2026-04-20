@@ -19,6 +19,7 @@ type UsageViewProps = {
   loading: boolean;
   onSelectSession?: (sessionId: string) => void;
   onSelectStats?: () => void;
+  onConnectAccountInsights?: (status: ProviderConnectionStatus) => void;
   scanRevision?: number;
   provider?: string;
   isAllView?: boolean;
@@ -85,7 +86,7 @@ const LastUpdatedLabel = ({ updatedAt }: { updatedAt: string }) => {
   );
 };
 
-export const UsageView = ({ snapshot, connectionStatus, loading, onSelectSession, onSelectStats, scanRevision, provider, isAllView }: UsageViewProps) => {
+export const UsageView = ({ snapshot, connectionStatus, loading, onSelectSession, onSelectStats, onConnectAccountInsights, scanRevision, provider, isAllView }: UsageViewProps) => {
   // Fetch aggregated cost for "All" view
   const [allCost, setAllCost] = useState<{ todayCostUSD: number; todayTokens: number; last30DaysCostUSD: number; last30DaysTokens: number } | null>(null);
   useEffect(() => {
@@ -149,7 +150,9 @@ export const UsageView = ({ snapshot, connectionStatus, loading, onSelectSession
   if (!snapshot) {
     return (
       <div>
-        {connectionStatus && <AccountInsightsCard status={connectionStatus} />}
+        {connectionStatus && (
+          <AccountInsightsCard status={connectionStatus} onConnect={onConnectAccountInsights} />
+        )}
         <CostCard cost={dbCost} />
         {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
         {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
