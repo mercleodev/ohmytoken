@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { ProviderUsageSnapshot, UsageProviderType } from './providers/usage/types';
 import { getProviderCostSummary } from './db/reader';
 
