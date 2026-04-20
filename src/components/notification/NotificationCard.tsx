@@ -600,6 +600,8 @@ const ConfidenceBar = ({ value }: { value: number }) => {
   );
 };
 
+const WORKFLOW_INSIGHTS_HIDDEN = true;
+
 const WorkflowInsightsSection = ({ candidates }: { candidates?: HarnessCandidate[] }) => {
   const visible = useMemo(() => {
     if (!candidates || candidates.length === 0) return [];
@@ -608,6 +610,7 @@ const WorkflowInsightsSection = ({ candidates }: { candidates?: HarnessCandidate
       .slice(0, MAX_WORKFLOW_CANDIDATES);
   }, [candidates]);
 
+  if (WORKFLOW_INSIGHTS_HIDDEN) return null;
   if (visible.length === 0) return null;
 
   return (

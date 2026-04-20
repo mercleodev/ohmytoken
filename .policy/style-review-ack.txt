@@ -1,18 +1,7 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-20T15:36:34Z
-fingerprint=40e8b537451507e35782162d768c022271df61e633519b367612093d39a9053e
+# updated_at_utc: 2026-04-20T16:12:05Z
+fingerprint=3ecaacf288886a6e6f5449b60e418492d312037e974531cad5077ba3e5b591a0
 source=docs/sdd/style-checklist.md
-note=Phase 4 frontend: first-run onboarding + Settings Connections section. Reused SetupGuide copy verbatim, Tailwind/token patterns preserved, no new any types, a11y aria-live retained on AccountInsightsCard.
+note=Hide-only UI change: single early-return flag in WorkflowInsightsSection. Tokens/layout untouched. Keeps backend harness-candidate pipeline intact per AC.
 
-electron/main.ts
-electron/preload.ts
-electron/providers/usage/__tests__/firstRunDetector.spec.ts
-electron/providers/usage/firstRunDetector.ts
-src/App.css
-src/App.tsx
-src/components/dashboard/dashboard.css
-src/components/dashboard/FirstRunOnboarding.tsx
-src/components/settings/ConnectionsSection.tsx
-src/components/SettingsSection.tsx
-src/main.tsx
-src/types/electron.d.ts
+src/components/notification/NotificationCard.tsx
