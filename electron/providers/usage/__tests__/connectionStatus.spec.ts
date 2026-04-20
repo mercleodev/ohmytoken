@@ -11,7 +11,15 @@ describe('buildProviderConnectionStatus', () => {
   const loadModule = async (fsOverrides: Partial<{ existsSync: (p: string) => boolean }> = {}) => {
     vi.doMock('fs', async () => {
       const actual = await vi.importActual<typeof import('fs')>('fs');
-      return { ...actual, existsSync: fsOverrides.existsSync ?? (() => false) };
+      // Force credential file reads to fail so tests don't depend on local filesystem state.
+      const failRead = () => {
+        throw new Error('credential read blocked in test');
+      };
+      return {
+        ...actual,
+        existsSync: fsOverrides.existsSync ?? (() => false),
+        readFileSync: failRead,
+      };
     });
     return import('../credentialReader');
   };
@@ -67,5 +75,53 @@ describe('buildProviderConnectionStatus', () => {
     }));
     expect(statuses.map((s) => s.provider)).toEqual(['claude', 'codex', 'gemini']);
     for (const s of statuses) expect(s.tracking).toBe('active');
+  });
+
+  it('keeps accountInsights at not_connected when the user has not opted in', async () => {
+    const mod = await loadModule({ existsSync: () => true });
+    const status = mod.buildProviderConnectionStatus(
+      'claude',
+      () => ({ promptCount: 3, lastTrackedAt: null, watcherFired: true }),
+      // No optedIn flag → treated as opt-out.
+    );
+    expect(status.accountInsights).toBe('not_connected');
+    expect(status.tracking).toBe('active');
+  });
+
+  it('surfaces runtime access_denied over token state when opted in', async () => {
+    const mod = await loadModule({ existsSync: () => true });
+    const status = mod.buildProviderConnectionStatus(
+      'claude',
+      () => ({ promptCount: 0, lastTrackedAt: null, watcherFired: false }),
+      { optedIn: true, runtimeError: 'access_denied' },
+    );
+    expect(status.accountInsights).toBe('access_denied');
+  });
+
+  it('surfaces runtime unavailable when opted in', async () => {
+    const mod = await loadModule({ existsSync: () => true });
+    const status = mod.buildProviderConnectionStatus(
+      'codex',
+      () => ({ promptCount: 0, lastTrackedAt: null, watcherFired: false }),
+      { optedIn: true, runtimeError: 'unavailable' },
+    );
+    expect(status.accountInsights).toBe('unavailable');
+  });
+
+  it('passes per-provider context through buildAllProviderConnectionStatuses', async () => {
+    const mod = await loadModule({ existsSync: () => true });
+    const ctxMap: Record<string, { optedIn?: boolean; runtimeError?: 'access_denied' | 'unavailable' | null }> = {
+      claude: { optedIn: true, runtimeError: 'access_denied' },
+      codex: { optedIn: true },
+      gemini: { optedIn: false },
+    };
+    const statuses = mod.buildAllProviderConnectionStatuses(
+      () => ({ promptCount: 0, lastTrackedAt: null, watcherFired: false }),
+      (p) => ctxMap[p] ?? {},
+    );
+    const byProvider = Object.fromEntries(statuses.map((s) => [s.provider, s.accountInsights]));
+    expect(byProvider.claude).toBe('access_denied');
+    expect(byProvider.codex).toBe('not_connected');
+    expect(byProvider.gemini).toBe('not_connected');
   });
 });

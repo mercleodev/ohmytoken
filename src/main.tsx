@@ -360,6 +360,10 @@ if (!window.api) {
 
     refreshProviderUsage: async () => {},
 
+    accountInsightsConnect: async () => ({ success: true, state: 'connected' as const }),
+    accountInsightsDisconnect: async () => ({ success: true, state: 'not_connected' as const }),
+    accountInsightsReconnect: async () => ({ success: true, state: 'connected' as const }),
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onProviderTokenChanged: (_callback: (provider: UsageProviderType) => void) => {
       return () => {};

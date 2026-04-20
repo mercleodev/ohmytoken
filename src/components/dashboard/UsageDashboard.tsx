@@ -163,6 +163,30 @@ export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: Dashbo
     }
   }, [selectedProvider]);
 
+  const handleAccountInsightsConnect = useCallback(
+    async (status: ProviderConnectionStatus) => {
+      const needsReconnect =
+        status.accountInsights === 'expired' ||
+        status.accountInsights === 'access_denied' ||
+        status.accountInsights === 'unavailable';
+      try {
+        setLoading(true);
+        if (needsReconnect) {
+          await window.api.accountInsightsReconnect(status.provider);
+        } else {
+          await window.api.accountInsightsConnect(status.provider);
+        }
+      } catch (err) {
+        console.error('Account insights connect failed:', err);
+      } finally {
+        await loadStatuses();
+        await loadUsage(status.provider);
+        setLoading(false);
+      }
+    },
+    [loadStatuses, loadUsage],
+  );
+
   useEffect(() => {
     const cleanup = window.api.onProviderTokenChanged((provider) => {
       loadStatuses();
@@ -317,6 +341,7 @@ export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: Dashbo
                     loading={loading}
                     onSelectSession={handleSelectSession}
                     onSelectStats={handleSelectStats}
+                    onConnectAccountInsights={handleAccountInsightsConnect}
                     scanRevision={scanRevision}
                     provider={providerQueryParam}
                     isAllView={isAllView}

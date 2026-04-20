@@ -406,9 +406,22 @@ const deriveTrackingState = (
   return 'waiting_for_activity';
 };
 
+// Phase 3 — when the user has not opted in, `accountInsights` stays at
+// `not_connected` regardless of local credential state. Runtime errors from
+// a connect attempt (keychain denied / upstream unavailable) override the
+// token-derived state so the renderer can distinguish failure modes.
+// Plan §7.5 failure taxonomy.
+export type BuildConnectionStatusContext = {
+  optedIn?: boolean;
+  runtimeError?: 'access_denied' | 'unavailable' | null;
+};
+
 const deriveAccountInsightsState = (
   status: ProviderTokenStatus,
+  ctx: BuildConnectionStatusContext,
 ): AccountInsightsState => {
+  if (ctx.optedIn !== true) return 'not_connected';
+  if (ctx.runtimeError) return ctx.runtimeError;
   if (status.tokenExpired) return 'expired';
   if (status.hasToken) return 'connected';
   return 'not_connected';
@@ -418,9 +431,14 @@ type ConnectionStatusSignalsProvider = (
   provider: UsageProviderType,
 ) => TrackingSignals;
 
+type ConnectionStatusContextProvider = (
+  provider: UsageProviderType,
+) => BuildConnectionStatusContext;
+
 export const buildProviderConnectionStatus = (
   provider: UsageProviderType,
   getSignals: ConnectionStatusSignalsProvider,
+  ctx: BuildConnectionStatusContext = {},
 ): ProviderConnectionStatus => {
   const tokenStatus = getProviderTokenStatus(provider);
   const signals = getSignals(provider);
@@ -428,7 +446,7 @@ export const buildProviderConnectionStatus = (
     provider,
     displayName: tokenStatus.displayName,
     tracking: deriveTrackingState(provider, signals),
-    accountInsights: deriveAccountInsightsState(tokenStatus),
+    accountInsights: deriveAccountInsightsState(tokenStatus, ctx),
     installed: tokenStatus.installed,
     hasLocalCredential: tokenStatus.hasToken,
     tokenExpired: tokenStatus.tokenExpired,
@@ -439,7 +457,10 @@ export const buildProviderConnectionStatus = (
 
 export const buildAllProviderConnectionStatuses = (
   getSignals: ConnectionStatusSignalsProvider,
+  getContext: ConnectionStatusContextProvider = () => ({}),
 ): ProviderConnectionStatus[] => {
   const providers: UsageProviderType[] = ['claude', 'codex', 'gemini'];
-  return providers.map((p) => buildProviderConnectionStatus(p, getSignals));
+  return providers.map((p) =>
+    buildProviderConnectionStatus(p, getSignals, getContext(p)),
+  );
 };

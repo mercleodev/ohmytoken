@@ -51,6 +51,22 @@ import { startProviderSessionWatcher } from "./watcher/providerSessionWatcher";
 import { startSessionFileWatcher } from "./watcher/sessionFileWatcher";
 import { startCodexSessionFileWatcher } from "./watcher/codexSessionFileWatcher";
 import { markProviderWatcherFired } from "./providers/usage/trackingActivity";
+import {
+  startTokenFileWatcher,
+  type TokenFileWatcherHandle,
+} from "./providers/usage/tokenFileWatcher";
+import {
+  isAccountInsightsEnabled,
+  getOptedInProviders,
+  setAccountInsightsEnabled,
+} from "./providers/usage/accountInsightsSettings";
+import {
+  setAccountInsightsRuntimeError,
+  clearAccountInsightsRuntimeError,
+  getAccountInsightsRuntimeError,
+} from "./providers/usage/accountInsightsRuntimeState";
+import { getProviderTokenStatus } from "./providers/usage/credentialReader";
+import type { UsageProviderType, AccountInsightsState } from "./providers/usage/types";
 
 
 // Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
@@ -70,6 +86,10 @@ let isQuitting = false;
 let evidenceEngine: EvidenceEngine | null = null;
 let sessionFileWatcherCleanup: (() => void) | null = null;
 let switchSessionFileWatcher: ((sessionId: string) => void) | null = null;
+let tokenWatcherHandle: TokenFileWatcherHandle | null = null;
+
+const currentSettings = (): AppSettings | undefined =>
+  store?.get("settings") as AppSettings | undefined;
 
 // injected files cache: file-based persistent storage
 const INJECTED_CACHE_PATH = path.join(
@@ -479,17 +499,28 @@ const initApp = async (): Promise<void> => {
   registerBackfillIPC(() => mainWindow);
   startGapFillScheduler(() => mainWindow);
 
-  // Start usageStore polling + initial fetch
+  // Phase 3 — polling iterates only opted-in providers; boot refresh gates on
+  // Claude opt-in so users get a tracking-only surface by default and no
+  // eager Keychain prompts.
   const refreshInterval = settings?.refreshInterval || 5;
-  usageStore.startPolling(refreshInterval);
-  usageStore.refresh("claude");
+  usageStore.startPolling(refreshInterval, () =>
+    getOptedInProviders(currentSettings()),
+  );
+  if (isAccountInsightsEnabled(currentSettings(), "claude")) {
+    usageStore.refresh("claude");
+  }
 
-  // Start token file watcher (syncs dashboard + tray simultaneously)
+  // Start token file watcher. The Keychain poll stays off until Claude is opted in.
   try {
-    const { startTokenFileWatcher } = require("./providers/usage/tokenFileWatcher");
-    startTokenFileWatcher({
+    tokenWatcherHandle = startTokenFileWatcher({
       getMainWindow: () => mainWindow,
-      onTokenChanged: () => usageStore.refresh("claude"),
+      onTokenChanged: (provider) => {
+        if (isAccountInsightsEnabled(currentSettings(), provider)) {
+          usageStore.refresh(provider);
+        }
+      },
+      isClaudeInsightsEnabled: () =>
+        isAccountInsightsEnabled(currentSettings(), "claude"),
     });
   } catch (err) {
     console.error("[TokenWatcher] Failed to start:", err);
@@ -843,11 +874,13 @@ const setupIPC = (): void => {
       registerShortcut(settings.shortcut);
     }
 
-    // Restart polling if interval changed
+    // Restart polling if interval changed (keeps opt-in-aware provider getter).
     const prevRefresh = prevSettings?.refreshInterval || 5;
     const newRefresh = settings.refreshInterval || 5;
     if (prevRefresh !== newRefresh) {
-      usageStore.startPolling(newRefresh);
+      usageStore.startPolling(newRefresh, () =>
+        getOptedInProviders(store!.get("settings") as AppSettings | undefined),
+      );
     }
 
     // Detect proxy port change -> restart
@@ -1813,14 +1846,21 @@ const setupIPC = (): void => {
         buildAllProviderConnectionStatuses,
       } = require("./providers/usage/credentialReader");
       const { hasProviderWatcherFired } = require("./providers/usage/trackingActivity");
-      return buildAllProviderConnectionStatuses((provider: string) => {
-        const snapshot = dbReader.getProviderTrackingSnapshot(provider);
-        return {
-          promptCount: snapshot.promptCount,
-          lastTrackedAt: snapshot.lastTrackedAt,
-          watcherFired: hasProviderWatcherFired(provider),
-        };
-      });
+      const settings = currentSettings();
+      return buildAllProviderConnectionStatuses(
+        (provider: string) => {
+          const snapshot = dbReader.getProviderTrackingSnapshot(provider);
+          return {
+            promptCount: snapshot.promptCount,
+            lastTrackedAt: snapshot.lastTrackedAt,
+            watcherFired: hasProviderWatcherFired(provider),
+          };
+        },
+        (provider: UsageProviderType) => ({
+          optedIn: isAccountInsightsEnabled(settings, provider),
+          runtimeError: getAccountInsightsRuntimeError(provider),
+        }),
+      );
     } catch (err) {
       console.error("[Usage] Failed to get provider connection statuses:", err);
       return [];
@@ -1831,12 +1871,98 @@ const setupIPC = (): void => {
     "refresh-provider-usage",
     async (_event, provider?: string) => {
       console.log(`[Usage] Refresh requested for: ${provider ?? "all"}`);
+      // Phase 3 — user-initiated refresh still respects opt-in so clicking
+      // refresh on a tracking-only tab never probes credentials silently.
       if (provider) {
+        if (!isAccountInsightsEnabled(currentSettings(), provider as UsageProviderType)) {
+          return null;
+        }
         return await usageStore.refresh(provider as any);
       }
-      await usageStore.refresh("claude");
+      if (isAccountInsightsEnabled(currentSettings(), "claude")) {
+        await usageStore.refresh("claude");
+      }
     },
   );
+
+  // === Phase 3 — Account Insights opt-in IPC ===
+
+  const isValidProvider = (value: unknown): value is UsageProviderType =>
+    value === "claude" || value === "codex" || value === "gemini";
+
+  const runAccountInsightsRefresh = async (
+    provider: UsageProviderType,
+    force: boolean,
+  ): Promise<{ success: boolean; state: AccountInsightsState; message?: string }> => {
+    clearAccountInsightsRuntimeError(provider);
+    try {
+      const cached = force ? null : usageStore.getSnapshot(provider);
+      const snapshot = cached ?? (await usageStore.refresh(provider));
+      if (snapshot) {
+        return { success: true, state: "connected" };
+      }
+      const tokenStatus = getProviderTokenStatus(provider);
+      if (tokenStatus.tokenExpired) {
+        return { success: false, state: "expired" };
+      }
+      if (!tokenStatus.hasToken) {
+        // Opted in but no local credential — user has pointed the app here
+        // but hasn't completed provider-side login yet.
+        return { success: true, state: "not_connected" };
+      }
+      setAccountInsightsRuntimeError(provider, "unavailable");
+      return { success: false, state: "unavailable" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const looksDenied = /keychain|denied|permission/i.test(msg);
+      const state: "access_denied" | "unavailable" = looksDenied
+        ? "access_denied"
+        : "unavailable";
+      setAccountInsightsRuntimeError(provider, state);
+      return { success: false, state, message: msg };
+    }
+  };
+
+  ipcMain.handle("account-insights:connect", async (_event, provider: unknown) => {
+    if (!isValidProvider(provider)) {
+      return { success: false, state: "not_connected", message: "invalid provider" };
+    }
+    const settings = (store!.get("settings") ?? {}) as AppSettings;
+    settings.accountInsights = setAccountInsightsEnabled(settings, provider, true);
+    store!.set("settings", settings);
+    if (provider === "claude") {
+      tokenWatcherHandle?.startKeychainPoll();
+    }
+    return await runAccountInsightsRefresh(provider, false);
+  });
+
+  ipcMain.handle("account-insights:disconnect", async (_event, provider: unknown) => {
+    if (!isValidProvider(provider)) {
+      return { success: false, state: "not_connected", message: "invalid provider" };
+    }
+    const settings = (store!.get("settings") ?? {}) as AppSettings;
+    settings.accountInsights = setAccountInsightsEnabled(settings, provider, false);
+    store!.set("settings", settings);
+    clearAccountInsightsRuntimeError(provider);
+    usageStore.clearSnapshot(provider);
+    if (provider === "claude") {
+      tokenWatcherHandle?.stopKeychainPoll();
+    }
+    return { success: true, state: "not_connected" };
+  });
+
+  ipcMain.handle("account-insights:reconnect", async (_event, provider: unknown) => {
+    if (!isValidProvider(provider)) {
+      return { success: false, state: "not_connected", message: "invalid provider" };
+    }
+    const settings = (store!.get("settings") ?? {}) as AppSettings;
+    settings.accountInsights = setAccountInsightsEnabled(settings, provider, true);
+    store!.set("settings", settings);
+    if (provider === "claude") {
+      tokenWatcherHandle?.startKeychainPoll();
+    }
+    return await runAccountInsightsRefresh(provider, true);
+  });
 
   // === MCP Insights IPC ===
 
