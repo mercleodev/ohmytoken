@@ -5,7 +5,7 @@ import { UsageGaugeCard } from './UsageGaugeCard';
 import { formatTimeAgo } from '../../utils/format';
 import { CostCard } from './CostCard';
 import { StatsCard } from './StatsCard';
-import { SetupGuide } from './SetupGuide';
+import { AccountInsightsCard } from './AccountInsightsCard';
 import { RecentSessions } from './RecentSessions';
 import { OutputProductivityCard } from './OutputProductivityCard';
 import { McpInsightsCard } from './McpInsightsCard';
@@ -130,13 +130,6 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
     );
   }
 
-  // Show SetupGuide when token is missing or expired
-  // Note: skip `installed` check — packaged apps cannot reliably resolve CLI PATH,
-  // and having a valid token already implies the CLI was installed.
-  if (tokenStatus && (!tokenStatus.hasToken || tokenStatus.tokenExpired)) {
-    return <SetupGuide status={tokenStatus} />;
-  }
-
   // Loading data
   if (loading && !snapshot) {
     return (
@@ -151,10 +144,12 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
     );
   }
 
-  // No snapshot — skip gauge but still show DB-based cost + data cards
+  // No snapshot — still show inline account card (when relevant) + DB-based cost + data cards.
+  // This is the runtime-first path: account insights are optional, not a page-level gate.
   if (!snapshot) {
     return (
       <div>
+        {tokenStatus && <AccountInsightsCard status={tokenStatus} />}
         <CostCard cost={dbCost} />
         {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
         {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
