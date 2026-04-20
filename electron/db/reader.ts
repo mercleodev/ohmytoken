@@ -788,6 +788,26 @@ export const getPromptCount = (): number => {
   return row.cnt;
 };
 
+export type ProviderTrackingSnapshot = {
+  promptCount: number;
+  lastTrackedAt: string | null;
+};
+
+export const getProviderTrackingSnapshot = (
+  provider: string,
+): ProviderTrackingSnapshot => {
+  const db = getDatabase();
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS cnt, MAX(timestamp) AS last_ts FROM prompts WHERE provider = ?`,
+    )
+    .get(provider) as { cnt: number; last_ts: string | null };
+  return {
+    promptCount: row?.cnt ?? 0,
+    lastTrackedAt: row?.last_ts ?? null,
+  };
+};
+
 // --- Evidence scoring queries ---
 
 import type {

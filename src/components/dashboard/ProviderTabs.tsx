@@ -1,5 +1,10 @@
 import { motion } from 'framer-motion';
-import { UsageProviderType, ProviderTokenStatus } from '../../types';
+import {
+  UsageProviderType,
+  ProviderConnectionStatus,
+  TrackingState,
+  AccountInsightsState,
+} from '../../types';
 
 export type ProviderFilter = UsageProviderType | 'all';
 
@@ -7,7 +12,8 @@ type ProviderTabInfo = {
   id: ProviderFilter;
   name: string;
   icon: string;
-  connected: boolean;
+  tracking: TrackingState | null;
+  accountInsights: AccountInsightsState | null;
 };
 
 type ProviderTabsProps = {
@@ -30,6 +36,44 @@ export const PROVIDER_ICONS: Record<ProviderFilter, string> = {
   gemini: '◆',
 };
 
+const trackingDotClass = (tracking: TrackingState | null): string => {
+  switch (tracking) {
+    case 'active':
+      return 'provider-tab-dot tracking-active';
+    case 'waiting_for_activity':
+      return 'provider-tab-dot tracking-waiting';
+    case 'not_enabled':
+      return 'provider-tab-dot tracking-not-enabled';
+    default:
+      return 'provider-tab-dot tracking-unknown';
+  }
+};
+
+const accountBadgeTitle = (state: AccountInsightsState | null): string => {
+  switch (state) {
+    case 'connected':
+      return 'Account insights connected';
+    case 'expired':
+      return 'Account session expired';
+    case 'not_connected':
+      return 'Account insights not connected';
+    case 'access_denied':
+      return 'Account access denied';
+    case 'unavailable':
+      return 'Account insights unavailable';
+    default:
+      return '';
+  }
+};
+
+const accountBadgeClass = (state: AccountInsightsState | null): string => {
+  const base = 'provider-tab-account-badge';
+  if (state === 'connected') return `${base} account-connected`;
+  if (state === 'expired' || state === 'access_denied') return `${base} account-attention`;
+  if (state === 'not_connected') return `${base} account-optional`;
+  return '';
+};
+
 export const ProviderTabs = ({ providers, selected, onSelect }: ProviderTabsProps) => {
   return (
     <div className="provider-tabs">
@@ -50,7 +94,18 @@ export const ProviderTabs = ({ providers, selected, onSelect }: ProviderTabsProp
           <span className="provider-tab-icon">{p.icon}</span>
           <span className="provider-tab-name">{p.name}</span>
           {p.id !== 'all' && (
-            <span className={`provider-tab-dot ${p.connected ? '' : 'disconnected'}`} />
+            <span className="provider-tab-indicators" aria-hidden="false">
+              <span
+                className={trackingDotClass(p.tracking)}
+                title={p.tracking ? `Tracking: ${p.tracking.replace('_', ' ')}` : ''}
+              />
+              {p.accountInsights && p.accountInsights !== 'not_connected' && (
+                <span
+                  className={accountBadgeClass(p.accountInsights)}
+                  title={accountBadgeTitle(p.accountInsights)}
+                />
+              )}
+            </span>
           )}
         </button>
       ))}
@@ -58,7 +113,9 @@ export const ProviderTabs = ({ providers, selected, onSelect }: ProviderTabsProp
   );
 };
 
-export const buildProviderTabInfo = (statuses: ProviderTokenStatus[]): ProviderTabInfo[] => {
+export const buildProviderTabInfo = (
+  statuses: ProviderConnectionStatus[],
+): ProviderTabInfo[] => {
   const allProviders: UsageProviderType[] = ['claude', 'codex', 'gemini'];
 
   const providerTabs: ProviderTabInfo[] = allProviders.map((id) => {
@@ -67,13 +124,13 @@ export const buildProviderTabInfo = (statuses: ProviderTokenStatus[]): ProviderT
       id,
       name: status?.displayName ?? id.charAt(0).toUpperCase() + id.slice(1),
       icon: PROVIDER_ICONS[id],
-      connected: status ? status.hasToken && !status.tokenExpired : false,
+      tracking: status?.tracking ?? null,
+      accountInsights: status?.accountInsights ?? null,
     };
   });
 
-  // Prepend the "All" tab
   return [
-    { id: 'all' as ProviderFilter, name: 'All', icon: PROVIDER_ICONS.all, connected: true },
+    { id: 'all' as ProviderFilter, name: 'All', icon: PROVIDER_ICONS.all, tracking: null, accountInsights: null },
     ...providerTabs,
   ];
 };

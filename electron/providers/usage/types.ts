@@ -51,6 +51,38 @@ export type ProviderTokenStatus = {
   };
 };
 
+// Phase 2 — split connection model. `tracking` and `accountInsights` are
+// independent axes: tracking means OhMyToken can observe agent activity,
+// account insights means the provider's account APIs are reachable.
+// See docs/idea/runtime-first-account-optional-ux-spec.md §4.
+export type TrackingState =
+  | 'not_enabled'
+  | 'waiting_for_activity'
+  | 'active';
+
+export type AccountInsightsState =
+  | 'not_connected'
+  | 'connected'
+  | 'expired'
+  | 'access_denied'
+  | 'unavailable';
+
+export type ProviderConnectionStatus = {
+  provider: UsageProviderType;
+  displayName: string;
+  tracking: TrackingState;
+  accountInsights: AccountInsightsState;
+  installed: boolean;
+  hasLocalCredential: boolean;
+  tokenExpired: boolean;
+  lastTrackedAt: string | null;
+  setupCommands: {
+    install: string;
+    login: string;
+    refresh: string;
+  };
+};
+
 // Credential types for each provider
 
 export type ClaudeCredentials = {

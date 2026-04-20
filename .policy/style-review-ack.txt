@@ -1,9 +1,22 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-20T13:38:57Z
-fingerprint=f5e49085ce630ed8e2cc8b572bfe6bf250bbb1b28105442f7ee232d460439d33
+# updated_at_utc: 2026-04-20T14:12:00Z
+fingerprint=be3bdab7398de698922e135e0b82681544474a796f17d20d7f22e0e9e01eda86
 source=docs/sdd/style-checklist.md
-note=Phase 1 UsageView gating removal: zero new any, framer-motion reused, AccountInsightsCard follows PascalCase convention, no dep additions, no silent catches. SetupGuide re-scope deferred to Phase 4 per plan §8.3.6.
+note=Phase 2 split connection status: new TrackingState/AccountInsightsState/ProviderConnectionStatus types, single-path IPC replace, all callers migrated in-PR. Degraded deferred per plan §6.3. Added 5 unit tests (connectionStatus.spec.ts) for pure state derivation. Watcher instrumentation isolated to trackingActivity module.
 
+electron/db/reader.ts
+electron/main.ts
+electron/preload.ts
+electron/providers/usage/__tests__/connectionStatus.spec.ts
+electron/providers/usage/credentialReader.ts
+electron/providers/usage/trackingActivity.ts
+electron/providers/usage/types.ts
+electron/watcher/providerSessionWatcher.ts
 src/components/dashboard/AccountInsightsCard.tsx
 src/components/dashboard/dashboard.css
+src/components/dashboard/ProviderTabs.tsx
+src/components/dashboard/UsageDashboard.tsx
 src/components/dashboard/UsageView.tsx
+src/main.tsx
+src/types/electron.d.ts
+src/types/index.ts

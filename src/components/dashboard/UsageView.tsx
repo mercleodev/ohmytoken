@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ProviderUsageSnapshot, ProviderTokenStatus, CreditBalance } from '../../types';
+import { ProviderUsageSnapshot, ProviderConnectionStatus, CreditBalance } from '../../types';
 import { UsageGaugeCard } from './UsageGaugeCard';
 import { formatTimeAgo } from '../../utils/format';
 import { CostCard } from './CostCard';
@@ -15,7 +15,7 @@ import { MemoryMonitorCard } from './MemoryMonitorCard';
 
 type UsageViewProps = {
   snapshot: ProviderUsageSnapshot | null;
-  tokenStatus: ProviderTokenStatus | null;
+  connectionStatus: ProviderConnectionStatus | null;
   loading: boolean;
   onSelectSession?: (sessionId: string) => void;
   onSelectStats?: () => void;
@@ -85,7 +85,7 @@ const LastUpdatedLabel = ({ updatedAt }: { updatedAt: string }) => {
   );
 };
 
-export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onSelectStats, scanRevision, provider, isAllView }: UsageViewProps) => {
+export const UsageView = ({ snapshot, connectionStatus, loading, onSelectSession, onSelectStats, scanRevision, provider, isAllView }: UsageViewProps) => {
   // Fetch aggregated cost for "All" view
   const [allCost, setAllCost] = useState<{ todayCostUSD: number; todayTokens: number; last30DaysCostUSD: number; last30DaysTokens: number } | null>(null);
   useEffect(() => {
@@ -149,7 +149,7 @@ export const UsageView = ({ snapshot, tokenStatus, loading, onSelectSession, onS
   if (!snapshot) {
     return (
       <div>
-        {tokenStatus && <AccountInsightsCard status={tokenStatus} />}
+        {connectionStatus && <AccountInsightsCard status={connectionStatus} />}
         <CostCard cost={dbCost} />
         {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
         {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}

@@ -5,6 +5,9 @@ import { execSync } from 'child_process';
 import {
   UsageProviderType,
   ProviderTokenStatus,
+  ProviderConnectionStatus,
+  TrackingState,
+  AccountInsightsState,
   ClaudeCredentials,
   CodexAuth,
   GeminiOAuthCreds,
@@ -366,4 +369,77 @@ export const getProviderTokenStatus = (provider: UsageProviderType): ProviderTok
 export const getAllProviderStatuses = (): ProviderTokenStatus[] => {
   const providers: UsageProviderType[] = ['claude', 'codex', 'gemini'];
   return providers.map(getProviderTokenStatus);
+};
+
+// === Phase 2 — split tracking vs account-insights connection status ===
+
+const SESSION_ROOTS: Record<UsageProviderType, string> = {
+  claude: path.join(homedir(), '.claude', 'projects'),
+  codex: path.join(homedir(), '.codex', 'sessions'),
+  gemini: path.join(homedir(), '.gemini', 'tmp'),
+};
+
+const hasSessionRoot = (provider: UsageProviderType): boolean => {
+  try {
+    return fs.existsSync(SESSION_ROOTS[provider]);
+  } catch {
+    return false;
+  }
+};
+
+type TrackingSignals = {
+  // DB row count for this provider (aggregated by db reader).
+  promptCount: number;
+  // Most recent tracked prompt timestamp for this provider, if any.
+  lastTrackedAt: string | null;
+  // Whether a watcher has fired for this provider in the current process lifetime.
+  watcherFired: boolean;
+};
+
+const deriveTrackingState = (
+  provider: UsageProviderType,
+  signals: TrackingSignals,
+): TrackingState => {
+  const rootExists = hasSessionRoot(provider);
+  if (!rootExists && signals.promptCount === 0) return 'not_enabled';
+  if (signals.watcherFired || signals.promptCount > 0) return 'active';
+  return 'waiting_for_activity';
+};
+
+const deriveAccountInsightsState = (
+  status: ProviderTokenStatus,
+): AccountInsightsState => {
+  if (status.tokenExpired) return 'expired';
+  if (status.hasToken) return 'connected';
+  return 'not_connected';
+};
+
+type ConnectionStatusSignalsProvider = (
+  provider: UsageProviderType,
+) => TrackingSignals;
+
+export const buildProviderConnectionStatus = (
+  provider: UsageProviderType,
+  getSignals: ConnectionStatusSignalsProvider,
+): ProviderConnectionStatus => {
+  const tokenStatus = getProviderTokenStatus(provider);
+  const signals = getSignals(provider);
+  return {
+    provider,
+    displayName: tokenStatus.displayName,
+    tracking: deriveTrackingState(provider, signals),
+    accountInsights: deriveAccountInsightsState(tokenStatus),
+    installed: tokenStatus.installed,
+    hasLocalCredential: tokenStatus.hasToken,
+    tokenExpired: tokenStatus.tokenExpired,
+    lastTrackedAt: signals.lastTrackedAt,
+    setupCommands: tokenStatus.setupCommands,
+  };
+};
+
+export const buildAllProviderConnectionStatuses = (
+  getSignals: ConnectionStatusSignalsProvider,
+): ProviderConnectionStatus[] => {
+  const providers: UsageProviderType[] = ['claude', 'codex', 'gemini'];
+  return providers.map((p) => buildProviderConnectionStatus(p, getSignals));
 };
