@@ -1,9 +1,9 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-19T15:57:17Z
-fingerprint=4061c18c635dc31395db21e63ef10cb920e650508c0e6c7de6e63b1984b0e103
+# updated_at_utc: 2026-04-20T13:38:57Z
+fingerprint=f5e49085ce630ed8e2cc8b572bfe6bf250bbb1b28105442f7ee232d460439d33
 source=docs/sdd/style-checklist.md
-note=#272 layout prop + residual height-auto cleanup on realtime lists (RecentSessions, ActionFlowList); ProviderTabs/NotificationCard untouched; 3 new SSR tests
+note=Phase 1 UsageView gating removal: zero new any, framer-motion reused, AccountInsightsCard follows PascalCase convention, no dep additions, no silent catches. SetupGuide re-scope deferred to Phase 4 per plan §8.3.6.
 
-src/components/dashboard/__tests__/actionFlowList.spec.tsx
-src/components/dashboard/ActionFlowList.tsx
-src/components/dashboard/RecentSessions.tsx
+src/components/dashboard/AccountInsightsCard.tsx
+src/components/dashboard/dashboard.css
+src/components/dashboard/UsageView.tsx
