@@ -402,6 +402,58 @@
   line-height: 1.6;
 }
 
+/* --- Account Insights Card (inline, replaces gauge area when account not connected) --- */
+
+.account-insights-card {
+  padding: 14px 16px;
+  margin: 4px 16px 12px;
+  background: rgba(0, 122, 255, 0.05);
+  border: 0.5px solid rgba(0, 122, 255, 0.18);
+  border-radius: 12px;
+}
+
+.account-insights-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a3b3d;
+  margin-bottom: 4px;
+}
+
+.account-insights-card-body {
+  font-size: 12px;
+  color: #6b6c6f;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.account-insights-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.account-insights-card-primary {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #007aff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.account-insights-card-primary:hover {
+  background: #0064d0;
+}
+
+.account-insights-card-secondary-hint {
+  font-size: 11px;
+  color: #9b9c9e;
+}
+
 /* --- Credit Balance Card --- */
 
 .credit-balance-card {
