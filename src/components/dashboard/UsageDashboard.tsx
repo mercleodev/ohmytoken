@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, Component, ReactNode } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { UsageProviderType, ProviderUsageSnapshot, ProviderTokenStatus } from '../../types';
+import { UsageProviderType, ProviderUsageSnapshot, ProviderConnectionStatus } from '../../types';
 import type { PromptScan, UsageLogEntry } from '../../types';
 import { setContextLimitOverride } from '../scan/shared';
 
@@ -53,7 +53,7 @@ type DashboardProps = {
 
 export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: DashboardProps = {}) => {
   const [selectedProvider, setSelectedProvider] = useState<ProviderFilter>('all');
-  const [providerStatuses, setProviderStatuses] = useState<ProviderTokenStatus[]>([]);
+  const [providerStatuses, setProviderStatuses] = useState<ProviderConnectionStatus[]>([]);
   const [snapshots, setSnapshots] = useState<Record<string, ProviderUsageSnapshot | null>>({});
   const [loading, setLoading] = useState(false);
   const [showContextSettings, setShowContextSettings] = useState(false);
@@ -101,7 +101,7 @@ export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: Dashbo
 
   const loadStatuses = useCallback(async () => {
     try {
-      const statuses = await window.api.getAllProviderStatus();
+      const statuses = await window.api.getAllProviderConnectionStatus();
       setProviderStatuses(statuses);
     } catch (err) {
       console.error('Failed to load provider statuses:', err);
@@ -313,7 +313,7 @@ export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: Dashbo
                 {nav.screen === 'main' && (
                   <UsageView
                     snapshot={currentSnapshot}
-                    tokenStatus={currentStatus}
+                    connectionStatus={currentStatus}
                     loading={loading}
                     onSelectSession={handleSelectSession}
                     onSelectStats={handleSelectStats}

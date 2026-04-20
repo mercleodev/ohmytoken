@@ -352,10 +352,10 @@ if (!window.api) {
       return mockData[provider] ?? null;
     },
 
-    getAllProviderStatus: async () => [
-      { provider: 'claude', displayName: 'Claude', installed: true, hasToken: true, tokenExpired: false, setupCommands: { install: 'npm install -g @anthropic-ai/claude-code', login: 'claude', refresh: 'claude /login' } },
-      { provider: 'codex', displayName: 'Codex', installed: true, hasToken: true, tokenExpired: false, setupCommands: { install: 'npm install -g @openai/codex', login: 'codex', refresh: 'codex' } },
-      { provider: 'gemini', displayName: 'Gemini', installed: false, hasToken: false, tokenExpired: false, setupCommands: { install: 'npm install -g @google/gemini-cli', login: 'gemini', refresh: 'gemini' } },
+    getAllProviderConnectionStatus: async () => [
+      { provider: 'claude', displayName: 'Claude', tracking: 'active', accountInsights: 'connected', installed: true, hasLocalCredential: true, tokenExpired: false, lastTrackedAt: new Date().toISOString(), setupCommands: { install: 'npm install -g @anthropic-ai/claude-code', login: 'claude', refresh: 'claude /login' } },
+      { provider: 'codex', displayName: 'Codex', tracking: 'active', accountInsights: 'connected', installed: true, hasLocalCredential: true, tokenExpired: false, lastTrackedAt: new Date().toISOString(), setupCommands: { install: 'npm install -g @openai/codex', login: 'codex', refresh: 'codex' } },
+      { provider: 'gemini', displayName: 'Gemini', tracking: 'waiting_for_activity', accountInsights: 'not_connected', installed: false, hasLocalCredential: false, tokenExpired: false, lastTrackedAt: null, setupCommands: { install: 'npm install -g @google/gemini-cli', login: 'gemini', refresh: 'gemini' } },
     ],
 
     refreshProviderUsage: async () => {},

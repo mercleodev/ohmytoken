@@ -20,6 +20,8 @@ import { BrowserWindow } from "electron";
 import { getAllPlugins } from "../backfill/plugins/registry";
 import { runProviderGapFill, importProviderFile } from "../backfill/index";
 import { findSessionFileBySessionId } from "../backfill/codex-scanner";
+import { markProviderWatcherFired } from "../providers/usage/trackingActivity";
+import type { UsageProviderType } from "../providers/usage/types";
 
 const DEBOUNCE_MS = 1000;
 const TRIGGER_DEBOUNCE_MS = 500;
@@ -94,6 +96,7 @@ export const startProviderSessionWatcher = (
               console.log(
                 `[SessionWatcher] ${plugin.id} dir: ${result.insertedMessages} new prompts (${result.durationMs}ms)`,
               );
+              markProviderWatcherFired(plugin.id as UsageProviderType);
               notifyFrontend(result.insertedMessages, result.durationMs);
             }
           } catch (err) {
@@ -147,6 +150,7 @@ export const startProviderSessionWatcher = (
             console.log(
               `[SessionWatcher] ${plugin.id} ${source}: ${result.insertedMessages} new prompts (${result.durationMs}ms)`,
             );
+            markProviderWatcherFired(plugin.id as UsageProviderType);
             notifyFrontend(result.insertedMessages, result.durationMs);
             return true;
           }

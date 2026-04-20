@@ -5,7 +5,7 @@ import {
   AppSettings,
   UsageProviderType,
   ProviderUsageSnapshot,
-  ProviderTokenStatus,
+  ProviderConnectionStatus,
 } from "./index";
 
 export type HistoryEntry = {
@@ -390,7 +390,7 @@ export type ElectronApi = {
   getProviderUsage: (
     provider: UsageProviderType,
   ) => Promise<ProviderUsageSnapshot | null>;
-  getAllProviderStatus: () => Promise<ProviderTokenStatus[]>;
+  getAllProviderConnectionStatus: () => Promise<ProviderConnectionStatus[]>;
   refreshProviderUsage: (provider?: UsageProviderType) => Promise<void>;
   onProviderTokenChanged: (
     callback: (provider: UsageProviderType) => void,

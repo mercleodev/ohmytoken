@@ -50,6 +50,7 @@ import { startGapFillScheduler, stopGapFillScheduler } from "./backfill/schedule
 import { startProviderSessionWatcher } from "./watcher/providerSessionWatcher";
 import { startSessionFileWatcher } from "./watcher/sessionFileWatcher";
 import { startCodexSessionFileWatcher } from "./watcher/codexSessionFileWatcher";
+import { markProviderWatcherFired } from "./providers/usage/trackingActivity";
 
 
 // Prevent EPIPE: avoid crash when console.log is called after stdout/stderr pipe is closed
@@ -498,6 +499,7 @@ const initApp = async (): Promise<void> => {
   try {
     const sessionWatcher = startSessionFileWatcher({
       onTurn: (event) => {
+        markProviderWatcherFired("claude");
         if (event.type === "human") {
           // Fetch session stats from DB for instant display on streaming card
           let sessionStats: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number } | undefined;
@@ -645,6 +647,7 @@ const initApp = async (): Promise<void> => {
   try {
     startHistoryWatcher({
       onNewEntry: (entry) => {
+        markProviderWatcherFired("claude");
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send("new-history-entry", entry);
         }
@@ -681,6 +684,7 @@ const initApp = async (): Promise<void> => {
   try {
     startCodexSessionFileWatcher({
       onTurn: (event) => {
+        markProviderWatcherFired("codex");
         if (event.type === "human") {
           // Fetch session stats from DB (same pattern as Claude watcher)
           let sessionStats: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number } | undefined;
@@ -1803,14 +1807,22 @@ const setupIPC = (): void => {
     }
   });
 
-  ipcMain.handle("get-all-provider-status", async () => {
+  ipcMain.handle("get-all-provider-connection-status", async () => {
     try {
       const {
-        getAllProviderStatuses,
+        buildAllProviderConnectionStatuses,
       } = require("./providers/usage/credentialReader");
-      return getAllProviderStatuses();
+      const { hasProviderWatcherFired } = require("./providers/usage/trackingActivity");
+      return buildAllProviderConnectionStatuses((provider: string) => {
+        const snapshot = dbReader.getProviderTrackingSnapshot(provider);
+        return {
+          promptCount: snapshot.promptCount,
+          lastTrackedAt: snapshot.lastTrackedAt,
+          watcherFired: hasProviderWatcherFired(provider),
+        };
+      });
     } catch (err) {
-      console.error("[Usage] Failed to get provider statuses:", err);
+      console.error("[Usage] Failed to get provider connection statuses:", err);
       return [];
     }
   });

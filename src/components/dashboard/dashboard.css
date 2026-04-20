@@ -71,18 +71,57 @@
   z-index: -1;
 }
 
-.provider-tab-dot {
+.provider-tab-indicators {
   position: absolute;
   top: 6px;
-  right: 10px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.provider-tab-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  background: #c7c7cc;
+}
+
+.provider-tab-dot.tracking-active {
   background: #34c759;
 }
 
-.provider-tab-dot.disconnected {
+.provider-tab-dot.tracking-waiting {
+  background: #ffd60a;
+}
+
+.provider-tab-dot.tracking-not-enabled {
   background: #c7c7cc;
+}
+
+.provider-tab-dot.tracking-unknown {
+  background: #c7c7cc;
+}
+
+.provider-tab-account-badge {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+}
+
+.provider-tab-account-badge.account-connected {
+  background: transparent;
+  border-color: #007aff;
+}
+
+.provider-tab-account-badge.account-attention {
+  background: transparent;
+  border-color: #ff9500;
+}
+
+.provider-tab-account-badge.account-optional {
+  background: transparent;
 }
 
 /* --- Sub Tabs Row (sub tabs + refresh button) --- */

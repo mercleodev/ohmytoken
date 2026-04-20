@@ -98,3 +98,32 @@ export type ProviderTokenStatus = {
     refresh: string;
   };
 };
+
+// Phase 2 — split connection model (see docs/idea/runtime-first-account-optional-ux-spec.md §4).
+export type TrackingState =
+  | 'not_enabled'
+  | 'waiting_for_activity'
+  | 'active';
+
+export type AccountInsightsState =
+  | 'not_connected'
+  | 'connected'
+  | 'expired'
+  | 'access_denied'
+  | 'unavailable';
+
+export type ProviderConnectionStatus = {
+  provider: UsageProviderType;
+  displayName: string;
+  tracking: TrackingState;
+  accountInsights: AccountInsightsState;
+  installed: boolean;
+  hasLocalCredential: boolean;
+  tokenExpired: boolean;
+  lastTrackedAt: string | null;
+  setupCommands: {
+    install: string;
+    login: string;
+    refresh: string;
+  };
+};

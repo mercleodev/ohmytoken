@@ -133,8 +133,8 @@ const api = {
   getProviderUsage: (provider: string): Promise<any> =>
     ipcRenderer.invoke("get-provider-usage", provider),
 
-  getAllProviderStatus: (): Promise<any[]> =>
-    ipcRenderer.invoke("get-all-provider-status"),
+  getAllProviderConnectionStatus: (): Promise<any[]> =>
+    ipcRenderer.invoke("get-all-provider-connection-status"),
 
   refreshProviderUsage: (provider?: string): Promise<void> =>
     ipcRenderer.invoke("refresh-provider-usage", provider),
