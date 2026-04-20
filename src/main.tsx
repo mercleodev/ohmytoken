@@ -364,6 +364,8 @@ if (!window.api) {
     accountInsightsDisconnect: async () => ({ success: true, state: 'not_connected' as const }),
     accountInsightsReconnect: async () => ({ success: true, state: 'connected' as const }),
 
+    getFirstRunStatus: async () => ({ isFirstRun: false, sessionRootsPresent: true, totalPromptCount: 0 }),
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onProviderTokenChanged: (_callback: (provider: UsageProviderType) => void) => {
       return () => {};

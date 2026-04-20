@@ -404,6 +404,14 @@ export type ElectronApi = {
   accountInsightsReconnect: (
     provider: UsageProviderType,
   ) => Promise<{ success: boolean; state: AccountInsightsState; message?: string }>;
+
+  // Phase 4 — first-run detection.
+  getFirstRunStatus: () => Promise<{
+    isFirstRun: boolean;
+    sessionRootsPresent: boolean;
+    totalPromptCount: number;
+  }>;
+
   onProviderTokenChanged: (
     callback: (provider: UsageProviderType) => void,
   ) => () => void;

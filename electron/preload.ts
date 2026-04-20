@@ -155,6 +155,13 @@ const api = {
   ): Promise<{ success: boolean; state: string; message?: string }> =>
     ipcRenderer.invoke("account-insights:reconnect", provider),
 
+  // Phase 4 — first-run detection for onboarding gate.
+  getFirstRunStatus: (): Promise<{
+    isFirstRun: boolean;
+    sessionRootsPresent: boolean;
+    totalPromptCount: number;
+  }> => ipcRenderer.invoke("get-first-run-status"),
+
   onProviderTokenChanged: (callback: (provider: string) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, provider: string) =>
       callback(provider);
