@@ -1867,6 +1867,18 @@ const setupIPC = (): void => {
     }
   });
 
+  ipcMain.handle("get-first-run-status", async () => {
+    try {
+      const { computeFirstRunStatus } = require("./providers/usage/firstRunDetector");
+      return computeFirstRunStatus({
+        getTotalPromptCount: () => dbReader.getPromptCount(),
+      });
+    } catch (err) {
+      console.error("[FirstRun] Failed to compute status:", err);
+      return { isFirstRun: false, sessionRootsPresent: true, totalPromptCount: 0 };
+    }
+  });
+
   ipcMain.handle(
     "refresh-provider-usage",
     async (_event, provider?: string) => {

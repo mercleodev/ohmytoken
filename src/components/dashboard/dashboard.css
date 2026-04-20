@@ -4406,3 +4406,149 @@
     transition: none;
   }
 }
+
+/* --- First-Run Onboarding (Phase 4) --- */
+
+.first-run-screen {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 32px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.first-run-header {
+  text-align: center;
+}
+
+.first-run-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2e2f30;
+  margin: 0 0 8px;
+  line-height: 1.35;
+}
+
+.first-run-subtitle {
+  font-size: 13px;
+  color: #6b6c6f;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.first-run-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.first-run-provider-card {
+  background: rgba(0, 0, 0, 0.02);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.first-run-provider-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.first-run-provider-icon {
+  font-size: 22px;
+  width: 32px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.first-run-provider-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2e2f30;
+  line-height: 1.3;
+}
+
+.first-run-provider-state {
+  font-size: 11px;
+  color: #9b9c9e;
+  margin-top: 2px;
+}
+
+.first-run-primary-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #007aff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.first-run-primary-btn:hover {
+  background: #0064d0;
+}
+
+.first-run-secondary {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.first-run-secondary-btn {
+  font-size: 12px;
+  color: #007aff;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.first-run-secondary-btn:hover {
+  text-decoration: underline;
+}
+
+.first-run-walkthrough {
+  background: rgba(0, 0, 0, 0.02);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 16px 12px 20px;
+}
+
+.first-run-waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 12px;
+  font-size: 12px;
+  color: #6b6c6f;
+}
+
+.first-run-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(0, 122, 255, 0.2);
+  border-top-color: #007aff;
+  border-radius: 50%;
+  animation: first-run-spin 0.9s linear infinite;
+}
+
+@keyframes first-run-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .first-run-spinner {
+    animation: none;
+  }
+}

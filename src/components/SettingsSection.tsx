@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AppSettings } from '../types';
+import { ConnectionsSection } from './settings/ConnectionsSection';
 
 type SettingsSectionProps = {
   settings: AppSettings | null;
@@ -139,6 +140,8 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
   return (
     <section className="settings-section">
       <h2>Settings</h2>
+
+      <ConnectionsSection />
 
       <div className="settings-group">
         <h3>Progress Bar Colors</h3>

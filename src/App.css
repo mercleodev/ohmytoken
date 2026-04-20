@@ -391,3 +391,74 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* --- Settings > Connections (Phase 4) --- */
+
+.connections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.connection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 0.5px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.connection-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.connection-row-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.connection-row-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2e2f30;
+}
+
+.connection-row-meta {
+  font-size: 11px;
+  color: #6b6c6f;
+  margin-top: 2px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.connection-row-primary {
+  font-size: 12px;
+  font-weight: 500;
+  color: #007aff;
+  background: transparent;
+  border: 0.5px solid rgba(0, 122, 255, 0.3);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.connection-row-primary:hover:not(:disabled) {
+  background: rgba(0, 122, 255, 0.08);
+}
+
+.connection-row-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
