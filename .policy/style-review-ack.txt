@@ -1,8 +1,9 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-21T02:31:51Z
-fingerprint=484370164cee0835caa28639f4120b7c91d66bdfe35a855f4bdb5ebf3f7bd44d
+# updated_at_utc: 2026-04-21T02:45:08Z
+fingerprint=e72d44f47607259410bd15827c268e4937ac01d677a7d95bbb375c0bd0517214
 source=docs/sdd/style-checklist.md
-note=README rewrite: reframe around runtime-first + account-optional, drop Workflow Change item, add How It Works / Tracking Evolves sections
+note=Extract resolveProviderUsageRequest pure gate; fix get-provider-usage IPC to respect account-insights opt-in
 
-.policy/style-review-ack.txt
-README.md
+electron/main.ts
+electron/providers/usage/__tests__/providerUsageGating.spec.ts
+electron/providers/usage/providerUsageGating.ts

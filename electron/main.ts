@@ -60,6 +60,7 @@ import {
   getOptedInProviders,
   setAccountInsightsEnabled,
 } from "./providers/usage/accountInsightsSettings";
+import { resolveProviderUsageRequest } from "./providers/usage/providerUsageGating";
 import {
   setAccountInsightsRuntimeError,
   clearAccountInsightsRuntimeError,
@@ -1831,9 +1832,14 @@ const setupIPC = (): void => {
 
   ipcMain.handle("get-provider-usage", async (_event, provider: string) => {
     try {
-      const cached = usageStore.getSnapshot(provider as any);
-      if (cached) return cached;
-      return await usageStore.refresh(provider as any);
+      return await resolveProviderUsageRequest(
+        currentSettings(),
+        provider as UsageProviderType,
+        {
+          getCached: () => usageStore.getSnapshot(provider as UsageProviderType),
+          refresh: () => usageStore.refresh(provider as UsageProviderType),
+        },
+      );
     } catch (err) {
       console.error(`[Usage] Failed to fetch ${provider}:`, err);
       return null;
