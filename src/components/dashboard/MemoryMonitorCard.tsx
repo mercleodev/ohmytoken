@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import type { MemoryStatus, MemoryFile, ProjectMemorySummary } from '../../types/electron';
+import {
+  memoryCardLabel,
+  supportsMultiProjectMemory,
+  type MemoryCardProvider,
+} from '../../utils/memoryCard';
 
 const TYPE_COLORS: Record<string, string> = {
   user: '#007AFF',
@@ -131,34 +136,43 @@ const ProjectMemoryDetail = ({ projectPath, onClose }: {
   );
 };
 
-export const MemoryMonitorCard = () => {
+type MemoryMonitorCardProps = {
+  provider: MemoryCardProvider;
+};
+
+export const MemoryMonitorCard = ({ provider }: MemoryMonitorCardProps) => {
   const [status, setStatus] = useState<MemoryStatus | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Multi-project state
+  // Multi-project state (Claude only — Codex memory is global)
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [allProjects, setAllProjects] = useState<ProjectMemorySummary[]>([]);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
+  const multiProjectEnabled = supportsMultiProjectMemory(provider);
+
   useEffect(() => {
     const load = async () => {
       try {
-        const [result, config] = await Promise.all([
-          window.api.getMemoryStatus(),
-          window.api.getConfig(),
-        ]);
+        const result = await window.api.getMemoryStatus(undefined, provider);
         setStatus(result);
 
-        const enabled = config?.settings?.showAllProjectsMemory ?? false;
-        setShowAllProjects(enabled);
+        if (multiProjectEnabled) {
+          const config = await window.api.getConfig();
+          const enabled = config?.settings?.showAllProjectsMemory ?? false;
+          setShowAllProjects(enabled);
 
-        if (enabled) {
-          const summary = await window.api.getAllProjectsMemorySummary();
-          if (summary?.projects) {
-            setAllProjects(summary.projects.filter((p) => !p.isCurrentProject));
+          if (enabled) {
+            const summary = await window.api.getAllProjectsMemorySummary();
+            if (summary?.projects) {
+              setAllProjects(summary.projects.filter((p) => !p.isCurrentProject));
+            }
           }
+        } else {
+          setShowAllProjects(false);
+          setAllProjects([]);
         }
       } catch {
         setStatus(null);
@@ -167,7 +181,7 @@ export const MemoryMonitorCard = () => {
       }
     };
     load();
-  }, []);
+  }, [provider, multiProjectEnabled]);
 
   if (loading || !status) return null;
 
@@ -191,7 +205,7 @@ export const MemoryMonitorCard = () => {
   return (
     <div className="memory-card">
       <div className="memory-header" onClick={() => setExpanded(!expanded)}>
-        <span className="memory-title">Claude Memory</span>
+        <span className="memory-title">{memoryCardLabel(provider)}</span>
         <span className="memory-line-count" style={{ color: barColor }}>
           {status.indexLineCount} / {status.indexMaxLines}
         </span>

@@ -1,10 +1,10 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-21T03:06:13Z
-fingerprint=5184e0cd939f68c39e4513006ebddfb7d8dc0c6bc5ac583056ffb56446f527ec
+# updated_at_utc: 2026-04-21T09:18:46Z
+fingerprint=0ec2dd2c4be5108dddd36a562f917faea99f46a64dc5f411659d80d3dd2b6ee1
 source=docs/sdd/style-checklist.md
-note=Switch PromptHeatmap and ContextTreemap tooltips to fixed positioning with viewport clamp via clampTooltipX helper
+note=Move MemoryMonitorCard from All tab to Claude/Codex provider-specific tabs; gate via supportsMemoryCard; provider prop passes through to IPC and label
 
-src/components/dashboard/ContextTreemap.tsx
-src/components/dashboard/PromptHeatmap.tsx
-src/utils/__tests__/tooltipPlacement.spec.ts
-src/utils/tooltipPlacement.ts
+src/components/dashboard/MemoryMonitorCard.tsx
+src/components/dashboard/UsageView.tsx
+src/utils/__tests__/memoryCard.spec.ts
+src/utils/memoryCard.ts
