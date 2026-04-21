@@ -1,31 +1,56 @@
 # OhMyToken
 
-**Real-time AI agent token usage monitor** — intercepts Claude, Codex & Gemini API calls and visualizes cost, context window, and prompt patterns.
+**Track AI coding agents locally — no account connection required.**
+
+A privacy-first usage monitor for Claude, Codex, and Gemini. OhMyToken starts tracking the moment you run a CLI session. No login, no OAuth, no cloud sync. Connect a provider account later if you want plan quotas and reset timing on top.
 
 Built with Electron + React. Runs locally on macOS.
 
 ---
 
+## Why OhMyToken
+
+- **Start tracking in one step** — watches your provider's local session logs. No account hookup to see cost, context, and prompt history.
+- **Local-only** — every byte stays on your machine. SQLite on disk, no telemetry, no remote sync.
+- **One dashboard for all three providers** — Claude, Codex, and Gemini side by side.
+- **Account insights are optional** — connect a provider account anytime to add plan quotas, weekly windows, and credit balance on top of runtime tracking.
+
+---
+
 ## What It Does
 
-OhMyToken sits between your AI coding agent and the API provider. It captures every request and response via a local HTTP proxy, then gives you a live dashboard to understand where your tokens go.
+OhMyToken pulls usage from up to three data sources and merges them into a single local dashboard:
 
-### Key Features
+1. **Session file watchers (primary, no account needed)** — tails `~/.claude/` and `~/.codex/sessions/` as you use the CLIs. Gemini is covered by the proxy layer today; a dedicated session watcher is planned.
+2. **Local HTTP proxy (`localhost:8780`)** — intercepts API traffic across all three providers for real-time token capture and cost computation.
+3. **Provider account APIs (optional)** — when connected, pulls plan type, usage windows, reset timing, and credit balance.
 
-- **Multi-provider support** — Claude, Codex, and Gemini in a single unified view
-- **Real-time proxy interception** — captures API calls on `localhost:8780`, parses SSE streams
-- **Token usage dashboard** — radial gauge, cost breakdown (today / 30d), credit balance tracking
-- **Context window visualization** — see exactly how your context fills up turn by turn
-- **Cache growth chart** — track cache-read vs cache-create tokens over time, with compaction markers
-- **Cost treemap** — visual breakdown of cost by prompt/query
-- **Prompt heatmap** — 365-day activity calendar showing usage patterns
-- **Token composition** — pie chart of cache-read, cache-create, input, and output tokens
-- **Session & prompt detail** — drill into any session, inspect tool calls, injected files, evidence scores
-- **MCP insights** — tool call analysis with optimization suggestions
-- **Session alerts** — warnings for cache explosion, low efficiency, long sessions
-- **Guardrail assessment** — evidence-based scoring with signal breakdown
-- **Workflow change recommendations** — detects repeated manual patterns and suggests automation
-- **Backfill engine** — recover historical usage data from provider session logs
+Everything lands in a local SQLite DB. The dashboard reads from the DB.
+
+---
+
+## Key Features
+
+### Always-on (runtime tracking, no account needed)
+
+- Multi-provider unified view — Claude, Codex, Gemini
+- Cost breakdown — today / last 30 days, USD
+- Context window per turn — see how it fills up
+- Cache growth chart — cache-read vs cache-create, with compaction markers
+- Token composition — cache-read, cache-create, input, output pie
+- Prompt heatmap — 365-day activity calendar
+- Cost treemap — visual breakdown by prompt
+- Session & prompt detail — drill into tool calls, injected files, evidence scores
+- MCP insights — tool call analysis
+- Session alerts — cache explosion, low efficiency, long session warnings
+- Guardrail assessment — evidence-based scoring
+- Backfill engine — recover historical usage from session logs
+
+### Optional (when a provider account is connected)
+
+- Radial usage gauges — session / weekly / model quota with reset timing
+- Credit balance — API prepaid balance (granted / used / expiry)
+- Plan identity — Pro / Max / Team / Free / API
 
 ---
 
@@ -43,6 +68,14 @@ npm run electron:dev
 npm run build
 ```
 
+**First launch:** OhMyToken shows an onboarding screen with a CLI card per provider. Pick one, run a normal session in that CLI, and your first tracked activity appears automatically. No account connection required. Connect accounts later from **Settings → Connections** if you want plan quotas and credit balance.
+
+---
+
+## How Tracking Evolves
+
+Tracking state: `not_enabled → waiting_for_activity → active`. Account state: `not_connected → connected` (or `expired` / `access_denied` / `unavailable`). The dashboard adapts — no account snapshot shows runtime-only cards; a connected snapshot adds gauges and credit balance on top.
+
 ---
 
 ## Architecture
@@ -51,7 +84,9 @@ npm run build
 electron/          Electron main process
   proxy/           HTTP proxy — intercept, parse SSE, calculate cost
   db/              SQLite persistence layer
-  providers/       Multi-provider usage fetchers (Claude, Codex, Gemini)
+  providers/       Multi-provider session watchers & account fetchers (Claude, Codex, Gemini)
+  watcher/         Generic session-file watcher (wired per-provider via watchConfig)
+  backfill/        Historical recovery plugins (Claude, Codex)
 src/               React frontend — usage dashboard & visualizations
 assets/            Tray icons and sprites
 ```
