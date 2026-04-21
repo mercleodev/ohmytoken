@@ -1,7 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-20T16:12:05Z
-fingerprint=3ecaacf288886a6e6f5449b60e418492d312037e974531cad5077ba3e5b591a0
+# updated_at_utc: 2026-04-21T02:31:51Z
+fingerprint=484370164cee0835caa28639f4120b7c91d66bdfe35a855f4bdb5ebf3f7bd44d
 source=docs/sdd/style-checklist.md
-note=Hide-only UI change: single early-return flag in WorkflowInsightsSection. Tokens/layout untouched. Keeps backend harness-candidate pipeline intact per AC.
+note=README rewrite: reframe around runtime-first + account-optional, drop Workflow Change item, add How It Works / Tracking Evolves sections
 
-src/components/notification/NotificationCard.tsx
+.policy/style-review-ack.txt
+README.md
