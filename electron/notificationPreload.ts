@@ -90,29 +90,29 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.send("notification-set-visible", visible);
   },
 
-  // Listen for real-time session activity (tool_use, text, thinking)
-  onSessionActivity: (
-    callback: (data: {
+  // Listen for real-time session activity — batched to reduce IPC flood
+  onSessionActivityBatch: (
+    callback: (batch: Array<{
       sessionId: string;
       timestamp: string;
       kind: string;
       name: string;
       detail: string;
-    }) => void,
+    }>) => void,
   ) => {
     const handler = (
       _event: Electron.IpcRendererEvent,
-      data: {
+      batch: Array<{
         sessionId: string;
         timestamp: string;
         kind: string;
         name: string;
         detail: string;
-      },
-    ) => callback(data);
-    ipcRenderer.on("session-activity", handler);
+      }>,
+    ) => callback(batch);
+    ipcRenderer.on("session-activity-batch", handler);
     return () => {
-      ipcRenderer.removeListener("session-activity", handler);
+      ipcRenderer.removeListener("session-activity-batch", handler);
     };
   },
 

@@ -359,52 +359,55 @@ export const useNotificationManager = (
   }, [startDismissTimer]);
 
   // Append activity line to matching session's notification
-  const appendActivity = useCallback((data: {
+  const appendActivityBatch = useCallback((batch: Array<{
     sessionId: string;
     timestamp: string;
     kind: string;
     name: string;
     detail: string;
-  }) => {
-    const line: ActivityLine = {
-      id: `act-${++activityCounter}`,
-      kind: data.kind as ActivityLine['kind'],
-      name: data.name,
-      detail: data.detail,
-      timestamp: data.timestamp,
-    };
+  }>) => {
+    if (batch.length === 0) return;
+
+    // Pre-process side-effects that happen outside setNotifications
+    for (const data of batch) {
+      if (data.kind === 'tool_use') {
+        const pendingComplete = completeDebounceRef.current.get(data.sessionId);
+        if (pendingComplete) {
+          clearTimeout(pendingComplete);
+          completeDebounceRef.current.delete(data.sessionId);
+        }
+      }
+    }
 
     setNotifications((prev) =>
       prev.map((n) => {
-        if (n.scan.session_id === data.sessionId) {
-          const log = [...n.activityLog, line].slice(-MAX_ACTIVITY_LINES);
-          // If a tool_use activity arrives on a "completed" card, revert to streaming
-          // — this handles premature completion from text-only assistant messages
-          // Cancel pending completion debounce if tool_use arrives
-          if (data.kind === 'tool_use') {
-            const pendingComplete = completeDebounceRef.current.get(data.sessionId);
-            if (pendingComplete) {
-              clearTimeout(pendingComplete);
-              completeDebounceRef.current.delete(data.sessionId);
-            }
-          }
-          const shouldRestream =
-            n.status === 'completed' && data.kind === 'tool_use';
-          if (shouldRestream) {
-            // Cancel any pending auto-dismiss timer
-            const timer = timersRef.current.get(n.id);
-            if (timer) {
-              clearTimeout(timer);
-              timersRef.current.delete(n.id);
-            }
+        const relevant = batch.filter((d) => d.sessionId === n.scan.session_id);
+        if (relevant.length === 0) return n;
+
+        let shouldRestream = false;
+        const newLines: ActivityLine[] = relevant.map((data) => {
+          if (!shouldRestream && n.status === 'completed' && data.kind === 'tool_use') {
+            shouldRestream = true;
           }
           return {
-            ...n,
-            activityLog: log,
-            ...(shouldRestream ? { status: 'streaming' as const, completedAt: null } : {}),
+            id: `act-${++activityCounter}`,
+            kind: data.kind as ActivityLine['kind'],
+            name: data.name,
+            detail: data.detail,
+            timestamp: data.timestamp,
           };
+        });
+
+        if (shouldRestream) {
+          const timer = timersRef.current.get(n.id);
+          if (timer) { clearTimeout(timer); timersRef.current.delete(n.id); }
         }
-        return n;
+
+        return {
+          ...n,
+          activityLog: [...n.activityLog, ...newLines].slice(-MAX_ACTIVITY_LINES),
+          ...(shouldRestream ? { status: 'streaming' as const, completedAt: null } : {}),
+        };
       }),
     );
   }, []);
@@ -435,10 +438,10 @@ export const useNotificationManager = (
       addNotification(data.scan, data.usage ?? null);
     });
 
-    // Real-time activity feed (tool_use, text, thinking)
+    // Real-time activity feed (tool_use, text, thinking) — batched to avoid per-token re-renders
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cleanupActivity = (window.api as any).onSessionActivity?.((data: any) => {
-      appendActivity(data);
+    const cleanupActivity = (window.api as any).onSessionActivityBatch?.((batch: any[]) => {
+      appendActivityBatch(batch);
     });
 
     // Async evidence scoring result from the proxy path. Merges the fresh
@@ -459,7 +462,7 @@ export const useNotificationManager = (
       cleanupActivity?.();
       cleanupEvidence?.();
     };
-  }, [enabled, addNotification, addStreamingNotification, completeStreaming, appendActivity]);
+  }, [enabled, addNotification, addStreamingNotification, completeStreaming, appendActivityBatch]);
 
   // Cleanup timers on unmount
   useEffect(() => {

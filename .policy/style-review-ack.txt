@@ -1,8 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-21T16:33:16Z
-fingerprint=ff7ad082fb7a50bee9f8acc2c4ebe7c401a0239194ea2b5bb26365c75c60384d
+# updated_at_utc: 2026-04-21T23:10:19Z
+fingerprint=82355f479ef157febfb86c15e2f8311b57a99e612b241c84725a672a9efa3f01
 source=docs/sdd/style-checklist.md
-note=QA fixes: SEC-001 path blocklist, SEC-002 db chmod, EVIDENCE-BUG-001/002 validation, A11Y-001 aria-label, A11Y-003 sort, EVIDENCE-WARN-001 friendlyToolName, TC-17-060 docs
+note=perf: batch session-activity IPC to fix notification flicker and dashboard slowdown
 
 docs/qa/README.md
 docs/qa/runs/2026-04-21-7b16d20/baseline-dashboard.png
@@ -25,14 +25,8 @@ docs/qa/runs/2026-04-21-7b16d20/TC-04-prompt-detail.png
 docs/qa/runs/2026-04-21-7b16d20/TC-08-watcher-db-ui-flow.png
 docs/qa/runs/2026-04-21-7b16d20/TC-09-prompt-detail-evidence.png
 docs/qa/runs/2026-04-21-7b16d20/TC-10-060-claude-not-connected.png
-electron/db/index.ts
-electron/db/reader.ts
-electron/evidence/__tests__/validateConfig.spec.ts
-electron/evidence/validateConfig.ts
 electron/main.ts
-electron/utils/__tests__/readFileContents.spec.ts
-electron/utils/readFileContents.ts
+electron/notificationPreload.ts
 scripts/qa-launch-electron.sh
 scripts/qa-launch-renderer.sh
-src/components/dashboard/FirstRunOnboarding.tsx
-src/components/dashboard/UsageDashboard.tsx
+src/components/notification/useNotificationManager.ts

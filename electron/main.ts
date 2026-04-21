@@ -297,6 +297,35 @@ const sendToMainWindow = (channel: string, data: unknown): void => {
   }
 };
 
+// Batch session-activity events to prevent flooding the notification window
+// with per-token IPC calls during streaming. tool_use flushes immediately;
+// text/thinking events are coalesced over ACTIVITY_FLUSH_MS.
+const ACTIVITY_FLUSH_MS = 150;
+type ActivityEvent = { sessionId: string; timestamp: string; kind: string; name: string; detail: string };
+const activityBuffer: ActivityEvent[] = [];
+let activityFlushTimer: ReturnType<typeof setTimeout> | null = null;
+
+const flushActivityBuffer = (): void => {
+  if (activityBuffer.length > 0) {
+    const batch = activityBuffer.splice(0);
+    sendToNotificationWindow("session-activity-batch", batch);
+  }
+  activityFlushTimer = null;
+};
+
+const queueActivity = (activity: ActivityEvent): void => {
+  activityBuffer.push(activity);
+  if (activity.kind === "tool_use") {
+    // Tool calls are user-visible actions — flush immediately
+    if (activityFlushTimer) { clearTimeout(activityFlushTimer); activityFlushTimer = null; }
+    flushActivityBuffer();
+    return;
+  }
+  if (!activityFlushTimer) {
+    activityFlushTimer = setTimeout(flushActivityBuffer, ACTIVITY_FLUSH_MS);
+  }
+};
+
 /**
  * Load → score-if-no-existing → persist → emit. Centralized so the three
  * watcher paths (Claude session, Codex session, history importer) do not
@@ -640,8 +669,7 @@ const initApp = async (): Promise<void> => {
         }
       },
       onActivity: (activity) => {
-        // Real-time activity feed → notification window only
-        sendToNotificationWindow("session-activity", activity);
+        queueActivity(activity);
       },
     });
     sessionFileWatcherCleanup = sessionWatcher.cleanup;
@@ -770,7 +798,7 @@ const initApp = async (): Promise<void> => {
         }
       },
       onActivity: (activity) => {
-        sendToNotificationWindow("session-activity", activity);
+        queueActivity(activity);
       },
     });
   } catch (err) {
