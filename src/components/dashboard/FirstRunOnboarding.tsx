@@ -9,6 +9,8 @@ const PROVIDER_ICONS: Record<UsageProviderType, string> = {
   gemini: '◆',
 };
 
+const PROVIDER_ORDER: Record<UsageProviderType, number> = { claude: 0, codex: 1, gemini: 2 };
+
 const POLL_INTERVAL_MS = 3000;
 
 type FirstRunOnboardingProps = {
@@ -86,7 +88,7 @@ export const FirstRunOnboarding = ({
         </header>
 
         <div className="first-run-providers">
-          {liveStatuses.map((status) => (
+          {[...liveStatuses].sort((a, b) => PROVIDER_ORDER[a.provider] - PROVIDER_ORDER[b.provider]).map((status) => (
             <article key={status.provider} className="first-run-provider-card">
               <div className="first-run-provider-head">
                 <span className="first-run-provider-icon" aria-hidden>

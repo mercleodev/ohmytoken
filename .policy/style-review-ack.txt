@@ -1,10 +1,38 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-21T09:18:46Z
-fingerprint=0ec2dd2c4be5108dddd36a562f917faea99f46a64dc5f411659d80d3dd2b6ee1
+# updated_at_utc: 2026-04-21T16:33:16Z
+fingerprint=ff7ad082fb7a50bee9f8acc2c4ebe7c401a0239194ea2b5bb26365c75c60384d
 source=docs/sdd/style-checklist.md
-note=Move MemoryMonitorCard from All tab to Claude/Codex provider-specific tabs; gate via supportsMemoryCard; provider prop passes through to IPC and label
+note=QA fixes: SEC-001 path blocklist, SEC-002 db chmod, EVIDENCE-BUG-001/002 validation, A11Y-001 aria-label, A11Y-003 sort, EVIDENCE-WARN-001 friendlyToolName, TC-17-060 docs
 
-src/components/dashboard/MemoryMonitorCard.tsx
-src/components/dashboard/UsageView.tsx
-src/utils/__tests__/memoryCard.spec.ts
-src/utils/memoryCard.ts
+docs/qa/README.md
+docs/qa/runs/2026-04-21-7b16d20/baseline-dashboard.png
+docs/qa/runs/2026-04-21-7b16d20/dashboard-modal-dismissed.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-001-onboarding-initial.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-003-session-roots-db-empty.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-004-provider-enabled-done.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-005-walkthrough-claude.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-006-skip-to-dashboard.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-007-dashboard-after-done.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-008-dark-mode.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-009-codex-walkthrough.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-015-keyboard-focus.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-current-state.png
+docs/qa/runs/2026-04-21-7b16d20/TC-01-electron-onboarding.png
+docs/qa/runs/2026-04-21-7b16d20/TC-03-002-claude-tab.png
+docs/qa/runs/2026-04-21-7b16d20/TC-03-005-gemini-tab.png
+docs/qa/runs/2026-04-21-7b16d20/TC-03-settings-btn.png
+docs/qa/runs/2026-04-21-7b16d20/TC-04-prompt-detail.png
+docs/qa/runs/2026-04-21-7b16d20/TC-08-watcher-db-ui-flow.png
+docs/qa/runs/2026-04-21-7b16d20/TC-09-prompt-detail-evidence.png
+docs/qa/runs/2026-04-21-7b16d20/TC-10-060-claude-not-connected.png
+electron/db/index.ts
+electron/db/reader.ts
+electron/evidence/__tests__/validateConfig.spec.ts
+electron/evidence/validateConfig.ts
+electron/main.ts
+electron/utils/__tests__/readFileContents.spec.ts
+electron/utils/readFileContents.ts
+scripts/qa-launch-electron.sh
+scripts/qa-launch-renderer.sh
+src/components/dashboard/FirstRunOnboarding.tsx
+src/components/dashboard/UsageDashboard.tsx

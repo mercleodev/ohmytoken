@@ -42,6 +42,8 @@ import { mergeConfig } from "./evidence/config";
 import { parseSystemFieldWithContent } from "./proxy/systemParser";
 import { insertEvidenceReport, recordWorkflowAction } from "./db/writer";
 import type { EvidenceEngineConfig } from "./evidence/types";
+import { readFileContentsFromDisk } from "./utils/readFileContents";
+import { validateEvidenceConfig } from "./evidence/validateConfig";
 import { runGapFill, registerBackfillIPC } from "./backfill/index";
 import { backfillCodexToolCalls } from "./backfill/codex-tool-backfill";
 import { clampNegativeTokens } from "./backfill/clamp-negative-tokens-backfill";
@@ -301,27 +303,6 @@ const sendToMainWindow = (channel: string, data: unknown): void => {
  * each re-implement the emit-with-anti-downgrade dance.
  * See docs/idea/notification-evidence-all-unverified.md §5.1 G1-3.
  */
-/**
- * Read injected file contents from disk (best-effort). Unlocks content-
- * dependent evidence signals (instruction-compliance, text-overlap) on
- * watcher paths where we don't have the original API request body.
- */
-const readFileContentsFromDisk = (paths: string[]): Record<string, string> => {
-  const contents: Record<string, string> = {};
-  for (const p of paths) {
-    try {
-      // injected_files paths are relative to the project root; resolve from CWD
-      // or fall back to absolute path. Common cases: CLAUDE.md, .claude/rules/*.md, MEMORY.md
-      const resolved = path.isAbsolute(p) ? p : path.resolve(p);
-      if (fs.existsSync(resolved)) {
-        contents[p] = fs.readFileSync(resolved, "utf-8");
-      }
-    } catch {
-      // Silently skip unreadable files
-    }
-  }
-  return contents;
-};
 
 const emitScoredScan: EmitScoredScan = (requestId, reason) => {
   const helper = makeEmitScoredScan({
@@ -2190,6 +2171,10 @@ const setupIPC = (): void => {
   ipcMain.handle(
     "update-evidence-config",
     async (_event, config: Partial<EvidenceEngineConfig>) => {
+      const validation = validateEvidenceConfig(config);
+      if (!validation.ok) {
+        return { success: false, error: validation.error };
+      }
       try {
         if (evidenceEngine) {
           evidenceEngine.updateConfig(config);

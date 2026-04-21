@@ -1289,7 +1289,12 @@ function computeConfidence(
 function friendlyToolName(toolName: string): string {
   if (toolName === 'exec_command') return 'Shell';
   if (toolName.startsWith('mcp__playwright__')) {
-    return toolName.replace('mcp__playwright__', '').replace(/_/g, ' ');
+    // mcp__playwright__playwright_click → "Playwright: click"
+    const action = toolName
+      .replace('mcp__playwright__playwright_', '')
+      .replace('mcp__playwright__', '')
+      .replace(/_/g, ' ');
+    return `Playwright: ${action}`;
   }
   if (toolName.startsWith('mcp__')) {
     const parts = toolName.split('__');

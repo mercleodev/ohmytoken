@@ -305,6 +305,7 @@ export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: Dashbo
               className="dashboard-settings-btn"
               onClick={() => setShowContextSettings(true)}
               title="Context Limit Settings"
+              aria-label="Context Limit Settings"
             >
               ⚙
             </button>

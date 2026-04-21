@@ -24,6 +24,10 @@ export const initDatabase = (customPath?: string): Database.Database => {
 
   db = new Database(dbPath);
 
+  if (dbPath !== ":memory:") {
+    try { fs.chmodSync(dbPath, 0o600); } catch { /* best-effort: ignore on read-only FS */ }
+  }
+
   // Performance pragmas
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
