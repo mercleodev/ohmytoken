@@ -1,9 +1,10 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-21T02:45:08Z
-fingerprint=e72d44f47607259410bd15827c268e4937ac01d677a7d95bbb375c0bd0517214
+# updated_at_utc: 2026-04-21T03:06:13Z
+fingerprint=5184e0cd939f68c39e4513006ebddfb7d8dc0c6bc5ac583056ffb56446f527ec
 source=docs/sdd/style-checklist.md
-note=Extract resolveProviderUsageRequest pure gate; fix get-provider-usage IPC to respect account-insights opt-in
+note=Switch PromptHeatmap and ContextTreemap tooltips to fixed positioning with viewport clamp via clampTooltipX helper
 
-electron/main.ts
-electron/providers/usage/__tests__/providerUsageGating.spec.ts
-electron/providers/usage/providerUsageGating.ts
+src/components/dashboard/ContextTreemap.tsx
+src/components/dashboard/PromptHeatmap.tsx
+src/utils/__tests__/tooltipPlacement.spec.ts
+src/utils/tooltipPlacement.ts

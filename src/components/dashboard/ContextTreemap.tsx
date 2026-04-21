@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Treemap, ResponsiveContainer } from "recharts";
 import { formatTokens, CATEGORY_COLORS } from "../scan/shared";
+import { clampTooltipX } from "../../utils/tooltipPlacement";
 import type { PromptScan } from "../../types";
+
+const TREEMAP_TOOLTIP_HALF_WIDTH = 90;
+const TREEMAP_TOOLTIP_HEIGHT = 48;
 
 type ContextTreemapProps = {
   scan: PromptScan;
@@ -235,13 +239,7 @@ const CustomContent = (props: Partial<CellProps>) => {
   // Leaf nodes
   const handleMouseEnter = (e: React.MouseEvent) => {
     if (onHover) {
-      const container = (e.currentTarget as SVGElement).closest(
-        ".context-treemap-chart",
-      );
-      const bounds = container?.getBoundingClientRect();
-      const relX = bounds ? e.clientX - bounds.left : x;
-      const relY = bounds ? e.clientY - bounds.top : y;
-      onHover({ name, tokens, filePath, x: relX, y: relY });
+      onHover({ name, tokens, filePath, x: e.clientX, y: e.clientY });
     }
   };
 
@@ -409,31 +407,31 @@ export const ContextTreemap = ({ scan, onFileClick }: ContextTreemapProps) => {
           </div>
         ))}
 
-        {/* Hover tooltip */}
-        {hoveredNode && (
-          <div
-            className="treemap-hover-tooltip"
-            style={{
-              position: "absolute",
-              left: Math.min(
-                hoveredNode.x,
-                (chartRef.current?.offsetWidth ?? 300) - 180,
-              ),
-              top: Math.max(hoveredNode.y - 8, 0),
-              transform: "translateY(-100%)",
-              pointerEvents: "none",
-            }}
-          >
-            <div className="treemap-tooltip-name">{hoveredNode.name}</div>
-            <div className="treemap-tooltip-tokens">
-              {formatTokens(hoveredNode.tokens)}
-            </div>
-            {hoveredNode.filePath && (
-              <div className="treemap-tooltip-hint">Click to view file</div>
-            )}
-          </div>
-        )}
       </div>
+      {hoveredNode && (
+        <div
+          className="treemap-hover-tooltip"
+          style={{
+            position: "fixed",
+            left: clampTooltipX({
+              targetX: hoveredNode.x,
+              halfWidth: TREEMAP_TOOLTIP_HALF_WIDTH,
+              viewportWidth: window.innerWidth,
+            }),
+            top: Math.max(hoveredNode.y - 8, TREEMAP_TOOLTIP_HEIGHT + 4),
+            transform: "translate(-50%, -100%)",
+            pointerEvents: "none",
+          }}
+        >
+          <div className="treemap-tooltip-name">{hoveredNode.name}</div>
+          <div className="treemap-tooltip-tokens">
+            {formatTokens(hoveredNode.tokens)}
+          </div>
+          {hoveredNode.filePath && (
+            <div className="treemap-tooltip-hint">Click to view file</div>
+          )}
+        </div>
+      )}
 
       {/* Clickable file list below treemap */}
       {files.length > 0 && (
