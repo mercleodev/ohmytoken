@@ -12,6 +12,7 @@ import { McpInsightsCard } from './McpInsightsCard';
 import { FEATURE_FLAGS } from '../../config/featureFlags';
 import { PromptHeatmap } from './PromptHeatmap';
 import { MemoryMonitorCard } from './MemoryMonitorCard';
+import { supportsMemoryCard } from '../../utils/memoryCard';
 
 type UsageViewProps = {
   snapshot: ProviderUsageSnapshot | null;
@@ -101,13 +102,14 @@ export const UsageView = ({ snapshot, connectionStatus, loading, onSelectSession
     window.api.getCostSummary(provider).then(setDbCost).catch(() => setDbCost(null));
   }, [snapshot, isAllView, provider, scanRevision]);
 
+  const memoryCard = supportsMemoryCard(provider) ? (
+    <MemoryMonitorCard provider={provider} />
+  ) : null;
+
   // "All" view: skip gauge, show aggregated cost + data cards
   if (isAllView) {
     return (
       <div>
-        {/* Claude Memory Monitor */}
-        <MemoryMonitorCard />
-
         {/* Aggregated Cost (all providers) */}
         <CostCard cost={allCost} />
 
@@ -153,6 +155,7 @@ export const UsageView = ({ snapshot, connectionStatus, loading, onSelectSession
         {connectionStatus && (
           <AccountInsightsCard status={connectionStatus} onConnect={onConnectAccountInsights} />
         )}
+        {memoryCard}
         <CostCard cost={dbCost} />
         {FEATURE_FLAGS.OUTPUT_PRODUCTIVITY && <OutputProductivityCard scanRevision={scanRevision} provider={provider} />}
         {FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard scanRevision={scanRevision} provider={provider} />}
@@ -186,6 +189,8 @@ export const UsageView = ({ snapshot, connectionStatus, loading, onSelectSession
         {snapshot.creditBalance && (
           <CreditBalanceCard creditBalance={snapshot.creditBalance} />
         )}
+
+        {memoryCard}
 
         {/* Notice */}
         <div className="prepaid-notice">
@@ -235,6 +240,8 @@ export const UsageView = ({ snapshot, connectionStatus, loading, onSelectSession
 
       {/* Last Updated Time */}
       <LastUpdatedLabel updatedAt={snapshot.updatedAt} />
+
+      {memoryCard}
 
       {/* Cost */}
       <CostCard cost={snapshot.cost} />
