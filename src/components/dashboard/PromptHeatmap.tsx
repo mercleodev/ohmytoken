@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { toLocalDateKey } from '../../utils/format';
+import { clampTooltipX } from '../../utils/tooltipPlacement';
 
 type HeatmapDay = { date: string; count: number };
 
@@ -10,6 +11,8 @@ type PromptHeatmapProps = {
 const CELL_SIZE = 11;
 const CELL_GAP = 2;
 const CELL_RADIUS = 2;
+const HEATMAP_TOOLTIP_HALF_WIDTH = 90;
+const HEATMAP_TOOLTIP_HEIGHT = 36;
 
 const LEVELS = [
   'rgba(0, 0, 0, 0.05)', // 0 — no data
@@ -131,13 +134,15 @@ export const PromptHeatmap = ({ provider }: PromptHeatmapProps) => {
 
   const handleMouseEnter = (e: React.MouseEvent, day: { date: string; count: number }) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const container = (e.currentTarget as HTMLElement).closest('.heatmap-grid-scroll');
-    if (!container) return;
-    const containerRect = container.getBoundingClientRect();
+    const targetX = rect.left + rect.width / 2;
     setTooltip({
       text: `${day.count} prompt${day.count !== 1 ? 's' : ''} on ${formatTooltipDate(day.date)}`,
-      x: rect.left - containerRect.left + rect.width / 2,
-      y: rect.top - containerRect.top - 8,
+      x: clampTooltipX({
+        targetX,
+        halfWidth: HEATMAP_TOOLTIP_HALF_WIDTH,
+        viewportWidth: window.innerWidth,
+      }),
+      y: Math.max(rect.top - 8, HEATMAP_TOOLTIP_HEIGHT + 4),
     });
   };
 
@@ -196,17 +201,16 @@ export const PromptHeatmap = ({ provider }: PromptHeatmapProps) => {
               )),
             )}
           </div>
-          {/* Tooltip */}
-          {tooltip && (
-            <div
-              className="stats-tooltip heatmap-tooltip"
-              style={{ left: tooltip.x, top: tooltip.y }}
-            >
-              {tooltip.text}
-            </div>
-          )}
         </div>
       </div>
+      {tooltip && (
+        <div
+          className="stats-tooltip heatmap-tooltip"
+          style={{ position: 'fixed', left: tooltip.x, top: tooltip.y }}
+        >
+          {tooltip.text}
+        </div>
+      )}
       {/* Legend */}
       <div className="heatmap-legend">
         <span className="heatmap-legend-label">Less</span>
