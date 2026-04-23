@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from 'react';
+import { forwardRef, useMemo, useRef, useEffect, useState, type Ref } from 'react';
 import { motion } from 'framer-motion';
 import type { PromptNotification, ActivityLine } from './types';
 import type { HarnessCandidate, HarnessCandidateKind } from '../../types/electron';
@@ -654,7 +654,10 @@ const WorkflowInsightsSection = ({ candidates }: { candidates?: HarnessCandidate
 
 const AUTO_DISMISS_MS = 120_000;
 
-export const NotificationCard = ({ notification, onDismiss, onClick, onMouseEnter, onMouseLeave }: Props) => {
+export const NotificationCard = forwardRef(function NotificationCard(
+  { notification, onDismiss, onClick, onMouseEnter, onMouseLeave }: Props,
+  ref: Ref<HTMLDivElement>,
+) {
   const { scan, usage, status, alerts, turnMetrics, activityLog } = notification;
   const provider = scan.provider ?? 'claude';
   const providerColor = PROVIDER_COLORS[provider] ?? '#8e8e93';
@@ -701,6 +704,7 @@ export const NotificationCard = ({ notification, onDismiss, onClick, onMouseEnte
 
   return (
     <motion.div
+      ref={ref}
       className={`notif-card ${isCompleted && !seen ? 'notif-card--completed' : ''} ${isCompleted && dismissProgress > 0.6 ? 'notif-card--fading' : ''}`}
       onMouseEnter={() => { onMouseEnter?.(); if (isCompleted) setSeen(true); }}
       onMouseLeave={onMouseLeave}
@@ -840,4 +844,4 @@ export const NotificationCard = ({ notification, onDismiss, onClick, onMouseEnte
       )}
     </motion.div>
   );
-};
+});

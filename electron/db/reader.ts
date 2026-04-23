@@ -313,6 +313,77 @@ export const getPromptIdByRequestId = (requestId: string): number | null => {
 export const getSessionPrompts = (sessionId: string): PromptScan[] =>
   getPrompts({ session_id: sessionId, limit: 500 });
 
+export type SessionStatsSummary = {
+  turns: number;
+  totalCostUsd: number;
+  totalTokens: number;
+  totalCacheRead: number;
+  lastModel: string | null;
+};
+
+/**
+ * Single-roundtrip aggregate for real-time HumanTurn streaming-card stats.
+ *
+ * The HumanTurn handler previously called getSessionPrompts (which
+ * per-row joins injected_files + tool_calls + agent_calls) and then fanned
+ * out getPromptDetail (5 more queries each) just to sum cost/tokens for the
+ * streaming card. For a 100-prompt session that was 800+ synchronous queries
+ * on the Electron main thread per turn (#299). This aggregate replaces the
+ * whole block with one query that uses idx_prompts_session and the same
+ * dedup CTE as getPrompts so proxy/history duplicates don't double-count.
+ */
+export const getSessionStatsSummary = (
+  sessionId: string,
+): SessionStatsSummary => {
+  const db = getDatabase();
+  const row = db
+    .prepare(
+      `
+      WITH deduped AS (
+        SELECT *, ROW_NUMBER() OVER (
+          PARTITION BY session_id, timestamp
+          ORDER BY CASE source WHEN 'history' THEN 3 WHEN 'proxy' THEN 2 ELSE 1 END DESC
+        ) AS _rn
+        FROM prompts
+        WHERE session_id = @session_id
+      )
+      SELECT
+        COUNT(*) AS turns,
+        COALESCE(SUM(cost_usd), 0) AS total_cost_usd,
+        COALESCE(SUM(
+          input_tokens + output_tokens
+          + cache_read_input_tokens + cache_creation_input_tokens
+        ), 0) AS total_tokens,
+        COALESCE(SUM(cache_read_input_tokens), 0) AS total_cache_read,
+        (
+          SELECT model FROM deduped
+          WHERE _rn = 1
+          ORDER BY timestamp DESC
+          LIMIT 1
+        ) AS last_model
+      FROM deduped
+      WHERE _rn = 1
+      `,
+    )
+    .get({ session_id: sessionId }) as
+    | {
+        turns: number;
+        total_cost_usd: number;
+        total_tokens: number;
+        total_cache_read: number;
+        last_model: string | null;
+      }
+    | undefined;
+
+  return {
+    turns: row?.turns ?? 0,
+    totalCostUsd: row?.total_cost_usd ?? 0,
+    totalTokens: row?.total_tokens ?? 0,
+    totalCacheRead: row?.total_cache_read ?? 0,
+    lastModel: row?.last_model ?? null,
+  };
+};
+
 export const getScanStats = (provider?: string, days?: number): ScanStats => {
   const db = getDatabase();
   const periodDays = days ?? 30;
