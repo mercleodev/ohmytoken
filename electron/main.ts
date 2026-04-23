@@ -543,25 +543,21 @@ const initApp = async (): Promise<void> => {
       onTurn: (event) => {
         markProviderWatcherFired("claude");
         if (event.type === "human") {
-          // Fetch session stats from DB for instant display on streaming card
+          // Fetch session stats from DB for instant display on streaming card.
+          // Single aggregate query instead of getSessionPrompts + N× getPromptDetail:
+          // with 100-prompt sessions that was 800+ sync queries per turn (#299).
           let sessionStats: { turns: number; costUsd: number; totalTokens: number; cacheReadPct: number } | undefined;
+          let sessionLastModel: string | null = null;
           try {
-            const scans = dbReader.getSessionPrompts(event.sessionId);
-            let totalCost = 0, totalTokens = 0, totalCacheRead = 0;
-            for (const s of scans) {
-              const detail = dbReader.getPromptDetail(s.request_id);
-              if (detail?.usage) {
-                totalCost += detail.usage.cost_usd ?? 0;
-                const r = detail.usage.response;
-                totalTokens += (r.input_tokens ?? 0) + (r.output_tokens ?? 0) + (r.cache_read_input_tokens ?? 0) + (r.cache_creation_input_tokens ?? 0);
-                totalCacheRead += r.cache_read_input_tokens ?? 0;
-              }
-            }
+            const summary = dbReader.getSessionStatsSummary(event.sessionId);
+            sessionLastModel = summary.lastModel;
             sessionStats = {
-              turns: scans.length,
-              costUsd: totalCost,
-              totalTokens,
-              cacheReadPct: totalTokens > 0 ? (totalCacheRead / totalTokens) * 100 : 0,
+              turns: summary.turns,
+              costUsd: summary.totalCostUsd,
+              totalTokens: summary.totalTokens,
+              cacheReadPct: summary.totalTokens > 0
+                ? (summary.totalCacheRead / summary.totalTokens) * 100
+                : 0,
             };
           } catch (e) {
             console.error("[SessionFileWatcher] Failed to fetch session stats:", e);
@@ -605,17 +601,9 @@ const initApp = async (): Promise<void> => {
             console.error("[SessionFileWatcher] Failed to read injected files:", e);
           }
 
-          // Resolve model: HumanTurn doesn't carry model, so fall back to last known from DB
-          let resolvedModel = event.model;
-          if (!resolvedModel) {
-            try {
-              const scans = dbReader.getSessionPrompts(event.sessionId);
-              if (scans.length > 0) {
-                const lastScan = scans[scans.length - 1];
-                resolvedModel = lastScan.model;
-              }
-            } catch { /* ignore */ }
-          }
+          // Resolve model: HumanTurn doesn't carry model, so fall back to last known from DB.
+          // Reuse the summary we already fetched above — avoids a second getSessionPrompts scan.
+          const resolvedModel = event.model ?? sessionLastModel ?? undefined;
 
           const streamingData = {
             sessionId: event.sessionId,
