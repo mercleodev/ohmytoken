@@ -149,6 +149,79 @@ const parseSessionFile = (filePath: string): RawEntry[] => {
 };
 
 /**
+ * Read only the tail of a session JSONL file and return parsed entries.
+ *
+ * `parseSessionFile` blocks the main thread proportionally to file size; with
+ * ohmytoken's ~18 MB session files that is 300–500 ms per call. Real-time
+ * importers (`importSinglePrompt`) only need entries near the freshest
+ * timestamp, so a bounded tail read is sufficient and keeps the main loop
+ * responsive (#299).
+ *
+ * When the file is ≤ `maxBytes`, behavior is identical to reading the whole
+ * file. When it exceeds the window, the first (possibly partial) line is
+ * discarded so we never hand a truncated JSON fragment to `JSON.parse`.
+ */
+export const readSessionTailEntries = (
+  filePath: string,
+  maxBytes: number,
+): RawEntry[] => {
+  let fd: number | null = null;
+  try {
+    const stat = fs.statSync(filePath);
+    if (stat.size === 0) return [];
+
+    // When we have to slice mid-file, read one extra byte *before* the window
+    // so we can distinguish "window starts exactly on a newline boundary"
+    // (keep the whole window) from "window starts mid-line" (drop the leading
+    // fragment). Without this probe byte we would always discard the first
+    // line and lose legitimate data when the cut happens to align.
+    const requestedBytes = Math.min(stat.size, maxBytes);
+    const probeByte = requestedBytes < stat.size ? 1 : 0;
+    const readBytes = requestedBytes + probeByte;
+    const offset = stat.size - readBytes;
+    const buffer = Buffer.alloc(readBytes);
+
+    fd = fs.openSync(filePath, "r");
+    fs.readSync(fd, buffer, 0, readBytes, offset);
+
+    let content = buffer.toString("utf-8");
+    if (probeByte === 1) {
+      if (content.charCodeAt(0) === 0x0a /* \n */) {
+        // Window begins right after a newline — first line is intact.
+        content = content.slice(1);
+      } else {
+        // Window began mid-line — drop the partial leading fragment.
+        const nl = content.indexOf("\n");
+        content = nl === -1 ? "" : content.slice(nl + 1);
+      }
+    }
+
+    const entries: RawEntry[] = [];
+    for (const line of content.split("\n")) {
+      if (!line) continue;
+      try {
+        entries.push(JSON.parse(line));
+      } catch {
+        /* skip malformed lines */
+      }
+    }
+    return entries;
+  } catch {
+    return [];
+  } finally {
+    if (fd !== null) {
+      try { fs.closeSync(fd); } catch { /* ignore */ }
+    }
+  }
+};
+
+// Tail window for real-time `importSinglePrompt`. 256 KiB comfortably holds
+// dozens of turns; the target prompt is always within seconds of EOF in the
+// hot-path callers. If the window ever misses, `importSinglePrompt` returns
+// null and the caller falls through cleanly (same as unknown-session today).
+const SINGLE_PROMPT_TAIL_BYTES = 256 * 1024;
+
+/**
  * Find all session JSONL files across all projects.
  */
 const findAllSessionFiles = (): Array<{
@@ -734,7 +807,9 @@ export const importSinglePrompt = (
       ? projectDir.replace(/^-/, "/").replace(/-/g, "/")
       : "";
 
-    const entries = parseSessionFile(filePath);
+    // Read only the tail — real-time callers always target the freshest
+    // entries, so we avoid re-parsing the entire JSONL on every turn (#299).
+    const entries = readSessionTailEntries(filePath, SINGLE_PROMPT_TAIL_BYTES);
     if (entries.length === 0) return null;
 
     // Find the user prompt closest to the given timestamp

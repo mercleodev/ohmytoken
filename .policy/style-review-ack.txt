@@ -1,9 +1,10 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-21T23:10:19Z
-fingerprint=82355f479ef157febfb86c15e2f8311b57a99e612b241c84725a672a9efa3f01
+# updated_at_utc: 2026-04-23T03:46:19Z
+fingerprint=019779482048d49112b2679c1c1141c7daa37a453cc06aee03903ab19b93ccc5
 source=docs/sdd/style-checklist.md
-note=perf: batch session-activity IPC to fix notification flicker and dashboard slowdown
+note=perf/session-tail-read-299: readSessionTailEntries bounded to 256 KiB; restores main-thread responsiveness on 18 MB session files. Tail probe byte prevents data loss at exact newline alignment; malformed-line skip preserved from parseSessionFile. No change to runFullImport full-parse path.
 
+.policy/style-review-ack.txt
 docs/qa/README.md
 docs/qa/runs/2026-04-21-7b16d20/baseline-dashboard.png
 docs/qa/runs/2026-04-21-7b16d20/dashboard-modal-dismissed.png
@@ -25,8 +26,7 @@ docs/qa/runs/2026-04-21-7b16d20/TC-04-prompt-detail.png
 docs/qa/runs/2026-04-21-7b16d20/TC-08-watcher-db-ui-flow.png
 docs/qa/runs/2026-04-21-7b16d20/TC-09-prompt-detail-evidence.png
 docs/qa/runs/2026-04-21-7b16d20/TC-10-060-claude-not-connected.png
-electron/main.ts
-electron/notificationPreload.ts
+electron/importer/__tests__/readSessionTail.spec.ts
+electron/importer/historyImporter.ts
 scripts/qa-launch-electron.sh
 scripts/qa-launch-renderer.sh
-src/components/notification/useNotificationManager.ts
