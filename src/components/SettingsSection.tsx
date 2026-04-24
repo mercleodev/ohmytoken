@@ -24,6 +24,17 @@ const DEFAULT_SETTINGS: AppSettings = {
   notificationDisplayId: 0,
 };
 
+const withDefaultSettings = (
+  settings: Partial<AppSettings> | null | undefined,
+): AppSettings => ({
+  ...DEFAULT_SETTINGS,
+  ...settings,
+  colors: {
+    ...DEFAULT_SETTINGS.colors,
+    ...(settings?.colors ?? {}),
+  },
+});
+
 type DisplayInfo = { id: number; label: string; width: number; height: number; isPrimary: boolean };
 
 export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionProps) => {
@@ -42,16 +53,17 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
 
   useEffect(() => {
     if (settings) {
-      setColorLow(settings.colors.low);
-      setColorMedium(settings.colors.medium);
-      setColorHigh(settings.colors.high);
-      setToggleInterval(settings.toggleInterval);
-      setRefreshInterval(settings.refreshInterval);
-      setShortcut(settings.shortcut || DEFAULT_SETTINGS.shortcut);
-      setProxyPort(settings.proxyPort || DEFAULT_SETTINGS.proxyPort);
-      setNotificationsEnabled(settings.notificationsEnabled ?? true);
-      setNotificationDisplayId(settings.notificationDisplayId ?? 0);
-      setShowAllProjectsMemory(settings.showAllProjectsMemory ?? false);
+      const next = withDefaultSettings(settings);
+      setColorLow(next.colors.low);
+      setColorMedium(next.colors.medium);
+      setColorHigh(next.colors.high);
+      setToggleInterval(next.toggleInterval);
+      setRefreshInterval(next.refreshInterval);
+      setShortcut(next.shortcut);
+      setProxyPort(next.proxyPort);
+      setNotificationsEnabled(next.notificationsEnabled ?? true);
+      setNotificationDisplayId(next.notificationDisplayId ?? 0);
+      setShowAllProjectsMemory(next.showAllProjectsMemory ?? false);
     }
   }, [settings]);
 
@@ -112,6 +124,7 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
 
   const handleSave = () => {
     onSave({
+      ...withDefaultSettings(settings),
       colors: {
         low: colorLow,
         medium: colorMedium,
@@ -200,13 +213,13 @@ export const SettingsSection = ({ settings, onSave, onCancel }: SettingsSectionP
           <input
             type="number"
             id="toggleInterval"
-            min={0.5}
+            min={0}
             max={10}
             step={0.5}
             value={toggleInterval / 1000}
             onChange={(e) => setToggleInterval(Number(e.target.value) * 1000)}
           />
-          <p className="hint">Interval for switching between usage and remaining time</p>
+          <p className="hint">Set to 0 to keep the tray title fixed on usage percent</p>
         </div>
 
         <div className="form-group">

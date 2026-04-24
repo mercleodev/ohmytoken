@@ -38,7 +38,7 @@ export type ColorSettings = {
 
 export type AppSettings = {
   colors: ColorSettings;
-  toggleInterval: number;  // Blink interval (ms)
+  toggleInterval: number;  // Tray display toggle interval (ms). 0 disables auto-toggle.
   refreshInterval: number; // API refresh interval (minutes)
   shortcut: string;        // Global shortcut (e.g., "CommandOrControl+Shift+T")
   proxyPort: number;       // Proxy server port (default: 8780)

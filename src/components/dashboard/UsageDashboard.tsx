@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Component, ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, Component, ReactNode } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { UsageProviderType, ProviderUsageSnapshot, ProviderConnectionStatus } from '../../types';
 import type { PromptScan, UsageLogEntry } from '../../types';
@@ -45,6 +45,7 @@ type NavState =
   | { screen: 'stats' };
 
 const TAB_ORDER: ProviderFilter[] = ['all', 'claude', 'codex', 'gemini'];
+const SCAN_REFRESH_DEBOUNCE_MS = 300;
 
 type DashboardProps = {
   pendingPromptNav?: PendingPromptNav | null;
@@ -77,20 +78,38 @@ export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: Dashbo
 
   // Listen for new scan events (always active — no data loss regardless of tab)
   const [scanRevision, setScanRevision] = useState(0);
+  const scanRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queueScanRefresh = useCallback(() => {
+    if (scanRefreshTimerRef.current) return;
+    scanRefreshTimerRef.current = setTimeout(() => {
+      scanRefreshTimerRef.current = null;
+      setScanRevision((r) => r + 1);
+    }, SCAN_REFRESH_DEBOUNCE_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (scanRefreshTimerRef.current) {
+        clearTimeout(scanRefreshTimerRef.current);
+        scanRefreshTimerRef.current = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const cleanup = window.api.onNewPromptScan(() => {
-      setScanRevision((r) => r + 1);
+      queueScanRefresh();
     });
     return cleanup;
-  }, []);
+  }, [queueScanRefresh]);
 
   // Listen for periodic backfill completions → refresh dashboard
   useEffect(() => {
     const cleanup = window.api.onBackfillComplete(() => {
-      setScanRevision((r) => r + 1);
+      queueScanRefresh();
     });
     return cleanup;
-  }, []);
+  }, [queueScanRefresh]);
 
   // Navigation
   const [nav, setNav] = useState<NavState>({ screen: 'main' });

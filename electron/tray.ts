@@ -23,7 +23,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     medium: "#ff9800", // orange
     high: "#f44336", // red
   },
-  toggleInterval: 2000, // 2 seconds
+  toggleInterval: 2000, // Normal tray toggle cadence
   refreshInterval: 5, // 5 minutes
   shortcut: "CommandOrControl+Shift+T", // default shortcut
   proxyPort: 8780, // default proxy port
@@ -40,6 +40,17 @@ const getAssetsPath = () => {
   }
   return path.join(process.resourcesPath, "assets", "tray-icons");
 };
+
+const withDefaultSettings = (
+  settings: Partial<AppSettings> | null | undefined,
+): AppSettings => ({
+  ...DEFAULT_SETTINGS,
+  ...settings,
+  colors: {
+    ...DEFAULT_SETTINGS.colors,
+    ...(settings?.colors ?? {}),
+  },
+});
 
 export class TrayManager {
   private mainWindow: BrowserWindow;
@@ -62,7 +73,7 @@ export class TrayManager {
   constructor(mainWindow: BrowserWindow, store: Store) {
     this.mainWindow = mainWindow;
     this.store = store;
-    this.settings = store.get("settings") || DEFAULT_SETTINGS;
+    this.settings = withDefaultSettings(store.get("settings"));
     this.staticIcon = this.loadStaticIcon();
   }
 
@@ -98,7 +109,7 @@ export class TrayManager {
   }
 
   updateSettings(settings: AppSettings): void {
-    this.settings = settings;
+    this.settings = withDefaultSettings(settings);
     this.restartIntervals();
     this.updateTrayDisplay();
   }
@@ -190,6 +201,11 @@ export class TrayManager {
   }
 
   private startIntervals(): void {
+    if (this.settings.toggleInterval <= 0) {
+      this.toggleIntervalId = null;
+      this.showingUsage = true;
+      return;
+    }
     this.toggleIntervalId = setInterval(() => {
       this.toggleDisplay();
     }, this.settings.toggleInterval);

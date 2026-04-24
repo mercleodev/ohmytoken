@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { memo, useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   formatTimeAgo,
@@ -8,7 +8,6 @@ import {
   getContextLimit,
   getGaugeColor,
 } from "../scan/shared";
-import { useWindowFocusRefresh } from "../../hooks";
 import type { PromptScan, HistoryEntry } from "../../types";
 import { PROVIDER_COLORS, PROVIDER_ICONS } from "./ProviderTabs";
 import type { ProviderFilter } from "./ProviderTabs";
@@ -275,7 +274,7 @@ const ProviderBadge = ({ provider }: { provider: string }) => {
   );
 };
 
-export const RecentSessions = ({
+export const RecentSessions = memo(({
   onSelectSession,
   scanRevision,
   provider,
@@ -332,8 +331,15 @@ export const RecentSessions = ({
     }
   }, [provider]);
 
-  // Load on mount + window focus
-  useWindowFocusRefresh(loadData);
+  // Refresh when the window regains focus. Initial load is handled by the
+  // scanRevision/provider effect below to avoid duplicate mount fetches.
+  useEffect(() => {
+    const handleFocus = () => {
+      loadData();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [loadData]);
 
   // Real-time: new history entries with retry-enrichment.
   useEffect(() => {
@@ -552,4 +558,4 @@ export const RecentSessions = ({
       )}
     </div>
   );
-};
+});

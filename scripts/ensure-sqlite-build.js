@@ -68,8 +68,18 @@ try {
     });
   }
 } catch (err) {
-  console.error(`[sqlite-build] rebuild failed: ${err.message}`);
-  process.exit(1);
+  // @electron/rebuild can fail during cleanup even after the native module
+  // was successfully rebuilt. Accept the run if post-check verification says
+  // the binary now targets the requested runtime.
+  const recovered = getCurrentBuild();
+  if (recovered === target) {
+    console.warn(
+      `[sqlite-build] rebuild reported an error, but verification shows ${target} binary is ready; continuing`,
+    );
+  } else {
+    console.error(`[sqlite-build] rebuild failed: ${err.message}`);
+    process.exit(1);
+  }
 }
 
 // Verify rebuild succeeded

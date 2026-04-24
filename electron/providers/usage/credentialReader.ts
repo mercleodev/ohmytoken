@@ -334,7 +334,27 @@ const DISPLAY_NAMES: Record<UsageProviderType, string> = {
   gemini: 'Gemini',
 };
 
-export const getProviderTokenStatus = (provider: UsageProviderType): ProviderTokenStatus => {
+type TokenStatusOptions = {
+  forceRefresh?: boolean;
+};
+
+const TOKEN_STATUS_CACHE_TTL_MS = 5_000;
+const tokenStatusCache = new Map<UsageProviderType, {
+  status: ProviderTokenStatus;
+  cachedAt: number;
+}>();
+
+export const getProviderTokenStatus = (
+  provider: UsageProviderType,
+  options: TokenStatusOptions = {},
+): ProviderTokenStatus => {
+  if (!options.forceRefresh) {
+    const cached = tokenStatusCache.get(provider);
+    if (cached && Date.now() - cached.cachedAt < TOKEN_STATUS_CACHE_TTL_MS) {
+      return cached.status;
+    }
+  }
+
   const installed = isCLIInstalled(CLI_COMMANDS[provider]);
 
   let hasToken = false;
@@ -356,7 +376,7 @@ export const getProviderTokenStatus = (provider: UsageProviderType): ProviderTok
     tokenExpired = creds !== null && isGeminiTokenExpired(creds);
   }
 
-  return {
+  const status: ProviderTokenStatus = {
     provider,
     displayName: DISPLAY_NAMES[provider],
     installed,
@@ -364,11 +384,18 @@ export const getProviderTokenStatus = (provider: UsageProviderType): ProviderTok
     tokenExpired,
     setupCommands: SETUP_COMMANDS[provider],
   };
+
+  tokenStatusCache.set(provider, {
+    status,
+    cachedAt: Date.now(),
+  });
+
+  return status;
 };
 
 export const getAllProviderStatuses = (): ProviderTokenStatus[] => {
   const providers: UsageProviderType[] = ['claude', 'codex', 'gemini'];
-  return providers.map(getProviderTokenStatus);
+  return providers.map((provider) => getProviderTokenStatus(provider));
 };
 
 // === Phase 2 — split tracking vs account-insights connection status ===

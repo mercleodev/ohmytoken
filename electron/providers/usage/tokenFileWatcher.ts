@@ -87,7 +87,7 @@ export const startTokenFileWatcher = (
 
   const pollKeychain = () => {
     try {
-      const status = getProviderTokenStatus('claude');
+      const status = getProviderTokenStatus('claude', { forceRefresh: true });
       const changed =
         lastKeychainHasToken !== null &&
         (status.hasToken !== lastKeychainHasToken ||
