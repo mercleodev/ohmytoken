@@ -1,14 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-24T15:29:26Z
-fingerprint=f8bbebb343f2f09ecb9bfb2fc9af65a9dce635e8a8c29fea34ef4557c58da156
+# updated_at_utc: 2026-04-24T23:48:15Z
+fingerprint=da3606a5945aa63dac679522c627e0b308a2feda03382bdb2939fd6806b71830
 source=docs/sdd/style-checklist.md
-note=P0-6 packages/oht-cli workspace scaffold. Root npm workspaces enabled. vitest config now includes packages/**. New pkg has own tsconfig (ES2022, strict, noUncheckedIndexedAccess). Pure Node stdout CLI — no deps yet. 7 vitest specs cover --version/-v/help/future subcommand preview/unknown-command error/CLI_VERSION semver shape/tui+statusline stub exit code 3. Smoke: tsc -> node dist/bin.js --version prints 'oht 0.0.1'.
+note=Gate doc §7 documents the P1-mini + P6-mini concept-verification track, scope, rollback, and manual verification protocol. Pure docs commit, no code changes, the new track is documented before any code lands.
 
-package-lock.json
-package.json
-packages/oht-cli/package.json
-packages/oht-cli/src/__tests__/cli.spec.ts
-packages/oht-cli/src/bin.ts
-packages/oht-cli/src/cli.ts
-packages/oht-cli/tsconfig.json
-vitest.config.electron.ts
+docs/sdd/terminal-hud-plugin-gate.md
+electron/eventBus/__tests__/sessionState.spec.ts

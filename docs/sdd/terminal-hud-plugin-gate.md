@@ -127,3 +127,63 @@ these rules:
    answer to an ADR under `docs/decisions/` and link it from the design
    note. Do not delete history — rewrite the §15 bullet as
    `RESOLVED → ADR-xxxx`.
+
+## 7. Concept Verification Track — P1-mini + P6-mini
+
+After Phase 0 landed (commits up to `2077451`) the user explicitly asked to
+prove the end-to-end pipeline before committing to the full Phase 1 → Phase 6
+sequence. The motivation is product-validation: confirm that an `oht
+statusline` line *can* render inside Claude Code today, even if the data is
+sparse, before investing in Phase 1's full emit-site wiring.
+
+This adds two off-sequence units that pull a thin slice from Phase 1 and
+Phase 6. They DO NOT replace the canonical phases — both will be rewritten
+when their full phases run. The mini units exist purely to de-risk the
+concept.
+
+### 7.1 Rationale and non-goals
+
+- **Goal**: a user with the OhMyToken Electron app running sees a single
+  meaningful line in their Claude Code status line (e.g.
+  `oht: connected · claude · sess-abcd1234`). A user without the app
+  running sees `oht: OhMyToken not running`.
+- **Not a goal**: real token / cost / latency numbers. Those land with
+  Phase 1's emit sites and Phase 6's full formatter. P6-mini deliberately
+  ships a one-line snapshot reader and nothing more.
+- **Not a goal**: TUI. P2 is unaffected.
+- **Not a goal**: provider auto-detection. P1-mini hardcodes
+  `provider: 'claude'` because that's what the app is instrumented for
+  today; revisiting belongs to §15 Q4 / Phase 1 entry.
+
+### 7.2 Spec units
+
+| Unit     | Scope (files)                                                                                                | Red test                                                                                | Gate                                                                                                                  | Commit message                                                                            |
+| -------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| P1-mini  | `electron/eventBus/sessionState.ts` + `electron/main.ts` (snapshot + heartbeat wiring)                       | `sessionState.spec.ts` — set/clear/snapshot/emit on state change, fresh-subscriber path | N/A (vitest covers helper; main.ts wiring is a deterministic call site)                                               | `feat(hud): P1-mini wire active-session snapshot + heartbeat (#301)`                      |
+| P6-mini  | `packages/oht-cli/src/statusline.ts` + `packages/oht-cli/src/cli.ts` (statusline subcommand replaces stub)   | `statusline.spec.ts` — connected / not-running / timeout / unexpected-frame fallback    | **Manual** — user confirms the line renders in their Claude Code status line after restart (no automated agent-browser path because the host is Claude Code, not OhMyToken's renderer) | `feat(hud): P6-mini implement oht statusline ws snapshot reader (#301)` |
+
+### 7.3 Rollback
+
+Both units are independent commits, so `git revert <sha>` undoes them
+without touching Phase 0. P1-mini's `setActiveSession` becomes the seed for
+Phase 1's full emit-site wiring; P6-mini's `runStatusline` becomes the seed
+for Phase 6. When those phases enter, the mini units are *replaced in place*
+(not extended) and the corresponding §16 docs commit must call the
+replacement out so reviewers can see the lineage.
+
+### 7.4 Manual verification protocol (P6-mini gate)
+
+After P6-mini commits land, the user runs:
+
+1. `npm --workspace=@ohmytoken/oht-cli run build` (rebuild dist).
+2. `oht statusline` from a terminal with the app NOT running →
+   expect `oht: OhMyToken not running` and exit code 2.
+3. `npm run electron:dev` in another terminal; wait for the Electron
+   window. `oht statusline` again → expect
+   `oht: connected · claude · <session-id>` and exit code 0.
+4. Restart Claude Code; observe the same line in the Claude Code status
+   line. Capture a screenshot under `docs/qa/runs/<YYYY-MM-DD>/p6-mini/`
+   and post it on issue #301.
+
+If step 2 or 3 fails, P6-mini must be reverted before any Phase 1 work
+begins — the concept verification has not landed yet.
