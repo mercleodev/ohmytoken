@@ -34,7 +34,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 const MIN_TITLE_WIDTH = 7;
 
 const getAssetsPath = () => {
-  const isDev = !require("electron").app.isPackaged;
+  const isDev = !app.isPackaged;
   if (isDev) {
     return path.join(__dirname, "..", "assets", "tray-icons");
   }
