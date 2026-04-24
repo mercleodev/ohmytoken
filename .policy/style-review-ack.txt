@@ -1,10 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-24T15:17:33Z
-fingerprint=5bfdf6fed6d355b7a46d1f63f79b202085603760b640dc5138251a874d5d9402
+# updated_at_utc: 2026-04-24T15:19:27Z
+fingerprint=73453bd00087cc567318e1496dfb534c125459c25ceab23b1f0fef030c20f279
 source=docs/sdd/style-checklist.md
-note=P0-2 loopback WebSocket event bus server on 127.0.0.1 with subscribe/snapshot protocol, token auth via query param, clean shutdown. Adds ws@^8.20 runtime dep + @types/ws dev dep (required by §13.2 of design; greenfield so MIGRATION-REUSE N/A). 11 new vitest specs covering boot/subscribe/snapshot/multi-fan-out/token mismatch/lifecycle.
+note=P0-3 thin emit() client module with enable/disable flag and bind(server) hook. Pure function module, no new deps, 7 vitest specs cover default-on/no-server no-op/bind+relay/disabled-drop/re-enable/unbind/reset.
 
-electron/eventBus/__tests__/server.spec.ts
-electron/eventBus/server.ts
-package-lock.json
-package.json
+electron/eventBus/__tests__/client.spec.ts
+electron/eventBus/client.ts
