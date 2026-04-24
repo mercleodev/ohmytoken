@@ -1,8 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-24T15:07:57Z
-fingerprint=f936fceb86fb4469dd978663380a0a9d6e0e318546bfac557cd1dacd71f131c8
+# updated_at_utc: 2026-04-24T15:11:16Z
+fingerprint=767175920980795a39c6fd06c9a5ded8dc52854b936803b873e0d3d5b49fb9b5
 source=docs/sdd/style-checklist.md
-note=DOC-02 allowlist updated with docs/sdd/terminal-hud-plugin-gate.md; DOC-03 issue #301 body and gate doc kept in English/mixed with consistent repo convention
+note=P0-1 pure type-only module under electron/eventBus (no renderer dep) with 11 vitest specs. AR-04 N/A (greenfield, not migrated from checktoken). AR-01 holds (types only). DOC-01 tests exercise the exported catalog/narrowing/matcher contract. DOC-03 English commit + ack notes.
 
-.public-docs-allowlist
-docs/sdd/terminal-hud-plugin-gate.md
+electron/eventBus/__tests__/events.spec.ts
+electron/eventBus/events.ts
