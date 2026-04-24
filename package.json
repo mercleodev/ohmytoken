@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Real-time AI agent token usage monitor for Claude, Codex & Gemini",
   "main": "dist-electron/main.js",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && tsc -p tsconfig.electron.json && vite build && electron-builder --mac",
@@ -12,7 +15,7 @@
     "ensure:node": "node scripts/ensure-sqlite-build.js node",
     "electron:dev": "npm run ensure:electron && concurrently \"vite\" \"tsc -p tsconfig.electron.json -w\" \"electron .\"",
     "start": "npm run ensure:electron && npm run build:electron && electron .",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit && tsc -p packages/oht-cli/tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "npm run ensure:node && vitest run --config vitest.config.electron.ts",
     "test:db": "npm run ensure:node && vitest run --config vitest.config.electron.ts",

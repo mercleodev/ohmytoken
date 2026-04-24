@@ -1,9 +1,14 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-24T15:25:36Z
-fingerprint=3dff4d00f86e1ad216510219c848ad0e1758378c950ccfd9de40c230ca5eb407
+# updated_at_utc: 2026-04-24T15:29:26Z
+fingerprint=f8bbebb343f2f09ecb9bfb2fc9af65a9dce635e8a8c29fea34ef4557c58da156
 source=docs/sdd/style-checklist.md
-note=P0-5 HudConfig schema + defaults + mergeHudConfig pure module. types.ts StoreData gains optional hudConfig?: Partial<HudConfig>. No store.ts edits needed -- persistence works through existing get<K>/set<K> generic. 9 vitest specs cover defaults/freeze/deep-merge/disable/idempotent/unknown-key-discard/JSON-roundtrip.
+note=P0-6 packages/oht-cli workspace scaffold. Root npm workspaces enabled. vitest config now includes packages/**. New pkg has own tsconfig (ES2022, strict, noUncheckedIndexedAccess). Pure Node stdout CLI — no deps yet. 7 vitest specs cover --version/-v/help/future subcommand preview/unknown-command error/CLI_VERSION semver shape/tui+statusline stub exit code 3. Smoke: tsc -> node dist/bin.js --version prints 'oht 0.0.1'.
 
-electron/__tests__/hudConfig.spec.ts
-electron/hudConfig.ts
-electron/types.ts
+package-lock.json
+package.json
+packages/oht-cli/package.json
+packages/oht-cli/src/__tests__/cli.spec.ts
+packages/oht-cli/src/bin.ts
+packages/oht-cli/src/cli.ts
+packages/oht-cli/tsconfig.json
+vitest.config.electron.ts
