@@ -1,8 +1,9 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-24T15:19:27Z
-fingerprint=73453bd00087cc567318e1496dfb534c125459c25ceab23b1f0fef030c20f279
+# updated_at_utc: 2026-04-24T15:22:24Z
+fingerprint=a90441df03a8d225ed980c23807dfbca5233602b8ceec8b4d4b4fb6777231366
 source=docs/sdd/style-checklist.md
-note=P0-3 thin emit() client module with enable/disable flag and bind(server) hook. Pure function module, no new deps, 7 vitest specs cover default-on/no-server no-op/bind+relay/disabled-drop/re-enable/unbind/reset.
+note=P0-4 boot hook: bootEventBus/shutdownEventBus helper in eventBus/boot.ts (5 vitest specs) + main.ts wiring (try/catch so bus failure never aborts boot, before-quit shutdown). Gate doc P0-4 scope is electron/main.ts-only but main.ts is not vitest-testable, so the boot helper lives in eventBus/boot.ts with thin main.ts wiring -- scope note documented in commit body.
 
-electron/eventBus/__tests__/client.spec.ts
-electron/eventBus/client.ts
+electron/eventBus/__tests__/boot.spec.ts
+electron/eventBus/boot.ts
+electron/main.ts

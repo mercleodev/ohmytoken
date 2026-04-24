@@ -41,6 +41,12 @@ import { getMemoryStatusForProvider } from "./memory/providerMemory";
 import { mergeConfig } from "./evidence/config";
 import { parseSystemFieldWithContent } from "./proxy/systemParser";
 import { insertEvidenceReport, recordWorkflowAction } from "./db/writer";
+import {
+  bootEventBus,
+  shutdownEventBus,
+  DEFAULT_EVENT_BUS_PORT,
+} from "./eventBus/boot";
+import type { EventBusServer } from "./eventBus/server";
 import type { EvidenceEngineConfig } from "./evidence/types";
 import { readFileContentsFromDisk } from "./utils/readFileContents";
 import { validateEvidenceConfig } from "./evidence/validateConfig";
@@ -87,6 +93,7 @@ let store: Store | null = null;
 let currentShortcut: string | null = null;
 let isQuitting = false;
 let evidenceEngine: EvidenceEngine | null = null;
+let eventBusServer: EventBusServer | null = null;
 let sessionFileWatcherCleanup: (() => void) | null = null;
 let switchSessionFileWatcher: ((sessionId: string) => void) | null = null;
 let tokenWatcherHandle: TokenFileWatcherHandle | null = null;
@@ -478,6 +485,21 @@ const initApp = async (): Promise<void> => {
   }
 
   store = new Store();
+
+  // Boot the HUD event bus (loopback WebSocket) so later subsystems
+  // (proxy, watcher, providers) can emit without caring about lifecycle.
+  // HudConfig-driven settings arrive in P0-5; for now we use the design
+  // defaults (enabled, fixed port 8781). Failure to bind must not abort
+  // app startup — the bus is an optional overlay.
+  try {
+    eventBusServer = await bootEventBus({
+      port: DEFAULT_EVENT_BUS_PORT,
+      enabled: true,
+    });
+  } catch (err) {
+    console.error("[eventBus] boot failed:", err);
+    eventBusServer = null;
+  }
 
   // Initialize Evidence Scoring Engine
   const savedEvidenceConfig = store.get('evidenceConfig');
@@ -2276,4 +2298,8 @@ app.on("before-quit", () => {
   if (sessionFileWatcherCleanup) sessionFileWatcherCleanup();
   trayManager?.cleanup();
   stopProxyServer().catch((err) => console.error("Proxy cleanup error:", err));
+  shutdownEventBus(eventBusServer).catch((err) =>
+    console.error("[eventBus] shutdown error:", err),
+  );
+  eventBusServer = null;
 });
