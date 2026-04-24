@@ -1,8 +1,10 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-24T15:11:16Z
-fingerprint=767175920980795a39c6fd06c9a5ded8dc52854b936803b873e0d3d5b49fb9b5
+# updated_at_utc: 2026-04-24T15:17:33Z
+fingerprint=5bfdf6fed6d355b7a46d1f63f79b202085603760b640dc5138251a874d5d9402
 source=docs/sdd/style-checklist.md
-note=P0-1 pure type-only module under electron/eventBus (no renderer dep) with 11 vitest specs. AR-04 N/A (greenfield, not migrated from checktoken). AR-01 holds (types only). DOC-01 tests exercise the exported catalog/narrowing/matcher contract. DOC-03 English commit + ack notes.
+note=P0-2 loopback WebSocket event bus server on 127.0.0.1 with subscribe/snapshot protocol, token auth via query param, clean shutdown. Adds ws@^8.20 runtime dep + @types/ws dev dep (required by §13.2 of design; greenfield so MIGRATION-REUSE N/A). 11 new vitest specs covering boot/subscribe/snapshot/multi-fan-out/token mismatch/lifecycle.
 
-electron/eventBus/__tests__/events.spec.ts
-electron/eventBus/events.ts
+electron/eventBus/__tests__/server.spec.ts
+electron/eventBus/server.ts
+package-lock.json
+package.json
