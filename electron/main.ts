@@ -47,6 +47,10 @@ import {
   DEFAULT_EVENT_BUS_PORT,
 } from "./eventBus/boot";
 import type { EventBusServer } from "./eventBus/server";
+import {
+  getActiveSnapshot,
+  setActiveSession,
+} from "./eventBus/sessionState";
 import type { EvidenceEngineConfig } from "./evidence/types";
 import { readFileContentsFromDisk } from "./utils/readFileContents";
 import { validateEvidenceConfig } from "./evidence/validateConfig";
@@ -495,7 +499,19 @@ const initApp = async (): Promise<void> => {
     eventBusServer = await bootEventBus({
       port: DEFAULT_EVENT_BUS_PORT,
       enabled: true,
+      getSnapshot: getActiveSnapshot,
     });
+    // P1-mini concept-verification heartbeat (gate doc §7.2). Seeds the
+    // snapshot so `oht statusline` has something to print, and proves the
+    // emit pipeline is alive end-to-end. Phase 1 will replace this with
+    // real provider switching driven by proxy/watcher signals.
+    if (eventBusServer) {
+      setActiveSession({
+        provider: "claude",
+        session_id: getLastActiveSessionId() ?? "unknown",
+        ctx_estimate: 0,
+      });
+    }
   } catch (err) {
     console.error("[eventBus] boot failed:", err);
     eventBusServer = null;

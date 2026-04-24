@@ -1,8 +1,9 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-24T23:48:15Z
-fingerprint=da3606a5945aa63dac679522c627e0b308a2feda03382bdb2939fd6806b71830
+# updated_at_utc: 2026-04-24T23:52:16Z
+fingerprint=4fe6fabd123c67a5ae410918acb0f68eae7cd7ee7c2bcb9a44ce80e38e72d6e3
 source=docs/sdd/style-checklist.md
-note=Gate doc §7 documents the P1-mini + P6-mini concept-verification track, scope, rollback, and manual verification protocol. Pure docs commit, no code changes, the new track is documented before any code lands.
+note=P1-mini concept-verification: sessionState.ts seeds active session for snapshot + emits heartbeat. main.ts passes getSnapshot to bootEventBus and seeds 'claude' provider with last-known session_id once on boot. Hardcoded provider acknowledged in commit body and gate doc §7.
 
-docs/sdd/terminal-hud-plugin-gate.md
 electron/eventBus/__tests__/sessionState.spec.ts
+electron/eventBus/sessionState.ts
+electron/main.ts
