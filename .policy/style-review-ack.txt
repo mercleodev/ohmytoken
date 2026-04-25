@@ -1,9 +1,14 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-24T23:52:16Z
-fingerprint=4fe6fabd123c67a5ae410918acb0f68eae7cd7ee7c2bcb9a44ce80e38e72d6e3
+# updated_at_utc: 2026-04-25T00:53:48Z
+fingerprint=124928f825a617a0c5089dcacd206d73209ac15ac47502dd4f9a0766b57a3b43
 source=docs/sdd/style-checklist.md
-note=P1-mini concept-verification: sessionState.ts seeds active session for snapshot + emits heartbeat. main.ts passes getSnapshot to bootEventBus and seeds 'claude' provider with last-known session_id once on boot. Hardcoded provider acknowledged in commit body and gate doc §7.
+note=P6-mini concept-verification: oht statusline replaces stub with ws snapshot reader. runStatusline connects to 127.0.0.1:port, subscribes ['*'], waits for snapshot, prints one line, exits. timeout 800ms default, OHT_EVENT_BUS_PORT env override. runCli now async; existing cli.spec.ts adapted to await. ws library added to oht-cli package deps. Smoke verified: 'oht statusline' (no app running) prints 'OhMyToken not running' exit 2.
 
-electron/eventBus/__tests__/sessionState.spec.ts
-electron/eventBus/sessionState.ts
-electron/main.ts
+docs/sdd/ohmytoken-sdd-lecture.html
+package-lock.json
+packages/oht-cli/package.json
+packages/oht-cli/src/__tests__/cli.spec.ts
+packages/oht-cli/src/__tests__/statusline.spec.ts
+packages/oht-cli/src/bin.ts
+packages/oht-cli/src/cli.ts
+packages/oht-cli/src/statusline.ts

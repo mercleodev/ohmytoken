@@ -2,13 +2,27 @@
 // execute it without installing workspace bins. bin.ts is the executable
 // shell that invokes runCli() with process.argv.
 
+import { runStatusline } from "./statusline.js";
+
 export const CLI_VERSION = "0.0.1";
+
+const DEFAULT_EVENT_BUS_PORT = 8781;
+const STATUSLINE_TIMEOUT_MS = 800;
 
 export interface WritableLike {
   write(chunk: string): boolean | void;
 }
 
-export function runCli(args: readonly string[], out: WritableLike): number {
+export interface CliOptions {
+  port?: number;
+  timeoutMs?: number;
+}
+
+export async function runCli(
+  args: readonly string[],
+  out: WritableLike,
+  options: CliOptions = {},
+): Promise<number> {
   const [command, ...rest] = args;
 
   if (command === "--version" || command === "-v") {
@@ -30,16 +44,24 @@ export function runCli(args: readonly string[], out: WritableLike): number {
   }
 
   if (command === "statusline") {
-    out.write(
-      "oht statusline: not yet implemented — lands in Phase 6 of the terminal HUD epic (#301).\n",
-    );
-    return 3;
+    return runStatusline({
+      out,
+      port: options.port ?? readPortFromEnv() ?? DEFAULT_EVENT_BUS_PORT,
+      timeoutMs: options.timeoutMs ?? STATUSLINE_TIMEOUT_MS,
+    });
   }
 
   out.write(
     `oht: unknown command "${command}". Try "oht --help" for the list of supported commands.\n`,
   );
   return 2;
+}
+
+function readPortFromEnv(): number | null {
+  const raw = process.env.OHT_EVENT_BUS_PORT;
+  if (!raw) return null;
+  const port = Number(raw);
+  return Number.isFinite(port) && port > 0 ? port : null;
 }
 
 function writeHelp(out: WritableLike): void {
@@ -50,7 +72,10 @@ function writeHelp(out: WritableLike): void {
     "  oht --version          Print CLI version",
     "  oht --help             Print this help",
     "  oht tui                Sidecar TUI (Phase 2, coming soon)",
-    "  oht statusline         Claude Code statusLine formatter (Phase 6)",
+    "  oht statusline         Claude Code statusLine reader (P6-mini)",
+    "",
+    "Environment:",
+    "  OHT_EVENT_BUS_PORT     Override the event-bus port (default: 8781).",
     "",
   ];
   out.write(lines.join("\n"));
