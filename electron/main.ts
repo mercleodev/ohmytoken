@@ -47,10 +47,15 @@ import {
   DEFAULT_EVENT_BUS_PORT,
 } from "./eventBus/boot";
 import type { EventBusServer } from "./eventBus/server";
+import { getActiveSnapshot } from "./eventBus/sessionState";
 import {
-  getActiveSnapshot,
-  setActiveSession,
-} from "./eventBus/sessionState";
+  registerProviderEmitter,
+  startAllProviderEmitters,
+} from "./eventBus/providerEmitter";
+import {
+  claudeProviderEmitter,
+  handleClaudeHistoryEntry,
+} from "./eventBus/providers/claude";
 import type { EvidenceEngineConfig } from "./evidence/types";
 import { readFileContentsFromDisk } from "./utils/readFileContents";
 import { validateEvidenceConfig } from "./evidence/validateConfig";
@@ -501,16 +506,9 @@ const initApp = async (): Promise<void> => {
       enabled: true,
       getSnapshot: getActiveSnapshot,
     });
-    // P1-mini concept-verification heartbeat (gate doc §7.2). Seeds the
-    // snapshot so `oht statusline` has something to print, and proves the
-    // emit pipeline is alive end-to-end. Phase 1 will replace this with
-    // real provider switching driven by proxy/watcher signals.
     if (eventBusServer) {
-      setActiveSession({
-        provider: "claude",
-        session_id: getLastActiveSessionId() || "unknown",
-        ctx_estimate: 0,
-      });
+      registerProviderEmitter(claudeProviderEmitter);
+      await startAllProviderEmitters();
     }
   } catch (err) {
     console.error("[eventBus] boot failed:", err);
@@ -727,6 +725,7 @@ const initApp = async (): Promise<void> => {
     startHistoryWatcher({
       onNewEntry: (entry) => {
         markProviderWatcherFired("claude");
+        handleClaudeHistoryEntry(entry);
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send("new-history-entry", entry);
         }
