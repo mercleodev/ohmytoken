@@ -77,8 +77,10 @@ writing code. Resolve the relevant open questions from the design note §15
 and promote the decision to `docs/decisions/` when appropriate.
 
 - **Phase 1** — Provider-neutral schema + emit wiring. Gate: **N/A
-  (vitest)**. Verify with spies that Claude/Codex/Gemini paths emit the
-  expected events.
+  (vitest)** for P1-1~P1-5; **Mandatory full-stack Electron** for P1-6
+  (integration). Claude only this phase; Codex/Gemini follow once the
+  P1-1 ProviderEmitter contract is stable. See §8 for the §3-level
+  unit decomposition.
 - **Phase 2 (L1 Sidecar TUI)** — Ink components + reducer. Gate:
   **Mandatory full-stack Electron**. While the TUI runs, terminate the
   Electron main process and confirm the TUI shows `disconnected`, then
@@ -187,3 +189,114 @@ After P6-mini commits land, the user runs:
 
 If step 2 or 3 fails, P6-mini must be reverted before any Phase 1 work
 begins — the concept verification has not landed yet.
+
+### 7.5 Run record — 2026-04-26 (resume checkpoint)
+
+Branch: `feat/terminal-hud-plugin` (local, 11 commits, not pushed).
+
+Verified end-to-end on 2026-04-26:
+
+- Step 1 (CLI build): pass — `dist/bin.js` produced.
+- Step 2 (no-app smoke): pass — `oht: OhMyToken not running`, exit 2.
+- Step 3 (app-running): pass on second boot. The first `electron:dev`
+  loaded a stale `dist-electron/main.js` produced before tsc had
+  finished compiling P1-mini, so port 8781 stayed silent. Fix is a
+  hard restart of `electron:dev` once the tsc watcher has emitted at
+  least one "Found 0 errors" line. After restart:
+  - `lsof -iTCP:8781 -sTCP:LISTEN` → `Electron … LISTEN`
+  - `oht statusline` → `oht: connected · claude · ` (empty session id),
+    exit 0.
+- Step 4 (Claude Code status line eyeball): NOT yet performed — held
+  until the cosmetic gap below is fixed so the line is meaningful.
+
+Known cosmetic gap (does not invalidate the concept):
+
+- `electron/main.ts` heartbeat uses
+  `getLastActiveSessionId() ?? "unknown"`, but the watcher returns an
+  empty string `""` (not `null`) when no session has been observed yet
+  during early app startup. `??` only catches nullish, so the empty
+  string flows through and the snapshot ships with
+  `session_id: ""`. Slicing 12 chars of `""` yields `""`, which is why
+  the status line ends with a trailing dot-space. Fix is a one-line
+  guard (e.g., switch to `||` or treat empty as missing) in the
+  P1-mini heartbeat path. Phase 1 proper will replace the heartbeat
+  outright, so the fix can either land as a tiny follow-up commit or
+  be absorbed when Phase 1 starts.
+
+Resume plan (next session):
+
+1. Reset chat context (`/clear`) so future work starts cold from this
+   record instead of carrying the long verification thread.
+2. Pick up "Path B" from the verification dialog: land the empty
+   session-id guard, rebuild CLI + Electron, and eyeball the Claude
+   Code status line. Capture the screenshot to
+   `docs/qa/runs/2026-04-26/p6-mini/` and attach to issue #301.
+3. Only after step 2 succeeds, decide between entering full Phase 1 or
+   jumping to Phase 2 TUI. Until then, P1-mini and P6-mini stay in
+   place per §7.3 rollback principles.
+
+Tooling housekeeping done in this session:
+
+- `~/.claude/settings.json` ← reverted (no project-wide blanket allow).
+- `.claude/settings.local.json` ← `Bash(*)` → `Bash`; same fix applied
+  to `Read`/`Edit`/`Write`/`Glob`/`Grep`/`WebFetch`. The `(*)` form
+  was matching a literal asterisk, not wildcarding, which is why
+  permission prompts kept firing despite the entries existing.
+
+### 7.6 Outcome — 2026-04-26 (Path B closed)
+
+- **Path B fix landed**: commit `292b73e` —
+  `fix(hud): empty session_id falls through to "unknown" in P1-mini
+  heartbeat (#301)`. One-line guard (`??` → `||`); empty strings now
+  fall through to `"unknown"` instead of producing a trailing
+  dot-space.
+- **§7.4 Step 4 verified**: Claude Code status bar shows
+  `oht: connected · claude · unknown` after restart. Capture archived
+  at `docs/qa/runs/2026-04-26/p6-mini/claude-code-statusline.png`.
+- **§7.5 Resume plan Step 3 decision**: enter full **Phase 1**;
+  Phase 4 (L2 Summon Mode via `globalShortcut`) follows. Provider
+  scope for Phase 1: **Claude only** (Codex/Gemini follow once P1-1
+  ProviderEmitter is stable). Data depth: **session id + tokens +
+  cost**. See §8 for the §3-level unit decomposition that satisfies
+  the §6 entry rule.
+- **Permission housekeeping (this session)**: created
+  `~/Desktop/pjt/.claude/settings.json` allowing `Bash`/`Read`/`Edit`/
+  `Write`/`Glob`/`Grep`/`WebSearch`/`WebFetch` so any new session
+  rooted under `~/Desktop/pjt/` (including ohmytoken) inherits the
+  allow-list automatically. Global `~/.claude/settings.json` left
+  untouched.
+
+## 8. Phase 1 — Spec Unit Decomposition
+
+Phase 1 wires real provider data (session id, token, cost) into the
+event-bus pipeline introduced in Phase 0. Provider scope is **Claude
+only** for this phase per the 2026-04-26 decision (see §7.6); Codex
+and Gemini follow once the P1-1 ProviderEmitter contract is stable.
+Data depth is the full triple — session id + tokens + cost.
+
+The unit table follows the §3 format. Lineage notes per §7.3 are
+preserved: P1-2 supersedes the P1-mini heartbeat, P1-6 absorbs the
+cosmetic-fix commit (`292b73e`) once the heartbeat block is removed
+entirely.
+
+| Unit | Scope (files) | Red test | Gate | Commit message |
+| ---- | ------------- | -------- | ---- | -------------- |
+| P1-1 | `electron/eventBus/providerEmitter.ts` + `__tests__/providerEmitter.spec.ts` | register/get/empty registry; provider-id round-trip; emit fan-out to subscribers | N/A (vitest) | `feat(hud): P1-1 introduce ProviderEmitter contract for multi-provider extension (#301)` |
+| P1-2 | `electron/eventBus/providers/claude.ts` + `__tests__/claude.spec.ts`; `electron/main.ts` (heartbeat replaced by subscribe) | mock watcher fires session change → setActiveSession called with watcher payload, provider id `"claude"` | N/A (vitest covers helper; main.ts wiring is a deterministic call site) | `feat(hud): P1-2 emit Claude active session changes via ProviderEmitter (#301)` |
+| P1-3 | `electron/eventBus/events.ts` (`token` variant); proxy intercept emit site (file pinned during the unit's first sub-step — see open question) | events.spec.ts roundtrip new variant; emit-from-proxy unit test with mocked intercept payload | N/A (vitest) | `feat(hud): P1-3 emit token usage per Claude proxy response (#301)` |
+| P1-4 | `electron/eventBus/costCalc.ts` + `__tests__/costCalc.spec.ts`; events.ts (`cost` variant) | model + input/output tokens → USD with documented rounding; emit on each token event | N/A (vitest) | `feat(hud): P1-4 emit running cost in USD alongside token events (#301)` |
+| P1-5 | `electron/eventBus/sessionState.ts` + events.ts (snapshot extension for token/cost totals) | emit N token events → snapshot reflects running totals; reset on session change | N/A (vitest) | `feat(hud): P1-5 extend snapshot with running token + cost totals (#301)` |
+| P1-6 | `electron/main.ts` (heartbeat block removed), `packages/oht-cli/src/statusline.ts` + `__tests__/statusline.spec.ts` | integration: boot Electron + mock proxy intercept → statusline includes session id + token total + cost | Mandatory full-stack Electron (§2) | `feat(hud): P1-6 replace P1-mini with full Claude emit pipeline + token/cost statusline (#301)` |
+
+**Open question (resolved inside P1-3, no ADR needed)**: the proxy
+may own multiple response-completion paths. P1-3's first sub-step is
+to grep `electron/proxy/` for the canonical completion site and pin
+the emit-from-proxy file before writing the red test. The choice is
+mechanical, so it stays inside the unit.
+
+**Phase 1 exit**: P1-1 ~ P1-6 unit commits landed; ProviderEmitter
+contract documented; P1-mini superseded (`292b73e` absorbed by P1-6);
+`oht statusline` renders
+`oht: connected · claude · <session-id-12> · <tokens> · $<cost>`
+against a real Claude session; full-stack Electron QA evidence under
+`docs/qa/runs/<date>/p1-6/`.
