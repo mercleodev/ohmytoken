@@ -508,7 +508,7 @@ const initApp = async (): Promise<void> => {
     if (eventBusServer) {
       setActiveSession({
         provider: "claude",
-        session_id: getLastActiveSessionId() ?? "unknown",
+        session_id: getLastActiveSessionId() || "unknown",
         ctx_estimate: 0,
       });
     }
