@@ -11,33 +11,38 @@
 // activity yet). This preserves the boot-time guarantee that P1-mini's
 // heartbeat used to provide — `oht statusline` always has a meaningful line
 // to print, never a trailing dot-space (see commit 292b73e and §7.6).
+//
+// Phase 1 retrospective review (#301) — sessionState now exposes setter and
+// announcer as separate functions. This emitter calls them in sequence so
+// the heartbeat reaches subscribers exactly when a new session_id lands
+// (start, or a non-empty history entry). Empty entries and the gating flag
+// short-circuit before either call so neither state nor the wire is touched.
 
 import { getLastActiveSessionId } from "../../watcher/historyWatcher";
 import type { ProviderEmitter } from "../providerEmitter";
-import { setActiveSession } from "../sessionState";
+import { announceActiveSession, setActiveSession } from "../sessionState";
 
-let active = false;
+let started = false;
 
 export const claudeProviderEmitter: ProviderEmitter = {
   id: "claude",
   start(): void {
-    active = true;
-    const sessionId = getLastActiveSessionId();
+    started = true;
+    const sessionId = getLastActiveSessionId() || "unknown";
     setActiveSession({
       provider: "claude",
-      session_id: sessionId || "unknown",
+      session_id: sessionId,
       ctx_estimate: 0,
     });
+    announceActiveSession({ provider: "claude", session_id: sessionId });
   },
   stop(): void {
-    active = false;
+    started = false;
   },
 };
 
-export function handleClaudeHistoryEntry(entry: {
-  sessionId: string;
-}): void {
-  if (!active) {
+export function handleClaudeHistoryEntry(entry: { sessionId: string }): void {
+  if (!started) {
     return;
   }
   if (!entry.sessionId) {
@@ -47,5 +52,9 @@ export function handleClaudeHistoryEntry(entry: {
     provider: "claude",
     session_id: entry.sessionId,
     ctx_estimate: 0,
+  });
+  announceActiveSession({
+    provider: "claude",
+    session_id: entry.sessionId,
   });
 }

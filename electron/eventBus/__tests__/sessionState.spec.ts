@@ -8,6 +8,7 @@ import {
 import { createEventBusServer, type EventBusServer } from "../server";
 import {
   accumulateActiveSessionTokens,
+  announceActiveSession,
   getActiveSnapshot,
   resetSessionState,
   setActiveSession,
@@ -37,8 +38,11 @@ describe("sessionState heartbeat helper", () => {
     expect(getActiveSnapshot()).toEqual({ current_session: null });
   });
 
-  it("setActiveSession populates the snapshot and emits a session.provider.active event", async () => {
-    // Subscribe BEFORE setActiveSession so the heartbeat reaches us.
+  it("setActiveSession populates the snapshot — emit is the caller's responsibility", async () => {
+    // Phase 1 retrospective review (#301) split the seed-and-announce path.
+    // setActiveSession is now a pure setter: subscribers get nothing on the
+    // wire from this call alone. announceActiveSession (separate spec
+    // below) is what drives the heartbeat.
     const ws = new WebSocket(`ws://127.0.0.1:${server.port}`);
     const frames: Array<Record<string, unknown>> = [];
     ws.on("message", (raw) => {
@@ -49,8 +53,6 @@ describe("sessionState heartbeat helper", () => {
       ws.once("error", reject);
     });
     ws.send(JSON.stringify({ op: "subscribe", types: ["session.*"] }));
-    // The snapshot reply also doubles as the "subscribe is processed" ack —
-    // emitting before that point races the server's subscriber registration.
     await waitFor(() => frames.find((f) => f.op === "snapshot"));
 
     setActiveSession({
@@ -59,17 +61,38 @@ describe("sessionState heartbeat helper", () => {
       ctx_estimate: 1234,
     });
 
-    // Snapshot reflects the change immediately. P1-5 added totals; the
-    // P1-mini contract here is just "metadata is in the snapshot", so we
-    // assert the metadata triple and let the running-totals suite below
-    // own the totals invariants.
     expect(getActiveSnapshot().current_session).toMatchObject({
       provider: "claude",
       session_id: "sess-mini",
       ctx_estimate: 1234,
     });
 
-    // The subscriber receives a session.provider.active event.
+    // Pure setter: no heartbeat event on the wire.
+    await new Promise((r) => setTimeout(r, 80));
+    expect(frames.some((f) => f.op === "event")).toBe(false);
+
+    ws.close();
+  });
+
+  it("announceActiveSession emits a session.provider.active event without touching state", async () => {
+    const ws = new WebSocket(`ws://127.0.0.1:${server.port}`);
+    const frames: Array<Record<string, unknown>> = [];
+    ws.on("message", (raw) => {
+      frames.push(JSON.parse(raw.toString()) as Record<string, unknown>);
+    });
+    await new Promise<void>((resolve, reject) => {
+      ws.once("open", () => resolve());
+      ws.once("error", reject);
+    });
+    ws.send(JSON.stringify({ op: "subscribe", types: ["session.*"] }));
+    await waitFor(() => frames.find((f) => f.op === "snapshot"));
+
+    announceActiveSession({
+      provider: "claude",
+      session_id: "sess-mini",
+      ts: 1700000000000,
+    });
+
     const heartbeat = await waitFor(() =>
       frames.find(
         (f) =>
@@ -83,8 +106,12 @@ describe("sessionState heartbeat helper", () => {
         type: "session.provider.active",
         provider: "claude",
         session_id: "sess-mini",
+        ts: 1700000000000,
       },
     });
+
+    // Pure emitter: state is untouched (no setActiveSession was called).
+    expect(getActiveSnapshot()).toEqual({ current_session: null });
 
     ws.close();
   });

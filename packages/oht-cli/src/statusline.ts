@@ -26,6 +26,13 @@ export interface StatuslineDeps {
   timeoutMs: number;
 }
 
+// Mirrors `SnapshotPayload.current_session` from
+// `electron/eventBus/events.ts` (the bus-side single source of truth, see
+// Phase 1 retrospective review #301, Major #4). Kept structural here because
+// `packages/oht-cli` is a separate npm workspace and a cross-package type
+// import would require monorepo path mapping or a shared-contracts package
+// — both deferred to a follow-up. Update both locations together until that
+// follow-up lands.
 interface SnapshotFrame {
   op: "snapshot";
   current_session:

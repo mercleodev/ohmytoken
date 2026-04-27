@@ -12,10 +12,17 @@
 // `accumulateActiveSessionTokens` next to the existing emit helpers so the
 // snapshot reflects live totals; totals reset on `session_id` change so
 // per-session math never bleeds across providers/sessions.
+//
+// Phase 1 retrospective review (#301) split the seed-and-announce path into
+// two single-responsibility functions:
+//   - setActiveSession: pure setter (state mutate only, never emits)
+//   - announceActiveSession: pure emitter (emit only, never touches state)
+// Callers (claude.ts, future codex/gemini emitters) invoke both in sequence.
+// The asymmetry "setActiveSession(null) does not emit" is now caller-owned
+// by simply not calling announceActiveSession on the null path.
 
 import { emit } from "./client";
-import type { Provider } from "./events";
-import type { SnapshotPayload } from "./server";
+import type { Provider, SnapshotPayload } from "./events";
 
 interface ActiveSession {
   provider: Provider;
@@ -33,31 +40,36 @@ type SetActiveSessionInput = {
 
 let active: ActiveSession | null = null;
 
-export function setActiveSession(
-  session: SetActiveSessionInput | null,
-  ts: number = Date.now(),
-): void {
+export function setActiveSession(session: SetActiveSessionInput | null): void {
   if (!session) {
     active = null;
     return;
   }
 
-  // Same session_id → preserve running totals (re-seed only metadata).
-  // Different session_id → totals reset to zero so per-session math is clean.
-  const preserveTotals = active?.session_id === session.session_id;
+  // Capture into a local so the narrowing below does not need a non-null
+  // assertion on the module-level `active` (which TS cannot narrow because
+  // any other function call could mutate it).
+  const prev = active;
+  const preserveTotals = prev?.session_id === session.session_id;
   active = {
     provider: session.provider,
     session_id: session.session_id,
     ctx_estimate: session.ctx_estimate,
-    output_tokens_total: preserveTotals ? active!.output_tokens_total : 0,
-    cost_usd_total: preserveTotals ? active!.cost_usd_total : 0,
+    output_tokens_total: preserveTotals && prev ? prev.output_tokens_total : 0,
+    cost_usd_total: preserveTotals && prev ? prev.cost_usd_total : 0,
   };
+}
 
+export function announceActiveSession(args: {
+  provider: Provider;
+  session_id: string;
+  ts?: number;
+}): void {
   emit({
     type: "session.provider.active",
-    ts,
-    provider: session.provider,
-    session_id: session.session_id,
+    ts: args.ts ?? Date.now(),
+    provider: args.provider,
+    session_id: args.session_id,
   });
 }
 

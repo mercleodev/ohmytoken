@@ -1,8 +1,15 @@
 // P1-3 sanity (gate doc §8). Drives a real SSE response through the
-// production proxy → mock upstream loop and asserts the message_delta /
-// message_stop emit helpers fire with the right shape. Side-effect
-// modules (writeUsageLog, writeScanLog, scanBuilder) are mocked because
-// the wiring under test is the emit hop, not the disk pipeline.
+// production proxy → mock upstream loop and asserts the record-usage
+// helpers fire with the right shape. Side-effect modules (writeUsageLog,
+// writeScanLog, scanBuilder) are mocked because the wiring under test is
+// the proxy → record-helper hop, not the disk pipeline.
+//
+// Phase 1 retrospective review (#301) — proxy/server.ts now calls
+// recordClaudeUsageDelta / recordClaudeUsageFinal (which own both the
+// wire emit and the sessionState accumulator update) instead of reaching
+// into both modules separately. The unit-level emit / accumulator shape
+// is owned by claudeProxyEmit.spec.ts; this integration only asserts the
+// proxy hands the right payload to the record helpers.
 
 import * as http from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,23 +17,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../../eventBus/providers/claudeProxyEmit", () => ({
   emitClaudeProxyMessageDelta: vi.fn(),
   emitClaudeProxyMessageStop: vi.fn(),
-}));
-// P1-5: accumulator is wired next to the emit helpers in
-// processSseEvents. The integration test owns emit-shape assertions —
-// running totals are covered in sessionState.spec.ts — so we mock the
-// accumulator here to keep this suite focused on the proxy → emit hop.
-vi.mock("../../eventBus/sessionState", () => ({
-  accumulateActiveSessionTokens: vi.fn(),
+  recordClaudeUsageDelta: vi.fn(),
+  recordClaudeUsageFinal: vi.fn(),
 }));
 vi.mock("../usageWriter", () => ({ writeUsageLog: vi.fn() }));
 vi.mock("../scanWriter", () => ({ writeScanLog: vi.fn() }));
 vi.mock("../scanBuilder", () => ({ buildPromptScan: vi.fn(() => null) }));
 
 import {
-  emitClaudeProxyMessageDelta,
-  emitClaudeProxyMessageStop,
+  recordClaudeUsageDelta,
+  recordClaudeUsageFinal,
 } from "../../eventBus/providers/claudeProxyEmit";
-import { accumulateActiveSessionTokens } from "../../eventBus/sessionState";
 import { startProxyServer, stopProxyServer } from "../server";
 
 const sseFrame = (event: string, data: unknown): string =>
@@ -137,9 +138,8 @@ describe("proxy server.ts — emit wiring (P1-3 integration)", () => {
   beforeEach(async () => {
     await stopProxyServer();
     mockUpstream = await startMockUpstream();
-    vi.mocked(emitClaudeProxyMessageDelta).mockClear();
-    vi.mocked(emitClaudeProxyMessageStop).mockClear();
-    vi.mocked(accumulateActiveSessionTokens).mockClear();
+    vi.mocked(recordClaudeUsageDelta).mockClear();
+    vi.mocked(recordClaudeUsageFinal).mockClear();
   });
 
   afterEach(async () => {
@@ -149,7 +149,7 @@ describe("proxy server.ts — emit wiring (P1-3 integration)", () => {
     );
   });
 
-  it("emits message_delta per SSE delta + message_stop once on stop, with monotonic delta tokens", async () => {
+  it("calls recordClaudeUsageDelta per SSE delta + recordClaudeUsageFinal once on stop, with monotonic delta tokens", async () => {
     const proxy = await startProxyOnRandomPort(
       `127.0.0.1:${mockUpstream.port}`,
     );
@@ -165,42 +165,43 @@ describe("proxy server.ts — emit wiring (P1-3 integration)", () => {
     // Flush event loop so the proxy's response 'end' handler runs.
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(emitClaudeProxyMessageDelta).toHaveBeenCalledTimes(2);
-    expect(emitClaudeProxyMessageStop).toHaveBeenCalledTimes(1);
+    expect(recordClaudeUsageDelta).toHaveBeenCalledTimes(2);
+    expect(recordClaudeUsageFinal).toHaveBeenCalledTimes(1);
 
-    const delta1 = vi.mocked(emitClaudeProxyMessageDelta).mock.calls[0][0];
+    const delta1 = vi.mocked(recordClaudeUsageDelta).mock.calls[0][0];
     expect(delta1.deltaOutputTokens).toBe(30);
     expect(delta1.cumulativeOutputTokens).toBe(30);
     expect(delta1.cumulativeCostUsd).toBeGreaterThanOrEqual(0);
+    expect(delta1.deltaCostUsd).toBeGreaterThanOrEqual(0);
     expect(delta1.requestId).toMatch(/[0-9a-f-]{36}/);
+    expect(typeof delta1.sessionId).toBe("string");
 
-    const delta2 = vi.mocked(emitClaudeProxyMessageDelta).mock.calls[1][0];
+    const delta2 = vi.mocked(recordClaudeUsageDelta).mock.calls[1][0];
     expect(delta2.deltaOutputTokens).toBe(20); // 50 - 30
     expect(delta2.cumulativeOutputTokens).toBe(50);
     expect(delta2.requestId).toBe(delta1.requestId);
+    expect(delta2.sessionId).toBe(delta1.sessionId);
 
-    const stop = vi.mocked(emitClaudeProxyMessageStop).mock.calls[0][0];
+    const stop = vi.mocked(recordClaudeUsageFinal).mock.calls[0][0];
     expect(stop.finalOutputTokens).toBe(50);
     expect(stop.finalCostUsd).toBeGreaterThanOrEqual(delta2.cumulativeCostUsd);
     expect(stop.requestId).toBe(delta1.requestId);
+    expect(stop.sessionId).toBe(delta1.sessionId);
+    expect(stop.topUpOutputTokens).toBe(0); // last delta already at 50
 
-    // P1-5: accumulator is invoked alongside each emit (2 deltas + 1
-    // stop = 3 calls). The token-delta sum across the calls must equal
-    // the final cumulative_output_tokens so sessionState totals can
+    // The token-delta sum across the helpers must equal the final
+    // cumulative_output_tokens so the accumulator inside the helpers can
     // never drift above ground truth.
-    const accumulatorCalls = vi.mocked(accumulateActiveSessionTokens).mock
-      .calls;
-    expect(accumulatorCalls).toHaveLength(3);
-    const tokenSum = accumulatorCalls.reduce(
-      (sum, [args]) => sum + args.output_tokens_delta,
-      0,
-    );
-    expect(tokenSum).toBe(50);
-    const sessionIds = new Set(accumulatorCalls.map(([args]) => args.session_id));
-    expect(sessionIds.size).toBe(1); // single session id across the request
+    const tokenSumFromDeltas = vi
+      .mocked(recordClaudeUsageDelta)
+      .mock.calls.reduce((sum, [args]) => sum + args.deltaOutputTokens, 0);
+    const tokenSumFromFinal = vi
+      .mocked(recordClaudeUsageFinal)
+      .mock.calls.reduce((sum, [args]) => sum + args.topUpOutputTokens, 0);
+    expect(tokenSumFromDeltas + tokenSumFromFinal).toBe(50);
   });
 
-  it("does not emit on non-/v1/messages traffic", async () => {
+  it("does not call any usage recorder on non-/v1/messages traffic", async () => {
     const proxy = await startProxyOnRandomPort(
       `127.0.0.1:${mockUpstream.port}`,
     );
@@ -225,8 +226,7 @@ describe("proxy server.ts — emit wiring (P1-3 integration)", () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 30));
 
-    expect(emitClaudeProxyMessageDelta).not.toHaveBeenCalled();
-    expect(emitClaudeProxyMessageStop).not.toHaveBeenCalled();
-    expect(accumulateActiveSessionTokens).not.toHaveBeenCalled();
+    expect(recordClaudeUsageDelta).not.toHaveBeenCalled();
+    expect(recordClaudeUsageFinal).not.toHaveBeenCalled();
   });
 });

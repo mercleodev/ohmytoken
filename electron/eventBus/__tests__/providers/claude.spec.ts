@@ -4,8 +4,13 @@ vi.mock("../../../watcher/historyWatcher", () => ({
   getLastActiveSessionId: vi.fn(),
 }));
 
+vi.mock("../../client", () => ({
+  emit: vi.fn(),
+  resetEventBusClient: vi.fn(),
+}));
+
 import { getLastActiveSessionId } from "../../../watcher/historyWatcher";
-import { resetEventBusClient } from "../../client";
+import { emit, resetEventBusClient } from "../../client";
 import {
   claudeProviderEmitter,
   handleClaudeHistoryEntry,
@@ -18,6 +23,7 @@ describe("ClaudeProviderEmitter", () => {
     resetSessionState();
     resetEventBusClient();
     vi.mocked(getLastActiveSessionId).mockReturnValue("");
+    vi.mocked(emit).mockClear();
   });
 
   it("identifies as claude", () => {
@@ -109,5 +115,71 @@ describe("ClaudeProviderEmitter", () => {
     expect(getActiveSnapshot().current_session?.session_id).toBe(
       "second-id",
     );
+  });
+
+  // Phase 1 retrospective review (#301) — sessionState now exposes setter
+  // and announcer separately. The emitter must call both so subscribers
+  // see a heartbeat exactly when the session_id changes.
+
+  it("start() announces the seeded session_id on the wire", () => {
+    vi.mocked(getLastActiveSessionId).mockReturnValue("sess-abc-1234567890");
+
+    claudeProviderEmitter.start();
+
+    expect(emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "session.provider.active",
+        provider: "claude",
+        session_id: "sess-abc-1234567890",
+      }),
+    );
+  });
+
+  it("start() with no watcher session announces 'unknown' so subscribers always see one heartbeat", () => {
+    vi.mocked(getLastActiveSessionId).mockReturnValue("");
+
+    claudeProviderEmitter.start();
+
+    expect(emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "session.provider.active",
+        provider: "claude",
+        session_id: "unknown",
+      }),
+    );
+  });
+
+  it("handleClaudeHistoryEntry announces the new session when started", () => {
+    claudeProviderEmitter.start();
+    vi.mocked(emit).mockClear();
+
+    handleClaudeHistoryEntry({ sessionId: "sess-new-9999999999" });
+
+    expect(emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "session.provider.active",
+        provider: "claude",
+        session_id: "sess-new-9999999999",
+      }),
+    );
+  });
+
+  it("handleClaudeHistoryEntry does not announce after stop()", () => {
+    claudeProviderEmitter.start();
+    claudeProviderEmitter.stop();
+    vi.mocked(emit).mockClear();
+
+    handleClaudeHistoryEntry({ sessionId: "after-stop" });
+
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it("handleClaudeHistoryEntry does not announce on empty session id", () => {
+    claudeProviderEmitter.start();
+    vi.mocked(emit).mockClear();
+
+    handleClaudeHistoryEntry({ sessionId: "" });
+
+    expect(emit).not.toHaveBeenCalled();
   });
 });

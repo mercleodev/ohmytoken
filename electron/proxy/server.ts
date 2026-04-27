@@ -9,10 +9,9 @@ import { buildPromptScan } from "./scanBuilder";
 import { writeScanLog } from "./scanWriter";
 import { PendingUsage, PromptScan, ProxyStatus, UsageLogEntry } from "./types";
 import {
-  emitClaudeProxyMessageDelta,
-  emitClaudeProxyMessageStop,
+  recordClaudeUsageDelta,
+  recordClaudeUsageFinal,
 } from "../eventBus/providers/claudeProxyEmit";
-import { accumulateActiveSessionTokens } from "../eventBus/sessionState";
 
 const DEFAULT_PORT = 8780;
 const ANTHROPIC_HOST = "api.anthropic.com";
@@ -144,27 +143,19 @@ const handleRequest = (
               pending.cache_creation_input_tokens,
               pending.cache_read_input_tokens,
             );
-            emitClaudeProxyMessageDelta({
+            recordClaudeUsageDelta({
               requestId: pending.request_id,
+              sessionId: pending.session_id,
               deltaOutputTokens: pending.output_tokens - prevOutputTokens,
               cumulativeOutputTokens: pending.output_tokens,
+              deltaCostUsd: cumulativeCost - accumulatedCostUsd,
               cumulativeCostUsd: cumulativeCost,
             });
-            try {
-              accumulateActiveSessionTokens({
-                session_id: pending.session_id,
-                output_tokens_delta:
-                  pending.output_tokens - accumulatedOutputTokens,
-                cost_usd_delta: cumulativeCost - accumulatedCostUsd,
-              });
-              accumulatedOutputTokens = pending.output_tokens;
-              accumulatedCostUsd = cumulativeCost;
-            } catch {
-              // Accumulator failures must not break SSE passthrough
-              // (gate doc §8 P1-5).
-            }
+            accumulatedOutputTokens = pending.output_tokens;
+            accumulatedCostUsd = cumulativeCost;
           } catch {
-            // Emit failures must not break SSE passthrough (gate doc §8 P1-3).
+            // Emit/accumulator failures must not break SSE passthrough
+            // (gate doc §8 P1-3 + P1-5).
           }
         }
         if (evt.type === "message_stop") {
@@ -181,30 +172,24 @@ const handleRequest = (
           );
 
           try {
-            emitClaudeProxyMessageStop({
+            // Top-up the accumulator with whatever residual the final
+            // calculation revealed beyond the last delta event (often
+            // zero for token, small for cost). Accumulator drops the
+            // call inside the helper if the active session changed
+            // mid-request.
+            recordClaudeUsageFinal({
               requestId: pending.request_id,
+              sessionId: pending.session_id,
+              topUpOutputTokens: pending.output_tokens - accumulatedOutputTokens,
               finalOutputTokens: pending.output_tokens,
+              topUpCostUsd: cost - accumulatedCostUsd,
               finalCostUsd: cost,
             });
-            try {
-              // Top-up the accumulator with whatever residual the final
-              // calculation revealed beyond the last delta event (often
-              // zero for token, small for cost). Accumulator drops the
-              // call if the active session changed mid-request.
-              accumulateActiveSessionTokens({
-                session_id: pending.session_id,
-                output_tokens_delta:
-                  pending.output_tokens - accumulatedOutputTokens,
-                cost_usd_delta: cost - accumulatedCostUsd,
-              });
-              accumulatedOutputTokens = pending.output_tokens;
-              accumulatedCostUsd = cost;
-            } catch {
-              // Accumulator failures must not break SSE passthrough
-              // (gate doc §8 P1-5).
-            }
+            accumulatedOutputTokens = pending.output_tokens;
+            accumulatedCostUsd = cost;
           } catch {
-            // Emit failures must not break SSE passthrough (gate doc §8 P1-3).
+            // Emit/accumulator failures must not break SSE passthrough
+            // (gate doc §8 P1-3 + P1-5).
           }
 
           const entry: UsageLogEntry = {

@@ -1,5 +1,27 @@
 export type Provider = "claude" | "codex" | "gemini";
 
+// Wire shape of the snapshot frame's `current_session` payload. Lives here
+// (next to HudEvent) so the bus contract is a single source of truth.
+// `electron/eventBus/server.ts` re-exports for backward compatibility.
+//
+// `output_tokens_total` / `cost_usd_total` were added by P1-5 and are kept
+// optional + zero-default so pre-P1-5 snapshot readers (the older statusline
+// reader, mid-flight CLI builds) keep narrowing successfully. Phase 1
+// retrospective (#301) flagged the optional shape as a follow-up — promoting
+// to required is deferred until all readers in the monorepo are on the
+// post-P1-5 build.
+export interface SnapshotPayload {
+  current_session:
+    | {
+        provider: string;
+        session_id: string;
+        ctx_estimate: number;
+        output_tokens_total?: number;
+        cost_usd_total?: number;
+      }
+    | null;
+}
+
 export type Severity = "info" | "warn" | "critical";
 
 export type GuardrailCode =

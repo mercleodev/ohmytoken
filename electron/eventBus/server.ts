@@ -2,23 +2,12 @@ import type { IncomingMessage } from "node:http";
 import type { AddressInfo } from "node:net";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 
-import { matchEventType, type HudEvent } from "./events";
+import { matchEventType, type HudEvent, type SnapshotPayload } from "./events";
 
-export interface SnapshotPayload {
-  // P1-5 extends current_session with running token/cost totals. Both
-  // counters are optional + zero-default so the existing
-  // `packages/oht-cli/src/statusline.ts:22-23` reader (still on the
-  // pre-P1-5 shape until P1-6) keeps narrowing successfully.
-  current_session:
-    | {
-        provider: string;
-        session_id: string;
-        ctx_estimate: number;
-        output_tokens_total?: number;
-        cost_usd_total?: number;
-      }
-    | null;
-}
+// Re-exported for backward compatibility. `SnapshotPayload` now lives next
+// to the HudEvent union in `events.ts` so the bus contract has a single
+// source of truth (Phase 1 retrospective review #301, Major #4).
+export type { SnapshotPayload };
 
 export interface EventBusLogger {
   info?: (msg: string, meta?: Record<string, unknown>) => void;
