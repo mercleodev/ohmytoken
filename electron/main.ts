@@ -159,15 +159,21 @@ const DEFAULT_SHORTCUT = "CommandOrControl+Shift+T";
 
 const DEFAULT_PROXY_PORT = 8780;
 
+// QA hook (gate doc §8.1, P1-6 headed run): when `OMT_QA_SHOW=1` the
+// main window starts visible so agent-browser CDP screenshots aren't
+// frame-paused by macOS hiding the window. Has no effect in normal
+// tray-app flow because the env var is unset for end users.
+const isQaShow = process.env.OMT_QA_SHOW === "1";
+
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 400,
     height: 640,
     resizable: false,
-    show: isTest,
-    frame: isTest,
+    show: isTest || isQaShow,
+    frame: isTest || isQaShow,
     transparent: false,
-    skipTaskbar: !isTest,
+    skipTaskbar: !isTest && !isQaShow,
     backgroundColor: "#ffffff", // white background
     roundedCorners: true,
     hasShadow: true,
