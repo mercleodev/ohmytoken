@@ -288,7 +288,7 @@ entirely.
 | P1-3 | `electron/eventBus/providers/claudeProxyEmit.ts` + `__tests__/providers/claudeProxyEmit.spec.ts`; emit at `electron/proxy/server.ts` `processSseEvents` (`message_delta` + `message_stop` branches — pinned 2026-04-27) | helper packages parsed token + cost values into canonical `proxy.sse.message_delta` / `proxy.sse.message_stop` HudEvent shapes and forwards to `client.emit()`; emit failures must not break SSE passthrough | N/A (vitest) | `feat(hud): P1-3 emit token usage + running cost per Claude proxy response (#301)` |
 | ~~P1-4~~ | _Absorbed by P1-3 (2026-04-27)_ — `events.ts` already bundles `cumulative_cost_usd` / `final_cost_usd` into the `proxy.sse.message_delta` / `proxy.sse.message_stop` variants, so token and cost are emitted at the same site using existing `electron/proxy/costCalculator.ts`. No standalone unit. | — | — | — |
 | P1-5 | `electron/eventBus/sessionState.ts` (`ActiveSession` adds `output_tokens_total` + `cost_usd_total`; new `accumulateActiveSessionTokens` helper; `setActiveSession` resets totals on `session_id` change) + `electron/eventBus/server.ts` (`SnapshotPayload.current_session` extended — optional / zero-default so `packages/oht-cli/src/statusline.ts:22-23` reader stays valid until P1-6) + `electron/proxy/server.ts` (`processSseEvents` calls accumulator next to `emitClaudeProxyMessageDelta` / `emitClaudeProxyMessageStop` — option A pinned 2026-04-27) + `__tests__/sessionState.spec.ts` (extends existing P1-mini suite) | accumulator emits N token events → snapshot reflects running totals (delta tokens cumulate, cost cumulates from per-request `cumulative_cost_usd` deltas); reset on `session_id` change; existing snapshot shape unchanged when totals=0 | N/A (vitest) | `feat(hud): P1-5 extend snapshot with running token + cost totals (#301)` |
-| P1-6 | `electron/main.ts` (heartbeat block removed), `packages/oht-cli/src/statusline.ts` + `__tests__/statusline.spec.ts` | integration: boot Electron + mock proxy intercept → statusline includes session id + token total + cost | Mandatory full-stack Electron (§2) | `feat(hud): P1-6 replace P1-mini with full Claude emit pipeline + token/cost statusline (#301)` |
+| P1-6 | `packages/oht-cli/src/statusline.ts` (`SnapshotFrame` reads optional `output_tokens_total` + `cost_usd_total`; connected-line formatter adds `· <tokens> · $<cost>` segments with K/M tokens + 4-decimal cost) + `__tests__/statusline.spec.ts` (red cases for the new format) — main.ts heartbeat block was already absorbed in P1-2 (`b0e0699`) and the cosmetic `292b73e` guard moved into `electron/eventBus/providers/claude.ts`, so no main.ts edit is needed in P1-6 | unit: connected line renders `oht: connected · <provider> · <id-12> · <tokens> · $<cost>` for snapshot with totals; zero-state renders `· 0 · $0.0000`; pre-P1-5 snapshot (totals omitted) coerces totals to 0; idle line unchanged. integration: boot Electron + drive mock SSE upstream so accumulator runs end-to-end → `oht statusline` line matches the live totals | Mandatory full-stack Electron (§2) — agent-browser headed pass + screenshot under `docs/qa/runs/<date>/p1-6/` per `.claude/rules/agent-browser-qa.md` | `feat(hud): P1-6 statusline shows token + cost totals from live Claude emit pipeline (#301)` |
 
 **Open question (resolved 2026-04-27)**: the proxy completion site
 has been pinned to `electron/proxy/server.ts` `processSseEvents` —
@@ -362,3 +362,29 @@ work. Cost accumulation strategy: token deltas cumulate from
 the per-request running baseline (so live UX during a stream reflects
 incremental cost, and the `message_stop` final value lands without
 double-counting).
+
+**P1-6 entry decision (2026-04-27)**: P1-6 row's "main.ts heartbeat
+block removed" scope is **already absorbed** by P1-2 (`b0e0699`):
+`claudeProviderEmitter.start()` + `handleClaudeHistoryEntry` own the
+session-id wiring, and the cosmetic guard at commit `292b73e` (empty
+`session_id` → `"unknown"` fallback) was lifted into
+`electron/eventBus/providers/claude.ts:28` at the same time. main.ts
+no longer carries any P1-mini heartbeat code, so the P1-6
+implementation commit will not touch main.ts. **Effective P1-6
+scope** narrows to (a) `packages/oht-cli/src/statusline.ts` upgrade
+so the connected line includes session token/cost totals, (b) the
+`__tests__/statusline.spec.ts` red tests for the new line format, and
+(c) the §2 mandatory full-stack Electron QA gate. Format chosen for
+the connected line: `oht: connected · <provider> · <session-id-12> ·
+<tokens> · $<cost>` where tokens collapse to K/M for ≥ 1000 (no
+trailing `.0`; e.g. `42` / `1.2K` / `12K` / `1.2M`) and cost is fixed
+4-decimal `$0.0000` (LLM cost is cents-scale; 4 decimals avoids
+silent zero-rounding for typical short bursts). Zero-state
+(`output_tokens_total=0` and `cost_usd_total=0` on a fresh session)
+renders as `... · 0 · $0.0000` to satisfy the Phase 1 exit
+"statusline includes session id + token total + cost". Idle (no
+session) stays at `oht: connected · idle` unchanged. Reader
+backwards compatibility: P1-5 left the new `SnapshotPayload` fields
+optional, so a snapshot frame that omits them (only possible if a
+mid-flight build skipped P1-5) is rendered with totals coerced to 0
+rather than crashing the line.
