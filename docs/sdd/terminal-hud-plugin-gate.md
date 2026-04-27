@@ -426,3 +426,91 @@ backwards compatibility: P1-5 left the new `SnapshotPayload` fields
 optional, so a snapshot frame that omits them (only possible if a
 mid-flight build skipped P1-5) is rendered with totals coerced to 0
 rather than crashing the line.
+
+---
+
+## 9. Phase 1 Closure + Operational Update (2026-04-28)
+
+This section captures decisions and operational changes that landed at
+the close of Phase 1 (PR #302). Sections 1–8 remain the per-unit gate
+contract; this section is the post-script.
+
+### 9.1 Phase 1 — Closed (PR #302)
+
+Phase 1 closed with 27 spec commits across P0-1 → P1-6 + §2 mandatory
+headed Electron gate PASS (run record `docs/qa/runs/2026-04-27/p1-6/`).
+Total branch impact: **29 commits ahead of main** (27 Phase 1 + 1 infra
++ 1 retrospective fixup). Post-merge follow-ups are tracked as separate
+issues; see §9.4.
+
+### 9.2 Phase 4 — Abandoned (L2 Summon Mode already implemented in main)
+
+The L2 Dashboard Summon Mode envisioned in `idea/terminal-hud-plugin.md`
+§2.2 was found, during a Phase 4 entry pass, to be 100% already
+implemented on the main branch:
+
+- `electron/main.ts:158` `DEFAULT_SHORTCUT = "CommandOrControl+Shift+T"`.
+- `electron/main.ts:415-447` `registerShortcut` toggles
+  `mainWindow.isVisible() ? hide() : trayManager.showWindowFromShortcut()`.
+- `electron/main.ts:205-211` `mainWindow.on("close")` intercepts close →
+  `event.preventDefault()` + `hide()` so the last-viewed view (including
+  the prompt detail page) survives across summon cycles.
+- `src/components/SettingsSection.tsx:232-237` already provides a
+  shortcut recording UI so the user can rebind freely.
+
+A previous version of §10 (Phase 4 unit decomposition) and its three
+exploratory commits were rolled back via `git reset --hard HEAD~3`
+(landed at `cf81565`) because re-implementing the summon path would have
+duplicated existing behavior. The HUD-relevant pull moved upstream to a
+follow-up Phase that mirrors the same data into a multi-line
+claude-hud-style statusLine AND a sidecar TUI (provider-neutral) — see
+the design exploration in `idea/terminal-hud-plugin.md`. Phase 2 / 3 / 5
+stay deferred until that direction is locked.
+
+### 9.3 Mandatory frontend-review gate (commit `d0ad058`)
+
+Phase 1's manual style-review ack was a self-attestation surface — the
+ack note accepted any string. To close that gap a mechanical gate was
+introduced:
+
+- `scripts/run-frontend-review.sh` — prints the code-reviewer agent
+  invocation instructions and the path of the required report
+  (`.policy/frontend-review-report.<fingerprint>.md`).
+- `scripts/check-frontend-review-ack.sh` — pre-commit gate that requires
+  the report exists with verdict `OK` or `OK with fixes` matching the
+  current change-set fingerprint.
+- `.githooks/pre-commit` — invokes the new check after the existing
+  identity / node-version / content-guard / rules-ack chain.
+- `scripts/list-meaningful-changed-files.sh` — excludes the report
+  files themselves from the fingerprint.
+
+`.policy/frontend-review-report.*.md` is gitignored (transient
+artifact); each contributor regenerates one for their own working
+tree. The first dogfooding case is the Phase 1 retrospective fixup
+commit (`24ed3ed`), where the agent verdict was OK and the gate passed
+on its own change set.
+
+The personal-Claude side of the rule (`CLAUDE.md` Core Rule, `.claude/
+rules/sdd-workflow.md` Step 5.5, `scripts/completion-gate.sh` Stop-hook
+strengthening) lives in gitignored files because the repo treats those
+as per-contributor configuration. Repo-level enforcement remains in the
+tracked hook + scripts above.
+
+### 9.4 Follow-up Issues (#303 ~ #309)
+
+Filed after PR #302 and cross-referenced in
+`pull/302#issuecomment-4331301575`:
+
+| Issue | Severity | Title |
+| ----- | -------- | ----- |
+| #303  | medium   | refactor(proxy): split processSseEvents into per-event handlers |
+| #304  | medium   | refactor(oht-cli): replace `new Promise(executor)` in runStatusline with deferred pattern |
+| #305  | low      | refactor(eventBus): extract module-level mutable singletons into context object |
+| #306  | medium   | refactor(monorepo): single import path for SnapshotPayload across workspaces |
+| #307  | low      | refactor(eventBus): absorb proxy-side baseline tracking into recordClaudeUsageDelta |
+| #308  | low      | chore: address Phase 1 retrospective minor findings (7 items) |
+| #309  | medium   | chore(hooks): upgrade frontend-review fingerprint from path-set to path+content hash |
+
+**#309 is a known-limitation** of the current frontend-review gate
+(fingerprint is path-set, not path+content) and should land before the
+gate is relied on against adversarial contributors.
