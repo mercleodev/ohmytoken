@@ -1,0 +1,31 @@
+# P1-6 statusline live capture (2026-04-27)
+
+## Environment
+- Electron HOME: /tmp/omt-qa-home-p1-6 (isolated)
+- Mock SSE upstream: 127.0.0.1:9999 (electron/proxy/mockServer.ts)
+- Proxy: 127.0.0.1:8780 → mock 9999
+- ws bus: 127.0.0.1:8781
+- CDP: 127.0.0.1:9222
+- Seeded session id (history.jsonl): sess-qa-p1-6-bb175cc5
+
+## Pre-SSE (initial state)
+    oht: connected · claude · sess-qa-p1-6 · 0 · $0.0000
+
+## After 1st SSE (mock: input=1000, cache_create=500, cache_read=200, output_tokens=50)
+    oht: connected · claude · sess-qa-p1-6 · 50 · $0.0284
+
+## After 2nd SSE (cumulative — same session)
+    oht: connected · claude · sess-qa-p1-6 · 100 · $0.0568
+
+## Acceptance
+Format matches §8 Phase 1 exit:
+    oht: connected · <provider> · <session-id-12> · <tokens> · $<cost>
+
+Token cumulation: 50 → 100 (×2 driver, ×2 result). Cost cumulation: $0.0284 → $0.0568 (linear).
+Session id truncated to first 12 chars (`sess-qa-p1-6`).
+Session reset/active flow: history.jsonl append → fs.watch → handleClaudeHistoryEntry → setActiveSession.
+
+## P1-5 + P1-6 wiring confirmed live
+- proxy/server.ts processSseEvents → emitClaudeProxyMessage{Delta,Stop} + accumulateActiveSessionTokens
+- sessionState totals reflected in getActiveSnapshot() ws snapshot frame
+- packages/oht-cli/src/statusline.ts renders the line with formatTokens / formatCost
