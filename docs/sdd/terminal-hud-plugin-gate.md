@@ -275,7 +275,9 @@ and Gemini follow once the P1-1 ProviderEmitter contract is stable.
 Data depth is the full triple — session id + tokens + cost.
 
 The unit table follows the §3 format. Lineage notes per §7.3 are
-preserved: P1-2 supersedes the P1-mini heartbeat, P1-6 absorbs the
+preserved: P1-2 supersedes the P1-mini heartbeat, P1-3 absorbs P1-4
+(2026-04-27 — token + cost share the same `events.ts` variants;
+see open-question resolution below), and P1-6 absorbs the
 cosmetic-fix commit (`292b73e`) once the heartbeat block is removed
 entirely.
 
@@ -283,19 +285,23 @@ entirely.
 | ---- | ------------- | -------- | ---- | -------------- |
 | P1-1 | `electron/eventBus/providerEmitter.ts` + `__tests__/providerEmitter.spec.ts` | register/get/empty registry; provider-id round-trip; emit fan-out to subscribers | N/A (vitest) | `feat(hud): P1-1 introduce ProviderEmitter contract for multi-provider extension (#301)` |
 | P1-2 | `electron/eventBus/providers/claude.ts` + `__tests__/claude.spec.ts`; `electron/main.ts` (heartbeat replaced by subscribe) | mock watcher fires session change → setActiveSession called with watcher payload, provider id `"claude"` | N/A (vitest covers helper; main.ts wiring is a deterministic call site) | `feat(hud): P1-2 emit Claude active session changes via ProviderEmitter (#301)` |
-| P1-3 | `electron/eventBus/events.ts` (`token` variant); proxy intercept emit site (file pinned during the unit's first sub-step — see open question) | events.spec.ts roundtrip new variant; emit-from-proxy unit test with mocked intercept payload | N/A (vitest) | `feat(hud): P1-3 emit token usage per Claude proxy response (#301)` |
-| P1-4 | `electron/eventBus/costCalc.ts` + `__tests__/costCalc.spec.ts`; events.ts (`cost` variant) | model + input/output tokens → USD with documented rounding; emit on each token event | N/A (vitest) | `feat(hud): P1-4 emit running cost in USD alongside token events (#301)` |
+| P1-3 | `electron/eventBus/providers/claudeProxyEmit.ts` + `__tests__/providers/claudeProxyEmit.spec.ts`; emit at `electron/proxy/server.ts` `processSseEvents` (`message_delta` + `message_stop` branches — pinned 2026-04-27) | helper packages parsed token + cost values into canonical `proxy.sse.message_delta` / `proxy.sse.message_stop` HudEvent shapes and forwards to `client.emit()`; emit failures must not break SSE passthrough | N/A (vitest) | `feat(hud): P1-3 emit token usage + running cost per Claude proxy response (#301)` |
+| ~~P1-4~~ | _Absorbed by P1-3 (2026-04-27)_ — `events.ts` already bundles `cumulative_cost_usd` / `final_cost_usd` into the `proxy.sse.message_delta` / `proxy.sse.message_stop` variants, so token and cost are emitted at the same site using existing `electron/proxy/costCalculator.ts`. No standalone unit. | — | — | — |
 | P1-5 | `electron/eventBus/sessionState.ts` + events.ts (snapshot extension for token/cost totals) | emit N token events → snapshot reflects running totals; reset on session change | N/A (vitest) | `feat(hud): P1-5 extend snapshot with running token + cost totals (#301)` |
 | P1-6 | `electron/main.ts` (heartbeat block removed), `packages/oht-cli/src/statusline.ts` + `__tests__/statusline.spec.ts` | integration: boot Electron + mock proxy intercept → statusline includes session id + token total + cost | Mandatory full-stack Electron (§2) | `feat(hud): P1-6 replace P1-mini with full Claude emit pipeline + token/cost statusline (#301)` |
 
-**Open question (resolved inside P1-3, no ADR needed)**: the proxy
-may own multiple response-completion paths. P1-3's first sub-step is
-to grep `electron/proxy/` for the canonical completion site and pin
-the emit-from-proxy file before writing the red test. The choice is
-mechanical, so it stays inside the unit.
+**Open question (resolved 2026-04-27)**: the proxy completion site
+has been pinned to `electron/proxy/server.ts` `processSseEvents` —
+specifically the `message_delta` and `message_stop` branches inside
+the closure. The function is invoked by both the `proxyRes.on('data')`
+stream path and the `proxyRes.on('end')` flush path, so a single
+emit-site pair covers all completion modes. Token + cost are emitted
+together because `events.ts` bundles them into one variant per event
+(P1-4 absorbed — see lineage note above).
 
-**Phase 1 exit**: P1-1 ~ P1-6 unit commits landed; ProviderEmitter
-contract documented; P1-mini superseded (`292b73e` absorbed by P1-6);
+**Phase 1 exit**: P1-1, P1-2, P1-3, P1-5, P1-6 unit commits landed
+(P1-4 absorbed into P1-3, see table); ProviderEmitter contract
+documented; P1-mini superseded (`292b73e` absorbed by P1-6);
 `oht statusline` renders
 `oht: connected · claude · <session-id-12> · <tokens> · $<cost>`
 against a real Claude session; full-stack Electron QA evidence under
