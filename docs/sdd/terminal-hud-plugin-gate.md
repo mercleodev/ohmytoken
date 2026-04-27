@@ -301,13 +301,17 @@ together because `events.ts` bundles them into one variant per event
 
 **Phase 1 exit**: P1-1, P1-2, P1-3, P1-5, P1-6 unit commits landed
 (P1-4 absorbed into P1-3, see table); ProviderEmitter contract
-documented; P1-mini superseded (`292b73e` absorbed by P1-6);
-`oht statusline` renders
+documented; P1-mini superseded (`292b73e` absorbed by P1-6 lineage —
+the cosmetic fallback already lives in
+`electron/eventBus/providers/claude.ts`); `oht statusline` renders
 `oht: connected · claude · <session-id-12> · <tokens> · $<cost>`
 against a real Claude session; full-stack Electron QA evidence under
-`docs/qa/runs/<date>/p1-6/`.
+`docs/qa/runs/<date>/p1-6/`. As of 2026-04-27 every item except the
+final clause is satisfied — P1-6 is vitest-closed and the headed
+agent-browser pass is **deferred** to a manual user-environment run
+(see §8.1 deferred note). Phase 1 ticks once that screenshot lands.
 
-### 8.1 Run record — 2026-04-27 (Phase 1, P1-1 → P1-5 + integration coverage)
+### 8.1 Run record — 2026-04-27 (Phase 1, P1-1 → P1-6 vitest close; P1-6 headed gate deferred)
 
 | Unit | Commit | Files | Tests | Notes |
 | ---- | ------ | ----- | ----- | ----- |
@@ -319,6 +323,8 @@ against a real Claude session; full-stack Electron QA evidence under
 | P1-3 sanity (test-only) | `59ab1e0` | `electron/proxy/__tests__/serverEmit.integration.spec.ts` | +2 vitest | Production proxy code drives a mock SSE upstream → emit helpers spied; covers delta monotonicity (30 → 20 = 50−30), `request_id` consistency across delta+stop, and non-/v1/messages no-op |
 | docs (P1-5 entry) | `52346fc` | `docs/sdd/terminal-hud-plugin-gate.md` (§8 P1-5 row + §8.1 entry decision) | — | §6 entry rule satisfied: option A wiring pinned to proxy emit-site; cost delta strategy documented |
 | P1-5 | `e1e861c` | `electron/eventBus/sessionState.ts` (+`output_tokens_total` / `cost_usd_total` on `ActiveSession`; new `accumulateActiveSessionTokens`; reset-on-session-change + preserve-on-same-id semantics in `setActiveSession`) + `electron/eventBus/server.ts` (`SnapshotPayload.current_session` extended w/ optional zero-default totals) + `electron/proxy/server.ts` (`processSseEvents` `message_delta` / `message_stop` branches call accumulator alongside emit helpers; per-request `accumulatedOutputTokens` / `accumulatedCostUsd` baselines convert `cumulative_*` to per-event deltas) + `__tests__/sessionState.spec.ts` (+7 cases: zero-seed, N-event cumulation, session-change reset, same-id preservation, no-active no-op, stale-id drop, reset wipe) + `__tests__/serverEmit.integration.spec.ts` (accumulator-call invariants: 3 calls per request, token-delta sum = cumulative_output_tokens, single session id, no-op on non-/v1/messages) + `__tests__/providers/claude.spec.ts` (P1-mini `toEqual` → `toMatchObject` + explicit totals=0; metadata contract unchanged) | +7 vitest (sessionState) | Accumulator failures wrapped in try/catch so SSE passthrough is preserved; option A wiring as pinned 2026-04-27 |
+| docs (P1-6 entry) | `21edf4b` | `docs/sdd/terminal-hud-plugin-gate.md` (§8 P1-6 row narrowed; §8.1 entry decision w/ token/cost format) | — | §6 entry rule satisfied: main.ts heartbeat block confirmed already absorbed by P1-2; statusline format pinned (K/M tokens, 4-decimal cost, zero-state segments) |
+| P1-6 (vitest portion) | `700254e` | `packages/oht-cli/src/statusline.ts` (`SnapshotFrame` reads optional totals; `formatTokens` K/M collapse w/o trailing `.0`; `formatCost` fixed 4-decimal; connected line gains `· <tokens> · $<cost>`) + `packages/oht-cli/src/__tests__/statusline.spec.ts` (4 new red cases — totals-bearing line, zero-state segments, missing-totals fallback, K/M+small-int boundaries — plus the 2 pre-existing connected lines updated to the new format; 9 cases total) + `electron/eventBus/__tests__/p1-6-integration.spec.ts` (3 cases: late-subscriber sees live totals, mid-stream subscribers see interim totals, session_id change resets snapshot totals to zero) | +3 vitest (P1-6 integration); statusline unit count unchanged (2 lines updated, 4 added → 9 total, was 5) | Phase 1 exit format `oht: connected · <provider> · <session-id-12> · <tokens> · $<cost>` rendered against the live event bus; full-stack §2 headed gate **deferred** to a manual user-environment run (GUI cannot run inside the automated harness) |
 
 **Validation baseline (P1-3 close)**: typecheck PASS · lint clean on
 changed files (pre-existing errors in `scripts/check-pr-*.mjs`,
@@ -335,6 +341,31 @@ lint clean on changed files · `npm run test` **323 passed | 3 skipped**
 verified through `serverEmit.integration.spec.ts` (no new test added —
 existing two cases extended with sum-equals-cumulative + single-session
 assertions).
+
+**Validation baseline (P1-6 vitest close — 2026-04-27)**: typecheck
+PASS · lint clean on changed files · `npm run test` **330 passed | 3
+skipped** (327 → +3 net = `p1-6-integration.spec.ts`; statusline unit
+count is unchanged because the two pre-existing connected lines were
+updated rather than added). Reader-shape backward compat covered by
+the missing-totals fallback case in `statusline.spec.ts`.
+
+**Deferred — P1-6 §2 full-stack Electron headed gate**: the
+mandatory agent-browser CDP run (`.claude/rules/agent-browser-qa.md`)
+cannot execute inside the automated harness because no GUI process
+can be spawned. Until the user runs the headed pass and stages a
+screenshot under `docs/qa/runs/<date>/p1-6/`, P1-6 is **vitest-closed,
+headed-deferred** and Phase 1 exit is held pending. Manual command
+sketch (no `scripts/qa-launch-electron.sh` exists yet — direct
+invocation): set `ELECTRON_ENABLE_LOGGING=1` + start with
+`--remote-debugging-port=9222`, run `npm run start` (or
+`npm run electron:dev` if hot reload is preferred), then in a second
+terminal `agent-browser connect 9222` + `agent-browser snapshot` +
+`agent-browser screenshot docs/qa/runs/<date>/p1-6/dashboard.png`.
+Drive a Claude SSE request through the proxy (port 8780) so the
+accumulator runs end-to-end, then `node packages/oht-cli/dist/cli.js
+statusline` and capture the printed line — must match
+`oht: connected · claude · <id-12> · <tokens> · $<cost>`. File the
+captured line + screenshot under the run directory and tick this row.
 
 **Deferred to P1-6 full-stack gate (§2)**: emit-frame visibility on
 the running Electron ws bus. The integration spec at `59ab1e0` covers
