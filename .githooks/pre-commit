@@ -56,3 +56,7 @@ fi
 if [ -x "${repo_root}/scripts/check-applicable-rules.sh" ]; then
   "${repo_root}/scripts/check-applicable-rules.sh" --mode=staged
 fi
+
+if [ -x "${repo_root}/scripts/check-frontend-review-ack.sh" ]; then
+  "${repo_root}/scripts/check-frontend-review-ack.sh"
+fi
