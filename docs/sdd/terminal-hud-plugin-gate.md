@@ -287,7 +287,7 @@ entirely.
 | P1-2 | `electron/eventBus/providers/claude.ts` + `__tests__/claude.spec.ts`; `electron/main.ts` (heartbeat replaced by subscribe) | mock watcher fires session change → setActiveSession called with watcher payload, provider id `"claude"` | N/A (vitest covers helper; main.ts wiring is a deterministic call site) | `feat(hud): P1-2 emit Claude active session changes via ProviderEmitter (#301)` |
 | P1-3 | `electron/eventBus/providers/claudeProxyEmit.ts` + `__tests__/providers/claudeProxyEmit.spec.ts`; emit at `electron/proxy/server.ts` `processSseEvents` (`message_delta` + `message_stop` branches — pinned 2026-04-27) | helper packages parsed token + cost values into canonical `proxy.sse.message_delta` / `proxy.sse.message_stop` HudEvent shapes and forwards to `client.emit()`; emit failures must not break SSE passthrough | N/A (vitest) | `feat(hud): P1-3 emit token usage + running cost per Claude proxy response (#301)` |
 | ~~P1-4~~ | _Absorbed by P1-3 (2026-04-27)_ — `events.ts` already bundles `cumulative_cost_usd` / `final_cost_usd` into the `proxy.sse.message_delta` / `proxy.sse.message_stop` variants, so token and cost are emitted at the same site using existing `electron/proxy/costCalculator.ts`. No standalone unit. | — | — | — |
-| P1-5 | `electron/eventBus/sessionState.ts` + events.ts (snapshot extension for token/cost totals) | emit N token events → snapshot reflects running totals; reset on session change | N/A (vitest) | `feat(hud): P1-5 extend snapshot with running token + cost totals (#301)` |
+| P1-5 | `electron/eventBus/sessionState.ts` (`ActiveSession` adds `output_tokens_total` + `cost_usd_total`; new `accumulateActiveSessionTokens` helper; `setActiveSession` resets totals on `session_id` change) + `electron/eventBus/server.ts` (`SnapshotPayload.current_session` extended — optional / zero-default so `packages/oht-cli/src/statusline.ts:22-23` reader stays valid until P1-6) + `electron/proxy/server.ts` (`processSseEvents` calls accumulator next to `emitClaudeProxyMessageDelta` / `emitClaudeProxyMessageStop` — option A pinned 2026-04-27) + `__tests__/sessionState.spec.ts` (extends existing P1-mini suite) | accumulator emits N token events → snapshot reflects running totals (delta tokens cumulate, cost cumulates from per-request `cumulative_cost_usd` deltas); reset on `session_id` change; existing snapshot shape unchanged when totals=0 | N/A (vitest) | `feat(hud): P1-5 extend snapshot with running token + cost totals (#301)` |
 | P1-6 | `electron/main.ts` (heartbeat block removed), `packages/oht-cli/src/statusline.ts` + `__tests__/statusline.spec.ts` | integration: boot Electron + mock proxy intercept → statusline includes session id + token total + cost | Mandatory full-stack Electron (§2) | `feat(hud): P1-6 replace P1-mini with full Claude emit pipeline + token/cost statusline (#301)` |
 
 **Open question (resolved 2026-04-27)**: the proxy completion site
@@ -337,3 +337,19 @@ residual P1-3 runtime risk is bounded.
 - `electron/eventBus/sessionState.ts:15-19` — `ActiveSession` interface needs `output_tokens_total` + `cost_usd_total`
 - `electron/eventBus/server.ts:7-11` — `SnapshotPayload.current_session` shape extension (loopback-coupled with `packages/oht-cli/src/statusline.ts:22-23`, but statusline upgrade is P1-6 scope; P1-5 keeps additions optional/zero-default so the existing reader stays valid)
 - Accumulator wiring choice (open question for P1-5 first sub-step): same site as `emitClaudeProxyMessageDelta` in `electron/proxy/server.ts` (mirrors P1-3 pattern, tightly coupled) **vs.** a `proxy.sse.*` subscriber in `electron/main.ts` (clean separation). Decide before writing the red test.
+
+**P1-5 entry decision (2026-04-27)**: option A pinned —
+accumulator wiring lives at the same emit-site as
+`emitClaudeProxyMessageDelta` / `emitClaudeProxyMessageStop` in
+`electron/proxy/server.ts` `processSseEvents`. Rationale: per-request
+`cumulative_cost_usd` is already computed there (the delta calculation
+needs `prevCumulativeCost`, which only the proxy site holds), so a
+ws-subscriber in `main.ts` would have to re-derive the same delta from
+event payloads and add an extra hop. Coupling between proxy and
+`sessionState` is acceptable because both are owned by the main
+process; the alternative trades zero coupling reduction for double
+work. Cost accumulation strategy: token deltas cumulate from
+`delta_output_tokens`; cost cumulates from `cumulative_cost_usd` minus
+the per-request running baseline (so live UX during a stream reflects
+incremental cost, and the `message_stop` final value lands without
+double-counting).
