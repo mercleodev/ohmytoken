@@ -306,3 +306,34 @@ documented; P1-mini superseded (`292b73e` absorbed by P1-6);
 `oht: connected · claude · <session-id-12> · <tokens> · $<cost>`
 against a real Claude session; full-stack Electron QA evidence under
 `docs/qa/runs/<date>/p1-6/`.
+
+### 8.1 Run record — 2026-04-27 (Phase 1, P1-1 → P1-3 + integration coverage)
+
+| Unit | Commit | Files | Tests | Notes |
+| ---- | ------ | ----- | ----- | ----- |
+| docs (§4 Phase 1 expand + §7.6 close + §8 add) | `cc72fb4` | `docs/sdd/terminal-hud-plugin-gate.md` | — | §6 entry rule satisfied (docs-only commit precedes Phase 1 code) |
+| P1-1 | `21a6122` | `electron/eventBus/providerEmitter.ts` + `__tests__/providerEmitter.spec.ts` | +10 vitest | ProviderEmitter contract; multi-provider extension foundation |
+| P1-2 | `b0e0699` | `electron/eventBus/providers/claude.ts` + `__tests__/providers/claude.spec.ts`; `electron/main.ts` wiring | +8 vitest | P1-mini heartbeat replaced; `oht statusline` confirmed real session id `aa075cc4-3e1` against running Electron |
+| docs (§8 P1-4 absorption) | `1e4921b` | `docs/sdd/terminal-hud-plugin-gate.md` | — | Resolved after `events.ts` review: token + cost bundle into the same `proxy.sse.message_delta` / `proxy.sse.message_stop` variants; P1-4 absorbed |
+| P1-3 | `59dbf8e` | `electron/eventBus/providers/claudeProxyEmit.ts` + `__tests__/providers/claudeProxyEmit.spec.ts`; `electron/proxy/server.ts` (`processSseEvents` `message_delta` + `message_stop` branches) | +6 vitest | Helper packages canonical HudEvent variants; emit failures wrapped in try/catch so SSE passthrough is preserved |
+| P1-3 sanity (test-only) | `59ab1e0` | `electron/proxy/__tests__/serverEmit.integration.spec.ts` | +2 vitest | Production proxy code drives a mock SSE upstream → emit helpers spied; covers delta monotonicity (30 → 20 = 50−30), `request_id` consistency across delta+stop, and non-/v1/messages no-op |
+
+**Validation baseline (P1-3 close)**: typecheck PASS · lint clean on
+changed files (pre-existing errors in `scripts/check-pr-*.mjs`,
+`scripts/check-pr-policy.mjs`, `electron/tray.ts`,
+`electron/watcher/statsCacheReader.ts`,
+`src/components/dashboard/SessionDetailView.tsx`,
+`electron/proxy/mockServer.ts` left untouched per
+`commit-checklist.md`) · tests **316 passed | 3 skipped** (308 baseline
+→ +8 net = 6 helper + 2 integration).
+
+**Deferred to P1-6 full-stack gate (§2)**: emit-frame visibility on
+the running Electron ws bus. The integration spec at `59ab1e0` covers
+the same emit path through production proxy code, and Path B already
+verified the bus fan-out via `session.provider.active`, so the
+residual P1-3 runtime risk is bounded.
+
+**Pinned for P1-5 first sub-step**:
+- `electron/eventBus/sessionState.ts:15-19` — `ActiveSession` interface needs `output_tokens_total` + `cost_usd_total`
+- `electron/eventBus/server.ts:7-11` — `SnapshotPayload.current_session` shape extension (loopback-coupled with `packages/oht-cli/src/statusline.ts:22-23`, but statusline upgrade is P1-6 scope; P1-5 keeps additions optional/zero-default so the existing reader stays valid)
+- Accumulator wiring choice (open question for P1-5 first sub-step): same site as `emitClaudeProxyMessageDelta` in `electron/proxy/server.ts` (mirrors P1-3 pattern, tightly coupled) **vs.** a `proxy.sse.*` subscriber in `electron/main.ts` (clean separation). Decide before writing the red test.
