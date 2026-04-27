@@ -8,6 +8,10 @@ import { writeUsageLog } from "./usageWriter";
 import { buildPromptScan } from "./scanBuilder";
 import { writeScanLog } from "./scanWriter";
 import { PendingUsage, PromptScan, ProxyStatus, UsageLogEntry } from "./types";
+import {
+  emitClaudeProxyMessageDelta,
+  emitClaudeProxyMessageStop,
+} from "../eventBus/providers/claudeProxyEmit";
 
 const DEFAULT_PORT = 8780;
 const ANTHROPIC_HOST = "api.anthropic.com";
@@ -121,7 +125,25 @@ const handleRequest = (
           );
         }
         if (evt.type === "message_delta") {
+          const prevOutputTokens = pending.output_tokens;
           pending.output_tokens = evt.output_tokens ?? 0;
+          try {
+            const cumulativeCost = calculateCost(
+              pending.model,
+              pending.input_tokens,
+              pending.output_tokens,
+              pending.cache_creation_input_tokens,
+              pending.cache_read_input_tokens,
+            );
+            emitClaudeProxyMessageDelta({
+              requestId: pending.request_id,
+              deltaOutputTokens: pending.output_tokens - prevOutputTokens,
+              cumulativeOutputTokens: pending.output_tokens,
+              cumulativeCostUsd: cumulativeCost,
+            });
+          } catch {
+            // Emit failures must not break SSE passthrough (gate doc §8 P1-3).
+          }
         }
         if (evt.type === "message_stop") {
           console.log(
@@ -135,6 +157,16 @@ const handleRequest = (
             pending.cache_creation_input_tokens,
             pending.cache_read_input_tokens,
           );
+
+          try {
+            emitClaudeProxyMessageStop({
+              requestId: pending.request_id,
+              finalOutputTokens: pending.output_tokens,
+              finalCostUsd: cost,
+            });
+          } catch {
+            // Emit failures must not break SSE passthrough (gate doc §8 P1-3).
+          }
 
           const entry: UsageLogEntry = {
             timestamp: new Date().toISOString(),
