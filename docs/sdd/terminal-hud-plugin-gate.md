@@ -307,7 +307,7 @@ documented; P1-mini superseded (`292b73e` absorbed by P1-6);
 against a real Claude session; full-stack Electron QA evidence under
 `docs/qa/runs/<date>/p1-6/`.
 
-### 8.1 Run record — 2026-04-27 (Phase 1, P1-1 → P1-3 + integration coverage)
+### 8.1 Run record — 2026-04-27 (Phase 1, P1-1 → P1-5 + integration coverage)
 
 | Unit | Commit | Files | Tests | Notes |
 | ---- | ------ | ----- | ----- | ----- |
@@ -317,6 +317,8 @@ against a real Claude session; full-stack Electron QA evidence under
 | docs (§8 P1-4 absorption) | `1e4921b` | `docs/sdd/terminal-hud-plugin-gate.md` | — | Resolved after `events.ts` review: token + cost bundle into the same `proxy.sse.message_delta` / `proxy.sse.message_stop` variants; P1-4 absorbed |
 | P1-3 | `59dbf8e` | `electron/eventBus/providers/claudeProxyEmit.ts` + `__tests__/providers/claudeProxyEmit.spec.ts`; `electron/proxy/server.ts` (`processSseEvents` `message_delta` + `message_stop` branches) | +6 vitest | Helper packages canonical HudEvent variants; emit failures wrapped in try/catch so SSE passthrough is preserved |
 | P1-3 sanity (test-only) | `59ab1e0` | `electron/proxy/__tests__/serverEmit.integration.spec.ts` | +2 vitest | Production proxy code drives a mock SSE upstream → emit helpers spied; covers delta monotonicity (30 → 20 = 50−30), `request_id` consistency across delta+stop, and non-/v1/messages no-op |
+| docs (P1-5 entry) | `52346fc` | `docs/sdd/terminal-hud-plugin-gate.md` (§8 P1-5 row + §8.1 entry decision) | — | §6 entry rule satisfied: option A wiring pinned to proxy emit-site; cost delta strategy documented |
+| P1-5 | `e1e861c` | `electron/eventBus/sessionState.ts` (+`output_tokens_total` / `cost_usd_total` on `ActiveSession`; new `accumulateActiveSessionTokens`; reset-on-session-change + preserve-on-same-id semantics in `setActiveSession`) + `electron/eventBus/server.ts` (`SnapshotPayload.current_session` extended w/ optional zero-default totals) + `electron/proxy/server.ts` (`processSseEvents` `message_delta` / `message_stop` branches call accumulator alongside emit helpers; per-request `accumulatedOutputTokens` / `accumulatedCostUsd` baselines convert `cumulative_*` to per-event deltas) + `__tests__/sessionState.spec.ts` (+7 cases: zero-seed, N-event cumulation, session-change reset, same-id preservation, no-active no-op, stale-id drop, reset wipe) + `__tests__/serverEmit.integration.spec.ts` (accumulator-call invariants: 3 calls per request, token-delta sum = cumulative_output_tokens, single session id, no-op on non-/v1/messages) + `__tests__/providers/claude.spec.ts` (P1-mini `toEqual` → `toMatchObject` + explicit totals=0; metadata contract unchanged) | +7 vitest (sessionState) | Accumulator failures wrapped in try/catch so SSE passthrough is preserved; option A wiring as pinned 2026-04-27 |
 
 **Validation baseline (P1-3 close)**: typecheck PASS · lint clean on
 changed files (pre-existing errors in `scripts/check-pr-*.mjs`,
@@ -326,6 +328,13 @@ changed files (pre-existing errors in `scripts/check-pr-*.mjs`,
 `electron/proxy/mockServer.ts` left untouched per
 `commit-checklist.md`) · tests **316 passed | 3 skipped** (308 baseline
 → +8 net = 6 helper + 2 integration).
+
+**Validation baseline (P1-5 close — 2026-04-27)**: typecheck PASS ·
+lint clean on changed files · `npm run test` **323 passed | 3 skipped**
+(316 → +7 net = sessionState P1-5 suite). Accumulator-call invariants
+verified through `serverEmit.integration.spec.ts` (no new test added —
+existing two cases extended with sum-equals-cumulative + single-session
+assertions).
 
 **Deferred to P1-6 full-stack gate (§2)**: emit-frame visibility on
 the running Electron ws bus. The integration spec at `59ab1e0` covers
