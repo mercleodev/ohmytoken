@@ -5,8 +5,18 @@ import { WebSocket, WebSocketServer, type RawData } from "ws";
 import { matchEventType, type HudEvent } from "./events";
 
 export interface SnapshotPayload {
+  // P1-5 extends current_session with running token/cost totals. Both
+  // counters are optional + zero-default so the existing
+  // `packages/oht-cli/src/statusline.ts:22-23` reader (still on the
+  // pre-P1-5 shape until P1-6) keeps narrowing successfully.
   current_session:
-    | { provider: string; session_id: string; ctx_estimate: number }
+    | {
+        provider: string;
+        session_id: string;
+        ctx_estimate: number;
+        output_tokens_total?: number;
+        cost_usd_total?: number;
+      }
     | null;
 }
 

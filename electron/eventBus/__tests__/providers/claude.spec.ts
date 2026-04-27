@@ -31,12 +31,16 @@ describe("ClaudeProviderEmitter", () => {
 
     claudeProviderEmitter.start();
 
-    expect(getActiveSnapshot()).toEqual({
-      current_session: {
-        provider: "claude",
-        session_id: "sess-abc-1234567890",
-        ctx_estimate: 0,
-      },
+    // P1-5 added running totals (output_tokens_total, cost_usd_total)
+    // to the snapshot. The Claude emitter contract owns metadata
+    // (provider/session_id/ctx_estimate) and must seed totals to zero
+    // — covered by the dedicated suite in sessionState.spec.ts.
+    expect(getActiveSnapshot().current_session).toMatchObject({
+      provider: "claude",
+      session_id: "sess-abc-1234567890",
+      ctx_estimate: 0,
+      output_tokens_total: 0,
+      cost_usd_total: 0,
     });
   });
 
@@ -45,12 +49,12 @@ describe("ClaudeProviderEmitter", () => {
 
     claudeProviderEmitter.start();
 
-    expect(getActiveSnapshot()).toEqual({
-      current_session: {
-        provider: "claude",
-        session_id: "unknown",
-        ctx_estimate: 0,
-      },
+    expect(getActiveSnapshot().current_session).toMatchObject({
+      provider: "claude",
+      session_id: "unknown",
+      ctx_estimate: 0,
+      output_tokens_total: 0,
+      cost_usd_total: 0,
     });
   });
 
@@ -59,10 +63,12 @@ describe("ClaudeProviderEmitter", () => {
 
     handleClaudeHistoryEntry({ sessionId: "sess-new-9999999999" });
 
-    expect(getActiveSnapshot().current_session).toEqual({
+    expect(getActiveSnapshot().current_session).toMatchObject({
       provider: "claude",
       session_id: "sess-new-9999999999",
       ctx_estimate: 0,
+      output_tokens_total: 0,
+      cost_usd_total: 0,
     });
   });
 

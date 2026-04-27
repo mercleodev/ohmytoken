@@ -12,6 +12,7 @@ import {
   emitClaudeProxyMessageDelta,
   emitClaudeProxyMessageStop,
 } from "../eventBus/providers/claudeProxyEmit";
+import { accumulateActiveSessionTokens } from "../eventBus/sessionState";
 
 const DEFAULT_PORT = 8780;
 const ANTHROPIC_HOST = "api.anthropic.com";
@@ -110,6 +111,14 @@ const handleRequest = (
       `[proxy] ${req.method} ${req.url} | isMessages=${isMessages} | model=${meta.model}`,
     );
 
+    // P1-5 (gate doc §8) tracks the running baseline so we can convert
+    // per-request `cumulative_*` values into per-event deltas before
+    // forwarding them to `accumulateActiveSessionTokens`. This keeps
+    // sessionState's running totals incremental — no double counting on
+    // message_stop, no zero-jump during the live stream.
+    let accumulatedOutputTokens = 0;
+    let accumulatedCostUsd = 0;
+
     const processSseEvents = (
       events: import("./types").SseEvent[],
       source: string,
@@ -141,6 +150,19 @@ const handleRequest = (
               cumulativeOutputTokens: pending.output_tokens,
               cumulativeCostUsd: cumulativeCost,
             });
+            try {
+              accumulateActiveSessionTokens({
+                session_id: pending.session_id,
+                output_tokens_delta:
+                  pending.output_tokens - accumulatedOutputTokens,
+                cost_usd_delta: cumulativeCost - accumulatedCostUsd,
+              });
+              accumulatedOutputTokens = pending.output_tokens;
+              accumulatedCostUsd = cumulativeCost;
+            } catch {
+              // Accumulator failures must not break SSE passthrough
+              // (gate doc §8 P1-5).
+            }
           } catch {
             // Emit failures must not break SSE passthrough (gate doc §8 P1-3).
           }
@@ -164,6 +186,23 @@ const handleRequest = (
               finalOutputTokens: pending.output_tokens,
               finalCostUsd: cost,
             });
+            try {
+              // Top-up the accumulator with whatever residual the final
+              // calculation revealed beyond the last delta event (often
+              // zero for token, small for cost). Accumulator drops the
+              // call if the active session changed mid-request.
+              accumulateActiveSessionTokens({
+                session_id: pending.session_id,
+                output_tokens_delta:
+                  pending.output_tokens - accumulatedOutputTokens,
+                cost_usd_delta: cost - accumulatedCostUsd,
+              });
+              accumulatedOutputTokens = pending.output_tokens;
+              accumulatedCostUsd = cost;
+            } catch {
+              // Accumulator failures must not break SSE passthrough
+              // (gate doc §8 P1-5).
+            }
           } catch {
             // Emit failures must not break SSE passthrough (gate doc §8 P1-3).
           }

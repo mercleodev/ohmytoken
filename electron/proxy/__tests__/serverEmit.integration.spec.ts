@@ -11,6 +11,13 @@ vi.mock("../../eventBus/providers/claudeProxyEmit", () => ({
   emitClaudeProxyMessageDelta: vi.fn(),
   emitClaudeProxyMessageStop: vi.fn(),
 }));
+// P1-5: accumulator is wired next to the emit helpers in
+// processSseEvents. The integration test owns emit-shape assertions —
+// running totals are covered in sessionState.spec.ts — so we mock the
+// accumulator here to keep this suite focused on the proxy → emit hop.
+vi.mock("../../eventBus/sessionState", () => ({
+  accumulateActiveSessionTokens: vi.fn(),
+}));
 vi.mock("../usageWriter", () => ({ writeUsageLog: vi.fn() }));
 vi.mock("../scanWriter", () => ({ writeScanLog: vi.fn() }));
 vi.mock("../scanBuilder", () => ({ buildPromptScan: vi.fn(() => null) }));
@@ -19,6 +26,7 @@ import {
   emitClaudeProxyMessageDelta,
   emitClaudeProxyMessageStop,
 } from "../../eventBus/providers/claudeProxyEmit";
+import { accumulateActiveSessionTokens } from "../../eventBus/sessionState";
 import { startProxyServer, stopProxyServer } from "../server";
 
 const sseFrame = (event: string, data: unknown): string =>
@@ -131,6 +139,7 @@ describe("proxy server.ts — emit wiring (P1-3 integration)", () => {
     mockUpstream = await startMockUpstream();
     vi.mocked(emitClaudeProxyMessageDelta).mockClear();
     vi.mocked(emitClaudeProxyMessageStop).mockClear();
+    vi.mocked(accumulateActiveSessionTokens).mockClear();
   });
 
   afterEach(async () => {
@@ -174,6 +183,21 @@ describe("proxy server.ts — emit wiring (P1-3 integration)", () => {
     expect(stop.finalOutputTokens).toBe(50);
     expect(stop.finalCostUsd).toBeGreaterThanOrEqual(delta2.cumulativeCostUsd);
     expect(stop.requestId).toBe(delta1.requestId);
+
+    // P1-5: accumulator is invoked alongside each emit (2 deltas + 1
+    // stop = 3 calls). The token-delta sum across the calls must equal
+    // the final cumulative_output_tokens so sessionState totals can
+    // never drift above ground truth.
+    const accumulatorCalls = vi.mocked(accumulateActiveSessionTokens).mock
+      .calls;
+    expect(accumulatorCalls).toHaveLength(3);
+    const tokenSum = accumulatorCalls.reduce(
+      (sum, [args]) => sum + args.output_tokens_delta,
+      0,
+    );
+    expect(tokenSum).toBe(50);
+    const sessionIds = new Set(accumulatorCalls.map(([args]) => args.session_id));
+    expect(sessionIds.size).toBe(1); // single session id across the request
   });
 
   it("does not emit on non-/v1/messages traffic", async () => {
@@ -203,5 +227,6 @@ describe("proxy server.ts — emit wiring (P1-3 integration)", () => {
 
     expect(emitClaudeProxyMessageDelta).not.toHaveBeenCalled();
     expect(emitClaudeProxyMessageStop).not.toHaveBeenCalled();
+    expect(accumulateActiveSessionTokens).not.toHaveBeenCalled();
   });
 });
