@@ -41,6 +41,21 @@ import { getMemoryStatusForProvider } from "./memory/providerMemory";
 import { mergeConfig } from "./evidence/config";
 import { parseSystemFieldWithContent } from "./proxy/systemParser";
 import { insertEvidenceReport, recordWorkflowAction } from "./db/writer";
+import {
+  bootEventBus,
+  shutdownEventBus,
+  DEFAULT_EVENT_BUS_PORT,
+} from "./eventBus/boot";
+import type { EventBusServer } from "./eventBus/server";
+import { getActiveSnapshot } from "./eventBus/sessionState";
+import {
+  registerProviderEmitter,
+  startAllProviderEmitters,
+} from "./eventBus/providerEmitter";
+import {
+  claudeProviderEmitter,
+  handleClaudeHistoryEntry,
+} from "./eventBus/providers/claude";
 import type { EvidenceEngineConfig } from "./evidence/types";
 import { readFileContentsFromDisk } from "./utils/readFileContents";
 import { validateEvidenceConfig } from "./evidence/validateConfig";
@@ -87,6 +102,7 @@ let store: Store | null = null;
 let currentShortcut: string | null = null;
 let isQuitting = false;
 let evidenceEngine: EvidenceEngine | null = null;
+let eventBusServer: EventBusServer | null = null;
 let sessionFileWatcherCleanup: (() => void) | null = null;
 let switchSessionFileWatcher: ((sessionId: string) => void) | null = null;
 let tokenWatcherHandle: TokenFileWatcherHandle | null = null;
@@ -143,15 +159,21 @@ const DEFAULT_SHORTCUT = "CommandOrControl+Shift+T";
 
 const DEFAULT_PROXY_PORT = 8780;
 
+// QA hook (gate doc §8.1, P1-6 headed run): when `OMT_QA_SHOW=1` the
+// main window starts visible so agent-browser CDP screenshots aren't
+// frame-paused by macOS hiding the window. Has no effect in normal
+// tray-app flow because the env var is unset for end users.
+const isQaShow = process.env.OMT_QA_SHOW === "1";
+
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 400,
     height: 640,
     resizable: false,
-    show: isTest,
-    frame: isTest,
+    show: isTest || isQaShow,
+    frame: isTest || isQaShow,
     transparent: false,
-    skipTaskbar: !isTest,
+    skipTaskbar: !isTest && !isQaShow,
     backgroundColor: "#ffffff", // white background
     roundedCorners: true,
     hasShadow: true,
@@ -479,6 +501,26 @@ const initApp = async (): Promise<void> => {
 
   store = new Store();
 
+  // Boot the HUD event bus (loopback WebSocket) so later subsystems
+  // (proxy, watcher, providers) can emit without caring about lifecycle.
+  // HudConfig-driven settings arrive in P0-5; for now we use the design
+  // defaults (enabled, fixed port 8781). Failure to bind must not abort
+  // app startup — the bus is an optional overlay.
+  try {
+    eventBusServer = await bootEventBus({
+      port: DEFAULT_EVENT_BUS_PORT,
+      enabled: true,
+      getSnapshot: getActiveSnapshot,
+    });
+    if (eventBusServer) {
+      registerProviderEmitter(claudeProviderEmitter);
+      await startAllProviderEmitters();
+    }
+  } catch (err) {
+    console.error("[eventBus] boot failed:", err);
+    eventBusServer = null;
+  }
+
   // Initialize Evidence Scoring Engine
   const savedEvidenceConfig = store.get('evidenceConfig');
   evidenceEngine = new EvidenceEngine(savedEvidenceConfig ?? undefined);
@@ -689,6 +731,7 @@ const initApp = async (): Promise<void> => {
     startHistoryWatcher({
       onNewEntry: (entry) => {
         markProviderWatcherFired("claude");
+        handleClaudeHistoryEntry(entry);
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send("new-history-entry", entry);
         }
@@ -2276,4 +2319,8 @@ app.on("before-quit", () => {
   if (sessionFileWatcherCleanup) sessionFileWatcherCleanup();
   trayManager?.cleanup();
   stopProxyServer().catch((err) => console.error("Proxy cleanup error:", err));
+  shutdownEventBus(eventBusServer).catch((err) =>
+    console.error("[eventBus] shutdown error:", err),
+  );
+  eventBusServer = null;
 });

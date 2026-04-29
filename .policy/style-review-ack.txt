@@ -1,32 +1,14 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-21T23:10:19Z
-fingerprint=82355f479ef157febfb86c15e2f8311b57a99e612b241c84725a672a9efa3f01
+# updated_at_utc: 2026-04-25T00:53:48Z
+fingerprint=124928f825a617a0c5089dcacd206d73209ac15ac47502dd4f9a0766b57a3b43
 source=docs/sdd/style-checklist.md
-note=perf: batch session-activity IPC to fix notification flicker and dashboard slowdown
+note=P6-mini concept-verification: oht statusline replaces stub with ws snapshot reader. runStatusline connects to 127.0.0.1:port, subscribes ['*'], waits for snapshot, prints one line, exits. timeout 800ms default, OHT_EVENT_BUS_PORT env override. runCli now async; existing cli.spec.ts adapted to await. ws library added to oht-cli package deps. Smoke verified: 'oht statusline' (no app running) prints 'OhMyToken not running' exit 2.
 
-docs/qa/README.md
-docs/qa/runs/2026-04-21-7b16d20/baseline-dashboard.png
-docs/qa/runs/2026-04-21-7b16d20/dashboard-modal-dismissed.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-001-onboarding-initial.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-003-session-roots-db-empty.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-004-provider-enabled-done.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-005-walkthrough-claude.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-006-skip-to-dashboard.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-007-dashboard-after-done.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-008-dark-mode.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-009-codex-walkthrough.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-015-keyboard-focus.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-current-state.png
-docs/qa/runs/2026-04-21-7b16d20/TC-01-electron-onboarding.png
-docs/qa/runs/2026-04-21-7b16d20/TC-03-002-claude-tab.png
-docs/qa/runs/2026-04-21-7b16d20/TC-03-005-gemini-tab.png
-docs/qa/runs/2026-04-21-7b16d20/TC-03-settings-btn.png
-docs/qa/runs/2026-04-21-7b16d20/TC-04-prompt-detail.png
-docs/qa/runs/2026-04-21-7b16d20/TC-08-watcher-db-ui-flow.png
-docs/qa/runs/2026-04-21-7b16d20/TC-09-prompt-detail-evidence.png
-docs/qa/runs/2026-04-21-7b16d20/TC-10-060-claude-not-connected.png
-electron/main.ts
-electron/notificationPreload.ts
-scripts/qa-launch-electron.sh
-scripts/qa-launch-renderer.sh
-src/components/notification/useNotificationManager.ts
+docs/sdd/ohmytoken-sdd-lecture.html
+package-lock.json
+packages/oht-cli/package.json
+packages/oht-cli/src/__tests__/cli.spec.ts
+packages/oht-cli/src/__tests__/statusline.spec.ts
+packages/oht-cli/src/bin.ts
+packages/oht-cli/src/cli.ts
+packages/oht-cli/src/statusline.ts

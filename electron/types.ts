@@ -55,6 +55,7 @@ export type StoreData = {
   providers: ProviderConfig[];
   settings?: AppSettings;
   evidenceConfig?: import('./evidence/types').EvidenceEngineConfig;
+  hudConfig?: Partial<import('./hudConfig').HudConfig>;
 };
 
 export type ProxyStatus = {

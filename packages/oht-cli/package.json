@@ -1,0 +1,27 @@
+{
+  "name": "@ohmytoken/oht-cli",
+  "version": "0.0.1",
+  "private": true,
+  "description": "OhMyToken terminal HUD CLI (oht). Phase 0 scaffold under issue #301.",
+  "type": "module",
+  "main": "./dist/cli.js",
+  "bin": {
+    "oht": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/bin.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

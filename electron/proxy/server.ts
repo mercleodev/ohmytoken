@@ -8,6 +8,10 @@ import { writeUsageLog } from "./usageWriter";
 import { buildPromptScan } from "./scanBuilder";
 import { writeScanLog } from "./scanWriter";
 import { PendingUsage, PromptScan, ProxyStatus, UsageLogEntry } from "./types";
+import {
+  recordClaudeUsageDelta,
+  recordClaudeUsageFinal,
+} from "../eventBus/providers/claudeProxyEmit";
 
 const DEFAULT_PORT = 8780;
 const ANTHROPIC_HOST = "api.anthropic.com";
@@ -106,6 +110,14 @@ const handleRequest = (
       `[proxy] ${req.method} ${req.url} | isMessages=${isMessages} | model=${meta.model}`,
     );
 
+    // P1-5 (gate doc §8) tracks the running baseline so we can convert
+    // per-request `cumulative_*` values into per-event deltas before
+    // forwarding them to `accumulateActiveSessionTokens`. This keeps
+    // sessionState's running totals incremental — no double counting on
+    // message_stop, no zero-jump during the live stream.
+    let accumulatedOutputTokens = 0;
+    let accumulatedCostUsd = 0;
+
     const processSseEvents = (
       events: import("./types").SseEvent[],
       source: string,
@@ -121,7 +133,30 @@ const handleRequest = (
           );
         }
         if (evt.type === "message_delta") {
+          const prevOutputTokens = pending.output_tokens;
           pending.output_tokens = evt.output_tokens ?? 0;
+          try {
+            const cumulativeCost = calculateCost(
+              pending.model,
+              pending.input_tokens,
+              pending.output_tokens,
+              pending.cache_creation_input_tokens,
+              pending.cache_read_input_tokens,
+            );
+            recordClaudeUsageDelta({
+              requestId: pending.request_id,
+              sessionId: pending.session_id,
+              deltaOutputTokens: pending.output_tokens - prevOutputTokens,
+              cumulativeOutputTokens: pending.output_tokens,
+              deltaCostUsd: cumulativeCost - accumulatedCostUsd,
+              cumulativeCostUsd: cumulativeCost,
+            });
+            accumulatedOutputTokens = pending.output_tokens;
+            accumulatedCostUsd = cumulativeCost;
+          } catch {
+            // Emit/accumulator failures must not break SSE passthrough
+            // (gate doc §8 P1-3 + P1-5).
+          }
         }
         if (evt.type === "message_stop") {
           console.log(
@@ -135,6 +170,27 @@ const handleRequest = (
             pending.cache_creation_input_tokens,
             pending.cache_read_input_tokens,
           );
+
+          try {
+            // Top-up the accumulator with whatever residual the final
+            // calculation revealed beyond the last delta event (often
+            // zero for token, small for cost). Accumulator drops the
+            // call inside the helper if the active session changed
+            // mid-request.
+            recordClaudeUsageFinal({
+              requestId: pending.request_id,
+              sessionId: pending.session_id,
+              topUpOutputTokens: pending.output_tokens - accumulatedOutputTokens,
+              finalOutputTokens: pending.output_tokens,
+              topUpCostUsd: cost - accumulatedCostUsd,
+              finalCostUsd: cost,
+            });
+            accumulatedOutputTokens = pending.output_tokens;
+            accumulatedCostUsd = cost;
+          } catch {
+            // Emit/accumulator failures must not break SSE passthrough
+            // (gate doc §8 P1-3 + P1-5).
+          }
 
           const entry: UsageLogEntry = {
             timestamp: new Date().toISOString(),

@@ -21,7 +21,7 @@ all_files="$(
 
 all_files="$(
   printf '%s\n' "${all_files}" \
-    | grep -vE '^(e2e/screenshots/|playwright-report/|test-results/|scripts/(completion-gate|keyword-doc-router)\.sh$)' \
+    | grep -vE '^(\.policy/style-review-ack\.txt$|\.policy/frontend-review-report\.[0-9a-f]+\.md$|e2e/screenshots/|playwright-report/|test-results/|scripts/(completion-gate|keyword-doc-router)\.sh$)' \
       || true
 )"
 
