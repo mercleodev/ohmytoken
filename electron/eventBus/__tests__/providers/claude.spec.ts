@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../../watcher/historyWatcher", () => ({
   getLastActiveSessionId: vi.fn(),
+  readRecentHistory: vi.fn(),
 }));
 
 vi.mock("../../client", () => ({
@@ -9,7 +10,10 @@ vi.mock("../../client", () => ({
   resetEventBusClient: vi.fn(),
 }));
 
-import { getLastActiveSessionId } from "../../../watcher/historyWatcher";
+import {
+  getLastActiveSessionId,
+  readRecentHistory,
+} from "../../../watcher/historyWatcher";
 import { emit, resetEventBusClient } from "../../client";
 import {
   claudeProviderEmitter,
@@ -23,6 +27,8 @@ describe("ClaudeProviderEmitter", () => {
     resetSessionState();
     resetEventBusClient();
     vi.mocked(getLastActiveSessionId).mockReturnValue("");
+    vi.mocked(readRecentHistory).mockReset();
+    vi.mocked(readRecentHistory).mockReturnValue([]);
     vi.mocked(emit).mockClear();
   });
 
@@ -62,6 +68,34 @@ describe("ClaudeProviderEmitter", () => {
       output_tokens_total: 0,
       cost_usd_total: 0,
     });
+  });
+
+  // Boot-race fix (#301 follow-up dogfooding): when the bus starts before
+  // the user types a new prompt, history.jsonl has not been read yet and
+  // statusline shows "unknown" until the next entry lands. Eagerly seeding
+  // via readRecentHistory(1) closes that gap.
+  it("start() seeds session_id via readRecentHistory when watcher has none yet", () => {
+    let cachedId = "";
+    vi.mocked(getLastActiveSessionId).mockImplementation(() => cachedId);
+    vi.mocked(readRecentHistory).mockImplementation(() => {
+      cachedId = "sess-from-history-1234";
+      return [];
+    });
+
+    claudeProviderEmitter.start();
+
+    expect(readRecentHistory).toHaveBeenCalledWith(1);
+    expect(getActiveSnapshot().current_session?.session_id).toBe(
+      "sess-from-history-1234",
+    );
+  });
+
+  it("start() skips readRecentHistory when the watcher already knows the session", () => {
+    vi.mocked(getLastActiveSessionId).mockReturnValue("sess-already-known");
+
+    claudeProviderEmitter.start();
+
+    expect(readRecentHistory).not.toHaveBeenCalled();
   });
 
   it("handleClaudeHistoryEntry updates the active session when started", () => {
