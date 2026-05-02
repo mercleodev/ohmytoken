@@ -687,22 +687,21 @@ const initApp = async (): Promise<void> => {
           }
           console.log(`[SessionFileWatcher] AssistantTurn detected → streaming complete`);
 
-          // Import the current prompt from session file and send enriched scan
-          // History watcher only fires on history.jsonl change (session close),
-          // so we must import here for real-time notification data.
+          // Import the current prompt from session file and emit the enriched
+          // scan. History watcher only fires on history.jsonl change (session
+          // close), so we import here for real-time notification data.
+          //
+          // When importSinglePrompt returns null — the scan is already in DB —
+          // do NOT fall back to re-emitting the session's last scan (#297):
+          // that rebroadcast stale `new-prompt-scan` events on every
+          // subsequent AssistantTurn (observed `age=41216s` in logs), which
+          // drove the dashboard re-render storm and notification flicker.
           setTimeout(() => {
             try {
               const eventTs = typeof event.timestamp === 'number' ? event.timestamp : new Date(event.timestamp).getTime();
               const importedId = importSinglePrompt(event.sessionId, eventTs);
               if (importedId) {
                 emitScoredScan(importedId, "session");
-              } else {
-                // Fallback: emit the latest scan for the session
-                const scans = dbReader.getSessionPrompts(event.sessionId);
-                if (scans.length > 0) {
-                  const latest = scans[scans.length - 1];
-                  emitScoredScan(latest.request_id, "session");
-                }
               }
             } catch (e) {
               console.error("[SessionFileWatcher] Failed to import prompt for notification:", e);
