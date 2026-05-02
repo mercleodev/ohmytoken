@@ -9,6 +9,7 @@ import {
 } from "electron";
 import { Store } from "./store";
 import { CurrentUsageData, AppSettings } from "./types";
+import { DEFAULT_APP_SETTINGS, mergeAppSettings } from "./appSettings";
 import { getProviderTokenStatus } from "./providers/usage/credentialReader";
 import {
   ProviderUsageSnapshot,
@@ -17,24 +18,12 @@ import {
 import * as path from "path";
 import * as fs from "fs";
 
-const DEFAULT_SETTINGS: AppSettings = {
-  colors: {
-    low: "#4caf50", // green
-    medium: "#ff9800", // orange
-    high: "#f44336", // red
-  },
-  toggleInterval: 2000, // 2 seconds
-  refreshInterval: 5, // 5 minutes
-  shortcut: "CommandOrControl+Shift+T", // default shortcut
-  proxyPort: 8780, // default proxy port
-};
-
 // Minimum character width for tray title to prevent layout shifts
 // Covers: "     4%" to "   100%" (usage) and " 0h 05m" to "23h 59m" (time)
 const MIN_TITLE_WIDTH = 7;
 
 const getAssetsPath = () => {
-  const isDev = !require("electron").app.isPackaged;
+  const isDev = !app.isPackaged;
   if (isDev) {
     return path.join(__dirname, "..", "assets", "tray-icons");
   }
@@ -53,7 +42,7 @@ export class TrayManager {
   };
   private showingUsage = true;
   private toggleIntervalId: NodeJS.Timeout | null = null;
-  private settings: AppSettings = DEFAULT_SETTINGS;
+  private settings: AppSettings = DEFAULT_APP_SETTINGS;
   private loggedOut = false;
   private suppressBlurHide = false;
 
@@ -62,7 +51,7 @@ export class TrayManager {
   constructor(mainWindow: BrowserWindow, store: Store) {
     this.mainWindow = mainWindow;
     this.store = store;
-    this.settings = store.get("settings") || DEFAULT_SETTINGS;
+    this.settings = mergeAppSettings(store.get("settings"));
     this.staticIcon = this.loadStaticIcon();
   }
 
@@ -98,7 +87,7 @@ export class TrayManager {
   }
 
   updateSettings(settings: AppSettings): void {
-    this.settings = settings;
+    this.settings = mergeAppSettings(settings);
     this.restartIntervals();
     this.updateTrayDisplay();
   }
