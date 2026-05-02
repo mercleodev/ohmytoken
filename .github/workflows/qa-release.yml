@@ -45,7 +45,7 @@ jobs:
       - name: Build packaged macOS app
         run: |
           npm run ensure:electron
-          npm run build
+          npm run build -- --publish=never
 
       - name: Resolve release tag
         id: meta
