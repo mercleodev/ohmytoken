@@ -46,6 +46,7 @@ import {
   shutdownEventBus,
   DEFAULT_EVENT_BUS_PORT,
 } from "./eventBus/boot";
+import { isHudEnabled } from "./eventBus/config";
 import type { EventBusServer } from "./eventBus/server";
 import { getActiveSnapshot } from "./eventBus/sessionState";
 import {
@@ -506,10 +507,14 @@ const initApp = async (): Promise<void> => {
   // HudConfig-driven settings arrive in P0-5; for now we use the design
   // defaults (enabled, fixed port 8781). Failure to bind must not abort
   // app startup — the bus is an optional overlay.
+  // `OMT_HUD_ENABLED=0` is an emergency opt-out for users who hit a
+  // regression they suspect originates from HUD code paths, so the rest
+  // of the app (dashboard/tray/shortcut/watchers) keeps working while
+  // diagnosis happens out-of-band.
   try {
     eventBusServer = await bootEventBus({
       port: DEFAULT_EVENT_BUS_PORT,
-      enabled: true,
+      enabled: isHudEnabled(),
       getSnapshot: getActiveSnapshot,
     });
     if (eventBusServer) {
