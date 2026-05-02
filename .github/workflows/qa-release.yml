@@ -1,0 +1,132 @@
+name: qa-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "QA release tag, for example v0.1.0-qa.1"
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*-qa.*"
+      - "qa-*"
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    name: Build unsigned macOS QA release
+    runs-on: macos-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build packaged macOS app
+        run: |
+          npm run ensure:electron
+          npm run build
+
+      - name: Resolve release tag
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Prepare QA release assets
+        id: assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.meta.outputs.tag }}"
+          DMG="$(find release -maxdepth 1 -name 'OhMyToken-*.dmg' ! -name '*.blockmap' | sort | tail -n 1)"
+          ZIP="$(find release -maxdepth 1 -name 'OhMyToken-*.zip' ! -name '*.blockmap' | sort | tail -n 1)"
+
+          if [ -z "${DMG}" ]; then
+            echo "No DMG artifact found in release/." >&2
+            exit 1
+          fi
+          if [ -z "${ZIP}" ]; then
+            echo "No ZIP artifact found in release/." >&2
+            exit 1
+          fi
+
+          node scripts/generate-homebrew-cask.mjs \
+            --tag "${TAG}" \
+            --dmg "${DMG}" \
+            --output release/ohmytoken.rb
+
+          (
+            cd release
+            shasum -a 256 "$(basename "${DMG}")" "$(basename "${ZIP}")" ohmytoken.rb > SHA256SUMS.txt
+          )
+
+          echo "dmg=${DMG}" >> "${GITHUB_OUTPUT}"
+          echo "zip=${ZIP}" >> "${GITHUB_OUTPUT}"
+
+      - name: Publish GitHub QA prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          DMG: ${{ steps.assets.outputs.dmg }}
+          ZIP: ${{ steps.assets.outputs.zip }}
+        run: |
+          set -euo pipefail
+          NOTES_FILE="$(mktemp)"
+          cat > "${NOTES_FILE}" <<EOF
+          QA prerelease build from ${GITHUB_SHA}.
+
+          This build is unsigned and not notarized. It is intended for internal QA installs through the generated Homebrew cask, not for official public distribution.
+
+          Homebrew tap update:
+          1. Copy the attached ohmytoken.rb into the tap repository at Casks/ohmytoken.rb.
+          2. Commit and push the tap update.
+          3. Install from another Mac with:
+             brew tap ${GITHUB_REPOSITORY_OWNER}/tap
+             brew install --cask ohmytoken
+          EOF
+
+          ASSETS=(
+            "${DMG}"
+            "${ZIP}"
+            "release/ohmytoken.rb"
+            "release/SHA256SUMS.txt"
+          )
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${ASSETS[@]}" --clobber
+          else
+            gh release create "${TAG}" "${ASSETS[@]}" \
+              --target "${GITHUB_SHA}" \
+              --title "OhMyToken ${TAG} QA" \
+              --notes-file "${NOTES_FILE}" \
+              --prerelease \
+              --latest=false
+          fi

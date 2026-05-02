@@ -5,6 +5,8 @@
 - Use English only in all work artifacts.
 - Commit messages must be high-quality, consistent, and fully in English.
 - Do not include Korean in code comments, docs, PR descriptions, or reports.
+- User-facing assistant replies, explanations, and task reports may be in Korean
+  when the user explicitly requests Korean.
 
 ## Repository Identity Lock (Mandatory)
 

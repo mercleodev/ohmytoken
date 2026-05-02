@@ -21,6 +21,7 @@
     "test:db": "npm run ensure:node && vitest run --config vitest.config.electron.ts",
     "test:e2e": "npm run build:electron && npx playwright test",
     "test:e2e:headed": "npm run build:electron && npx playwright test --headed",
+    "release:qa:cask": "node scripts/generate-homebrew-cask.mjs",
     "postinstall": "electron-builder install-app-deps"
   },
   "author": "mercleodev",

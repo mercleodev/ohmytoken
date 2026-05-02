@@ -60,4 +60,5 @@ docs/decisions/
 !SECURITY.md
 !LICENSE
 !.github/**/*.md
+!docs/QA-HOMEBREW-DISTRIBUTION.md
 !docs/sdd/*.md

@@ -3,6 +3,7 @@ CONTRIBUTING.md
 OPEN-SOURCE-WORKFLOW.md
 SECURITY.md
 AGENTS.md
+docs/QA-HOMEBREW-DISTRIBUTION.md
 .github/pull_request_template.md
 .github/ISSUE_TEMPLATE/bug_report.md
 .github/ISSUE_TEMPLATE/feature_request.md
