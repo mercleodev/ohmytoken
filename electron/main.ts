@@ -504,13 +504,13 @@ const initApp = async (): Promise<void> => {
 
   // Boot the HUD event bus (loopback WebSocket) so later subsystems
   // (proxy, watcher, providers) can emit without caring about lifecycle.
-  // HudConfig-driven settings arrive in P0-5; for now we use the design
-  // defaults (enabled, fixed port 8781). Failure to bind must not abort
-  // app startup — the bus is an optional overlay.
-  // `OMT_HUD_ENABLED=0` is an emergency opt-out for users who hit a
-  // regression they suspect originates from HUD code paths, so the rest
-  // of the app (dashboard/tray/shortcut/watchers) keeps working while
-  // diagnosis happens out-of-band.
+  // HudConfig-driven settings arrive in P0-5; for now we route boot
+  // through `isHudEnabled()` which is **off by default during the
+  // v1.0.0 stabilization period** — the HUD only boots when
+  // `OMT_HUD_ENABLED=1` is set explicitly. Dashboard / tray / shortcut
+  // / notifications / watchers all remain functional regardless.
+  // Failure to bind must not abort app startup — the bus is an optional
+  // overlay.
   try {
     eventBusServer = await bootEventBus({
       port: DEFAULT_EVENT_BUS_PORT,
