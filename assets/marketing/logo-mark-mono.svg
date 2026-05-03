@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="OhMyToken">
+  <title>OhMyToken</title>
+  <g fill="currentColor">
+    <rect x="10" y="10" width="13" height="13" rx="2" opacity="0.2"/>
+    <rect x="25.5" y="10" width="13" height="13" rx="2" opacity="0.4"/>
+    <rect x="41" y="10" width="13" height="13" rx="2" opacity="0.6"/>
+    <rect x="10" y="25.5" width="13" height="13" rx="2" opacity="0.5"/>
+    <rect x="25.5" y="25.5" width="13" height="13" rx="2" opacity="1"/>
+    <rect x="41" y="25.5" width="13" height="13" rx="2" opacity="0.7"/>
+    <rect x="10" y="41" width="13" height="13" rx="2" opacity="0.3"/>
+    <rect x="25.5" y="41" width="13" height="13" rx="2" opacity="0.55"/>
+    <rect x="41" y="41" width="13" height="13" rx="2" opacity="0.4"/>
+  </g>
+</svg>
