@@ -21,7 +21,7 @@ A privacy-first usage monitor for **Claude**, **Codex**, and **Gemini**. Trackin
 
 Built with Electron + React. Runs locally on macOS.
 
-> **Why another tool?** [CodexBar](https://github.com/steipete/CodexBar) shows limits across many providers in your menu bar. [ccusage](https://github.com/ryoppippi/ccusage) is a CLI scanner. OhMyToken is a **full local dashboard** — heatmap, treemap, cache analysis, evidence scoring — focused on the three CLIs you spend most of your day in.
+> **What it is.** A **full local dashboard** for your AI coding agents — heatmap, treemap, cache analysis, evidence scoring. Focused on the three CLIs you spend most of your day in: Claude, Codex, and Gemini.
 
 ---
 
@@ -232,7 +232,6 @@ Outputs to `dist/` as a signed `.dmg` when signing credentials are configured. S
 ## Related
 
 - [ccusage](https://github.com/ryoppippi/ccusage) — CLI usage scanner. Inspiration for the local-first parsing approach.
-- [CodexBar](https://github.com/steipete/CodexBar) — macOS menu bar app for AI provider limits. Different focus (breadth across many providers); same privacy-first ethos.
 
 ## Looking for a Windows or Linux version?
 
@@ -242,7 +241,7 @@ OhMyToken is macOS-first today. The session watchers and proxy core are platform
 
 ## Credits
 
-- Inspired by [ccusage](https://github.com/ryoppippi/ccusage) and [CodexBar](https://github.com/steipete/CodexBar).
+- Inspired by [ccusage](https://github.com/ryoppippi/ccusage).
 - Built on [Electron](https://www.electronjs.org/), [React](https://react.dev/), and [Tailwind CSS](https://tailwindcss.com/).
 - Tray sprite art and brand mark: project-original.
 
