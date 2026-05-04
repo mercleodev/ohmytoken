@@ -13,6 +13,10 @@
   <img src="https://img.shields.io/badge/status-pre--1.0-orange" alt="status" />
 </p>
 
+<p align="center">
+  <img src="assets/marketing/screenshots/dashboard-hero.png" alt="OhMyToken dashboard — 3-provider unified view" width="800" />
+</p>
+
 A privacy-first usage monitor for **Claude**, **Codex**, and **Gemini**. Tracking starts the moment you run a CLI session. No login, no OAuth, no cloud sync. Connect a provider account later if you want plan quotas and reset timing on top.
 
 Built with Electron + React. Runs locally on macOS.
@@ -96,6 +100,29 @@ Deep tracking for the three CLIs developers actually use day-to-day.
 - **Radial usage gauges** — session / weekly / model quota with reset timing
 - **Credit balance** — API prepaid balance (granted / used / expiry)
 - **Plan identity** — Pro / Max / Team / Free / API
+
+---
+
+## Screenshots
+
+Captured from the local mock-data fixture. Real usage looks similar; the numbers come from your CLI sessions.
+
+<table>
+  <tr>
+    <td width="50%"><img src="assets/marketing/screenshots/feature-cost.png" alt="Cost breakdown — today and 30-day" /></td>
+    <td width="50%"><img src="assets/marketing/screenshots/feature-heatmap.png" alt="365-day prompt heatmap" /></td>
+  </tr>
+  <tr>
+    <td><strong>Cost breakdown.</strong> Today and rolling 30-day USD, broken down per provider.</td>
+    <td><strong>Prompt heatmap.</strong> 365-day calendar of every prompt you sent, color-graded by intensity.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="assets/marketing/screenshots/feature-recent-prompts.png" alt="Recent prompts feed" /></td>
+  </tr>
+  <tr>
+    <td colspan="2"><strong>Recent prompts.</strong> Tool-call counts, model badge, context fill % per prompt, with compaction markers.</td>
+  </tr>
+</table>
 
 ---
 
