@@ -62,6 +62,10 @@
  *     should be re-validated by the dead-CSS follow-up issue.
  *   - Does NOT resolve runtime concatenation (`base + "-" + variant`) without
  *     an override entry.
+ *   - Does NOT scan multi-line template literals — Phase B's literal-extraction
+ *     regexes deliberately stop at the first newline inside double/single
+ *     quotes. Multi-line template literals (rare for class composition) are
+ *     a known gap; add an override for any class that needs them.
  *   - Does NOT inspect node_modules or __tests__/.
  *   - Comments are stripped before token extraction to avoid false positives.
  *
@@ -79,6 +83,34 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
+
+/**
+ * Modifier words used by classifyOrphan() to detect compound-modifier
+ * patterns. These are class-name fragments that, when seen in isolation
+ * without a static consumer, are most likely composed at runtime via
+ * `className={`${base} ${modifier}`}`. Source: hand-curated from the current
+ * dashboard.css orphan list. Tuning cost: a false-negative here means a
+ * class is classified as `true-orphan-candidate` and therefore eligible for
+ * the U50 `/* UNUSED candidate * /` marker — which could lead to deletion
+ * of a runtime-composed class. Lift here so it is greppable.
+ */
+const MODIFIER_WORDS = new Set([
+  'active', 'inactive',
+  'open', 'closed',
+  'expanded', 'collapsed',
+  'enabled', 'disabled',
+  'loading', 'loaded',
+  'pending', 'ready', 'complete', 'completed',
+  'selected', 'unselected',
+  'hovered', 'focused',
+  'success', 'error', 'warning', 'info',
+  'clickable', 'editable', 'draggable',
+  'copied', 'saved',
+  'connected', 'disconnected', 'attention', 'optional',
+  'on', 'off',
+  'tracking', 'unverified', 'confirmed', 'likely',
+  'small', 'large',
+]);
 
 const DASHBOARD_CSS = join(ROOT, 'src/components/dashboard/dashboard.css');
 const NOTIFICATION_CSS = join(ROOT, 'src/components/notification/notification.css');
@@ -348,34 +380,15 @@ function classifyOrphan(className) {
   // like className={`${base} ${state}`} (state being "active", "open", etc.)
   if (!className.includes('-')) return 'compound-modifier-unresolved';
 
-  // Common modifier suffixes/prefixes: classes that LOOK like they will be
-  // composed with another base class at runtime.
-  const modifierWords = new Set([
-    'active', 'inactive',
-    'open', 'closed',
-    'expanded', 'collapsed',
-    'enabled', 'disabled',
-    'loading', 'loaded',
-    'pending', 'ready', 'complete', 'completed',
-    'selected', 'unselected',
-    'hovered', 'focused',
-    'success', 'error', 'warning', 'info',
-    'clickable', 'editable', 'draggable',
-    'copied', 'saved',
-    'connected', 'disconnected', 'attention', 'optional',
-    'on', 'off',
-    'tracking', 'unverified', 'confirmed', 'likely',
-    'small', 'large',
-  ]);
-
   // The class itself ends with `-<modifier>` or starts with `<modifier>-` AND
   // its base half exists as another class — strong signal of compound modifier.
   // Without checking against the dashboard set we use a softer heuristic:
-  //   any class whose final hyphen-separated segment is a modifier word.
+  //   any class whose final or first hyphen-separated segment is in
+  //   MODIFIER_WORDS (declared at module scope so it is greppable).
   const parts = className.split('-');
   const lastSegment = parts[parts.length - 1];
   const firstSegment = parts[0];
-  if (modifierWords.has(lastSegment) || modifierWords.has(firstSegment)) {
+  if (MODIFIER_WORDS.has(lastSegment) || MODIFIER_WORDS.has(firstSegment)) {
     return 'compound-modifier-unresolved';
   }
 
@@ -403,6 +416,12 @@ async function ensureExists(path) {
 // ---------- Main ----------
 
 async function main() {
+  // Capture timestamp once per run so every output file shows the same
+  // `Generated: ...` line. Without this, six calls to `GENERATED_AT`
+  // produce six slightly-different strings and committed-inventory diffs become
+  // noisier than the actual class-mapping changes.
+  const GENERATED_AT = new Date().toISOString();
+
   for (const f of [DASHBOARD_CSS, NOTIFICATION_CSS, APP_CSS, TOKEN_TREEMAP_CSS]) {
     await ensureExists(f);
   }
@@ -490,13 +509,13 @@ async function main() {
     .join('\n');
   await writeFile(
     join(OUT_DIR, 'selectors-ordered.txt'),
-    `# dashboard.css selectors in declaration order\n# Generated: ${new Date().toISOString()}\n# Total entries (including @-rules): ${dashboardSelectors.length}\n# Format: <line>\\t<selector>\n#\n# Use this as the cascade-order baseline. After moves, the relative order of\n# the moved selectors must be preserved in the final emitted Vite CSS bundle.\n# Cross-check with scripts/css-decomp-cascade-check.mjs against dist/.\n\n${orderedLines}\n`,
+    `# dashboard.css selectors in declaration order\n# Generated: ${GENERATED_AT}\n# Total entries (including @-rules): ${dashboardSelectors.length}\n# Format: <line>\\t<selector>\n#\n# Use this as the cascade-order baseline. After moves, the relative order of\n# the moved selectors must be preserved in the final emitted Vite CSS bundle.\n# Cross-check with scripts/css-decomp-cascade-check.mjs against dist/.\n\n${orderedLines}\n`,
     'utf8',
   );
 
   // ---- 2. class-consumers.json ----
   await writeJson(join(OUT_DIR, 'class-consumers.json'), {
-    generated: new Date().toISOString(),
+    generated: GENERATED_AT,
     source: 'src/components/dashboard/dashboard.css',
     sharedTargetDir: 'src/components/dashboard/_shared/',
     totalClasses: inventory.length,
@@ -520,7 +539,7 @@ async function main() {
   const lines = [];
   lines.push('# Dashboard CSS Class → Consumer Inventory');
   lines.push('');
-  lines.push(`- Generated: ${new Date().toISOString()}`);
+  lines.push(`- Generated: ${GENERATED_AT}`);
   lines.push('- Source: `src/components/dashboard/dashboard.css`');
   lines.push('- Shared target: `src/components/dashboard/_shared/`');
   lines.push(`- Total classes defined: **${inventory.length}**`);
@@ -614,7 +633,7 @@ async function main() {
   const prefixLines = [];
   prefixLines.push('# Dashboard CSS Prefix Summary');
   prefixLines.push('');
-  prefixLines.push(`- Generated: ${new Date().toISOString()}`);
+  prefixLines.push(`- Generated: ${GENERATED_AT}`);
   prefixLines.push(`- Distinct prefixes: ${prefixRows.length}`);
   prefixLines.push('- Shared target: `src/components/dashboard/_shared/`');
   prefixLines.push('');
@@ -669,7 +688,7 @@ async function main() {
     'Classes defined in `dashboard.css` AND in another stylesheet. Before P1 reconciliation, prove whether the colliding stylesheets ship in the same Vite bundle and whether any DOM node can match both rule families. Rename or delete only after that proof (per Codex v2 review non-blocking #1).',
   );
   collisionLines.push('');
-  collisionLines.push(`- Generated: ${new Date().toISOString()}`);
+  collisionLines.push(`- Generated: ${GENERATED_AT}`);
   collisionLines.push('');
   collisionLines.push('## dashboard.css vs notification.css');
   collisionLines.push('');
@@ -711,7 +730,7 @@ async function main() {
     '**Per Codex v2 review blocking #2: only `true-orphan-candidate` is eligible for the U50 `/* UNUSED candidate */` marker.** The other two buckets require manual verification before any deletion attempt because their static analysis is known to be incomplete.',
   );
   orphanLines.push('');
-  orphanLines.push(`- Generated: ${new Date().toISOString()}`);
+  orphanLines.push(`- Generated: ${GENERATED_AT}`);
   orphanLines.push(`- Total orphans: **${buckets.orphan.length}**`);
   orphanLines.push('');
 

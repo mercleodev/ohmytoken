@@ -161,8 +161,20 @@ function lcsLength(a, b) {
 }
 
 function selectorKey(sel) {
-  // Normalize whitespace; leave class/pseudo/combinator structure intact.
-  return sel.raw.replace(/\s+/g, ' ').trim();
+  // Canonicalize so a hand-written baseline (`.a > .b:HOVER`) and a Vite-
+  // minified bundle (`.a>.b:hover`) compare equal:
+  //   1. collapse whitespace around combinators (>, +, ~)
+  //   2. lowercase pseudo-classes / pseudo-elements
+  //   3. normalize remaining whitespace runs to a single space, trim
+  // Without this canonicalization, false negatives (FAIL where order is
+  // actually preserved) and false positives (silent PASS via empty
+  // intersection) are both reachable. Per gate doc §3 C7 this script is the
+  // contract authority for cascade preservation.
+  return sel.raw
+    .replace(/\s*([>+~])\s*/g, '$1')
+    .replace(/(::?[a-zA-Z][a-zA-Z0-9-]*)/g, (m) => m.toLowerCase())
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function findReorderings(baseline, bundle) {
@@ -174,6 +186,23 @@ function findReorderings(baseline, bundle) {
   const bundleSet = new Set(bundleKeys);
   const baselineComparable = baselineKeys.filter((k) => bundleSet.has(k));
   const bundleComparable = bundleKeys.filter((k) => baselineSet.has(k));
+
+  // Empty-intersection guard. With a misconfigured baseline path or after a
+  // catastrophic build (no dashboard.css selectors emitted at all), every
+  // count drops to zero and the LCS check would silently report PASS via
+  // `0 === 0 === 0`. Treat this as a configuration failure, not a passing
+  // cascade order.
+  if (baselineComparable.length === 0 || bundleComparable.length === 0) {
+    return {
+      ok: false,
+      comparableCount: 0,
+      lcs: 0,
+      bundleOnly: bundleKeys.length,
+      baselineOnly: baselineKeys.length,
+      firstDivergence: null,
+      emptyIntersection: true,
+    };
+  }
 
   const lcs = lcsLength(baselineComparable, bundleComparable);
   const ok = lcs === baselineComparable.length && lcs === bundleComparable.length;
@@ -262,6 +291,24 @@ async function main() {
   console.log(`Longest common subsequence:           ${result.lcs}`);
   console.log(`Selectors only in bundle (new files): ${result.bundleOnly}`);
   console.log(`Selectors only in baseline (removed): ${result.baselineOnly}`);
+
+  if (result.emptyIntersection) {
+    console.log('CASCADE ORDER: FAIL');
+    console.log(
+      'Empty selector intersection between baseline and bundle.',
+    );
+    console.log(
+      'Likely cause: misconfigured baseline path, wrong dist/ assets, or',
+    );
+    console.log(
+      'a build that emitted no dashboard.css selectors at all. Verify',
+    );
+    console.log(
+      `${relative(ROOT, BASELINE_PATH)} exists and \`npm run build\` produced`,
+    );
+    console.log(`  ${relative(ROOT, DIST_ASSETS)}/*.css with the expected content.`);
+    process.exit(1);
+  }
 
   if (result.ok) {
     console.log('CASCADE ORDER: PASS');
