@@ -170,6 +170,14 @@ function selectorKey(sel) {
   // actually preserved) and false positives (silent PASS via empty
   // intersection) are both reachable. Per gate doc §3 C7 this script is the
   // contract authority for cascade preservation.
+  //
+  // Known residual gaps (low likelihood for the current dashboard.css surface,
+  // but worth a follow-up if a future move touches them):
+  //   - whitespace inside attribute selectors is NOT stripped, so
+  //     `[data-x = "Foo"]` and `[data-x="Foo"]` would not equate.
+  //   - whitespace inside functional pseudo args is NOT stripped, so
+  //     `:not( .a )` and `:not(.a)` would not equate.
+  // If either pattern lands in dashboard.css, extend this canonicalizer.
   return sel.raw
     .replace(/\s*([>+~])\s*/g, '$1')
     .replace(/(::?[a-zA-Z][a-zA-Z0-9-]*)/g, (m) => m.toLowerCase())

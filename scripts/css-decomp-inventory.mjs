@@ -93,6 +93,12 @@ const ROOT = join(__dirname, '..');
  * class is classified as `true-orphan-candidate` and therefore eligible for
  * the U50 `/* UNUSED candidate * /` marker — which could lead to deletion
  * of a runtime-composed class. Lift here so it is greppable.
+ *
+ * Curation policy: each entry MUST be a class-name suffix actually observed
+ * in `dashboard.css`. Do not add speculative entries — a false positive (an
+ * unrelated class wrongly classified as a runtime modifier) hides a genuine
+ * orphan from U50 review. When tuning, run the inventory generator and
+ * verify the orphan diff before/after the change.
  */
 const MODIFIER_WORDS = new Set([
   'active', 'inactive',
