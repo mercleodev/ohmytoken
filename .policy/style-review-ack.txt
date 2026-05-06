@@ -1,10 +1,9 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-05T09:49:34Z
-fingerprint=80555717538d8dd1721ccd4bda3839f40d2986425248a73849568d44eb006d69
+# updated_at_utc: 2026-05-06T15:30:58Z
+fingerprint=734cf8fea38cdeb7c3df7efb0ffa73e30656caa273386e269815e2262e9ada48
 source=docs/sdd/style-checklist.md
-note=U0 v3 gate doc + allowlist (#330)
+note=P0.3 add QA visual-regression stabilization (env-gated): src/qa/stabilization.ts + preload + scripts/qa-launch-renderer.sh + qa-launch-electron.sh doc-block. URL-param path runtime-verified via agent-browser.
 
-.public-docs-allowlist
 docs/idea/landing-mockup.html
 docs/idea/logo-assets/favicon.svg
 docs/idea/logo-assets/logo-lockup.svg
@@ -14,9 +13,10 @@ docs/idea/logo-assets/preview.html
 docs/idea/logo-mockup.html
 docs/idea/quota-share-ux-mockup.html
 docs/idea/readme-mockup.html
-docs/sdd/css-decomp-inventory/class-consumers.json
-docs/sdd/css-decomp-inventory/selectors-ordered.txt
-docs/sdd/dashboard-css-decomposition-gate.md
+electron/preload.ts
 landing_preview.html
 readme_preview.html
-scripts/css-decomp-overrides.json
+scripts/qa-launch-electron.sh
+scripts/qa-launch-renderer.sh
+src/main.tsx
+src/qa/stabilization.ts
