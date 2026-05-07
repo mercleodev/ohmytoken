@@ -490,9 +490,11 @@ Every implementation unit (P1 onward) follows the per-unit cycle defined in §8.
 
 **Done criteria**: scripts and inventory artifacts committed; no `dashboard.css` modification; cascade-order baseline ready to be frozen at U1.
 
-### U1 — Visual baseline + cascade-order baseline freeze (NO code change)
+### U1 — Cascade-order baseline freeze (NO code change)
 
-**Why**: Goal G5 + Codex v2 #5. Pixel + cascade ground truth captured BEFORE any source change (P1 reconciliation is a source change and therefore follows U1).
+> **v3.1 split (2026-05-07)**: U1 was originally specified as "Visual baseline + cascade-order baseline freeze" in a single commit. Two preconditions for the visual half were not in the codebase at U1 land time: (a) a deterministic fixture seeder for `~/.claude/history.jsonl` and the SQLite DB, (b) the `OMT_QA_FAKE_NOW` / `OMT_QA_NO_ANIMATIONS` runtime stabilization knobs. P0.3 (`596f927`) landed (b). The fixture seeder (a) and the actual visual capture are split off into the new follow-on unit **U1-VR** (Visual Regression baseline) which follows U1 and precedes P1's pixel-diff requirement. The cascade-order baseline — the **mechanical contract authority** that every Tier 1-3 commit verifies against — is frozen in U1 unchanged. Total commit count becomes **55** (was 54): U0 + P0 + P0.1 + P0.2 + P0.3 + U1 + U1-VR + P1 + 36 Tier 1 + 8 Tier 2 + 3 Tier 3 + U49 + U50 + U51.
+
+**Why**: Goal G5 + Codex v2 #5. Cascade ground truth captured BEFORE any source change (P1 reconciliation is a source change and therefore follows U1). The visual ground truth is captured in U1-VR — which can land before or after the cascade-only U1 commit, but MUST land before any Tier 1 commit so the gate doc §6 P1-and-beyond visual diff requirement is satisfied.
 
 **Steps**:
 1. **Freeze the cascade-order baseline**:
@@ -501,43 +503,50 @@ Every implementation unit (P1 onward) follows the per-unit cycle defined in §8.
       docs/sdd/css-decomp-inventory/selectors-ordered.txt.U1
    ```
    `selectors-ordered.txt.U1` is **immutable until U49** and is the ground truth for `scripts/css-decomp-cascade-check.mjs`.
-2. **Stabilize fixtures and runtime** (Codex v1 #5 blocking):
-   - Set `HOME=/tmp/omt-qa-css-decomp-home` and seed deterministic fixtures in `~/.claude/history.jsonl` and the SQLite DB. Record the fixture contents under `docs/qa/runs/<date>/baseline/fixtures/`.
-   - Disable animations: set `prefers-reduced-motion` via Electron CLI or inject `* { animation-duration: 0s !important; transition-duration: 0s !important; }` into a QA-only `<style>` block (gated by `OMT_QA_NO_ANIMATIONS=1`).
-   - Freeze "time ago" labels: set `OMT_QA_FAKE_NOW=2026-05-05T12:00:00Z` so all relative timestamps render the same on every run.
-   - Force viewport: 1440 × 900, devicePixelRatio = 2 (Retina). Pin via `agent-browser open --viewport 1440x900 --dpr 2`.
-   - Wait for `[data-loaded="true"]` (or equivalent) before each screenshot to avoid skeleton/spinner flicker.
-   - Set system font-rendering deterministic: `Inter` only, no fallback fonts during QA.
-3. Build: `npm run build:electron`.
-4. Launch full-stack Electron with the QA HOME: `bash scripts/qa-launch-electron.sh` (script must respect `OMT_QA_*` env vars).
-5. Connect: `agent-browser connect 9222 --session css-decomp-baseline`.
-6. Capture the **canonical screens** (§9.1) under `docs/qa/runs/<date>/baseline/canonical/`:
-   - `dashboard-all-default.png`, `dashboard-all-default.snapshot.json`
-   - `dashboard-claude.png`, `dashboard-claude.snapshot.json`
-   - `dashboard-prompt-detail.png`, `dashboard-prompt-detail.snapshot.json`
-   - `settings-evidence.png`, `settings-evidence.snapshot.json`
-   - `settings-context-limit.png`, `settings-context-limit.snapshot.json`
-   - `backfill-dialog.png`, `backfill-dialog.snapshot.json`
-   - `first-run-onboarding.png`, `first-run-onboarding.snapshot.json`
-   - `notification-overlay.png`, `notification-overlay.snapshot.json` (full notification tree even though we don't move its CSS — guards against accidental cross-cut regression)
-   - `setup-guide.png`, `setup-guide.snapshot.json`
-   - `mcp-insights-expanded.png` and `mcp-insights-collapsed.png` (collapsible-state coverage)
-   - `memory-monitor-expanded.png` and `memory-monitor-collapsed.png`
-7. Also capture renderer-only twins via `bash scripts/qa-launch-renderer.sh` for offline regression where mock API suffices: `renderer-dashboard.png`, `renderer-settings.png`. These act as fast-path checks for Tier 1 units that don't need real-IPC data.
-8. **Bundle-side cascade baseline (NEW v3)**: run `npm run build` then `node scripts/css-decomp-cascade-check.mjs`. Expect PASS — at U1 nothing has been moved, so the bundle order matches the U1 baseline trivially. This run also confirms the cascade-check tooling works end-to-end before any unit needs it.
-9. Commit:
+2. **Bundle-side cascade sanity (was step 8)**: run `npm run build` then `node scripts/css-decomp-cascade-check.mjs`. Expect PASS — at U1 nothing has been moved, so the bundle order matches the U1 baseline trivially. This run also confirms the cascade-check tooling works end-to-end before any unit needs it.
+3. Commit:
    ```
-   chore(qa): U1 capture dashboard CSS decomposition visual + cascade baseline (#<issue>)
+   chore(qa): U1 freeze dashboard CSS cascade-order baseline (#<issue>)
 
    - Cascade baseline frozen: docs/sdd/css-decomp-inventory/selectors-ordered.txt.U1
+     (immutable until U49; ground truth for scripts/css-decomp-cascade-check.mjs).
+   - Bundle cascade-check executed once: PASS (sanity).
+   - Visual baseline deferred to U1-VR (depends on a fixture seeder; see §6 U1-VR).
+   ```
+
+**Done criteria**: `selectors-ordered.txt.U1` committed and immutable; cascade-check PASS dry-run on the unmodified bundle; no source changes to `dashboard.css` or any TSX. The visual half of the original U1 spec moves to U1-VR below.
+
+### U1-VR — Visual regression baseline (NO source change to dashboard.css)
+
+**Why**: Goal G5 + Codex v2 #5. Pixel ground truth captured BEFORE any Tier 1 commit so byte-equal regression has a reference. Split out of U1 in v3.1 because the fixture seeder + stabilization knobs were not in the codebase at U1 land time. P0.3 (`596f927`) lands the runtime stabilization (`OMT_QA_FAKE_NOW` + `OMT_QA_NO_ANIMATIONS` + `__qaConfig` preload bridge + `src/qa/stabilization.ts` + `scripts/qa-launch-renderer.sh`). U1-VR's prerequisite is a deterministic fixture seeder (`scripts/qa-seed-fixtures.sh` or equivalent — TBD) that populates `~/.claude/history.jsonl`, the SQLite DB, and any provider-config files so the dashboard renders the same populated data on every run.
+
+U1-VR MUST land before any Tier 1 commit. P1 (collision reconciliation) can run before U1-VR because P1's diff target is dashboard.css source — not pixel — and P1 itself emits no class moves. The Tier 1+ commits are the ones that need a pixel reference.
+
+**Steps**:
+1. **Build the fixture seeder** (if not already present): `scripts/qa-seed-fixtures.sh` — populates `$HOME/.claude/history.jsonl`, the SQLite DB, and `~/.codex/sessions/` so the dashboard renders the canonical populated states. Outputs deterministic fixture artifacts under `docs/qa/runs/<date>/baseline/fixtures/` for audit.
+2. **Stabilize fixtures and runtime**:
+   - `HOME=/tmp/omt-qa-css-decomp-home` (override `qa-launch-electron.sh` default via `HOME_OVERRIDE`); run the seeder against this HOME.
+   - `OMT_QA_FAKE_NOW=2026-05-05T12:00:00Z` and `OMT_QA_NO_ANIMATIONS=1` (already wired through `electron/preload.ts` → `__qaConfig` → `src/qa/stabilization.ts` after P0.3).
+   - Force viewport 1440 × 900, DPR 2 via `agent-browser open --viewport 1440x900 --dpr 2`.
+   - Wait for `[data-loaded="true"]` (or equivalent) before each screenshot.
+   - Inter font: relies on the project's existing `<link rel="stylesheet">` to Google Fonts. Verify Inter loaded via `agent-browser eval "[...document.fonts].some(f => f.family === 'Inter' && f.status === 'loaded')"` before screenshotting.
+3. Build: `npm run build:electron`.
+4. Launch full-stack Electron: `OMT_QA_FAKE_NOW=... OMT_QA_NO_ANIMATIONS=1 HOME_OVERRIDE=/tmp/omt-qa-css-decomp-home bash scripts/qa-launch-electron.sh`.
+5. Connect: `agent-browser connect 9222 --session css-decomp-baseline`.
+6. Capture the **canonical screens** under `docs/qa/runs/<date>/baseline/canonical/` — same 13 PNG + JSON pairs as the original U1 spec:
+   - `dashboard-all-default`, `dashboard-claude`, `dashboard-prompt-detail`, `settings-evidence`, `settings-context-limit`, `backfill-dialog`, `first-run-onboarding`, `notification-overlay` (cross-cut guard), `setup-guide`, `mcp-insights-expanded` + `mcp-insights-collapsed`, `memory-monitor-expanded` + `memory-monitor-collapsed`.
+7. Renderer-only twins via `bash scripts/qa-launch-renderer.sh` (using the canonical QA URL printed by the launcher): `renderer-dashboard.png`, `renderer-settings.png`. Fast-path checks for Tier 1 units that don't need real-IPC data.
+8. Commit:
+   ```
+   chore(qa): U1-VR capture dashboard CSS decomposition visual baseline (#<issue>)
+
    - Visual baseline: 13 canonical screens + 2 renderer-only twins under
      docs/qa/runs/<date>/baseline/. Stabilized via OMT_QA_FAKE_NOW,
      OMT_QA_NO_ANIMATIONS, viewport 1440x900 @ DPR 2, deterministic
-     fixtures.
-   - Bundle cascade-check executed once: PASS (sanity).
+     fixtures (see scripts/qa-seed-fixtures.sh).
    ```
 
-**Done criteria**: `selectors-ordered.txt.U1` committed and immutable; all canonical + per-unit baseline PNGs + snapshot JSONs committed; cascade-check PASS dry-run on the unmodified bundle; no source changes to `dashboard.css` or any TSX.
+**Done criteria**: 13 canonical PNG + JSON pairs and 2 renderer-only twins committed under `docs/qa/runs/<date>/baseline/`; fixture artifacts archived under `.../fixtures/`; all screenshots reproducible via `bash scripts/qa-seed-fixtures.sh && bash scripts/qa-capture-baseline.sh` (or equivalent).
 
 ### P1 — Cross-file class collision risk records + reconciliation (after U1)
 

@@ -1,8 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-06T15:30:58Z
-fingerprint=734cf8fea38cdeb7c3df7efb0ffa73e30656caa273386e269815e2262e9ada48
+# updated_at_utc: 2026-05-07T03:56:27Z
+fingerprint=5413826b55f6fba7ded46982f5ecfbd35d6b8d7aab82835fb931af2ec7767f68
 source=docs/sdd/style-checklist.md
-note=P0.3 add QA visual-regression stabilization (env-gated): src/qa/stabilization.ts + preload + scripts/qa-launch-renderer.sh + qa-launch-electron.sh doc-block. URL-param path runtime-verified via agent-browser.
+note=U1 freeze cascade-order baseline (selectors-ordered.txt.U1, immutable until U49) + gate doc v3.1 split (U1 mechanical now / U1-VR visual deferred). Cascade-check PASS sanity: 618/618 LCS.
 
 docs/idea/landing-mockup.html
 docs/idea/logo-assets/favicon.svg
@@ -13,10 +13,7 @@ docs/idea/logo-assets/preview.html
 docs/idea/logo-mockup.html
 docs/idea/quota-share-ux-mockup.html
 docs/idea/readme-mockup.html
-electron/preload.ts
+docs/sdd/css-decomp-inventory/selectors-ordered.txt.U1
+docs/sdd/dashboard-css-decomposition-gate.md
 landing_preview.html
 readme_preview.html
-scripts/qa-launch-electron.sh
-scripts/qa-launch-renderer.sh
-src/main.tsx
-src/qa/stabilization.ts
