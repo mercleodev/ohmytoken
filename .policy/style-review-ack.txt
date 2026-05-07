@@ -1,14 +1,19 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-25T00:53:48Z
-fingerprint=124928f825a617a0c5089dcacd206d73209ac15ac47502dd4f9a0766b57a3b43
+# updated_at_utc: 2026-05-07T03:56:27Z
+fingerprint=5413826b55f6fba7ded46982f5ecfbd35d6b8d7aab82835fb931af2ec7767f68
 source=docs/sdd/style-checklist.md
-note=P6-mini concept-verification: oht statusline replaces stub with ws snapshot reader. runStatusline connects to 127.0.0.1:port, subscribes ['*'], waits for snapshot, prints one line, exits. timeout 800ms default, OHT_EVENT_BUS_PORT env override. runCli now async; existing cli.spec.ts adapted to await. ws library added to oht-cli package deps. Smoke verified: 'oht statusline' (no app running) prints 'OhMyToken not running' exit 2.
+note=U1 freeze cascade-order baseline (selectors-ordered.txt.U1, immutable until U49) + gate doc v3.1 split (U1 mechanical now / U1-VR visual deferred). Cascade-check PASS sanity: 618/618 LCS.
 
-docs/sdd/ohmytoken-sdd-lecture.html
-package-lock.json
-packages/oht-cli/package.json
-packages/oht-cli/src/__tests__/cli.spec.ts
-packages/oht-cli/src/__tests__/statusline.spec.ts
-packages/oht-cli/src/bin.ts
-packages/oht-cli/src/cli.ts
-packages/oht-cli/src/statusline.ts
+docs/idea/landing-mockup.html
+docs/idea/logo-assets/favicon.svg
+docs/idea/logo-assets/logo-lockup.svg
+docs/idea/logo-assets/logo-mark-mono.svg
+docs/idea/logo-assets/logo-mark.svg
+docs/idea/logo-assets/preview.html
+docs/idea/logo-mockup.html
+docs/idea/quota-share-ux-mockup.html
+docs/idea/readme-mockup.html
+docs/sdd/css-decomp-inventory/selectors-ordered.txt.U1
+docs/sdd/dashboard-css-decomposition-gate.md
+landing_preview.html
+readme_preview.html

@@ -1,0 +1,20 @@
+{
+  "_comment": "Manual consumer overrides for classes the static analyzer cannot resolve. Used by scripts/css-decomp-inventory.mjs Phase C. Each entry maps a class name (without leading dot) to the list of consumer files (relative to repo root) that produce it at runtime. Add entries here ONLY when (a) the class is defined in dashboard.css, (b) the static analyzer reports zero or wrong consumers, and (c) the runtime usage is verified by reading the source. The follow-up dead-CSS issue should re-validate every entry here before deletion.",
+  "manualConsumers": {
+    "session-alert--info": [
+      "src/components/dashboard/SessionAlert.tsx"
+    ],
+    "session-alert--warning": [
+      "src/components/dashboard/SessionAlert.tsx"
+    ],
+    "session-alert--error": [
+      "src/components/dashboard/SessionAlert.tsx"
+    ],
+    "session-alert--success": [
+      "src/components/dashboard/SessionAlert.tsx"
+    ],
+    "cache-growth-chart--clickable": [
+      "src/components/dashboard/CacheGrowthChart.tsx"
+    ]
+  }
+}
