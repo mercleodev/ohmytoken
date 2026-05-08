@@ -36,7 +36,7 @@ release.
 Use a separate tap repository:
 
 ```text
-github.com/<owner>/homebrew-tap
+github.com/mercleodev/homebrew-tap
 ```
 
 The tap should contain:
@@ -53,7 +53,7 @@ release assets at that path, then commit and push the tap repository.
 On another Mac:
 
 ```bash
-brew tap <owner>/tap
+brew tap mercleodev/tap
 brew install --cask ohmytoken
 ```
 
