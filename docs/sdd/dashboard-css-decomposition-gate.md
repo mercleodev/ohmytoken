@@ -494,6 +494,8 @@ Every implementation unit (P1 onward) follows the per-unit cycle defined in §8.
 
 > **v3.1 split (2026-05-07)**: U1 was originally specified as "Visual baseline + cascade-order baseline freeze" in a single commit. Two preconditions for the visual half were not in the codebase at U1 land time: (a) a deterministic fixture seeder for `~/.claude/history.jsonl` and the SQLite DB, (b) the `OMT_QA_FAKE_NOW` / `OMT_QA_NO_ANIMATIONS` runtime stabilization knobs. P0.3 (`596f927`) landed (b). The fixture seeder (a) and the actual visual capture are split off into the new follow-on unit **U1-VR** (Visual Regression baseline) which follows U1 and precedes P1's pixel-diff requirement. The cascade-order baseline — the **mechanical contract authority** that every Tier 1-3 commit verifies against — is frozen in U1 unchanged. Total commit count becomes **55** (was 54): U0 + P0 + P0.1 + P0.2 + P0.3 + U1 + U1-VR + P1 + 36 Tier 1 + 8 Tier 2 + 3 Tier 3 + U49 + U50 + U51.
 
+> **v3.2 split (2026-05-08)**: U1-VR's Step 1 (fixture authoring + seeder script) is extracted into its own unit **P0.4** so the seeder can be reviewed and its determinism verified without entangling the agent-browser capture work. P0.4 lands BEFORE U1-VR; U1-VR Step 1 then becomes a one-line invocation of the seeder. Total commit count becomes **56** (was 55): U0 + P0 + P0.1 + P0.2 + P0.3 + U1 + P0.4 + U1-VR + P1 + 36 Tier 1 + 8 Tier 2 + 3 Tier 3 + U49 + U50 + U51.
+
 **Why**: Goal G5 + Codex v2 #5. Cascade ground truth captured BEFORE any source change (P1 reconciliation is a source change and therefore follows U1). The visual ground truth is captured in U1-VR — which can land before or after the cascade-only U1 commit, but MUST land before any Tier 1 commit so the gate doc §6 P1-and-beyond visual diff requirement is satisfied.
 
 **Steps**:
@@ -516,16 +518,66 @@ Every implementation unit (P1 onward) follows the per-unit cycle defined in §8.
 
 **Done criteria**: `selectors-ordered.txt.U1` committed and immutable; cascade-check PASS dry-run on the unmodified bundle; no source changes to `dashboard.css` or any TSX. The visual half of the original U1 spec moves to U1-VR below.
 
+### P0.4 — Deterministic fixture seeder for U1-VR (NO source change to dashboard.css)
+
+**Why**: Goal G5 + v3.1 split prereq (a). The visual baseline is only useful if it is **byte-reproducible** — re-running the capture on the same source must produce identical PNGs. P0.3 stabilized time and animations, but the dashboard reads its content from `~/.claude/history.jsonl`, a SQLite DB at `~/.checktoken/checktoken.db`, and `~/.codex/sessions/`, all of which drift in real user homes. P0.4 owns the seeder that materializes these into a temp `$HOME` so every U1-VR (and every future re-capture) sees identical input. P0.4 emits no screenshots; that is U1-VR's job. Splitting the seeder into its own commit lets it be reviewed for determinism + data-shape correctness before agent-browser capture work begins.
+
+**Decisions frozen at v3.2 entry (2026-05-08)**:
+- **Language**: Node.js ESM (`scripts/qa-seed-fixtures.mjs`). Justified because (i) `better-sqlite3` is the production SQLite driver and reusing it from Node guarantees the seeded DB is byte-identical to one the app would write itself; (ii) `~/.claude/history.jsonl` and `~/.claude/.credentials.json` are most cleanly authored from JS; (iii) avoids shelling-out to `sqlite3` CLI which may not be installed on every contributor machine.
+- **HOME profile granularity**: 4 profiles (not 13). One profile per *renderer state class*, not per screenshot:
+  - `populated` — covers `dashboard-all-default`, `dashboard-claude`, `dashboard-prompt-detail`, `settings-evidence`, `settings-context-limit`, `notification-overlay`, `mcp-insights-expanded`, `mcp-insights-collapsed`, `memory-monitor-expanded`, `memory-monitor-collapsed` (10 of 13 canonical screens). Multiple screens per HOME because they are reachable from the same data via in-app navigation; an agent-browser script will route between them.
+  - `first-run` — covers `first-run-onboarding` (empty HOME, first-run flag true).
+  - `setup-guide` — covers `setup-guide` (HOME with the first-run gate cleared but no provider configured).
+  - `backfill` — covers `backfill-dialog` (HOME with backfill-in-progress state primed).
+  This keeps capture time bounded (4 Electron launches, not 13) without compromising the variant fidelity each screenshot needs.
+- **Idempotency**: the seeder must be a pure function of (fixture name, target HOME path). Calling it twice on the same target HOME must produce byte-identical output (DB rows in declaration order, JSONL line order stable, file timestamps not embedded). The seeder writes to a fresh tmp HOME each run; it does NOT mutate the user's real `$HOME` and refuses to run if `HOME` was not overridden.
+- **Not in scope (deferred to U1-VR)**: actual `npm run build:electron`, agent-browser CDP connection, screenshot capture, renderer-twin URLs, and the `docs/qa/runs/<date>/baseline/` artifact tree.
+
+**Steps**:
+1. **Author `scripts/qa-fixtures.json`**: 4 fixture profile records. Each record has `{ name, description, history: [HistoryEntry], db: { prompts: [...], sessions: [...], evidence_reports: [...], ... }, credentials: { ... } | null, codexSessions: [...], appSettings: { ... }, firstRun: boolean }`. Fixed timestamps, sessionIds, model strings, costs — no clock-derived values, no random ids.
+2. **Implement `scripts/qa-seed-fixtures.mjs`**: Node ESM module. CLI: `node scripts/qa-seed-fixtures.mjs <fixture-name> --home <path>`. Loads `qa-fixtures.json`, picks the named profile, writes:
+   - `<home>/.claude/history.jsonl` (one record per line, in `qa-fixtures.json` array order)
+   - `<home>/.checktoken/checktoken.db` (better-sqlite3, applies migrations from `electron/db/schema.ts`, then INSERTs profile rows in array order)
+   - `<home>/.claude/.credentials.json` (if profile.credentials !== null)
+   - `<home>/.codex/sessions/<id>.json` per profile.codexSessions entry
+   - App settings JSON (path TBD from `electron/appSettings` source) per profile.appSettings
+   - Refuses to run if `<path>` is `~`, `$HOME`, `/`, or contains the user's real login shell home prefix.
+3. **Determinism check**: `bash scripts/qa-seed-fixtures-test.sh` (new) — for each of the 4 profiles, seed twice into two different temp HOMEs, then `diff -r` the two trees with hash-based byte comparison (since SQLite WAL files have to be checkpointed first). Asserts byte-identical output. The script is wired into `npm run test:fixtures` so CI can run it later (CI wiring is U1-VR's job, not P0.4's).
+4. **Audit manifest**: each seeder run drops `<home>/.fixture-manifest.json` with `{ fixture, schemaVersion, seededAt: "FIXED", inputHash: "<sha256 of qa-fixtures.json subset>", outputs: [<file paths>] }`. The `seededAt` is a constant string (not `new Date()`) so manifest hashes themselves are deterministic.
+5. **Commit**:
+   ```
+   chore(qa): P0.4 add deterministic fixture seeder for U1-VR (#<issue>)
+
+   - scripts/qa-fixtures.json (4 profiles: populated, first-run, setup-guide, backfill)
+   - scripts/qa-seed-fixtures.mjs (Node ESM, better-sqlite3 reuse)
+   - scripts/qa-seed-fixtures-test.sh (determinism check)
+   - docs/sdd/dashboard-css-decomposition-gate.md §14 P0.4 entry
+
+   Determinism check: 4/4 profiles byte-identical across two seeded HOMEs.
+   Frontend-review: PASS. Style-review: ack'd.
+   ```
+
+**Done criteria**:
+- `scripts/qa-fixtures.json` + `scripts/qa-seed-fixtures.mjs` + `scripts/qa-seed-fixtures-test.sh` committed.
+- Each of the 4 profiles seeds without error into a temp HOME.
+- `bash scripts/qa-seed-fixtures-test.sh` PASS (byte-identical re-seed).
+- §14 run record P0.4 entry filled.
+- No code changes to `electron/`, `src/`, or `dashboard.css`. The seeder may *import from* `electron/db/schema.ts` to avoid duplicating migration SQL (preferred), but does not modify it.
+
 ### U1-VR — Visual regression baseline (NO source change to dashboard.css)
 
-**Why**: Goal G5 + Codex v2 #5. Pixel ground truth captured BEFORE any Tier 1 commit so byte-equal regression has a reference. Split out of U1 in v3.1 because the fixture seeder + stabilization knobs were not in the codebase at U1 land time. P0.3 (`596f927`) lands the runtime stabilization (`OMT_QA_FAKE_NOW` + `OMT_QA_NO_ANIMATIONS` + `__qaConfig` preload bridge + `src/qa/stabilization.ts` + `scripts/qa-launch-renderer.sh`). U1-VR's prerequisite is a deterministic fixture seeder (`scripts/qa-seed-fixtures.sh` or equivalent — TBD) that populates `~/.claude/history.jsonl`, the SQLite DB, and any provider-config files so the dashboard renders the same populated data on every run.
+**Why**: Goal G5 + Codex v2 #5. Pixel ground truth captured BEFORE any Tier 1 commit so byte-equal regression has a reference. Split out of U1 in v3.1 because the fixture seeder + stabilization knobs were not in the codebase at U1 land time. P0.3 (`596f927`) lands the runtime stabilization (`OMT_QA_FAKE_NOW` + `OMT_QA_NO_ANIMATIONS` + `__qaConfig` preload bridge + `src/qa/stabilization.ts` + `scripts/qa-launch-renderer.sh`). P0.4 (v3.2 split) lands the deterministic fixture seeder. With both prereqs in, U1-VR is purely capture orchestration.
 
 U1-VR MUST land before any Tier 1 commit. P1 (collision reconciliation) can run before U1-VR because P1's diff target is dashboard.css source — not pixel — and P1 itself emits no class moves. The Tier 1+ commits are the ones that need a pixel reference.
 
 **Steps**:
-1. **Build the fixture seeder** (if not already present): `scripts/qa-seed-fixtures.sh` — populates `$HOME/.claude/history.jsonl`, the SQLite DB, and `~/.codex/sessions/` so the dashboard renders the canonical populated states. Outputs deterministic fixture artifacts under `docs/qa/runs/<date>/baseline/fixtures/` for audit.
-2. **Stabilize fixtures and runtime**:
-   - `HOME=/tmp/omt-qa-css-decomp-home` (override `qa-launch-electron.sh` default via `HOME_OVERRIDE`); run the seeder against this HOME.
+1. **Seed the four HOME profiles** (per §7 P0.4): for each of `populated`, `first-run`, `setup-guide`, `backfill`, run
+   ```bash
+   node scripts/qa-seed-fixtures.mjs <profile> --home /tmp/omt-qa-css-decomp-home-<profile>
+   ```
+   Capture the four HOME paths for the launches in step 4.
+2. **Stabilize runtime** (fixture stabilization is owned by P0.4):
+   - `HOME_OVERRIDE=/tmp/omt-qa-css-decomp-home-<profile>` per profile.
    - `OMT_QA_FAKE_NOW=2026-05-05T12:00:00Z` and `OMT_QA_NO_ANIMATIONS=1` (already wired through `electron/preload.ts` → `__qaConfig` → `src/qa/stabilization.ts` after P0.3).
    - Force viewport 1440 × 900, DPR 2 via `agent-browser open --viewport 1440x900 --dpr 2`.
    - Wait for `[data-loaded="true"]` (or equivalent) before each screenshot.
