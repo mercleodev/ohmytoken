@@ -62,3 +62,4 @@ docs/decisions/
 !.github/**/*.md
 !docs/QA-HOMEBREW-DISTRIBUTION.md
 !docs/sdd/*.md
+!docs/sdd/css-decomp-inventory/collision-records/*.md

@@ -15,3 +15,7 @@ docs/sdd/testing.md
 docs/sdd/style-checklist.md
 docs/sdd/terminal-hud-plugin-gate.md
 docs/sdd/dashboard-css-decomposition-gate.md
+docs/sdd/css-decomp-inventory/collision-records/loading.md
+docs/sdd/css-decomp-inventory/collision-records/cache.md
+docs/sdd/css-decomp-inventory/collision-records/cost-row.md
+docs/sdd/css-decomp-inventory/collision-records/legend-value.md

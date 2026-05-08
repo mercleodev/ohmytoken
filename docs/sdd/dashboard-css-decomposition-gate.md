@@ -1151,6 +1151,38 @@ risks collision; cascade-order is implicit; component → ownership invisible.
 
 (Append below as each unit completes. Implementer fills this in; do not let entries accumulate uncommitted — each unit's record lands in the same commit as its code change, or in the very next commit if the record was written post-validation.)
 
+#### Backfill — U0 → U1 (recorded 2026-05-08)
+
+Earlier units committed their work without filling §14. Reconstructed from `git log` for traceability:
+
+- **U0** docs-only — `e9d1847` `docs(dashboard-css): U0 open epic for dashboard.css decomposition`
+- **P0** inventory generator + baseline — `6808d83`
+- **P0.1** harden cascade-check + tighten generator — `9b702b6`
+- **P0.2** residual gap notes + JSDocs — `bbb20d1`
+- **P0.3 / U1-VR** QA visual-regression stabilization — `596f927`
+- **U1** cascade-order baseline freeze — `52d0d25`
+
+#### P1 — Cross-file class collision risk records
+
+- **Group**: cross-file collisions (no owner relocation)
+- **SHA**: (filled by commit step)
+- **Lines moved**: 0 (P1 is record-keeping; no CSS source delta)
+- **Consumers updated**: none
+- **Frontend review**: (filled after `scripts/run-frontend-review.sh`)
+- **Cascade-order check**: PASS — bundle re-emits selectors-ordered.txt.U1 1:1; LCS = 618/618 comparable selectors. Zero source delta in `dashboard.css`/`App.css`/`TokenTreemap.css`.
+- **Visual diff**: PASS by §11.4 implicit equivalence — P1 introduced no CSS source change, so `dist/assets/main-*.css` is byte-equivalent (modulo Vite content hash) to U1. agent-browser canonical-screen capture was waived per user approval (2026-05-08) on the same grounds. No exception risk recorded; resumes mandatory for U2+.
+- **Inventory rerun**: No delta vs U1 baseline. `selectors-ordered.txt`, `class-consumers.json`, `class-consumers.md`, `prefix-summary.md`, `orphans.md`, `collisions.md` are byte-identical to U1 outputs except for the generator timestamp on two files (reverted; not committed).
+- **Records**: `docs/sdd/css-decomp-inventory/collision-records/{loading,cache,cost-row,legend-value}.md`
+- **Decisions** (one per collision):
+  - `.loading` (`dashboard.css:587 .dashboard-refresh-btn.loading` ↔ `App.css:115 .icon-btn.loading`) — **BENIGN**. Both compound; mutually exclusive base classes; identical declarations. No DOM node carries both bases simultaneously.
+  - `.cache` (`dashboard.css:944 .prompt-card-journey-chip.cache` ↔ `TokenTreemap.css:586 .cost-row.cache`) — **BENIGN**. Compound; different bases; TokenTreemap.css is bundle-absent (see below).
+  - `.cost-row` (`dashboard.css:292` standalone ↔ `TokenTreemap.css:578` standalone) — **BENIGN**. Bundle overlap empty: TokenTreemap.css has zero importers in `src/` (no `TokenTreemap.tsx` component exists; no `import './TokenTreemap.css'` anywhere). Confirmed via `grep -rn "TokenTreemap" src` (no matches) and post-build inspection of `dist/assets/main-*.css` (TokenTreemap signatures `display:flex;…color:#ccc` and `margin-left:auto` absent).
+  - `.legend-value` (`dashboard.css:1887` standalone ↔ `TokenTreemap.css:204` standalone) — **BENIGN**. Same rationale as `.cost-row`.
+- **Notes / deferred items**:
+  - **Out-of-scope follow-up**: `src/components/TokenTreemap.css` is a fully orphaned stylesheet. Removal is deferred to a separate issue per §3 C4 (Pure Relocation Discipline) and is not in this epic's U50 scope (which targets `dashboard.css`-internal `/* UNUSED candidate */` markers only).
+  - Allowlist updated: `.gitignore` adds a `!docs/sdd/css-decomp-inventory/collision-records/*.md` negation, and `.public-docs-allowlist` lists the four new records explicitly.
+  - Per the v3 P1 commit-message template, the customary `… reconcile cross-file class collisions` wording was softened to `… record cross-file class collision classifications` because no reconciliation was needed.
+
 ---
 
 ## §15. Glossary & References
