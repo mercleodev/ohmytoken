@@ -1217,7 +1217,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### P0.4 — Deterministic fixture seeder for U1-VR
 
 - **Group**: U1-VR prereq (extracted in v3.2 split)
-- **SHA**: (filled by next commit)
+- **SHA**: `8a1b828`
 - **Lines moved**: 0 (P0.4 adds new files; no relocation, no source change to `electron/`/`src/`/`dashboard.css`)
 - **Files added**:
   - `scripts/qa-fixtures.json` — 4 fixture profiles (`populated`, `first-run`, `setup-guide`, `backfill`) with fixed timestamps, sessionIds, costs, and sortable record arrays. `fixedNow = 2026-05-05T12:00:00Z` aligned with `OMT_QA_FAKE_NOW`.
