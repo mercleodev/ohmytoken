@@ -496,6 +496,8 @@ Every implementation unit (P1 onward) follows the per-unit cycle defined in §8.
 
 > **v3.2 split (2026-05-08)**: U1-VR's Step 1 (fixture authoring + seeder script) is extracted into its own unit **P0.4** so the seeder can be reviewed and its determinism verified without entangling the agent-browser capture work. P0.4 lands BEFORE U1-VR; U1-VR Step 1 then becomes a one-line invocation of the seeder. Total commit count becomes **56** (was 55): U0 + P0 + P0.1 + P0.2 + P0.3 + U1 + P0.4 + U1-VR + P1 + 36 Tier 1 + 8 Tier 2 + 3 Tier 3 + U49 + U50 + U51.
 
+> **v3.3 split (2026-05-09)**: U1-VR's capture orchestration (per-screen navigation, headed Electron lifecycle, agent-browser CDP wiring, PNG + JSON sidecar emission) is extracted into its own unit **P0.5** so the orchestration logic can be reviewed for selector accuracy and process hygiene without entangling the actual baseline capture. P0.5 lands BEFORE U1-VR; U1-VR Steps 4-7 (build, launch, connect, capture) then become a single invocation of `bash scripts/qa-capture-baseline.sh --all`. Splitting was necessary because v3.2 assumed "capture orchestration" was trivial once seeder + stabilization were in; in practice each of the 13 canonical screens requires a documented selector + waitFor + variant flags map (`scripts/qa-capture-screen-map.json`), and per-profile process management cannot be inlined into U1-VR's commit body without losing reviewability. Total commit count becomes **57** (was 56): U0 + P0 + P0.1 + P0.2 + P0.3 + U1 + P0.4 + P0.5 + U1-VR + P1 + 36 Tier 1 + 8 Tier 2 + 3 Tier 3 + U49 + U50 + U51.
+
 **Why**: Goal G5 + Codex v2 #5. Cascade ground truth captured BEFORE any source change (P1 reconciliation is a source change and therefore follows U1). The visual ground truth is captured in U1-VR — which can land before or after the cascade-only U1 commit, but MUST land before any Tier 1 commit so the gate doc §6 P1-and-beyond visual diff requirement is satisfied.
 
 **Steps**:
@@ -564,31 +566,71 @@ Every implementation unit (P1 onward) follows the per-unit cycle defined in §8.
 - §14 run record P0.4 entry filled.
 - No code changes to `electron/`, `src/`, or `dashboard.css`. The seeder may *import from* `electron/db/schema.ts` to avoid duplicating migration SQL (preferred), but does not modify it.
 
+### P0.5 — Capture orchestrator for U1-VR (NO source change to dashboard.css)
+
+**Why**: Goal G5 + v3.3 split rationale. U1-VR's "purely capture orchestration" framing assumed the per-screen navigation map could be written inline into the U1-VR commit body. In practice, the 13 canonical screens declared in §9.1 each need a documented entry: which DOM selector triggers entry, which selector signals readiness, which variant flags (expanded / collapsed / claude-tab / etc.) gate the visual delta, which renderer-window vs notification-window CDP target the screen lives on. Coupled with per-profile process management (launch headed Electron in background → wait for CDP → connect → drive → capture → terminate cleanly), this is a non-trivial body of orchestration logic that benefits from being landed and reviewed before the baseline run consumes it. P0.5 owns this orchestrator; P0.5 emits no PNGs (those are U1-VR's job).
+
+**Decisions frozen at v3.3 entry (2026-05-09)**:
+- **Language**: Bash + `jq`. Justified because (i) the orchestrator is fundamentally process management (launch / connect / signal / kill) for which Bash plus `set -euo pipefail` is the idiomatic choice and consistent with the existing `scripts/qa-launch-electron.sh` + `scripts/qa-seed-fixtures-test.sh` family; (ii) per-screen navigation is a sequence of `agent-browser` CLI calls, not custom logic; (iii) `jq` is universally available on macOS dev machines and parses the screen-map cleanly. Node was rejected because spawning child processes with proper signal forwarding is more verbose than Bash for this use case.
+- **Screen-map declarativity**: The 13 screens + per-profile assignment live in `scripts/qa-capture-screen-map.json` — a single declarative document the orchestrator interprets. Each screen entry is `{ name, profile, target ("renderer" | "notification"), waitFor (selector or `[data-loaded="true"]` proxy), steps ([{click|wait|eval}, ...]), description }`. Screens that need clarification at U1-VR execution time carry an explicit `tbd: "<reason>"` field and are listed under "Known ambiguities" below; the executor at U1-VR time refines them in-place.
+- **Headedness**: Headed only (HEADLESS=1 mode is rejected). Rationale: Inter font rendering and macOS WebKit text-rasterization details differ between headed and headless Chromium; the U1 baseline must reflect the actual user-facing render path.
+- **Output layout**: `docs/qa/runs/<YYYY-MM-DD>/baseline/canonical/<screen-name>.png` + `<screen-name>.json` (sidecar) per canonical screen. Renderer-only twins under `docs/qa/runs/<YYYY-MM-DD>/baseline/renderer/` per §9. The sidecar is `{ profile, screen, fixedNow, viewport, dpr, agentBrowserVersion, electronVersion, capturedAtFixed: "FIXED" }`. `capturedAtFixed` is a constant string (not real time) so sidecars themselves are byte-stable across re-captures.
+- **Termination contract**: Each profile's headed Electron is launched via `run_in_background`-style subshell with PID captured. After the last screen for a profile is captured, the orchestrator sends `SIGTERM` then waits up to 10 s for graceful exit before `SIGKILL`. CDP port 9222 is reset between profiles so re-launch attaches to the fresh instance, never a stale tab.
+- **Determinism check (lite)**: P0.5 ships a `--dry-run` mode that validates the screen-map JSON shape, `jq` availability, and shell syntax (`bash -n`), but does NOT launch Electron or call `agent-browser`. The full headed determinism check (capture twice, byte-compare PNGs) is U1-VR's responsibility, not P0.5's, because it requires the full agent-browser + Electron stack.
+- **Not in scope (deferred to U1-VR)**: actual `npm run build:electron`, headed Electron launches per profile, agent-browser CDP attach, the 13 PNG captures, the 2 renderer-twin captures, the `docs/qa/runs/<date>/baseline/` artifact tree.
+
+**Known ambiguities documented in `qa-capture-screen-map.json` (to be refined by U1-VR executor)**:
+- `setup-guide` — §7 P0.4 declares this profile as "HOME with the first-run gate cleared but no provider configured", but in the current codebase `SetupGuide` only renders inside `FirstRunOnboarding` (post provider-pick "wait for session" stage). The screen-map's best-guess is `first-run` profile + nav step "click first-provider-card", marked `tbd:` for U1-VR-side verification.
+- `notification-overlay` — renders in a SEPARATE BrowserWindow (frameless, transparent). The map's `target` is `"notification"` and the CDP tab discovery uses `agent-browser tab` to find the notification window (URL contains `notification.html`). This is documented but not exercised by P0.5's dry-run.
+
+**Steps**:
+1. **Author `scripts/qa-capture-screen-map.json`**: 13 canonical screens + 2 renderer twins, each carrying `{ name, profile, target, waitFor, steps, description, tbd? }`. Versioned `"version": 1`.
+2. **Implement `scripts/qa-capture-baseline.sh`**: Bash + `jq`. Modes:
+   - `--list` — print the screen list grouped by profile.
+   - `--dry-run` — validate JSON shape (required keys per entry), `jq` present, `bash -n` syntax check on self.
+   - `<profile>` — seed → launch → connect → for each screen: navigate, wait, screenshot + emit sidecar JSON → terminate.
+   - `--all` — iterate all 4 profiles in series.
+   Both `--list` and `--dry-run` exit without launching Electron.
+3. **Self-validation**: run `bash scripts/qa-capture-baseline.sh --dry-run`; expect PASS (zero stderr, exit 0). Log artifact line for §14.
+4. **Commit**:
+   ```
+   chore(qa): P0.5 add U1-VR capture orchestrator (#<issue>)
+
+   - scripts/qa-capture-screen-map.json (13 canonical + 2 renderer-twin
+     screen definitions, per-profile assignment, declarative selector +
+     waitFor + steps map)
+   - scripts/qa-capture-baseline.sh (Bash + jq orchestrator with --list,
+     --dry-run, <profile>, --all modes; per-profile seed + launch +
+     connect + capture + terminate lifecycle)
+   - docs/sdd/dashboard-css-decomposition-gate.md v3.3 split note +
+     §7 P0.5 entry + §14 P0.5 entry
+
+   Dry-run: PASS. Headed capture deferred to U1-VR.
+   ```
+
+**Done criteria**:
+- `scripts/qa-capture-screen-map.json` + `scripts/qa-capture-baseline.sh` committed.
+- `bash scripts/qa-capture-baseline.sh --dry-run` PASS (exit 0).
+- `bash scripts/qa-capture-baseline.sh --list` enumerates 15 entries (13 canonical + 2 renderer).
+- §14 run record P0.5 entry filled.
+- No code changes to `electron/`, `src/`, or `dashboard.css`. No screenshots emitted.
+
 ### U1-VR — Visual regression baseline (NO source change to dashboard.css)
 
-**Why**: Goal G5 + Codex v2 #5. Pixel ground truth captured BEFORE any Tier 1 commit so byte-equal regression has a reference. Split out of U1 in v3.1 because the fixture seeder + stabilization knobs were not in the codebase at U1 land time. P0.3 (`596f927`) lands the runtime stabilization (`OMT_QA_FAKE_NOW` + `OMT_QA_NO_ANIMATIONS` + `__qaConfig` preload bridge + `src/qa/stabilization.ts` + `scripts/qa-launch-renderer.sh`). P0.4 (v3.2 split) lands the deterministic fixture seeder. With both prereqs in, U1-VR is purely capture orchestration.
+**Why**: Goal G5 + Codex v2 #5. Pixel ground truth captured BEFORE any Tier 1 commit so byte-equal regression has a reference. Split out of U1 in v3.1 because the fixture seeder + stabilization knobs were not in the codebase at U1 land time. P0.3 (`596f927`) lands the runtime stabilization (`OMT_QA_FAKE_NOW` + `OMT_QA_NO_ANIMATIONS` + `__qaConfig` preload bridge + `src/qa/stabilization.ts` + `scripts/qa-launch-renderer.sh`). P0.4 (v3.2 split) lands the deterministic fixture seeder. P0.5 (v3.3 split) lands the capture orchestrator + screen-map. With all three prereqs in, U1-VR is the actual baseline run.
 
 U1-VR MUST land before any Tier 1 commit. P1 (collision reconciliation) can run before U1-VR because P1's diff target is dashboard.css source — not pixel — and P1 itself emits no class moves. The Tier 1+ commits are the ones that need a pixel reference.
 
 **Steps**:
-1. **Seed the four HOME profiles** (per §7 P0.4): for each of `populated`, `first-run`, `setup-guide`, `backfill`, run
+1. **Run the orchestrator** (per §7 P0.5):
    ```bash
-   node scripts/qa-seed-fixtures.mjs <profile> --home /tmp/omt-qa-css-decomp-home-<profile>
+   bash scripts/qa-capture-baseline.sh --all
    ```
-   Capture the four HOME paths for the launches in step 4.
-2. **Stabilize runtime** (fixture stabilization is owned by P0.4):
-   - `HOME_OVERRIDE=/tmp/omt-qa-css-decomp-home-<profile>` per profile.
-   - `OMT_QA_FAKE_NOW=2026-05-05T12:00:00Z` and `OMT_QA_NO_ANIMATIONS=1` (already wired through `electron/preload.ts` → `__qaConfig` → `src/qa/stabilization.ts` after P0.3).
-   - Force viewport 1440 × 900, DPR 2 via `agent-browser open --viewport 1440x900 --dpr 2`.
-   - Wait for `[data-loaded="true"]` (or equivalent) before each screenshot.
-   - Inter font: relies on the project's existing `<link rel="stylesheet">` to Google Fonts. Verify Inter loaded via `agent-browser eval "[...document.fonts].some(f => f.family === 'Inter' && f.status === 'loaded')"` before screenshotting.
-3. Build: `npm run build:electron`.
-4. Launch full-stack Electron: `OMT_QA_FAKE_NOW=... OMT_QA_NO_ANIMATIONS=1 HOME_OVERRIDE=/tmp/omt-qa-css-decomp-home bash scripts/qa-launch-electron.sh`.
-5. Connect: `agent-browser connect 9222 --session css-decomp-baseline`.
-6. Capture the **canonical screens** under `docs/qa/runs/<date>/baseline/canonical/` — same 13 PNG + JSON pairs as the original U1 spec:
-   - `dashboard-all-default`, `dashboard-claude`, `dashboard-prompt-detail`, `settings-evidence`, `settings-context-limit`, `backfill-dialog`, `first-run-onboarding`, `notification-overlay` (cross-cut guard), `setup-guide`, `mcp-insights-expanded` + `mcp-insights-collapsed`, `memory-monitor-expanded` + `memory-monitor-collapsed`.
-7. Renderer-only twins via `bash scripts/qa-launch-renderer.sh` (using the canonical QA URL printed by the launcher): `renderer-dashboard.png`, `renderer-settings.png`. Fast-path checks for Tier 1 units that don't need real-IPC data.
-8. Commit:
+   This iterates the 4 HOME profiles, seeding each (P0.4), launching headed Electron with stabilization vars (P0.3), connecting agent-browser via CDP, driving the 13 canonical screens declared in `scripts/qa-capture-screen-map.json` (P0.5), capturing PNG + JSON sidecar per screen under `docs/qa/runs/<YYYY-MM-DD>/baseline/canonical/`, and terminating Electron between profiles.
+2. **Resolve any `tbd:` annotations** in `qa-capture-screen-map.json` left by P0.5 (e.g., `setup-guide` precise nav). Update the map in-place; commit map fixes alongside the U1-VR baseline if a screen needed re-shooting.
+3. **Renderer-only twins**: `bash scripts/qa-launch-renderer.sh` (using the canonical QA URL printed by the launcher). The same orchestrator handles `renderer-dashboard.png` and `renderer-settings.png` under `docs/qa/runs/<YYYY-MM-DD>/baseline/renderer/` when invoked with `--renderer-only`. Fast-path checks for Tier 1 units that don't need real-IPC data.
+4. **Determinism (mandatory)**: re-run `bash scripts/qa-capture-baseline.sh --all` into a separate output directory and assert the 13 + 2 PNG hashes are byte-identical to the first run. If any screen drifts, escalate per §11.4.
+5. Commit:
    ```
    chore(qa): U1-VR capture dashboard CSS decomposition visual baseline (#<issue>)
 
@@ -1238,6 +1280,27 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - The seeder does not touch `electron/db/schema.ts`. It only imports `runMigrations` so any future migration added to the schema is automatically applied to seeded DBs without changing this script.
   - The `electron/db/schema.ts` import works under Node 22 via default `--experimental-strip-types`. The performance warning emitted by Node is benign.
   - **Out-of-scope follow-up**: U1-VR will add `npm run build:electron`, `qa-launch-electron.sh` invocation per profile, and `agent-browser` capture wiring. The 13 canonical screens map to fixture profiles as documented in §7 P0.4 (see "HOME profile granularity").
+
+#### P0.5 — Capture orchestrator for U1-VR
+
+- **Group**: U1-VR prereq (extracted in v3.3 split)
+- **SHA**: (filled by next commit)
+- **Lines moved**: 0 (P0.5 adds new files; no relocation, no source change to `electron/`/`src/`/`dashboard.css`)
+- **Files added**:
+  - `scripts/qa-capture-screen-map.json` — declarative screen-map. 13 canonical entries (`dashboard-all-default`, `dashboard-claude`, `dashboard-prompt-detail`, `settings-evidence`, `settings-context-limit`, `backfill-dialog`, `first-run-onboarding`, `notification-overlay`, `setup-guide`, `mcp-insights-expanded`, `mcp-insights-collapsed`, `memory-monitor-expanded`, `memory-monitor-collapsed`) + 2 renderer-only twins (`renderer-dashboard`, `renderer-settings`). Each entry carries `{ name, profile, target, waitFor, steps, description, tbd? }`. Screens with unresolved navigation paths (`setup-guide`, `notification-overlay`) are flagged with explicit `tbd:` annotations for U1-VR-side refinement.
+  - `scripts/qa-capture-baseline.sh` — Bash + jq orchestrator. Modes: `--list` (enumerate screens grouped by profile), `--dry-run` (validate JSON shape + jq presence + `bash -n` self-check; no Electron launch), `<profile>` (full capture for one profile), `--all` (4 profiles in series). Per-profile lifecycle: seed via `qa-seed-fixtures.mjs` → launch `qa-launch-electron.sh` in background subshell with PID capture → `agent-browser connect 9222` → drive screens per map → `screenshot` to PNG + emit sidecar JSON → `SIGTERM` (10 s grace) → `SIGKILL` if needed.
+- **Dry-run**: PASS — `bash scripts/qa-capture-baseline.sh --dry-run` exits 0; `--list` enumerates 15 entries.
+- **Frontend review**: (filled after `scripts/run-frontend-review.sh`)
+- **Cascade-order check**: N/A — no CSS source change.
+- **Visual diff**: N/A — no PNGs emitted. P0.5 only emits orchestration infrastructure; the actual baseline is U1-VR.
+- **Inventory rerun**: not run (no `dashboard.css` change).
+- **Notes / design points**:
+  - Bash + jq chosen over Node because process management (launch / SIGTERM / SIGKILL / PID tracking) is more idiomatic in Bash and consistent with the existing `qa-launch-electron.sh` + `qa-seed-fixtures-test.sh` family.
+  - Screen-map is intentionally declarative — no orchestrator code branches on screen name. Adding a new screen is a JSON edit, not a script edit.
+  - Sidecar JSON `capturedAtFixed` is a constant string (not real time) so sidecars themselves are byte-stable across re-captures, satisfying the U1-VR determinism step.
+  - `notification-overlay` and `setup-guide` carry `tbd:` annotations because their precise navigation path could not be confirmed without a headed run. The U1-VR executor refines the map in-place during baseline capture.
+  - `--dry-run` cannot exercise headed launch / agent-browser / Electron. The full headed determinism check is U1-VR's responsibility (per §7 P0.5 Decisions).
+  - **Out-of-scope follow-up**: U1-VR consumes this orchestrator end-to-end. P1 (collision reconciliation) does NOT need this orchestrator since its diff target is source, not pixel.
 
 #### P1 — Cross-file class collision risk records
 

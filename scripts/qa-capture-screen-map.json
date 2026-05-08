@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "fakeNow": "2026-05-05T12:00:00Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "dpr": 2
+  },
+  "cdpPort": 9222,
+  "screens": [
+    {
+      "name": "dashboard-all-default",
+      "profile": "populated",
+      "target": "renderer",
+      "waitFor": ".dashboard .provider-tab.active",
+      "steps": [],
+      "description": "Dashboard boots with the 'All' provider tab selected (default after boot when populated profile is seeded)."
+    },
+    {
+      "name": "dashboard-claude",
+      "profile": "populated",
+      "target": "renderer",
+      "waitFor": ".dashboard .provider-tab.active",
+      "steps": [
+        { "type": "click", "selector": ".provider-tabs .provider-tab:nth-child(2)" },
+        { "type": "wait", "selector": ".provider-tabs .provider-tab:nth-child(2).active" }
+      ],
+      "description": "Dashboard with Claude provider tab selected (second tab; TAB_ORDER: all, claude, codex, gemini)."
+    },
+    {
+      "name": "dashboard-prompt-detail",
+      "profile": "populated",
+      "target": "renderer",
+      "waitFor": ".prompt-detail-view",
+      "steps": [
+        { "type": "click", "selector": ".recent-sessions-row:first-of-type" },
+        { "type": "wait", "selector": ".session-detail-view" },
+        { "type": "click", "selector": ".session-detail-view .prompt-card:first-of-type" },
+        { "type": "wait", "selector": ".prompt-detail-view" }
+      ],
+      "description": "Prompt detail view, reached by clicking the first session in Recent Sessions, then the first prompt within that session.",
+      "tbd": "Selectors `.recent-sessions-row` and `.prompt-card` are best-guesses from CSS class inventory; verify against actual rendered DOM at U1-VR run-time and adjust if RecentSessions/SessionDetailView use different class names."
+    },
+    {
+      "name": "settings-evidence",
+      "profile": "populated",
+      "target": "renderer",
+      "waitFor": ".evidence-settings-panel",
+      "steps": [
+        { "type": "click", "selector": ".recent-sessions-row:first-of-type" },
+        { "type": "wait", "selector": ".session-detail-view" },
+        { "type": "click", "selector": ".session-detail-view .prompt-card:first-of-type" },
+        { "type": "wait", "selector": ".prompt-detail-view" },
+        { "type": "click", "selector": ".prompt-detail-view .evidence-settings-btn" },
+        { "type": "wait", "selector": ".evidence-settings-panel" }
+      ],
+      "description": "Evidence scoring settings popup, opened from PromptDetailView via the `.evidence-settings-btn` (PromptDetailView.tsx:203)."
+    },
+    {
+      "name": "settings-context-limit",
+      "profile": "populated",
+      "target": "renderer",
+      "waitFor": ".context-limit-settings",
+      "steps": [
+        { "type": "click", "selector": ".dashboard-settings-btn" },
+        { "type": "wait", "selector": ".context-limit-settings" }
+      ],
+      "description": "Context limit settings popup, opened from main dashboard via the ⚙ `.dashboard-settings-btn` (UsageDashboard.tsx:305)."
+    },
+    {
+      "name": "backfill-dialog",
+      "profile": "backfill",
+      "target": "renderer",
+      "waitFor": ".backfill-dialog",
+      "steps": [],
+      "description": "BackfillDialog overlay renders on dashboard boot when backfillStatus IPC reports incomplete state with count > 0 (UsageDashboard.tsx:60-76, 394). Backfill profile primes the DB into this state."
+    },
+    {
+      "name": "first-run-onboarding",
+      "profile": "first-run",
+      "target": "renderer",
+      "waitFor": ".first-run-screen",
+      "steps": [],
+      "description": "FirstRunOnboarding renders when getFirstRunStatus IPC returns isFirstRun=true (App.tsx:32-39). first-run profile primes appSettings.firstRun=true."
+    },
+    {
+      "name": "notification-overlay",
+      "profile": "populated",
+      "target": "notification",
+      "waitFor": ".notif-overlay .notification-card",
+      "steps": [
+        { "type": "tab-switch", "urlPattern": "*notification*" },
+        { "type": "eval", "script": "window.__qaTriggerNotification && window.__qaTriggerNotification()" },
+        { "type": "wait", "selector": ".notif-overlay .notification-card" }
+      ],
+      "description": "Notification overlay renders in a separate frameless BrowserWindow (src/notification-main.tsx) when a new prompt scan event fires. Cross-cut guard for §9.1.",
+      "tbd": "(1) The notification window may not be visible until at least one notification arrives; the seed currently does not synthesize an `onNewPromptScan` event. P0.5 leaves the eval step as a placeholder for U1-VR-side wiring (e.g., add a `__qaTriggerNotification` test hook in src/notification-main.tsx OR fire an IPC event from the main process). (2) Confirm the notification window's URL pattern via `agent-browser tab` at run-time."
+    },
+    {
+      "name": "setup-guide",
+      "profile": "first-run",
+      "target": "renderer",
+      "waitFor": ".setup-guide.first-run-walkthrough .setup-guide-title",
+      "steps": [
+        { "type": "wait", "selector": ".first-run-screen" },
+        { "type": "click", "selector": ".first-run-provider-card:first-of-type" },
+        { "type": "wait", "selector": ".first-run-walkthrough .setup-guide" }
+      ],
+      "description": "SetupGuide stage of FirstRunOnboarding (post provider-pick 'wait for session' stage). FirstRunOnboarding.tsx:148-149.",
+      "tbd": "§7 P0.4 declares setup-guide profile as 'HOME with the first-run gate cleared but no provider configured', but the codebase only renders SetupGuide inside FirstRunOnboarding's wait-stage. Best-guess interpretation here is first-run profile + click-to-enter-wait-stage. Verify selector `.first-run-provider-card` matches the actual rendered ProviderPickerCards classnames at U1-VR run-time. Alternative: add a non-first-run rendering path for SetupGuide before U1-VR (out of P0.5 scope)."
+    },
+    {
+      "name": "mcp-insights-expanded",
+      "profile": "populated",
+      "target": "renderer",
+      "waitFor": ".mcp-card .collapsible.open",
+      "steps": [
+        { "type": "scroll-to", "selector": ".mcp-card" }
+      ],
+      "description": "McpInsightsCard with default expanded=true state (McpInsightsCard.tsx:71). Variant captures the open card layout."
+    },
+    {
+      "name": "mcp-insights-collapsed",
+      "profile": "populated",
+      "target": "renderer",
+      "waitFor": ".mcp-card .cost-chevron:not(.expanded)",
+      "steps": [
+        { "type": "scroll-to", "selector": ".mcp-card" },
+        { "type": "click", "selector": ".mcp-card-header button[aria-expanded='true']" },
+        { "type": "wait", "selector": ".mcp-card .cost-chevron:not(.expanded)" }
+      ],
+      "description": "McpInsightsCard collapsed via the header toggle button. Variant captures the closed-card chevron + condensed layout."
+    },
+    {
+      "name": "memory-monitor-expanded",
+      "profile": "populated",
+      "target": "renderer",
+      "waitFor": ".memory-card .collapsible.open",
+      "steps": [
+        { "type": "scroll-to", "selector": ".memory-card" }
+      ],
+      "description": "MemoryMonitorCard with default expanded=true state (MemoryMonitorCard.tsx:145)."
+    },
+    {
+      "name": "memory-monitor-collapsed",
+      "profile": "populated",
+      "target": "renderer",
+      "waitFor": ".memory-card .memory-chevron:not(.expanded)",
+      "steps": [
+        { "type": "scroll-to", "selector": ".memory-card" },
+        { "type": "click", "selector": ".memory-card .memory-header" },
+        { "type": "wait", "selector": ".memory-card .memory-chevron:not(.expanded)" }
+      ],
+      "description": "MemoryMonitorCard collapsed via the header click handler (MemoryMonitorCard.tsx:207)."
+    },
+    {
+      "name": "renderer-dashboard",
+      "profile": "renderer-only",
+      "target": "renderer-only",
+      "waitFor": ".dashboard",
+      "steps": [],
+      "description": "Renderer-only twin: dashboard view rendered against mock window.api (src/main.tsx). Captured via qa-launch-renderer.sh + agent-browser open <vite-url>. Fast-path check for Tier 1 units that don't need real IPC data."
+    },
+    {
+      "name": "renderer-settings",
+      "profile": "renderer-only",
+      "target": "renderer-only",
+      "waitFor": ".settings-section",
+      "steps": [
+        { "type": "eval", "script": "window.api.onNavigateTo && window.api.onNavigateTo._trigger && window.api.onNavigateTo._trigger('settings')" }
+      ],
+      "description": "Renderer-only twin: settings view. Reached by triggering the onNavigateTo('settings') IPC mock (App.tsx:53-62).",
+      "tbd": "The mock window.api in src/main.tsx may or may not expose a _trigger hook for onNavigateTo. Verify at U1-VR run-time and add the test hook to main.tsx if missing (out of P0.5 scope)."
+    }
+  ]
+}
