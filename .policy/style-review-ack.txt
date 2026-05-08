@@ -1,9 +1,7 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-08T16:06:32Z
-fingerprint=1dd34221fb156451c9e64047463727fe1f54ddf3605f5bdaf658e04d10640a53
+# updated_at_utc: 2026-05-08T16:07:28Z
+fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
 source=docs/sdd/style-checklist.md
-note=P0.5 capture orchestrator + screen-map for U1-VR. Bash + jq orchestrator with --list / --dry-run / <profile> / --all / --renderer-only modes. Dry-run PASS (15 entries, 4 with TBD annotations).
+note=P0.5 §14 SHA backfill — replace placeholder with 9d50575. Docs-only, no code change.
 
 docs/sdd/dashboard-css-decomposition-gate.md
-scripts/qa-capture-baseline.sh
-scripts/qa-capture-screen-map.json

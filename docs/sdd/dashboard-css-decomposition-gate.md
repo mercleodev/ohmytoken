@@ -1284,7 +1284,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### P0.5 — Capture orchestrator for U1-VR
 
 - **Group**: U1-VR prereq (extracted in v3.3 split)
-- **SHA**: (filled by next commit)
+- **SHA**: `9d50575`
 - **Lines moved**: 0 (P0.5 adds new files; no relocation, no source change to `electron/`/`src/`/`dashboard.css`)
 - **Files added**:
   - `scripts/qa-capture-screen-map.json` — declarative screen-map. 13 canonical entries (`dashboard-all-default`, `dashboard-claude`, `dashboard-prompt-detail`, `settings-evidence`, `settings-context-limit`, `backfill-dialog`, `first-run-onboarding`, `notification-overlay`, `setup-guide`, `mcp-insights-expanded`, `mcp-insights-collapsed`, `memory-monitor-expanded`, `memory-monitor-collapsed`) + 2 renderer-only twins (`renderer-dashboard`, `renderer-settings`). Each entry carries `{ name, profile, target, waitFor, steps, description, tbd? }`. Screens with unresolved navigation paths (`setup-guide`, `notification-overlay`) are flagged with explicit `tbd:` annotations for U1-VR-side refinement.
