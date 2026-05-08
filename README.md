@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/marketing/screenshots/dashboard-hero.png" alt="OhMyToken dashboard — 3-provider unified view" width="800" />
+  <img src="assets/marketing/demo/ohmytoken-overview-demo.gif" alt="OhMyToken live usage notification demo" width="800" />
 </p>
 
 A privacy-first usage monitor for **Claude**, **Codex**, and **Gemini**. Tracking starts the moment you run a CLI session. No login, no OAuth, no cloud sync. Connect a provider account later if you want plan quotas and reset timing on top.
@@ -105,22 +105,24 @@ Deep tracking for the three CLIs developers actually use day-to-day.
 
 ## Screenshots
 
-Captured from the local mock-data fixture. Real usage looks similar; the numbers come from your CLI sessions.
+Captured from real local usage views.
 
 <table>
   <tr>
-    <td width="50%"><img src="assets/marketing/screenshots/feature-cost.png" alt="Cost breakdown — today and 30-day" /></td>
-    <td width="50%"><img src="assets/marketing/screenshots/feature-heatmap.png" alt="365-day prompt heatmap" /></td>
+    <td width="50%"><img src="assets/marketing/screenshots/usage-overview-compact-suggested.png" alt="Usage overview showing compact suggested state" /></td>
+    <td width="50%"><img src="assets/marketing/screenshots/session-context-usage.png" alt="Session detail with context usage and cache growth" /></td>
   </tr>
   <tr>
-    <td><strong>Cost breakdown.</strong> Today and rolling 30-day USD, broken down per provider.</td>
-    <td><strong>Prompt heatmap.</strong> 365-day calendar of every prompt you sent, color-graded by intensity.</td>
+    <td><strong>Compact suggested.</strong> The dashboard flags prompts approaching the context limit.</td>
+    <td><strong>Session context.</strong> Context usage, cache growth, compaction markers, and prompt details.</td>
   </tr>
   <tr>
-    <td colspan="2"><img src="assets/marketing/screenshots/feature-recent-prompts.png" alt="Recent prompts feed" /></td>
+    <td width="50%"><img src="assets/marketing/screenshots/context-files-memory.png" alt="Prompt detail showing context files, memory, and actions" /></td>
+    <td width="50%"><img src="assets/marketing/screenshots/live-notification-insights.png" alt="Live notification overlay with reusable script warning and per-turn charts" /></td>
   </tr>
   <tr>
-    <td colspan="2"><strong>Recent prompts.</strong> Tool-call counts, model badge, context fill % per prompt, with compaction markers.</td>
+    <td><strong>Context and memory.</strong> Injected files, memory entries, and action details in one prompt view.</td>
+    <td><strong>Live notification insights.</strong> A streaming prompt card surfaces reusable-script candidates, context files, session health, and per-turn context, cost, and output trends.</td>
   </tr>
 </table>
 
