@@ -1,13 +1,7 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-08T13:59:23Z
-fingerprint=f480dbc55b3db40f2ab1f4e1d944c48d6c95bcd655b71cd8e51291796240f54a
+# updated_at_utc: 2026-05-08T14:02:47Z
+fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
 source=docs/sdd/style-checklist.md
-note=P1 cross-file class collision risk records: 4 BENIGN classifications, no CSS source change. DOC-02: 4 new collision-record markdowns added to .public-docs-allowlist + .gitignore negation. DOC-03: all docs in English, gate-doc §14 entry matches commit.
+note=P1 §14 SHA backfill — replace placeholder with 1dbd444. Docs-only, no allowlist or content change.
 
-.gitignore
-.public-docs-allowlist
-docs/sdd/css-decomp-inventory/collision-records/cache.md
-docs/sdd/css-decomp-inventory/collision-records/cost-row.md
-docs/sdd/css-decomp-inventory/collision-records/legend-value.md
-docs/sdd/css-decomp-inventory/collision-records/loading.md
 docs/sdd/dashboard-css-decomposition-gate.md

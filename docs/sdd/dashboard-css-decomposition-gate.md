@@ -1165,7 +1165,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### P1 — Cross-file class collision risk records
 
 - **Group**: cross-file collisions (no owner relocation)
-- **SHA**: (filled by commit step)
+- **SHA**: `1dbd444`
 - **Lines moved**: 0 (P1 is record-keeping; no CSS source delta)
 - **Consumers updated**: none
 - **Frontend review**: (filled after `scripts/run-frontend-review.sh`)
