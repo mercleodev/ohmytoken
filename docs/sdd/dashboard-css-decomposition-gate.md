@@ -1214,6 +1214,31 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 - **P0.3 / U1-VR** QA visual-regression stabilization — `596f927`
 - **U1** cascade-order baseline freeze — `52d0d25`
 
+#### P0.4 — Deterministic fixture seeder for U1-VR
+
+- **Group**: U1-VR prereq (extracted in v3.2 split)
+- **SHA**: (filled by next commit)
+- **Lines moved**: 0 (P0.4 adds new files; no relocation, no source change to `electron/`/`src/`/`dashboard.css`)
+- **Files added**:
+  - `scripts/qa-fixtures.json` — 4 fixture profiles (`populated`, `first-run`, `setup-guide`, `backfill`) with fixed timestamps, sessionIds, costs, and sortable record arrays. `fixedNow = 2026-05-05T12:00:00Z` aligned with `OMT_QA_FAKE_NOW`.
+  - `scripts/qa-seed-fixtures.mjs` — Node ESM seeder. Imports `runMigrations` from `electron/db/schema.ts` directly via Node 22 type-stripping; SQLite DB seeded with `journal_mode=DELETE` for byte-stable comparisons. CLI: `<profile> --home <path>` and `--list`. Refuses to run if `--home` looks like the user's real `$HOME` (rejects paths under `~/Library`, `~/Documents`, `~/Desktop` and any path that doesn't contain `qa` or live under `/tmp`/`/private/tmp`/`/var/folders`).
+  - `scripts/qa-seed-fixtures-test.sh` — determinism check. Seeds each profile twice into two distinct temp HOMEs and asserts byte-identical hashes. Special-cases the SQLite DB by dumping table contents (sorted-key JSON per row) instead of comparing raw page bytes — content determinism is what U1-VR cares about.
+- **Determinism check**: PASS — 4/4 profiles produced byte-identical hashes across two re-seeds.
+  - `populated`: PASS
+  - `first-run`: PASS
+  - `setup-guide`: PASS
+  - `backfill`: PASS
+- **Frontend review**: (filled after `scripts/run-frontend-review.sh`)
+- **Cascade-order check**: N/A — no CSS source change.
+- **Visual diff**: N/A — no CSS source change. P0.4 only emits seeder infrastructure; pixel capture itself is U1-VR.
+- **Inventory rerun**: not run (no `dashboard.css` change).
+- **Notes / design points**:
+  - Manifest paths are HOME-relative (not absolute) so `.fixture-manifest.json` itself is byte-identical across HOMEs. Original implementation embedded absolute `--home` paths and was caught by the determinism check.
+  - SQLite WAL mode is intentionally disabled in the seeder (`journal_mode=DELETE`) so the on-disk DB is a single file at the end. The production app will switch back to WAL on first open, which is fine because U1-VR captures *images of a running app*, not the DB file.
+  - The seeder does not touch `electron/db/schema.ts`. It only imports `runMigrations` so any future migration added to the schema is automatically applied to seeded DBs without changing this script.
+  - The `electron/db/schema.ts` import works under Node 22 via default `--experimental-strip-types`. The performance warning emitted by Node is benign.
+  - **Out-of-scope follow-up**: U1-VR will add `npm run build:electron`, `qa-launch-electron.sh` invocation per profile, and `agent-browser` capture wiring. The 13 canonical screens map to fixture profiles as documented in §7 P0.4 (see "HOME profile granularity").
+
 #### P1 — Cross-file class collision risk records
 
 - **Group**: cross-file collisions (no owner relocation)

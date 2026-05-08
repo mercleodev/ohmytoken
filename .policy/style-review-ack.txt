@@ -1,7 +1,10 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-08T14:02:47Z
-fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
+# updated_at_utc: 2026-05-08T15:19:55Z
+fingerprint=053ce92e37ae7a1f6f243f3f695dd6a8abb10ad20fbc2a55752822b2189275e9
 source=docs/sdd/style-checklist.md
-note=P1 §14 SHA backfill — replace placeholder with 1dbd444. Docs-only, no allowlist or content change.
+note=P0.4 fixture seeder. DOC-02: no new public-md (gate-doc edit only; existing allowlist entry covers it). DOC-03: all docs/code in English. Frontend-review: OK with fixes (6 minor, none blocking; tracked as follow-up). Determinism check: 4/4 PASS.
 
 docs/sdd/dashboard-css-decomposition-gate.md
+scripts/qa-fixtures.json
+scripts/qa-seed-fixtures-test.sh
+scripts/qa-seed-fixtures.mjs
