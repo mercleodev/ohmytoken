@@ -1,7 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-08T16:07:28Z
-fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
+# updated_at_utc: 2026-05-08T16:49:43Z
+fingerprint=159ff47d402bbc459c07cc969b5b8db68f29dee80229fd9a3a2165140e99608a
 source=docs/sdd/style-checklist.md
-note=P0.5 §14 SHA backfill — replace placeholder with 9d50575. Docs-only, no code change.
+note=P0.5 fix-forward — better-sqlite3 ABI dance (ensure_runtime helper, seed/capture phase split, --seed-only mode) + §14 U1-VR blocker note for agent-browser 0.26.0 CDP tab-routing failure surfaced during smoke test.
 
 docs/sdd/dashboard-css-decomposition-gate.md
+scripts/qa-capture-baseline.sh

@@ -11,15 +11,22 @@
 # Usage:
 #   scripts/qa-capture-baseline.sh --list                # enumerate screens
 #   scripts/qa-capture-baseline.sh --dry-run             # validate map + script
+#   scripts/qa-capture-baseline.sh --seed-only           # seed all 4 profiles
 #   scripts/qa-capture-baseline.sh <profile>             # capture one profile
 #   scripts/qa-capture-baseline.sh --all                 # 4 profiles in series
-#   scripts/qa-capture-baseline.sh --renderer-only      # vite + 2 twins
+#   scripts/qa-capture-baseline.sh --renderer-only       # vite + 2 twins
 #
 # Environment overrides:
 #   OUT_DIR           default: docs/qa/runs/<UTC date>/baseline
 #   CDP_PORT          default: 9222 (must match qa-launch-electron.sh)
 #   STARTUP_GRACE     default: 8 (seconds to wait for Electron CDP readiness)
 #   TERMINATE_GRACE   default: 10 (seconds before SIGKILL)
+#
+# Better-sqlite3 ABI dance: the seeder runs under system Node (MODULE_VERSION
+# 127 on Node 22) but Electron 28 embeds Node with MODULE_VERSION 119.
+# Both `--all` and `<profile>` modes call `npm run ensure:node` before
+# seeding and `npm run ensure:electron` before launching Electron. These
+# are idempotent — they read config.gypi and only rebuild when needed.
 #
 # This script emits no PNGs unless invoked with a profile name. P0.5
 # itself is reviewed via --dry-run; the actual baseline capture is
@@ -233,6 +240,32 @@ terminate_pid() {
   kill -KILL "$pid" 2>/dev/null || true
 }
 
+seed_profile() {
+  local profile="$1"
+  local home_path="/tmp/omt-qa-css-decomp-home-${profile}"
+  rm -rf "$home_path"
+  node "$SEEDER" "$profile" --home "$home_path" >/dev/null
+  echo "[qa-capture]   ✓ seeded $profile → $home_path"
+}
+
+# better-sqlite3 ABI dance: the seeder runs under system Node (MODULE_VERSION
+# 127 on Node 22) but Electron 28 embeds Node with MODULE_VERSION 119. Trying
+# to load a node-compiled binary into Electron raises ERR_DLOPEN_FAILED; the
+# reverse fails too. `npm run ensure:electron` / `ensure:node` are idempotent
+# (they read config.gypi and only rebuild when the runtime target changed),
+# so calling them per phase is cheap when no switch is needed.
+ensure_runtime() {
+  local target="$1"
+  if [ "$target" = "node" ]; then
+    npm run ensure:node >/dev/null 2>&1
+  elif [ "$target" = "electron" ]; then
+    npm run ensure:electron >/dev/null 2>&1
+  else
+    echo "[qa-capture] FATAL: unknown ensure_runtime target '$target'" >&2
+    return 1
+  fi
+}
+
 capture_profile() {
   local profile="$1"
   local home_path="/tmp/omt-qa-css-decomp-home-${profile}"
@@ -242,11 +275,12 @@ capture_profile() {
     echo "[qa-capture] no screens declared for profile '$profile' — skipping"
     return 0
   fi
+  if [ ! -d "$home_path" ]; then
+    echo "[qa-capture] FATAL: profile '$profile' HOME not seeded ($home_path missing). Run --seed-only first or use --all." >&2
+    return 1
+  fi
 
   echo "[qa-capture] === profile: $profile ($profile_screens screens) ==="
-
-  rm -rf "$home_path"
-  node "$SEEDER" "$profile" --home "$home_path" >/dev/null
 
   mkdir -p "$OUT_DIR/canonical"
 
@@ -332,12 +366,32 @@ case "$mode" in
   --dry-run)
     dry_run
     ;;
+  --seed-only)
+    require_cmd jq
+    require_cmd node
+    require_cmd npm
+    validate_map
+    echo "[qa-capture] === seed pass (better-sqlite3 → node ABI) ==="
+    ensure_runtime node
+    for p in populated first-run setup-guide backfill; do
+      seed_profile "$p"
+    done
+    echo "[qa-capture] seed-only PASS — 4 profiles ready under /tmp/omt-qa-css-decomp-home-*"
+    ;;
   --all)
     require_cmd jq
     require_cmd node
+    require_cmd npm
     require_cmd agent-browser
     require_cmd curl
     validate_map
+    echo "[qa-capture] === seed pass (better-sqlite3 → node ABI) ==="
+    ensure_runtime node
+    for p in populated first-run setup-guide backfill; do
+      seed_profile "$p"
+    done
+    echo "[qa-capture] === capture pass (better-sqlite3 → electron ABI) ==="
+    ensure_runtime electron
     for p in populated first-run setup-guide backfill; do
       capture_profile "$p"
     done
@@ -352,14 +406,20 @@ case "$mode" in
   populated|first-run|setup-guide|backfill)
     require_cmd jq
     require_cmd node
+    require_cmd npm
     require_cmd agent-browser
     require_cmd curl
     validate_map
+    echo "[qa-capture] === seed (node ABI) ==="
+    ensure_runtime node
+    seed_profile "$mode"
+    echo "[qa-capture] === capture (electron ABI) ==="
+    ensure_runtime electron
     capture_profile "$mode"
     ;;
   *)
     echo "[qa-capture] FATAL: unknown mode '$mode'" >&2
-    echo "Valid modes: --list, --dry-run, --all, --renderer-only, populated, first-run, setup-guide, backfill" >&2
+    echo "Valid modes: --list, --dry-run, --seed-only, --all, --renderer-only, populated, first-run, setup-guide, backfill" >&2
     exit 2
     ;;
 esac
