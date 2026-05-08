@@ -36,14 +36,16 @@ Built with Electron + React. Runs locally on macOS.
 
 Download the latest signed DMG from the [Releases page](../../releases/latest).
 
-### Homebrew (QA channel)
+### Homebrew
 
-Pre-release tap, refreshed alongside QA builds. A stable cask will land with v1.0. See [docs/QA-HOMEBREW-DISTRIBUTION.md](./docs/QA-HOMEBREW-DISTRIBUTION.md) for the tap path.
+Install from the project tap:
 
 ```bash
-brew tap <owner>/tap
+brew tap mercleodev/tap
 brew install --cask ohmytoken
 ```
+
+The tap currently tracks pre-release builds until the stable v1.0 cask is published. See [docs/QA-HOMEBREW-DISTRIBUTION.md](./docs/QA-HOMEBREW-DISTRIBUTION.md) for release flow details.
 
 ### Build from source
 

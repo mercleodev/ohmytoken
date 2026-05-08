@@ -78,6 +78,29 @@ print_hit() {
   sed -n '1,3p' "${tmp}" | sed 's/^/  line /'
 }
 
+filter_allowed_public_identity_lines() {
+  local file="$1"
+  local text="$2"
+
+  case "${file}" in
+    README.md|docs/QA-HOMEBREW-DISTRIBUTION.md)
+      for token in "${private_tokens[@]}"; do
+        if [[ "${#token}" -lt 3 ]]; then
+          continue
+        fi
+        text="$(
+          printf '%s\n' "${text}" |
+            rg -v --fixed-strings -- "brew tap ${token}/tap" |
+            rg -v --fixed-strings -- "github.com/${token}/homebrew-tap" ||
+            true
+        )"
+      done
+      ;;
+  esac
+
+  printf '%s\n' "${text}"
+}
+
 is_internal_doc() {
   local f="$1"
   [[ "${f}" == .claude/* ]] || [[ "${f}" == docs/decisions/* ]] || [[ "${f}" == policy/* ]]
@@ -151,7 +174,8 @@ for file in "${staged_files[@]}"; do
     if [[ "${#token}" -lt 3 ]]; then
       continue
     fi
-    if echo "${added_lines}" | rg -n --fixed-strings -- "${token}" >"${tmp}"; then
+    searchable_lines="$(filter_allowed_public_identity_lines "${file}" "${added_lines}")"
+    if echo "${searchable_lines}" | rg -n --fixed-strings -- "${token}" >"${tmp}"; then
       print_hit "${file}" "Private identity token detected"
       fail=1
       break
