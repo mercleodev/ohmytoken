@@ -1318,6 +1318,38 @@ Earlier units committed their work without filling §14. Reconstructed from `git
     4. End-user runs are unchanged: the env var is unset, so neither the notification skip nor the IPC handler activates. The renderer's `window.api.qaCaptureWindow` invokes an unregistered IPC channel and rejects, but no production code path calls it. Tests do not call it either.
   - Versions tested: agent-browser 0.26.0 (initial install) → 0.27.0 (2026-05-09 upgrade) — both exhibit the screenshot CDP timeout. Electron 28.3.3 in OhMyToken. Capture mechanism: `webContents.capturePage()` (Electron-native) — agent-browser only used for navigation/`eval` triggering.
 
+#### U1-VR-a — Partial visual baseline (populated profile, 2 of 13 canonical screens)
+
+- **Group**: U1-VR partial — landed under v3.3 split, P0.5.2 wiring
+- **SHA**: (filled by next commit)
+- **Lines moved**: 0 (baseline artifacts only; no source change)
+- **Files added**:
+  - `docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.png` (96209 bytes, 800×1224 px)
+  - `docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.json` (sidecar)
+  - `docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.png` (123798 bytes, 800×1224 px)
+  - `docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.json` (sidecar)
+- **Captured screens** (2 of 13):
+  - `dashboard-all-default` — populated profile boot, `All` provider tab default-active. SHA `ed298c36528b4b55a9ae546ae37b4269dea5aec9`. Same hash produced under P0.5.2 smoke testing (3 captures byte-identical) — confirms reproducibility.
+  - `dashboard-claude` — populated profile, click `.provider-tabs .provider-tab:nth-child(2)` to activate Claude tab. SHA `f0be79c2968cd02c8fcc46c0786189e2a7b20786`. Different hash from `dashboard-all-default` confirms DOM state change is reflected in the capture.
+- **Skipped screens** (8 of 10 in populated, plus 3 in other profiles + 2 renderer twins): all carry `tbd:` annotations in `scripts/qa-capture-screen-map.json` and require U1-VR-b session for selector validation:
+  - Same-page variants — `mcp-insights-expanded`/`-collapsed`, `memory-monitor-expanded`/`-collapsed`, `settings-context-limit`: selectors derived from source but `agent-browser scrollintoview` + click flows not exercised end-to-end. populated profile may not seed enough MCP/memory data to render those cards in their non-empty state.
+  - Multi-step nav — `dashboard-prompt-detail`, `settings-evidence`: `.session-card` exists in claude-tab populated state but `agent-browser --cdp click .session-card` did not trigger navigation to SessionDetailView (subsequent `wait .prompt-card` hung). Likely needs ref-based click via `snapshot -i` → `click @e<n>` per agent-browser core skill.
+  - `notification-overlay`: permanently skipped under `OMT_QA_CAPTURE_MODE=1` (the notification BrowserWindow is not created). U1-VR-b can decide to drop, defer, or implement a separate notification-only launch flow.
+  - Other-profile screens — `backfill-dialog` (backfill), `first-run-onboarding` + `setup-guide` (first-run): not exercised in P0.5.2; only populated profile was iterated.
+  - Renderer-only twins — `renderer-dashboard`, `renderer-settings`: separate `qa-launch-renderer.sh` flow not exercised.
+- **Frontend review**: N/A — docs-only landing of pre-validated capture artifacts. (P0.5.2 fix-forward earned its own frontend-review under fingerprint `7c62d4f6…` with verdict OK with fixes.)
+- **Cascade-order check**: N/A — no CSS source change.
+- **Visual diff**: N/A for baseline land (this IS the baseline). All future Tier 1+ commits diff against this set for the 2 captured screens; the 11 still-`tbd:` screens are not part of the regression bar until U1-VR-b lands them.
+- **Sidecar schema**: each PNG ships with a JSON sidecar capturing `{ profile, screen, fixedNow: "2026-05-05T12:00:00Z", targetViewport (1440×900 from gate-doc spec), actualPx (800×1224 from PNG file — main BrowserWindow is hardcoded to 400×640 logical), agentBrowserVersion, electronVersion, capturedAtFixed: "FIXED" }`. The `targetViewport` vs `actualPx` gap reflects a separate decision deferred to U1-VR-b: whether to resize the main BrowserWindow to 1440×900 in capture mode. The user-facing render path is currently 400×640.
+- **Notes / U1-VR-b checklist**:
+  1. Decide BrowserWindow resize policy (1440×900 vs leave at 400×640 to match shipped layout). Document in §7 P0.5 Decisions.
+  2. Refine `dashboard-prompt-detail` nav: try `snapshot -i` → `click @e<ref>` instead of CSS selector click; or insert a `wait_ms` between click and the next wait.
+  3. Validate `settings-context-limit` end-to-end (selectors look right but unrun).
+  4. Validate `mcp-insights-*` / `memory-monitor-*` (expand/collapse variants).
+  5. Iterate first-run + backfill profile launches; verify their root selectors render on boot.
+  6. Renderer-only twins — run `qa-launch-renderer.sh` + `agent-browser open <vite-url>` flow. Mock window.api `_trigger` hook may need to be added if `renderer-settings` requires IPC simulation.
+  7. After all 13 canonical + 2 renderer twins captured, run `--all` again into a separate `OUT_DIR` and assert byte-equal hashes vs first run (determinism check, gate doc §7 U1-VR Step 4).
+
 #### P1 — Cross-file class collision risk records
 
 - **Group**: cross-file collisions (no owner relocation)

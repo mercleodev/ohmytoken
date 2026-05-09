@@ -1,17 +1,11 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-09T15:36:46Z
-fingerprint=7c62d4f69df6f79d1374ea5084a760a66350b8291595a96dadff5958c6cebf57
+# updated_at_utc: 2026-05-09T15:38:50Z
+fingerprint=4c3b276a4eedf0345ab7fc1d12ceb564158b7173b2a98eed92759572b335ab0e
 source=docs/sdd/style-checklist.md
-note=P0.5.2 fix-forward — OMT_QA_CAPTURE_MODE env + IPC capture handler (qa:capture-window) + orchestrator wiring (eval-based capture, /tmp+mv pattern, sidecar targetViewport+actualPx, INCLUDE_TBD skip default). Frontend-review: OK with fixes (6 LOW, 0 blocking; tracked as follow-up).
+note=U1-VR-a partial visual baseline — 2 of 13 canonical screens (populated profile: dashboard-all-default, dashboard-claude). Sidecar JSON includes targetViewport+actualPx. Reproducibility verified (sha matches P0.5.2 smoke). 11 remaining screens skipped under tbd until U1-VR-b. §14 entry added.
 
 docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.json
 docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.png
 docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.json
 docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.png
 docs/sdd/dashboard-css-decomposition-gate.md
-electron/main.ts
-electron/preload.ts
-scripts/qa-capture-baseline.sh
-scripts/qa-capture-screen-map.json
-src/main.tsx
-src/types/electron.d.ts
