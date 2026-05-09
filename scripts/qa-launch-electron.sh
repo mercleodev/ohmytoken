@@ -14,9 +14,25 @@
 #   - Adds `--remote-debugging-port=9222` so `agent-browser connect 9222`
 #     attaches in a second terminal.
 #
+# Visual-regression stabilization (set ONLY for byte-equal QA passes;
+# leave unset for normal dev/QA so end-user behaviour is unchanged):
+#   - OMT_QA_FAKE_NOW=<ISO timestamp>  e.g. 2026-05-05T12:00:00Z
+#       Freezes `Date.now()` and `new Date()` (no-arg form) in the
+#       renderer. Required for the U1 baseline + every Tier 1-3
+#       byte-equal diff so "time ago" labels do not drift between runs.
+#   - OMT_QA_NO_ANIMATIONS=1
+#       Injects a `<style>` block in the renderer that zeros animation
+#       and transition durations. Required for byte-equal screenshots.
+#   Both vars are read in `electron/preload.ts` and forwarded to the
+#   renderer via `contextBridge.exposeInMainWorld('__qaConfig', ...)`.
+#   `src/qa/stabilization.ts` applies the patches before React mounts.
+#
 # Usage:
 #   scripts/qa-launch-electron.sh                          # real upstream
 #   PROXY_UPSTREAM=127.0.0.1:9999 scripts/qa-launch-electron.sh
+#   OMT_QA_FAKE_NOW=2026-05-05T12:00:00Z \
+#     OMT_QA_NO_ANIMATIONS=1 \
+#     scripts/qa-launch-electron.sh                        # baseline mode
 #
 # Stop with ctrl-c (or `pkill -f 'electron .'` from another shell).
 

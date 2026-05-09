@@ -546,6 +546,12 @@ export type ElectronApi = {
   backfillStatus: () => Promise<{ completed: boolean; lastScanTimestamp: number | null }>;
   onBackfillProgress: (callback: (progress: BackfillProgress) => void) => () => void;
   onBackfillComplete: (callback: (result: BackfillResult) => void) => () => void;
+
+  // QA-only (gate doc §7 P0.5 / U1-VR). Only resolves when Electron
+  // launched with OMT_QA_CAPTURE_MODE=1; otherwise IPC handler is not
+  // registered and the promise rejects. Output path must be absolute
+  // and under /tmp, /private/tmp, or /var/folders.
+  qaCaptureWindow: (outputPath: string) => Promise<{ path: string; bytes: number }>;
 };
 
 declare global {

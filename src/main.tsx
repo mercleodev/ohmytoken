@@ -1,3 +1,4 @@
+import './qa/stabilization';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -567,6 +568,7 @@ if (!window.api) {
       return () => {};
     },
     getDisplays: async () => [],
+    qaCaptureWindow: async (outputPath: string) => ({ path: outputPath, bytes: 0 }),
   };
   console.log('🔧 Mock API loaded for browser testing');
 }

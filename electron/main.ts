@@ -166,6 +166,29 @@ const DEFAULT_PROXY_PORT = 8780;
 // tray-app flow because the env var is unset for end users.
 const isQaShow = process.env.OMT_QA_SHOW === "1";
 
+// QA hook (dashboard-css decomp gate doc §7 P0.5 / U1-VR): when
+// `OMT_QA_CAPTURE_MODE=1` two QA-only behaviors activate:
+//   1. The secondary notification BrowserWindow is NOT created.
+//      agent-browser CDP attaches to whichever target it finds first,
+//      and a blank notification window mirroring as the default attach
+//      target makes screenshot capture non-deterministic. Skipping its
+//      creation leaves the main window as the sole CDP page target.
+//      All `notificationWindow.*` call-sites already guard with
+//      `notificationWindow && !notificationWindow.isDestroyed()`, so
+//      skipping creation is safe.
+//   2. The `qa:capture-window` IPC handler registers (see below).
+//      agent-browser's CDP `Page.captureScreenshot` against headed
+//      Electron times out when the OS-level frame is paint-paused
+//      (window not foreground). This handler exposes Electron's native
+//      `webContents.capturePage()` instead — which captures off the
+//      compositor and ignores OS paint-pause — and writes a PNG to a
+//      caller-supplied tmp path. agent-browser triggers it with `eval`.
+//      The handler ONLY registers when this flag is set; it is not
+//      shipped to end users.
+// Has no effect in normal tray-app flow because the env var is unset
+// for end users.
+const isQaCaptureMode = process.env.OMT_QA_CAPTURE_MODE === "1";
+
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 400,
@@ -532,7 +555,7 @@ const initApp = async (): Promise<void> => {
   console.log('[Evidence] Engine initialized, fusion:', evidenceEngine.getConfig().fusion_method);
 
   createWindow();
-  createNotificationWindow();
+  if (!isQaCaptureMode) createNotificationWindow();
 
   trayManager = new TrayManager(mainWindow!, store);
   trayManager.init();
@@ -900,6 +923,37 @@ const initApp = async (): Promise<void> => {
 
 const setupIPC = (): void => {
   if (!store || !trayManager) return;
+
+  // QA-only capture handler (gate doc §7 P0.5 / U1-VR). Only registers
+  // when OMT_QA_CAPTURE_MODE=1 is set (orchestrator-controlled). Uses
+  // Electron's native webContents.capturePage(), which captures off the
+  // compositor and is unaffected by macOS paint-pausing of background
+  // windows — unlike CDP `Page.captureScreenshot` which times out when
+  // the headed window is not foreground.
+  // Path safety: only absolute paths under /tmp, /private/tmp, or
+  // /var/folders are accepted (orchestrator emits to these). Real
+  // user paths and `..` traversal are refused.
+  if (isQaCaptureMode) {
+    ipcMain.handle("qa:capture-window", async (_event, outputPath: string) => {
+      if (typeof outputPath !== "string" || outputPath.length === 0) {
+        throw new Error("qa:capture-window: outputPath is required");
+      }
+      if (!path.isAbsolute(outputPath) || outputPath.includes("..")) {
+        throw new Error(`qa:capture-window: refusing non-absolute or traversing path: ${outputPath}`);
+      }
+      const safePrefixes = ["/tmp/", "/private/tmp/", "/var/folders/"];
+      if (!safePrefixes.some((p) => outputPath.startsWith(p))) {
+        throw new Error(`qa:capture-window: refusing path outside tmp dirs: ${outputPath}`);
+      }
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        throw new Error("qa:capture-window: mainWindow not available");
+      }
+      const image = await mainWindow.webContents.capturePage();
+      const fs = require("fs/promises") as typeof import("fs/promises");
+      await fs.writeFile(outputPath, image.toPNG());
+      return { path: outputPath, bytes: image.toPNG().length };
+    });
+  }
 
   // Dark mode feature removed
 
@@ -2296,7 +2350,7 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
-    createNotificationWindow();
+    if (!isQaCaptureMode) createNotificationWindow();
   }
 });
 

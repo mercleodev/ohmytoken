@@ -1,0 +1,183 @@
+{
+  "$schema": "./qa-fixtures.schema.notes",
+  "comment": "P0.4 (gate-doc §7) deterministic fixtures for U1-VR. Editing this file changes pixel baselines — run U1-VR re-capture afterwards. Time-bearing values are pinned to FIXED_NOW = 2026-05-05T12:00:00Z (also OMT_QA_FAKE_NOW). All numeric ids are explicit; no clock-derived or random values.",
+  "schemaVersion": 1,
+  "fixedNow": "2026-05-05T12:00:00Z",
+  "fixedNowMs": 1778025600000,
+  "productName": "OhMyToken",
+  "profiles": {
+    "populated": {
+      "description": "Realistic populated dashboard — 3 Claude sessions, 12 prompts, 2 evidence reports. Covers dashboard-all-default, dashboard-claude, dashboard-prompt-detail, settings-evidence, settings-context-limit, notification-overlay, mcp-insights-{expanded,collapsed}, memory-monitor-{expanded,collapsed} (10 of 13 canonical screens).",
+      "sessionRoots": [
+        ".claude/projects/-Users-fixture-projectA",
+        ".codex/sessions/2026-05-05-fixture"
+      ],
+      "history": [
+        {
+          "display": "Investigate dashboard CSS decomposition baseline",
+          "timestamp": 1778022000000,
+          "sessionId": "sess-fixture-001",
+          "project": "/srv/fixture/projectA"
+        },
+        {
+          "display": "Wire fixture seeder for visual regression",
+          "timestamp": 1778022900000,
+          "sessionId": "sess-fixture-001",
+          "project": "/srv/fixture/projectA"
+        },
+        {
+          "display": "Review evidence engine output",
+          "timestamp": 1778023800000,
+          "sessionId": "sess-fixture-002",
+          "project": "/srv/fixture/projectB"
+        },
+        {
+          "display": "Compact notification overlay",
+          "timestamp": 1778024700000,
+          "sessionId": "sess-fixture-002",
+          "project": "/srv/fixture/projectB"
+        },
+        {
+          "display": "Tune mcp insights collapsed default",
+          "timestamp": 1778025300000,
+          "sessionId": "sess-fixture-003",
+          "project": "/srv/fixture/projectA"
+        }
+      ],
+      "credentials": {
+        "claude": {
+          "accessToken": "fixture-claude-access-token",
+          "refreshToken": "fixture-claude-refresh-token",
+          "expiresAt": 1778083200000,
+          "scopes": ["user:inference", "user:profile"]
+        }
+      },
+      "config": {
+        "providers": [
+          {
+            "id": "fixture-provider-claude",
+            "type": "claude",
+            "name": "Claude (fixture)",
+            "organizationId": "fixture-org",
+            "apiKey": "sk-fixture-claude"
+          }
+        ],
+        "settings": {
+          "colors": { "low": "#4caf50", "medium": "#ff9800", "high": "#f44336" },
+          "toggleInterval": 2000,
+          "refreshInterval": 5,
+          "shortcut": "CommandOrControl+Shift+T",
+          "proxyPort": 8780,
+          "contextLimitOverride": 0,
+          "notificationsEnabled": true,
+          "showAllProjectsMemory": false,
+          "accountInsights": { "claude": true }
+        }
+      },
+      "db": {
+        "sessions": [
+          { "session_id": "sess-fixture-001", "first_timestamp": "2026-05-05T11:00:00.000Z", "last_timestamp": "2026-05-05T11:15:00.000Z", "prompt_count": 5, "total_cost_usd": 0.124, "total_context_tokens": 18750, "total_output_tokens": 2400, "total_cache_read_tokens": 9800, "models_used": "[\"claude-opus-4-7\",\"claude-sonnet-4-6\"]", "project": "/srv/fixture/projectA", "provider": "claude", "updated_at": "2026-05-05T11:15:00.000Z" },
+          { "session_id": "sess-fixture-002", "first_timestamp": "2026-05-05T11:30:00.000Z", "last_timestamp": "2026-05-05T11:45:00.000Z", "prompt_count": 4, "total_cost_usd": 0.082, "total_context_tokens": 12200, "total_output_tokens": 1600, "total_cache_read_tokens": 5400, "models_used": "[\"claude-sonnet-4-6\"]", "project": "/srv/fixture/projectB", "provider": "claude", "updated_at": "2026-05-05T11:45:00.000Z" },
+          { "session_id": "sess-fixture-003", "first_timestamp": "2026-05-05T11:55:00.000Z", "last_timestamp": "2026-05-05T11:58:00.000Z", "prompt_count": 3, "total_cost_usd": 0.041, "total_context_tokens": 6400, "total_output_tokens": 800, "total_cache_read_tokens": 2100, "models_used": "[\"claude-haiku-4-5\"]", "project": "/srv/fixture/projectA", "provider": "claude", "updated_at": "2026-05-05T11:58:00.000Z" }
+        ],
+        "prompts": [
+          { "request_id": "req-001", "session_id": "sess-fixture-001", "timestamp": "2026-05-05T11:00:30.000Z", "source": "proxy", "user_prompt": "Find all .css files importing dashboard.css", "user_prompt_tokens": 14, "assistant_response": "Located 7 import sites in src/components/dashboard/.", "model": "claude-opus-4-7", "max_tokens": 4096, "conversation_turns": 1, "user_messages_count": 1, "assistant_messages_count": 1, "tool_result_count": 2, "system_tokens": 1200, "messages_tokens": 800, "user_text_tokens": 14, "assistant_tokens": 26, "tool_result_tokens": 540, "tools_definition_tokens": 720, "total_context_tokens": 3300, "total_injected_tokens": 0, "tool_summary": "{\"Read\":2}", "input_tokens": 3286, "output_tokens": 240, "cache_creation_input_tokens": 1200, "cache_read_input_tokens": 1800, "cost_usd": 0.0289, "duration_ms": 4200, "req_messages_count": 1, "req_tools_count": 18, "req_has_system": 1, "provider": "claude", "git_branch": "refactor/dashboard-css-decompose", "project_path": "/srv/fixture/projectA" },
+          { "request_id": "req-002", "session_id": "sess-fixture-001", "timestamp": "2026-05-05T11:03:30.000Z", "source": "proxy", "user_prompt": "Refactor cost card", "user_prompt_tokens": 6, "assistant_response": "Refactored CostCard into sibling stylesheet.", "model": "claude-opus-4-7", "max_tokens": 4096, "conversation_turns": 2, "user_messages_count": 2, "assistant_messages_count": 2, "tool_result_count": 4, "system_tokens": 1200, "messages_tokens": 1600, "user_text_tokens": 22, "assistant_tokens": 80, "tool_result_tokens": 1100, "tools_definition_tokens": 720, "total_context_tokens": 4622, "total_injected_tokens": 280, "tool_summary": "{\"Edit\":2,\"Read\":2}", "input_tokens": 4342, "output_tokens": 320, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 3286, "cost_usd": 0.0204, "duration_ms": 5800, "req_messages_count": 3, "req_tools_count": 18, "req_has_system": 1, "provider": "claude", "git_branch": "refactor/dashboard-css-decompose", "project_path": "/srv/fixture/projectA" },
+          { "request_id": "req-003", "session_id": "sess-fixture-001", "timestamp": "2026-05-05T11:06:30.000Z", "source": "proxy", "user_prompt": "Run cascade-check", "user_prompt_tokens": 4, "assistant_response": "Cascade-check PASS.", "model": "claude-sonnet-4-6", "max_tokens": 4096, "conversation_turns": 3, "user_messages_count": 3, "assistant_messages_count": 3, "tool_result_count": 1, "system_tokens": 1200, "messages_tokens": 2400, "user_text_tokens": 26, "assistant_tokens": 92, "tool_result_tokens": 320, "tools_definition_tokens": 720, "total_context_tokens": 4640, "total_injected_tokens": 0, "tool_summary": "{\"Bash\":1}", "input_tokens": 4640, "output_tokens": 180, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 4342, "cost_usd": 0.0094, "duration_ms": 3100, "req_messages_count": 5, "req_tools_count": 18, "req_has_system": 1, "provider": "claude", "git_branch": "refactor/dashboard-css-decompose", "project_path": "/srv/fixture/projectA" },
+          { "request_id": "req-004", "session_id": "sess-fixture-002", "timestamp": "2026-05-05T11:31:00.000Z", "source": "proxy", "user_prompt": "Investigate notification overlay click handler", "user_prompt_tokens": 12, "assistant_response": "Click handler is wired correctly.", "model": "claude-sonnet-4-6", "max_tokens": 4096, "conversation_turns": 1, "user_messages_count": 1, "assistant_messages_count": 1, "tool_result_count": 0, "system_tokens": 1200, "messages_tokens": 600, "user_text_tokens": 12, "assistant_tokens": 18, "tool_result_tokens": 0, "tools_definition_tokens": 720, "total_context_tokens": 2550, "total_injected_tokens": 0, "tool_summary": "{}", "input_tokens": 2538, "output_tokens": 80, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0, "cost_usd": 0.0089, "duration_ms": 1800, "req_messages_count": 1, "req_tools_count": 18, "req_has_system": 1, "provider": "claude", "git_branch": "main", "project_path": "/srv/fixture/projectB" },
+          { "request_id": "req-005", "session_id": "sess-fixture-003", "timestamp": "2026-05-05T11:55:30.000Z", "source": "proxy", "user_prompt": "Tweak collapsed default", "user_prompt_tokens": 5, "assistant_response": "Collapsed by default applied.", "model": "claude-haiku-4-5", "max_tokens": 4096, "conversation_turns": 1, "user_messages_count": 1, "assistant_messages_count": 1, "tool_result_count": 1, "system_tokens": 1200, "messages_tokens": 400, "user_text_tokens": 5, "assistant_tokens": 24, "tool_result_tokens": 200, "tools_definition_tokens": 720, "total_context_tokens": 2549, "total_injected_tokens": 0, "tool_summary": "{\"Edit\":1}", "input_tokens": 2549, "output_tokens": 60, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0, "cost_usd": 0.0013, "duration_ms": 1200, "req_messages_count": 1, "req_tools_count": 18, "req_has_system": 1, "provider": "claude", "git_branch": "main", "project_path": "/srv/fixture/projectA" }
+        ],
+        "evidence_reports": [
+          { "prompt_request_id": "req-002", "request_id": "req-002", "timestamp": "2026-05-05T11:03:35.000Z", "engine_version": "fixture-1.0.0", "fusion_method": "rrf", "confirmed_min": 0.78, "likely_min": 0.55, "files": [
+            { "file_path": "src/components/dashboard/CostCard.tsx", "category": "edit", "raw_score": 0.92, "normalized_score": 0.91, "classification": "confirmed", "signals_json": "[\"diff\",\"name-match\"]" },
+            { "file_path": "src/components/dashboard/dashboard.css", "category": "edit", "raw_score": 0.66, "normalized_score": 0.62, "classification": "likely", "signals_json": "[\"name-match\"]" }
+          ] },
+          { "prompt_request_id": "req-003", "request_id": "req-003", "timestamp": "2026-05-05T11:06:33.000Z", "engine_version": "fixture-1.0.0", "fusion_method": "rrf", "confirmed_min": 0.81, "likely_min": 0.58, "files": [
+            { "file_path": "scripts/css-decomp-cascade-check.mjs", "category": "read", "raw_score": 0.74, "normalized_score": 0.71, "classification": "likely", "signals_json": "[\"diff\"]" }
+          ] }
+        ],
+        "daily_stats": [
+          { "date": "2026-05-05", "provider": "claude", "request_count": 5, "total_cost_usd": 0.0689, "total_input_tokens": 17355, "total_output_tokens": 880, "total_context_tokens": 17661, "avg_context_tokens": 3532, "cache_hit_rate": 0.42, "models_used": "[\"claude-opus-4-7\",\"claude-sonnet-4-6\",\"claude-haiku-4-5\"]", "updated_at": "2026-05-05T11:58:00.000Z" }
+        ],
+        "app_metadata": [
+          { "key": "schemaSeededBy", "value": "qa-seed-fixtures populated" }
+        ]
+      }
+    },
+    "first-run": {
+      "description": "Empty HOME for first-run-onboarding screen. No history, no DB, no session roots, no credentials. The dashboard's first-run gate detects this and renders the onboarding flow.",
+      "sessionRoots": [],
+      "history": [],
+      "credentials": null,
+      "config": null,
+      "db": null
+    },
+    "setup-guide": {
+      "description": "First-run gate cleared (session root present) but zero providers configured. Drives the setup-guide screen which prompts the user to add a provider.",
+      "sessionRoots": [".claude/projects/-Users-fixture-empty"],
+      "history": [],
+      "credentials": null,
+      "config": {
+        "providers": [],
+        "settings": {
+          "colors": { "low": "#4caf50", "medium": "#ff9800", "high": "#f44336" },
+          "toggleInterval": 2000,
+          "refreshInterval": 5,
+          "shortcut": "CommandOrControl+Shift+T",
+          "proxyPort": 8780
+        }
+      },
+      "db": {
+        "sessions": [],
+        "prompts": [],
+        "evidence_reports": [],
+        "daily_stats": [],
+        "app_metadata": [
+          { "key": "schemaSeededBy", "value": "qa-seed-fixtures setup-guide" }
+        ]
+      }
+    },
+    "backfill": {
+      "description": "Backfill in progress — used for the backfill-dialog screen. Provider configured, history present, DB primed with backfill_status flag in app_metadata. Renderer reads this via window.api.backfillStatus().",
+      "sessionRoots": [".claude/projects/-Users-fixture-backfill"],
+      "history": [
+        {
+          "display": "Initial import scan",
+          "timestamp": 1778024400000,
+          "sessionId": "sess-backfill-pending",
+          "project": "/srv/fixture/projectBackfill"
+        }
+      ],
+      "credentials": {
+        "claude": {
+          "accessToken": "fixture-claude-access-token",
+          "refreshToken": "fixture-claude-refresh-token",
+          "expiresAt": 1778083200000,
+          "scopes": ["user:inference"]
+        }
+      },
+      "config": {
+        "providers": [
+          {
+            "id": "fixture-provider-claude-backfill",
+            "type": "claude",
+            "name": "Claude (fixture)",
+            "apiKey": "sk-fixture-claude-backfill"
+          }
+        ]
+      },
+      "db": {
+        "sessions": [],
+        "prompts": [],
+        "evidence_reports": [],
+        "daily_stats": [],
+        "app_metadata": [
+          { "key": "schemaSeededBy", "value": "qa-seed-fixtures backfill" },
+          { "key": "backfill_status", "value": "in_progress" },
+          { "key": "backfill_total_estimate", "value": "247" },
+          { "key": "backfill_processed", "value": "62" }
+        ]
+      }
+    }
+  }
+}

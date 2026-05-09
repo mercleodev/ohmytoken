@@ -1,0 +1,17 @@
+{
+  "profile": "populated",
+  "screen": "settings-context-limit",
+  "fixedNow": "2026-05-05T12:00:00Z",
+  "targetViewport": {
+    "width": 400,
+    "height": 640,
+    "dpr": 2
+  },
+  "actualPx": {
+    "width": 800,
+    "height": 1224
+  },
+  "agentBrowserVersion": "agent-browser 0.27.0",
+  "electronVersion": "28.3.3",
+  "capturedAtFixed": "FIXED"
+}

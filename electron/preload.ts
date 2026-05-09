@@ -334,8 +334,26 @@ const api = {
       ipcRenderer.removeListener('backfill:complete', handler);
     };
   },
+
+  // QA-only (gate doc §7 P0.5 / U1-VR). The IPC handler in main.ts
+  // only registers when OMT_QA_CAPTURE_MODE=1, so this becomes a
+  // rejected promise on end-user runs.
+  qaCaptureWindow: (outputPath: string): Promise<{ path: string; bytes: number }> =>
+    ipcRenderer.invoke('qa:capture-window', outputPath),
 };
 
 contextBridge.exposeInMainWorld("api", api);
+
+// QA visual-regression stabilization config (consumed by
+// `src/qa/stabilization.ts`). Activated only when the launcher (e.g.
+// `scripts/qa-launch-electron.sh`) sets `OMT_QA_FAKE_NOW` and/or
+// `OMT_QA_NO_ANIMATIONS=1`. End-user runs leave both env vars unset
+// so the renderer sees `__qaConfig.fakeNow === null` and `noAnimations
+// === false` and the stabilization module is a no-op.
+const qaConfig = {
+  fakeNow: process.env.OMT_QA_FAKE_NOW ?? null,
+  noAnimations: process.env.OMT_QA_NO_ANIMATIONS === "1",
+};
+contextBridge.exposeInMainWorld("__qaConfig", qaConfig);
 
 export type ApiType = typeof api;
