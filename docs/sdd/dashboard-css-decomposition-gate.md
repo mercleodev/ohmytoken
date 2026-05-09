@@ -1321,7 +1321,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U1-VR-a — Partial visual baseline (populated profile, 2 of 13 canonical screens)
 
 - **Group**: U1-VR partial — landed under v3.3 split, P0.5.2 wiring
-- **SHA**: (filled by next commit)
+- **SHA**: `cb5d1f4`
 - **Lines moved**: 0 (baseline artifacts only; no source change)
 - **Files added**:
   - `docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.png` (96209 bytes, 800×1224 px)

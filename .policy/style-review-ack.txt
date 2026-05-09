@@ -1,11 +1,7 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-09T15:38:50Z
-fingerprint=4c3b276a4eedf0345ab7fc1d12ceb564158b7173b2a98eed92759572b335ab0e
+# updated_at_utc: 2026-05-09T15:39:54Z
+fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
 source=docs/sdd/style-checklist.md
-note=U1-VR-a partial visual baseline — 2 of 13 canonical screens (populated profile: dashboard-all-default, dashboard-claude). Sidecar JSON includes targetViewport+actualPx. Reproducibility verified (sha matches P0.5.2 smoke). 11 remaining screens skipped under tbd until U1-VR-b. §14 entry added.
+note=U1-VR-a SHA backfill — replace placeholder with cb5d1f4. Per §14 cadence rule. No code, no fixture, no allowlist change.
 
-docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.json
-docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.png
-docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.json
-docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.png
 docs/sdd/dashboard-css-decomposition-gate.md
