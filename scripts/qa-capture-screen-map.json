@@ -75,8 +75,7 @@
       "target": "renderer",
       "waitFor": ".backfill-dialog",
       "steps": [],
-      "description": "BackfillDialog overlay renders on dashboard boot when backfillStatus IPC reports incomplete state with count > 0 (UsageDashboard.tsx:60-76, 394). Backfill profile primes the DB into this state.",
-      "tbd": "Backfill profile not exercised in P0.5.2 smoke (only populated). U1-VR-b: seed backfill profile, launch with OMT_QA_CAPTURE_MODE=1, verify .backfill-dialog renders on boot."
+      "description": "BackfillDialog overlay renders on dashboard boot when backfillStatus IPC reports incomplete state with count > 0 (UsageDashboard.tsx:60-76, 394). Backfill profile primes the DB into this state and seeds a single fixture .jsonl under sessionRoots so countSessionFiles()>0."
     },
     {
       "name": "first-run-onboarding",
@@ -84,8 +83,7 @@
       "target": "renderer",
       "waitFor": ".first-run-screen",
       "steps": [],
-      "description": "FirstRunOnboarding renders when getFirstRunStatus IPC returns isFirstRun=true (App.tsx:32-39). first-run profile primes appSettings.firstRun=true.",
-      "tbd": "first-run profile not exercised in P0.5.2 smoke. U1-VR-b: seed first-run profile, launch, verify .first-run-screen renders on boot."
+      "description": "FirstRunOnboarding renders when getFirstRunStatus IPC returns isFirstRun=true (App.tsx:32-39). first-run profile primes appSettings.firstRun=true."
     },
     {
       "name": "notification-overlay",
@@ -104,14 +102,13 @@
       "name": "setup-guide",
       "profile": "first-run",
       "target": "renderer",
-      "waitFor": ".setup-guide.first-run-walkthrough .setup-guide-title",
+      "waitFor": ".first-run-walkthrough .setup-guide-title",
       "steps": [
         { "type": "wait", "selector": ".first-run-screen" },
-        { "type": "click", "selector": ".first-run-provider-card:first-of-type" },
+        { "type": "click", "selector": ".first-run-provider-card:first-of-type .first-run-primary-btn" },
         { "type": "wait", "selector": ".first-run-walkthrough .setup-guide" }
       ],
-      "description": "SetupGuide stage of FirstRunOnboarding (post provider-pick 'wait for session' stage). FirstRunOnboarding.tsx:148-149.",
-      "tbd": "§7 P0.4 declares setup-guide profile as 'HOME with the first-run gate cleared but no provider configured', but the codebase only renders SetupGuide inside FirstRunOnboarding's wait-stage. Best-guess interpretation here is first-run profile + click-to-enter-wait-stage. Verify selector `.first-run-provider-card` matches the actual rendered ProviderPickerCards classnames at U1-VR run-time. Alternative: add a non-first-run rendering path for SetupGuide before U1-VR (out of P0.5 scope)."
+      "description": "SetupGuide stage of FirstRunOnboarding (post provider-pick 'wait for session' stage). FirstRunOnboarding.tsx:104-110 renders an `.first-run-primary-btn` inside each `.first-run-provider-card` whose onClick advances stage→'walkthrough'; the article itself has no click handler. SetupGuide.tsx:58 renders `.setup-guide` inside the walkthrough container."
     },
     {
       "name": "mcp-insights-expanded",

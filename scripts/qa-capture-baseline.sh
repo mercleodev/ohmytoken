@@ -330,6 +330,20 @@ capture_profile() {
 
   echo "[qa-capture] === profile: $profile ($profile_screens screens) ==="
 
+  # Boot-time root selector per profile. After the post-screen reload we
+  # need to wait for the application shell to mount, which differs:
+  #   populated/backfill → .dashboard (UsageDashboard renders at boot;
+  #     BackfillDialog is a modal overlay on top, not a replacement)
+  #   first-run/setup-guide → .first-run-screen (App.tsx mounts
+  #     FirstRunOnboarding when getFirstRunStatus.isFirstRun is true)
+  # Without this, first-run runs hang on `wait .dashboard` until timeout.
+  local boot_selector
+  case "$profile" in
+    populated|backfill) boot_selector=".dashboard" ;;
+    first-run|setup-guide) boot_selector=".first-run-screen" ;;
+    *) boot_selector=".dashboard" ;;
+  esac
+
   mkdir -p "$OUT_DIR/canonical"
 
   # Defensive: kill any stale OhMyToken Electron from a prior run that
@@ -342,6 +356,11 @@ capture_profile() {
   ps -e -o pid,command \
     | awk -v r="$REPO_ROOT" '$0 ~ "Electron.app/Contents/MacOS/Electron \\. --remote-debugging-port=" && index($0, r) {print $1}' \
     | xargs -I{} kill -KILL {} 2>/dev/null || true
+  # Kill any agent-browser daemon left over from a prior run. Stale
+  # daemons cache CDP session IDs that no longer map to a live target,
+  # producing "Session with given id not found" or EAGAIN on the next
+  # CLI call. Fresh daemon per profile is the simplest correct path.
+  pkill -9 -f "agent-browser-darwin-arm64" 2>/dev/null || true
   sleep 1
 
   local launch_pid=""
@@ -369,8 +388,8 @@ capture_profile() {
     curl -s -X POST "http://127.0.0.1:${CDP_PORT}/json/activate/${main_target}" >/dev/null
   fi
 
-  jq -r --arg p "$profile" '.screens | map(select(.profile == $p)) | .[].name' "$SCREEN_MAP" \
-  | while IFS= read -r screen_name; do
+  local first_screen=1
+  while IFS= read -r screen_name; do
     local target tbd
     target=$(jq -r --arg n "$screen_name" '.screens[] | select(.name == $n) | .target' "$SCREEN_MAP")
     tbd=$(jq -r --arg n "$screen_name" '.screens[] | select(.name == $n) | .tbd // ""' "$SCREEN_MAP")
@@ -384,15 +403,25 @@ capture_profile() {
     fi
     local wait_for
     wait_for=$(jq -r --arg n "$screen_name" '.screens[] | select(.name == $n) | .waitFor' "$SCREEN_MAP")
-    # Reload to reset React state between screens. Each canonical
-    # screen is captured from a clean dashboard boot rather than from
-    # whatever state the previous screen's interactions left behind.
+    # Reload between screens to reset React state. The first screen
+    # boots clean from Electron launch, so we only reload for the 2nd+
+    # screens of the profile. Reload after fresh boot triggers an
+    # agent-browser daemon CDP-session-id rotation that produces
+    # "Session with given id not found" on the next call.
     # Without this, the `settings-context-limit` capture's open popup
     # bleeds into subsequent captures (since AnimatePresence keeps
     # the modal mounted until React unmounts it). Reload also clears
     # any leftover scroll position, hover state, focus ring, etc.
-    agent-browser --cdp "$CDP_PORT" reload >/dev/null
-    agent-browser --cdp "$CDP_PORT" wait ".dashboard"
+    if [ "$first_screen" -eq 1 ]; then
+      first_screen=0
+    else
+      agent-browser --cdp "$CDP_PORT" reload >/dev/null
+      # Brief settle: the agent-browser daemon occasionally returns EAGAIN
+      # ("Resource temporarily unavailable") if the next command issues
+      # immediately after reload.
+      sleep 1
+      agent-browser --cdp "$CDP_PORT" wait "$boot_selector"
+    fi
     run_steps "$screen_name" cdp
     agent-browser --cdp "$CDP_PORT" wait "$wait_for"
     # Re-activate before each capture: framer-motion uses rAF and
@@ -424,7 +453,7 @@ capture_profile() {
     mv "$tmp_png" "$png_path"
     emit_sidecar "$sidecar_path" "$screen_name" "$profile" "$png_path"
     echo "[qa-capture]   ✓ $screen_name → $png_path ($(wc -c < "$png_path" | tr -d ' ') bytes)"
-  done
+  done < <(jq -r --arg p "$profile" '.screens | map(select(.profile == $p)) | .[].name' "$SCREEN_MAP")
 
   terminate_pid "$launch_pid"
   launch_pid=""

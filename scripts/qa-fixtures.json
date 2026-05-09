@@ -138,8 +138,17 @@
       }
     },
     "backfill": {
-      "description": "Backfill in progress — used for the backfill-dialog screen. Provider configured, history present, DB primed with backfill_status flag in app_metadata. Renderer reads this via window.api.backfillStatus().",
+      "description": "Backfill in progress — used for the backfill-dialog screen. Provider configured, history present, DB primed with backfill_status flag in app_metadata, plus a single fixture UUID-named .jsonl file under sessionRoots so countSessionFiles() returns >0 (UsageDashboard.tsx:60-76 gates BackfillDialog on count > 0). Renderer reads via window.api.backfillStatus()/backfillCount().",
       "sessionRoots": [".claude/projects/-Users-fixture-backfill"],
+      "sessionFiles": [
+        {
+          "root": ".claude/projects/-Users-fixture-backfill",
+          "filename": "00000000-0000-4000-8000-000000000001.jsonl",
+          "lines": [
+            { "type": "user", "message": { "role": "user", "content": "fixture prompt for backfill smoke" }, "uuid": "00000000-0000-4000-8000-000000000002", "sessionId": "sess-backfill-pending", "timestamp": "2026-05-05T11:00:00.000Z" }
+          ]
+        }
+      ],
       "history": [
         {
           "display": "Initial import scan",

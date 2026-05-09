@@ -1381,6 +1381,38 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   6. Renderer-only twins — run `qa-launch-renderer.sh` + `agent-browser open <vite-url>` flow. Mock window.api `_trigger` hook may need to be added if `renderer-settings` requires IPC simulation.
   7. After all 13 canonical + 2 renderer twins captured, run `--all` again into a separate `OUT_DIR` and assert byte-equal hashes vs first run (determinism check, gate doc §7 U1-VR Step 4).
 
+#### U1-VR-c — Other-profile partial baseline (first-run + backfill, 7 of 13 canonical screens)
+
+- **Group**: U1-VR (visual baseline, third batch). Extends U1-VR-b by adding the three other-profile screens that were `tbd:` and orchestrator-blocked.
+- **SHA**: (filled after this commit lands)
+- **Captured screens** (3 NEW; total 7 of 13): `first-run-onboarding`, `setup-guide` (first-run profile), `backfill-dialog` (backfill profile). Hashes:
+  - `first-run-onboarding.png` — sha256 `41c9e00bb825e35fb212b16cf0d59d7022ea512a2a56fa7f4c4108abb0b82d09` (92,448 bytes)
+  - `setup-guide.png` — sha256 `0274ddbf1fc9801cb755bdab3114b7f2041ca16eb7355dd05d8c6e8fcb20ef9a` (90,955 bytes)
+  - `backfill-dialog.png` — sha256 `90d51560bcb9143d55562fe6c0695367b0683b768f92edd31f071ccb209085a0` (112,676 bytes)
+- **Determinism check (U1-VR-b → U1-VR-c)**: the 4 populated PNGs from U1-VR-b are byte-equal in U1-VR-c (re-checked sha256). Orchestrator changes below are non-regressing for the populated profile.
+- **Hotfix landed alongside**: `electron/main.ts` `before-quit` handler called `mainWindow.close()` without an `isDestroyed()` guard. Under the orchestrator's terminate-pid SIGTERM teardown (and any other normal-quit race where the BrowserWindow was destroyed before `before-quit` fired), this raised `TypeError: Object has been destroyed at App.<anonymous>` and tore down the main process. Surfaced as a user-visible Electron error dialog mid-orchestration. Added the `!mainWindow.isDestroyed()` guard; rebuilt `dist-electron`.
+- **Orchestrator P0.5.4 improvements**:
+  1. **Per-profile boot selector**: hardcoded `wait .dashboard` after the inter-screen reload was wrong for non-populated profiles. `populated`/`backfill` keep `.dashboard`; `first-run`/`setup-guide` switched to `.first-run-screen` (App.tsx mounts FirstRunOnboarding when `getFirstRunStatus.isFirstRun=true`). Without this, first-run runs would hang on `wait .dashboard` until timeout.
+  2. **Skip reload for first screen**: `agent-browser --cdp <port> reload` after Electron's clean boot triggers an agent-browser daemon CDP-session-id rotation that returns "Session with given id not found" (or EAGAIN/`Resource temporarily unavailable`) on the next CLI call. The reload was only needed *between* screens to clear AnimatePresence-leaked modal state; the first screen boots clean already. Loop now reloads from screen 2+ only. Required `done < <(jq …)` instead of `jq … | while …` to keep `first_screen` propagating across iterations (subshell scope fix).
+  3. **Reload settle**: 1 s sleep between reload and the next agent-browser command for the inter-screen path, to dodge the daemon-busy window.
+  4. **Daemon hard-kill at profile start**: `pkill -9 -f agent-browser-darwin-arm64` added alongside the existing stale-Electron kill in `capture_profile`. Multiple agent-browser daemons can accumulate across re-runs (3 simultaneous instances observed during U1-VR-c smoke), and stale daemons cache CDP session IDs that no longer map to live targets, producing intermittent EAGAIN/session-not-found across the orchestrator's first agent-browser command.
+- **Fixture enrichment for backfill profile**: the dashboard's `BackfillDialog` is gated on `count > 0` from `countSessionFiles()`, which counts `^[0-9a-f]{8}-…\.jsonl$`-named files under `~/.claude/projects/**`. The U1-VR-b backfill fixture only seeded `.fixture-marker` files, so count was 0 and the dialog never rendered. Added a new top-level `sessionFiles[]` field to the `qa-fixtures.json` schema (interpreted by `qa-seed-fixtures.mjs` step 1b — UUID-named jsonl with seeded message lines). Backfill profile now seeds one such file with a single fixture user message; dialog renders with "Found 1 Claude session file." text. The `populated` profile is unchanged (still no `sessionFiles`); other profiles get a no-op pass.
+- **Setup-guide selector fix**: U1-VR-b screen-map clicked `.first-run-provider-card:first-of-type` (the `<article>` element with no click handler) and waited on the synthetic class `.setup-guide.first-run-walkthrough .setup-guide-title`. Updated to click the actual button inside the card (`.first-run-provider-card:first-of-type .first-run-primary-btn`, which `onClick`s to `setStage('walkthrough')`) and wait on `.first-run-walkthrough .setup-guide-title` (matches `SetupGuide.tsx:58` rendered DOM).
+- **Skipped screens still pending**: 6 of 13 remain `tbd:` for U1-VR-d/e:
+  - `settings-evidence` (populated): needs `displayScan.injected_files` non-empty in fixture (`PromptDetailView.tsx:77` gate). `tool_summary` is seeded but `injected_files` is not.
+  - `mcp-insights-{expanded,collapsed}` (populated): `McpInsightsCard.tsx:90` returns null without MCP `tool_calls` data; populated fixture seeds none.
+  - `memory-monitor-{expanded,collapsed}` (populated): `MemoryMonitorCard.tsx:186` returns null without memory file data; populated fixture seeds none.
+  - `notification-overlay`: permanently skipped under `OMT_QA_CAPTURE_MODE=1` (notif BrowserWindow not created); separate launch flow required.
+  - `renderer-{dashboard,settings}` (renderer-only twins): renderer-only flow not exercised.
+- **Frontend review**: N/A — docs-only landing of pre-validated capture artifacts plus the surgical Electron `isDestroyed` guard (1 line; not a UI change).
+- **Cascade-order check**: N/A — no CSS source change.
+- **Visual diff**: N/A — this extends the baseline. The 4 populated PNGs are byte-equal vs U1-VR-b (no regression).
+- **Notes / U1-VR-d checklist**:
+  1. **Fixture enrichment** (5 screens unblock): seed MCP `tool_calls`, memory file rows, prompt `injected_files` for the `populated` profile. Re-capture mcp-insights-{expanded,collapsed}, memory-monitor-{expanded,collapsed}, settings-evidence.
+  2. **Renderer twins** (2 screens): launch vite dev server via `qa-launch-renderer.sh`, point agent-browser at the served URL, capture renderer-dashboard + renderer-settings against mock `window.api`. May need to add a `_trigger` hook on the mock for `onNavigateTo('settings')`.
+  3. **Determinism re-run**: after all 12 captures land (notification-overlay deferred), run `--all` into a separate `OUT_DIR` and assert byte-equal sha256 hashes vs the canonical baseline.
+  4. **U1-VR final commit**: mark baseline complete (12/13, with notification-overlay permanently deferred). Update §7 P0.5 Decisions if any orchestrator behavior is meant to ship as-is.
+
 #### P1 — Cross-file class collision risk records
 
 - **Group**: cross-file collisions (no owner relocation)

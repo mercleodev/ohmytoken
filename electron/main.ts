@@ -2370,7 +2370,7 @@ app.on("will-quit", () => {
 
 app.on("before-quit", () => {
   isQuitting = true;
-  if (mainWindow) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.close();
   }
   usageStore.stopPolling();

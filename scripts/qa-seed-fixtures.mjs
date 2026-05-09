@@ -306,6 +306,21 @@ function main() {
     outputs.push(marker);
   }
 
+  // 1b. Session files: deterministic UUID-named .jsonl files inside a
+  // sessionRoots dir. The backfill orchestrator's countSessionFiles()
+  // counts these; without at least one matching file the dashboard
+  // never renders BackfillDialog (UsageDashboard.tsx:60-76 requires
+  // count > 0). Used by the backfill profile to make the dialog
+  // appear; safe no-op for profiles without sessionFiles.
+  for (const entry of profile.sessionFiles ?? []) {
+    const fileDir = join(homePath, entry.root);
+    ensureDir(fileDir);
+    const filePath = join(fileDir, entry.filename);
+    const lines = (entry.lines ?? []).map((l) => JSON.stringify(l)).join("\n");
+    writeFileSync(filePath, lines + (lines ? "\n" : ""));
+    outputs.push(filePath);
+  }
+
   // 2. ~/.claude/history.jsonl
   if ((profile.history ?? []).length > 0) {
     const histPath = join(homePath, ".claude", "history.jsonl");
