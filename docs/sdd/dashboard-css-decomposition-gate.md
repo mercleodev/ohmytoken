@@ -1384,7 +1384,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U1-VR-c — Other-profile partial baseline (first-run + backfill, 7 of 13 canonical screens)
 
 - **Group**: U1-VR (visual baseline, third batch). Extends U1-VR-b by adding the three other-profile screens that were `tbd:` and orchestrator-blocked.
-- **SHA**: (filled after this commit lands)
+- **SHA**: `5db711b`
 - **Captured screens** (3 NEW; total 7 of 13): `first-run-onboarding`, `setup-guide` (first-run profile), `backfill-dialog` (backfill profile). Hashes:
   - `first-run-onboarding.png` — sha256 `41c9e00bb825e35fb212b16cf0d59d7022ea512a2a56fa7f4c4108abb0b82d09` (92,448 bytes)
   - `setup-guide.png` — sha256 `0274ddbf1fc9801cb755bdab3114b7f2041ca16eb7355dd05d8c6e8fcb20ef9a` (90,955 bytes)
