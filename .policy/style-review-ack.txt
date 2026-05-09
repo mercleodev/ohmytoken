@@ -1,8 +1,7 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-08T16:49:43Z
-fingerprint=159ff47d402bbc459c07cc969b5b8db68f29dee80229fd9a3a2165140e99608a
+# updated_at_utc: 2026-05-09T02:15:05Z
+fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
 source=docs/sdd/style-checklist.md
-note=P0.5 fix-forward — better-sqlite3 ABI dance (ensure_runtime helper, seed/capture phase split, --seed-only mode) + §14 U1-VR blocker note for agent-browser 0.26.0 CDP tab-routing failure surfaced during smoke test.
+note=P0.5 blocker note revision — remove Playwright/chrome-remote-interface fallback options. agent-browser is the only allowed automation tool per §C5 + .claude/rules/agent-browser-qa.md. Resolution path now lists agent-browser-only options (workflow re-validation, upstream issue, alternate attach flow).
 
 docs/sdd/dashboard-css-decomposition-gate.md
-scripts/qa-capture-baseline.sh
