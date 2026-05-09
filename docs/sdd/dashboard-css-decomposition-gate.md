@@ -1321,7 +1321,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U1-VR-b — Extended partial baseline (populated profile, 4 of 13 canonical screens)
 
 - **Group**: U1-VR partial extension — landed on top of U1-VR-a (`cb5d1f4`)
-- **SHA**: (filled by next commit)
+- **SHA**: `a8aaf64`
 - **Lines moved**: 0
 - **Captured screens** (4 of 13): `dashboard-all-default`, `dashboard-claude`, `dashboard-prompt-detail` (NEW), `settings-context-limit` (NEW). All sidecars now record both `targetViewport` (400×900 from screen-map, post U1-VR-b decision to match shipped 400×640 layout) and `actualPx` (800×1224 — DPR 2 of 400×612 main BrowserWindow content area).
 - **Orchestrator improvements that unblocked the 2 new screens** (P0.5.3 fix-forward bundled here):
