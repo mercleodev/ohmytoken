@@ -163,7 +163,12 @@ run_steps() {
       click)
         local sel
         sel=$(echo "$step" | jq -r '.selector')
-        agent-browser "${ab_prefix[@]}" click "$sel"
+        # Native DOM click via eval — agent-browser's CDP `click` does
+        # not trigger React onClick handlers (CDP dispatchMouseEvent
+        # bypasses React's synthetic event system). U1-VR-b smoke
+        # confirmed: `click @e6` against a React button reports "✓ Done"
+        # but state never updates; `el.click()` works.
+        agent-browser "${ab_prefix[@]}" eval "document.querySelector('$sel').click()"
         ;;
       wait)
         local sel
@@ -327,6 +332,18 @@ capture_profile() {
 
   mkdir -p "$OUT_DIR/canonical"
 
+  # Defensive: kill any stale OhMyToken Electron from a prior run that
+  # bound to $CDP_PORT. Prior orchestrator failures can leave processes
+  # alive whose terminate_pid trap didn't fire (e.g., subshell pipe-loop
+  # exit modes); fresh launches then race for the port and capturing
+  # commands attach to whichever instance binds first — usually the
+  # stale one with leftover React state. This makes capture deterministic
+  # by guaranteeing a single instance.
+  ps -e -o pid,command \
+    | awk -v r="$REPO_ROOT" '$0 ~ "Electron.app/Contents/MacOS/Electron \\. --remote-debugging-port=" && index($0, r) {print $1}' \
+    | xargs -I{} kill -KILL {} 2>/dev/null || true
+  sleep 1
+
   local launch_pid=""
   trap 'terminate_pid "$launch_pid"' EXIT
   NODE_ENV=test \
@@ -339,6 +356,18 @@ capture_profile() {
   launch_pid=$!
 
   wait_for_cdp "$CDP_PORT" "$STARTUP_GRACE"
+
+  # Bring the OhMyToken main page to OS-level foreground via CDP HTTP
+  # /json/activate. Without this, macOS paint-pauses the Electron
+  # window's compositor and framer-motion's requestAnimationFrame-based
+  # animations stall mid-progress (overlay opacity stuck at ~0.02
+  # instead of 1). This makes the capture deterministic regardless of
+  # which window happens to have focus when the orchestrator runs.
+  local main_target
+  main_target=$(curl -s "http://127.0.0.1:${CDP_PORT}/json" | jq -r '.[] | select(.url | endswith("/index.html")) | .id' | head -1)
+  if [ -n "$main_target" ]; then
+    curl -s -X POST "http://127.0.0.1:${CDP_PORT}/json/activate/${main_target}" >/dev/null
+  fi
 
   jq -r --arg p "$profile" '.screens | map(select(.profile == $p)) | .[].name' "$SCREEN_MAP" \
   | while IFS= read -r screen_name; do
@@ -355,8 +384,29 @@ capture_profile() {
     fi
     local wait_for
     wait_for=$(jq -r --arg n "$screen_name" '.screens[] | select(.name == $n) | .waitFor' "$SCREEN_MAP")
+    # Reload to reset React state between screens. Each canonical
+    # screen is captured from a clean dashboard boot rather than from
+    # whatever state the previous screen's interactions left behind.
+    # Without this, the `settings-context-limit` capture's open popup
+    # bleeds into subsequent captures (since AnimatePresence keeps
+    # the modal mounted until React unmounts it). Reload also clears
+    # any leftover scroll position, hover state, focus ring, etc.
+    agent-browser --cdp "$CDP_PORT" reload >/dev/null
+    agent-browser --cdp "$CDP_PORT" wait ".dashboard"
     run_steps "$screen_name" cdp
     agent-browser --cdp "$CDP_PORT" wait "$wait_for"
+    # Re-activate before each capture: framer-motion uses rAF and
+    # macOS paint-pauses non-foreground windows, so animations stall
+    # mid-progress unless the window is OS-level foreground. The
+    # initial activate after launch can be lost if any other app
+    # steals focus mid-run. Re-activating per capture is cheap and
+    # keeps animations completing naturally (no inline-style hacks).
+    if [ -n "$main_target" ]; then
+      curl -s -X POST "http://127.0.0.1:${CDP_PORT}/json/activate/${main_target}" >/dev/null
+    fi
+    # Brief settle window: framer-motion fades typically finish in
+    # ~150-300ms; 500ms is conservative without slowing the run much.
+    agent-browser --cdp "$CDP_PORT" wait 500
     local png_path="$OUT_DIR/canonical/${screen_name}.png"
     local sidecar_path="$OUT_DIR/canonical/${screen_name}.json"
     # IPC capture (P0.5.2): bypass agent-browser CDP screenshot which

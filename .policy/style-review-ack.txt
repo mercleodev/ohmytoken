@@ -1,7 +1,17 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-09T15:39:54Z
-fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
+# updated_at_utc: 2026-05-09T16:19:43Z
+fingerprint=3b7c7099f9426c22c92a66041b9cae776512188773502a263da9d57beeb1faa5
 source=docs/sdd/style-checklist.md
-note=U1-VR-a SHA backfill — replace placeholder with cb5d1f4. Per §14 cadence rule. No code, no fixture, no allowlist change.
+note=U1-VR-b — extend partial baseline to 4/13 canonical screens (added dashboard-prompt-detail + settings-context-limit). Orchestrator P0.5.3 improvements (native eval click, reload between screens, foreground re-activate, stale electron cleanup, targetViewport+actualPx sidecar). 9 remaining screens tbd-annotated (fixture enrichment / other profiles / renderer twins). §14 U1-VR-b entry + U1-VR-c checklist.
 
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.json
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.png
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.json
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.png
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-prompt-detail.json
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-prompt-detail.png
+docs/qa/runs/2026-05-10/baseline/canonical/settings-context-limit.json
+docs/qa/runs/2026-05-10/baseline/canonical/settings-context-limit.png
 docs/sdd/dashboard-css-decomposition-gate.md
+scripts/qa-capture-baseline.sh
+scripts/qa-capture-screen-map.json

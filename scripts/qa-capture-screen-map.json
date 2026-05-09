@@ -2,10 +2,11 @@
   "version": 1,
   "fakeNow": "2026-05-05T12:00:00Z",
   "viewport": {
-    "width": 1440,
-    "height": 900,
+    "width": 400,
+    "height": 640,
     "dpr": 2
   },
+  "viewportNote": "OhMyToken main window is hardcoded to 400x640 (tray app, fixed size). The original gate-doc §7 U1-VR spec called for 1440x900 but that produces a layout users never see. U1-VR-b (2026-05-10) decided to keep 400x640 to match the shipped layout, since CSS decomposition regressions are most likely to surface in the actual user-facing render path. Sidecar JSON's targetViewport == actualPx now.",
   "cdpPort": 9222,
   "screens": [
     {
@@ -38,8 +39,7 @@
         { "type": "click", "selector": ".prompt-card" },
         { "type": "wait", "selector": ".prompt-detail-header" }
       ],
-      "description": "Prompt detail view: click first .session-card (RecentSessions.tsx:462) → SessionDetailView renders → click first .prompt-card (SessionDetailView.tsx:495) → PromptDetailView renders.",
-      "tbd": "(P0.5.2 smoke) `.session-card` exists in claude-tab populated state but agent-browser default click selection didn't trigger navigation to SessionDetailView; subsequent `wait .prompt-card` hung. Likely needs ref-based click via snapshot first (per agent-browser core skill: `snapshot -i` → `click @e<n>`). U1-VR-b should re-validate this nav path. Until then this screen is skipped."
+      "description": "Prompt detail view: click first .session-card (RecentSessions.tsx:462) → SessionDetailView renders → click first .prompt-card (SessionDetailView.tsx:495) → PromptDetailView renders. Native eval-based click (P0.5.2 fix) routes through React onClick handlers."
     },
     {
       "name": "settings-evidence",
@@ -51,11 +51,12 @@
         { "type": "wait", "selector": ".prompt-card" },
         { "type": "click", "selector": ".prompt-card" },
         { "type": "wait", "selector": ".prompt-detail-header" },
+        { "type": "wait", "selector": ".evidence-settings-btn" },
         { "type": "click", "selector": ".evidence-settings-btn" },
         { "type": "wait", "selector": ".evidence-settings-panel" }
       ],
-      "description": "Evidence scoring settings popup: navigate to PromptDetailView (same as dashboard-prompt-detail), then click .evidence-settings-btn (PromptDetailView.tsx:203).",
-      "tbd": "Blocked on dashboard-prompt-detail nav (same selector chain). Resolve dashboard-prompt-detail first."
+      "description": "Evidence scoring settings popup: navigate to PromptDetailView (same as dashboard-prompt-detail), then click .evidence-settings-btn (PromptDetailView.tsx:203). The button is inside a lazy-mounted Section so .prompt-detail-header alone isn't sufficient — wait explicitly for the button selector before clicking.",
+      "tbd": "(U1-VR-b finding) `.evidence-settings-btn` is only rendered when `hasInjectedFiles=true` (PromptDetailView.tsx:77, 192), which requires `displayScan.injected_files` to be a non-empty array. The populated fixture's prompts seed `tool_summary` (Read/Edit counts) but NOT `injected_files` rows in the DB. Fixture enrichment needed: add at least one prompt with seeded injected_files entries linked via the prompts.injected_files JSON column or join table. Tracked as fixture-enrichment follow-up; orchestrator path is correct."
     },
     {
       "name": "settings-context-limit",
@@ -66,8 +67,7 @@
         { "type": "click", "selector": ".dashboard-settings-btn" },
         { "type": "wait", "selector": ".ctx-settings-panel" }
       ],
-      "description": "Context limit settings popup: click ⚙ .dashboard-settings-btn (UsageDashboard.tsx:305) → ContextLimitSettings overlay renders with .ctx-settings-overlay > .ctx-settings-panel.",
-      "tbd": "Selectors derived from source (UsageDashboard.tsx:305 .dashboard-settings-btn + ContextLimitSettings.tsx:69 .ctx-settings-panel) but not exercised end-to-end in P0.5.2 smoke. U1-VR-b: validate."
+      "description": "Context limit settings popup: click ⚙ .dashboard-settings-btn (UsageDashboard.tsx:305) → ContextLimitSettings overlay renders with .ctx-settings-overlay > .ctx-settings-panel. Validated U1-VR-b smoke."
     },
     {
       "name": "backfill-dialog",

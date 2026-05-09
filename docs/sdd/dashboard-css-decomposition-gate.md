@@ -1318,6 +1318,37 @@ Earlier units committed their work without filling §14. Reconstructed from `git
     4. End-user runs are unchanged: the env var is unset, so neither the notification skip nor the IPC handler activates. The renderer's `window.api.qaCaptureWindow` invokes an unregistered IPC channel and rejects, but no production code path calls it. Tests do not call it either.
   - Versions tested: agent-browser 0.26.0 (initial install) → 0.27.0 (2026-05-09 upgrade) — both exhibit the screenshot CDP timeout. Electron 28.3.3 in OhMyToken. Capture mechanism: `webContents.capturePage()` (Electron-native) — agent-browser only used for navigation/`eval` triggering.
 
+#### U1-VR-b — Extended partial baseline (populated profile, 4 of 13 canonical screens)
+
+- **Group**: U1-VR partial extension — landed on top of U1-VR-a (`cb5d1f4`)
+- **SHA**: (filled by next commit)
+- **Lines moved**: 0
+- **Captured screens** (4 of 13): `dashboard-all-default`, `dashboard-claude`, `dashboard-prompt-detail` (NEW), `settings-context-limit` (NEW). All sidecars now record both `targetViewport` (400×900 from screen-map, post U1-VR-b decision to match shipped 400×640 layout) and `actualPx` (800×1224 — DPR 2 of 400×612 main BrowserWindow content area).
+- **Orchestrator improvements that unblocked the 2 new screens** (P0.5.3 fix-forward bundled here):
+  1. **Native eval click** replaces agent-browser's CDP `click`. The CDP `Input.dispatchMouseEvent` doesn't trigger React's synthetic onClick — confirmed during U1-VR-b smoke: `agent-browser --cdp 9222 click @e6` reported "✓ Done" but `setShowContextSettings(true)` never fired. Replacing with `agent-browser --cdp 9222 eval "document.querySelector(sel).click()"` invokes the DOM-level click which React listens to. Documented in script comment.
+  2. **Reload between screens** resets React state (popup mounts, scroll position, focus, AnimatePresence pending exits). Without this, settings-context-limit's open popup bled into subsequent captures because AnimatePresence keeps modals mounted until React unmounts them. `agent-browser --cdp <port> reload` + `wait .dashboard` is now the prefix of every screen iteration.
+  3. **Foreground re-activate before each capture** via CDP HTTP `/json/activate/<id>`. macOS paint-pauses non-foreground BrowserWindows so framer-motion's rAF-driven fades stall mid-progress (overlay opacity stuck at 0.019 instead of 1). Re-activating per-capture lets animations complete naturally; combined with a 500ms settle window this captures clean end-states without inline-style hacks.
+  4. **Stale Electron cleanup** before launch. Multiple orchestrator runs from the same shell session left Electron processes alive that bound to the same `--remote-debugging-port=9222` (orchestrator failures inside pipe-loop subshells didn't trigger the EXIT trap). New launches racing with stale instances captured stale React state. The orchestrator now `kill -KILL`s any pre-existing Electron from this repo's `node_modules/` bound to the CDP port before launch.
+  5. **Sidecar viewport reporting**: `targetViewport` (gate-doc spec) and `actualPx` (read from PNG file with `file(1)`) now both included so the spec-vs-actual discrepancy is explicit per-capture rather than implicit.
+- **Skipped screens** (9 of 13 + 2 renderer twins, all `tbd:` annotated):
+  - `settings-evidence` — needs **fixture enrichment**. `.evidence-settings-btn` is conditionally rendered behind `hasInjectedFiles` (PromptDetailView.tsx:77, 192), which requires `displayScan.injected_files` to be a non-empty array. Populated fixture seeds prompts with `tool_summary` (Read/Edit counts) but NOT `injected_files` rows. U1-VR-c needs to add at least one prompt with seeded injected_files to populate fixture.
+  - `mcp-insights-expanded`/`collapsed` — needs fixture enrichment. McpInsightsCard `return null` when `!data` (McpInsightsCard.tsx:90). Populated fixture has 0 MCP `tool_calls` in DB. Cards never render.
+  - `memory-monitor-expanded`/`collapsed` — needs fixture enrichment. MemoryMonitorCard `return null` when `loading || !status` (MemoryMonitorCard.tsx:186). No memory file data seeded.
+  - `notification-overlay` — permanently skipped under `OMT_QA_CAPTURE_MODE=1` (notification window not created). Re-enabling needs separate launch flow.
+  - `backfill-dialog` (backfill profile) and `first-run-onboarding`, `setup-guide` (first-run profile) — only populated profile was iterated in U1-VR-b. U1-VR-c should run the orchestrator across all 4 profiles or use `--all`.
+  - `renderer-dashboard`, `renderer-settings` — renderer-only flow not exercised.
+- **Reproduce U1-VR-b run**:
+  ```bash
+  bash scripts/qa-capture-baseline.sh populated
+  ```
+- **Determinism check**: not yet run. U1-VR-c should re-run the same command into a separate `OUT_DIR` and assert byte-equal hashes for the 4 captured screens.
+- **U1-VR-c checklist (priorities)**:
+  1. Fixture enrichment — add MCP tool_calls, memory files, prompt injected_files to populated profile (unblocks 5 screens).
+  2. Run remaining profiles (backfill, first-run) — `bash scripts/qa-capture-baseline.sh --all` (unblocks 3 screens).
+  3. Renderer twins via `qa-launch-renderer.sh` (unblocks 2 screens).
+  4. Determinism re-run + byte-equal verification.
+  5. Land final U1-VR commit + §14 entry, marking baseline complete (12 of 13 canonical, with `notification-overlay` deferred).
+
 #### U1-VR-a — Partial visual baseline (populated profile, 2 of 13 canonical screens)
 
 - **Group**: U1-VR partial — landed under v3.3 split, P0.5.2 wiring

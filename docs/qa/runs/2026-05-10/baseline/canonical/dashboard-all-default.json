@@ -3,8 +3,8 @@
   "screen": "dashboard-all-default",
   "fixedNow": "2026-05-05T12:00:00Z",
   "targetViewport": {
-    "width": 1440,
-    "height": 900,
+    "width": 400,
+    "height": 640,
     "dpr": 2
   },
   "actualPx": {
