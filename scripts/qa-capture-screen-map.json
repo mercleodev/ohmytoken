@@ -31,15 +31,15 @@
       "name": "dashboard-prompt-detail",
       "profile": "populated",
       "target": "renderer",
-      "waitFor": ".prompt-detail-view",
+      "waitFor": ".prompt-detail-header",
       "steps": [
-        { "type": "click", "selector": ".recent-sessions-row:first-of-type" },
-        { "type": "wait", "selector": ".session-detail-view" },
-        { "type": "click", "selector": ".session-detail-view .prompt-card:first-of-type" },
-        { "type": "wait", "selector": ".prompt-detail-view" }
+        { "type": "click", "selector": ".session-card" },
+        { "type": "wait", "selector": ".prompt-card" },
+        { "type": "click", "selector": ".prompt-card" },
+        { "type": "wait", "selector": ".prompt-detail-header" }
       ],
-      "description": "Prompt detail view, reached by clicking the first session in Recent Sessions, then the first prompt within that session.",
-      "tbd": "Selectors `.recent-sessions-row` and `.prompt-card` are best-guesses from CSS class inventory; verify against actual rendered DOM at U1-VR run-time and adjust if RecentSessions/SessionDetailView use different class names."
+      "description": "Prompt detail view: click first .session-card (RecentSessions.tsx:462) → SessionDetailView renders → click first .prompt-card (SessionDetailView.tsx:495) → PromptDetailView renders.",
+      "tbd": "(P0.5.2 smoke) `.session-card` exists in claude-tab populated state but agent-browser default click selection didn't trigger navigation to SessionDetailView; subsequent `wait .prompt-card` hung. Likely needs ref-based click via snapshot first (per agent-browser core skill: `snapshot -i` → `click @e<n>`). U1-VR-b should re-validate this nav path. Until then this screen is skipped."
     },
     {
       "name": "settings-evidence",
@@ -47,25 +47,27 @@
       "target": "renderer",
       "waitFor": ".evidence-settings-panel",
       "steps": [
-        { "type": "click", "selector": ".recent-sessions-row:first-of-type" },
-        { "type": "wait", "selector": ".session-detail-view" },
-        { "type": "click", "selector": ".session-detail-view .prompt-card:first-of-type" },
-        { "type": "wait", "selector": ".prompt-detail-view" },
-        { "type": "click", "selector": ".prompt-detail-view .evidence-settings-btn" },
+        { "type": "click", "selector": ".session-card" },
+        { "type": "wait", "selector": ".prompt-card" },
+        { "type": "click", "selector": ".prompt-card" },
+        { "type": "wait", "selector": ".prompt-detail-header" },
+        { "type": "click", "selector": ".evidence-settings-btn" },
         { "type": "wait", "selector": ".evidence-settings-panel" }
       ],
-      "description": "Evidence scoring settings popup, opened from PromptDetailView via the `.evidence-settings-btn` (PromptDetailView.tsx:203)."
+      "description": "Evidence scoring settings popup: navigate to PromptDetailView (same as dashboard-prompt-detail), then click .evidence-settings-btn (PromptDetailView.tsx:203).",
+      "tbd": "Blocked on dashboard-prompt-detail nav (same selector chain). Resolve dashboard-prompt-detail first."
     },
     {
       "name": "settings-context-limit",
       "profile": "populated",
       "target": "renderer",
-      "waitFor": ".context-limit-settings",
+      "waitFor": ".ctx-settings-panel",
       "steps": [
         { "type": "click", "selector": ".dashboard-settings-btn" },
-        { "type": "wait", "selector": ".context-limit-settings" }
+        { "type": "wait", "selector": ".ctx-settings-panel" }
       ],
-      "description": "Context limit settings popup, opened from main dashboard via the ⚙ `.dashboard-settings-btn` (UsageDashboard.tsx:305)."
+      "description": "Context limit settings popup: click ⚙ .dashboard-settings-btn (UsageDashboard.tsx:305) → ContextLimitSettings overlay renders with .ctx-settings-overlay > .ctx-settings-panel.",
+      "tbd": "Selectors derived from source (UsageDashboard.tsx:305 .dashboard-settings-btn + ContextLimitSettings.tsx:69 .ctx-settings-panel) but not exercised end-to-end in P0.5.2 smoke. U1-VR-b: validate."
     },
     {
       "name": "backfill-dialog",
@@ -73,7 +75,8 @@
       "target": "renderer",
       "waitFor": ".backfill-dialog",
       "steps": [],
-      "description": "BackfillDialog overlay renders on dashboard boot when backfillStatus IPC reports incomplete state with count > 0 (UsageDashboard.tsx:60-76, 394). Backfill profile primes the DB into this state."
+      "description": "BackfillDialog overlay renders on dashboard boot when backfillStatus IPC reports incomplete state with count > 0 (UsageDashboard.tsx:60-76, 394). Backfill profile primes the DB into this state.",
+      "tbd": "Backfill profile not exercised in P0.5.2 smoke (only populated). U1-VR-b: seed backfill profile, launch with OMT_QA_CAPTURE_MODE=1, verify .backfill-dialog renders on boot."
     },
     {
       "name": "first-run-onboarding",
@@ -81,7 +84,8 @@
       "target": "renderer",
       "waitFor": ".first-run-screen",
       "steps": [],
-      "description": "FirstRunOnboarding renders when getFirstRunStatus IPC returns isFirstRun=true (App.tsx:32-39). first-run profile primes appSettings.firstRun=true."
+      "description": "FirstRunOnboarding renders when getFirstRunStatus IPC returns isFirstRun=true (App.tsx:32-39). first-run profile primes appSettings.firstRun=true.",
+      "tbd": "first-run profile not exercised in P0.5.2 smoke. U1-VR-b: seed first-run profile, launch, verify .first-run-screen renders on boot."
     },
     {
       "name": "notification-overlay",
@@ -94,7 +98,7 @@
         { "type": "wait", "selector": ".notif-overlay .notification-card" }
       ],
       "description": "Notification overlay renders in a separate frameless BrowserWindow (src/notification-main.tsx) when a new prompt scan event fires. Cross-cut guard for §9.1.",
-      "tbd": "(1) The notification window may not be visible until at least one notification arrives; the seed currently does not synthesize an `onNewPromptScan` event. P0.5 leaves the eval step as a placeholder for U1-VR-side wiring (e.g., add a `__qaTriggerNotification` test hook in src/notification-main.tsx OR fire an IPC event from the main process). (2) Confirm the notification window's URL pattern via `agent-browser tab` at run-time."
+      "tbd": "(P0.5.2) Skipped under OMT_QA_CAPTURE_MODE=1 — the notification BrowserWindow is not created in capture mode (creates CDP target ambiguity). To capture this screen the orchestrator would need to (a) launch Electron WITHOUT OMT_QA_CAPTURE_MODE, (b) trigger a notification, (c) tab-switch to the notification window, (d) capture via CDP — but agent-browser's CDP screenshot is unreliable in multi-tab scenarios (the original P0.5 blocker). U1-VR can decide to either drop this canonical screen, add a separate launch mode that captures only the notification window solo, or accept manual capture. Tracked separately."
     },
     {
       "name": "setup-guide",
@@ -117,7 +121,8 @@
       "steps": [
         { "type": "scroll-to", "selector": ".mcp-card" }
       ],
-      "description": "McpInsightsCard with default expanded=true state (McpInsightsCard.tsx:71). Variant captures the open card layout."
+      "description": "McpInsightsCard with default expanded=true state (McpInsightsCard.tsx:71). Variant captures the open card layout.",
+      "tbd": "Selectors derived from source but `agent-browser scrollintoview` not exercised in P0.5.2 smoke. The populated profile may not seed any MCP data → card may render empty. U1-VR-b: verify .mcp-card .collapsible.open exists in the seeded populated dashboard, and that scroll lands the card in viewport."
     },
     {
       "name": "mcp-insights-collapsed",
@@ -129,7 +134,8 @@
         { "type": "click", "selector": ".mcp-card-header button[aria-expanded='true']" },
         { "type": "wait", "selector": ".mcp-card .cost-chevron:not(.expanded)" }
       ],
-      "description": "McpInsightsCard collapsed via the header toggle button. Variant captures the closed-card chevron + condensed layout."
+      "description": "McpInsightsCard collapsed via the header toggle button. Variant captures the closed-card chevron + condensed layout.",
+      "tbd": "Blocked on mcp-insights-expanded validation (same card)."
     },
     {
       "name": "memory-monitor-expanded",
@@ -139,7 +145,8 @@
       "steps": [
         { "type": "scroll-to", "selector": ".memory-card" }
       ],
-      "description": "MemoryMonitorCard with default expanded=true state (MemoryMonitorCard.tsx:145)."
+      "description": "MemoryMonitorCard with default expanded=true state (MemoryMonitorCard.tsx:145).",
+      "tbd": "Selectors derived from source but not exercised in P0.5.2 smoke. populated profile may not seed memory monitor data. U1-VR-b: validate."
     },
     {
       "name": "memory-monitor-collapsed",
@@ -151,7 +158,8 @@
         { "type": "click", "selector": ".memory-card .memory-header" },
         { "type": "wait", "selector": ".memory-card .memory-chevron:not(.expanded)" }
       ],
-      "description": "MemoryMonitorCard collapsed via the header click handler (MemoryMonitorCard.tsx:207)."
+      "description": "MemoryMonitorCard collapsed via the header click handler (MemoryMonitorCard.tsx:207).",
+      "tbd": "Blocked on memory-monitor-expanded validation (same card)."
     },
     {
       "name": "renderer-dashboard",
@@ -159,7 +167,8 @@
       "target": "renderer-only",
       "waitFor": ".dashboard",
       "steps": [],
-      "description": "Renderer-only twin: dashboard view rendered against mock window.api (src/main.tsx). Captured via qa-launch-renderer.sh + agent-browser open <vite-url>. Fast-path check for Tier 1 units that don't need real IPC data."
+      "description": "Renderer-only twin: dashboard view rendered against mock window.api (src/main.tsx). Captured via qa-launch-renderer.sh + agent-browser open <vite-url>. Fast-path check for Tier 1 units that don't need real IPC data.",
+      "tbd": "renderer-only flow not exercised in P0.5.2 smoke (focus was on headed-Electron path). U1-VR-b: launch vite dev server, agent-browser open canonical QA URL, verify .dashboard renders against mock window.api."
     },
     {
       "name": "renderer-settings",

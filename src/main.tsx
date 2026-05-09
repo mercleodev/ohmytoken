@@ -568,6 +568,7 @@ if (!window.api) {
       return () => {};
     },
     getDisplays: async () => [],
+    qaCaptureWindow: async (outputPath: string) => ({ path: outputPath, bytes: 0 }),
   };
   console.log('🔧 Mock API loaded for browser testing');
 }

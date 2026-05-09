@@ -21,12 +21,34 @@
 #   CDP_PORT          default: 9222 (must match qa-launch-electron.sh)
 #   STARTUP_GRACE     default: 8 (seconds to wait for Electron CDP readiness)
 #   TERMINATE_GRACE   default: 10 (seconds before SIGKILL)
+#   INCLUDE_TBD       default: 0. Set to 1 to attempt screens that carry a
+#                     `tbd:` annotation in qa-capture-screen-map.json.
+#                     Default skips them so a baseline run only captures
+#                     fully-validated screens.
 #
 # Better-sqlite3 ABI dance: the seeder runs under system Node (MODULE_VERSION
 # 127 on Node 22) but Electron 28 embeds Node with MODULE_VERSION 119.
 # Both `--all` and `<profile>` modes call `npm run ensure:node` before
 # seeding and `npm run ensure:electron` before launching Electron. These
 # are idempotent — they read config.gypi and only rebuild when needed.
+#
+# Capture method (P0.5.2): Electron is launched with OMT_QA_CAPTURE_MODE=1.
+# Side effects:
+#   - notification BrowserWindow not created → CDP has only the main page,
+#     so agent-browser tab routing edge-cases are eliminated.
+#   - `qa:capture-window` IPC handler registers in the main process. The
+#     orchestrator emits screenshots via `agent-browser eval
+#     "window.api.qaCaptureWindow('<path>').then(r=>JSON.stringify(r))"`,
+#     which routes through Electron's native webContents.capturePage().
+#     This bypasses agent-browser's CDP `Page.captureScreenshot` path,
+#     which times out under macOS paint-pause when the headed window is
+#     not foreground. Captures are byte-equal across runs (verified at
+#     P0.5.2 smoke test: 3 identical hashes for the same DOM state).
+#
+# Notification-overlay screen: skipped under capture mode (the notif
+# window does not exist). Re-enabling the notification baseline requires
+# a separate launch without OMT_QA_CAPTURE_MODE; tracked as a U1-VR-side
+# follow-up in the screen-map's `tbd:` annotations.
 #
 # This script emits no PNGs unless invoked with a profile name. P0.5
 # itself is reviewed via --dry-run; the actual baseline capture is
@@ -44,6 +66,7 @@ LAUNCH_RENDERER="${REPO_ROOT}/scripts/qa-launch-renderer.sh"
 : "${STARTUP_GRACE:=8}"
 : "${TERMINATE_GRACE:=10}"
 : "${OUT_DIR:=${REPO_ROOT}/docs/qa/runs/$(date -u +%Y-%m-%d)/baseline}"
+: "${INCLUDE_TBD:=0}"
 
 # ---------------------------------------------------------------------------
 # Pre-flight
@@ -126,6 +149,11 @@ dry_run() {
 
 run_steps() {
   local screen_name="$1"
+  local mode="${2:-cdp}" # "cdp" for headed Electron attach; "daemon" for renderer-only
+  local ab_prefix=()
+  if [ "$mode" = "cdp" ]; then
+    ab_prefix=(--cdp "$CDP_PORT")
+  fi
   local steps_json
   steps_json=$(jq -c --arg n "$screen_name" '.screens[] | select(.name == $n) | .steps' "$SCREEN_MAP")
   echo "$steps_json" | jq -c '.[]' | while IFS= read -r step; do
@@ -135,32 +163,30 @@ run_steps() {
       click)
         local sel
         sel=$(echo "$step" | jq -r '.selector')
-        agent-browser click "$sel"
+        agent-browser "${ab_prefix[@]}" click "$sel"
         ;;
       wait)
         local sel
         sel=$(echo "$step" | jq -r '.selector')
-        agent-browser wait "$sel"
+        agent-browser "${ab_prefix[@]}" wait "$sel"
         ;;
       wait_ms)
         local ms
         ms=$(echo "$step" | jq -r '.ms')
-        agent-browser wait "$ms"
+        agent-browser "${ab_prefix[@]}" wait "$ms"
         ;;
       eval)
         local script
         script=$(echo "$step" | jq -r '.script')
-        agent-browser evaluate "$script"
+        agent-browser "${ab_prefix[@]}" eval "$script"
         ;;
       scroll-to)
         local sel
         sel=$(echo "$step" | jq -r '.selector')
-        agent-browser scrollintoview "$sel"
+        agent-browser "${ab_prefix[@]}" scrollintoview "$sel"
         ;;
       tab-switch)
-        local pat
-        pat=$(echo "$step" | jq -r '.urlPattern')
-        agent-browser tab --url "$pat"
+        echo "[qa-capture] WARN: tab-switch step ignored in OMT_QA_CAPTURE_MODE (notif window not created)" >&2
         ;;
       *)
         echo "[qa-capture] FATAL: unknown step type '$step_type' in screen $screen_name" >&2
@@ -174,12 +200,26 @@ emit_sidecar() {
   local out_path="$1"
   local screen_name="$2"
   local profile="$3"
+  local png_path="$4"
   local fixed_now
   fixed_now=$(jq -r '.fakeNow' "$SCREEN_MAP")
-  local viewport_w viewport_h dpr
-  viewport_w=$(jq -r '.viewport.width' "$SCREEN_MAP")
-  viewport_h=$(jq -r '.viewport.height' "$SCREEN_MAP")
-  dpr=$(jq -r '.viewport.dpr' "$SCREEN_MAP")
+  local target_w target_h target_dpr
+  target_w=$(jq -r '.viewport.width' "$SCREEN_MAP")
+  target_h=$(jq -r '.viewport.height' "$SCREEN_MAP")
+  target_dpr=$(jq -r '.viewport.dpr' "$SCREEN_MAP")
+  # Actual captured dimensions from PNG file (independent of declared
+  # target viewport; the OhMyToken main BrowserWindow is hardcoded to
+  # 400x640, so actualPx differs from targetViewport until U1-VR-b
+  # decides whether to resize the window in capture mode).
+  local actual_w actual_h
+  if [ -f "$png_path" ]; then
+    local dims
+    dims=$(file "$png_path" 2>/dev/null | grep -oE '[0-9]+ x [0-9]+' | head -1)
+    actual_w=$(echo "$dims" | awk '{print $1}')
+    actual_h=$(echo "$dims" | awk '{print $3}')
+  fi
+  : "${actual_w:=0}"
+  : "${actual_h:=0}"
   local ab_version
   ab_version=$(agent-browser --version 2>/dev/null || echo "unknown")
   local electron_version
@@ -188,16 +228,19 @@ emit_sidecar() {
     --arg profile "$profile" \
     --arg screen "$screen_name" \
     --arg fixedNow "$fixed_now" \
-    --argjson width "$viewport_w" \
-    --argjson height "$viewport_h" \
-    --argjson dpr "$dpr" \
+    --argjson tw "$target_w" \
+    --argjson th "$target_h" \
+    --argjson tdpr "$target_dpr" \
+    --argjson aw "$actual_w" \
+    --argjson ah "$actual_h" \
     --arg agentBrowserVersion "$ab_version" \
     --arg electronVersion "$electron_version" \
     '{
       profile: $profile,
       screen: $screen,
       fixedNow: $fixedNow,
-      viewport: { width: $width, height: $height, dpr: $dpr },
+      targetViewport: { width: $tw, height: $th, dpr: $tdpr },
+      actualPx: { width: $aw, height: $ah },
       agentBrowserVersion: $agentBrowserVersion,
       electronVersion: $electronVersion,
       capturedAtFixed: "FIXED"
@@ -286,7 +329,9 @@ capture_profile() {
 
   local launch_pid=""
   trap 'terminate_pid "$launch_pid"' EXIT
-  HOME_OVERRIDE="$home_path" \
+  NODE_ENV=test \
+    OMT_QA_CAPTURE_MODE=1 \
+    HOME_OVERRIDE="$home_path" \
     OMT_QA_FAKE_NOW="$(jq -r '.fakeNow' "$SCREEN_MAP")" \
     OMT_QA_NO_ANIMATIONS=1 \
     REMOTE_DEBUG_PORT="$CDP_PORT" \
@@ -294,24 +339,41 @@ capture_profile() {
   launch_pid=$!
 
   wait_for_cdp "$CDP_PORT" "$STARTUP_GRACE"
-  agent-browser connect "$CDP_PORT" --session "css-decomp-baseline-${profile}"
 
   jq -r --arg p "$profile" '.screens | map(select(.profile == $p)) | .[].name' "$SCREEN_MAP" \
   | while IFS= read -r screen_name; do
-    local target
+    local target tbd
     target=$(jq -r --arg n "$screen_name" '.screens[] | select(.name == $n) | .target' "$SCREEN_MAP")
+    tbd=$(jq -r --arg n "$screen_name" '.screens[] | select(.name == $n) | .tbd // ""' "$SCREEN_MAP")
+    if [ -n "$tbd" ] && [ "$INCLUDE_TBD" != "1" ]; then
+      echo "[qa-capture] $screen_name: SKIP (tbd: ${tbd:0:80}…). Re-run with INCLUDE_TBD=1 to attempt."
+      continue
+    fi
     if [ "$target" = "notification" ]; then
-      echo "[qa-capture] $screen_name: target=notification — switching tab"
+      echo "[qa-capture] $screen_name: target=notification — SKIP (notif window not created in OMT_QA_CAPTURE_MODE; see screen-map tbd)"
+      continue
     fi
     local wait_for
     wait_for=$(jq -r --arg n "$screen_name" '.screens[] | select(.name == $n) | .waitFor' "$SCREEN_MAP")
-    run_steps "$screen_name"
-    agent-browser wait "$wait_for"
+    run_steps "$screen_name" cdp
+    agent-browser --cdp "$CDP_PORT" wait "$wait_for"
     local png_path="$OUT_DIR/canonical/${screen_name}.png"
     local sidecar_path="$OUT_DIR/canonical/${screen_name}.json"
-    agent-browser screenshot "$png_path"
-    emit_sidecar "$sidecar_path" "$screen_name" "$profile"
-    echo "[qa-capture]   ✓ $screen_name → $png_path"
+    # IPC capture (P0.5.2): bypass agent-browser CDP screenshot which
+    # times out under macOS paint-pause; route via Electron's native
+    # webContents.capturePage() exposed by qa:capture-window IPC.
+    # The handler refuses paths outside /tmp, /private/tmp, /var/folders
+    # for safety, so write to /tmp first then mv to OUT_DIR.
+    local tmp_png="/tmp/omt-qa-capture-${profile}-${screen_name}.png"
+    agent-browser --cdp "$CDP_PORT" eval "window.api.qaCaptureWindow('$tmp_png').then(r => JSON.stringify(r))" >/dev/null
+    if [ ! -f "$tmp_png" ]; then
+      echo "[qa-capture] FATAL: capture failed for $screen_name (file not written: $tmp_png)" >&2
+      terminate_pid "$launch_pid"
+      return 1
+    fi
+    mv "$tmp_png" "$png_path"
+    emit_sidecar "$sidecar_path" "$screen_name" "$profile" "$png_path"
+    echo "[qa-capture]   ✓ $screen_name → $png_path ($(wc -c < "$png_path" | tr -d ' ') bytes)"
   done
 
   terminate_pid "$launch_pid"
@@ -332,14 +394,20 @@ capture_renderer_only() {
   agent-browser open "$qa_url"
   jq -r '.screens | map(select(.profile == "renderer-only")) | .[].name' "$SCREEN_MAP" \
   | while IFS= read -r screen_name; do
+    local tbd
+    tbd=$(jq -r --arg n "$screen_name" '.screens[] | select(.name == $n) | .tbd // ""' "$SCREEN_MAP")
+    if [ -n "$tbd" ] && [ "$INCLUDE_TBD" != "1" ]; then
+      echo "[qa-capture] $screen_name: SKIP (tbd: ${tbd:0:80}…). Re-run with INCLUDE_TBD=1 to attempt."
+      continue
+    fi
     local wait_for
     wait_for=$(jq -r --arg n "$screen_name" '.screens[] | select(.name == $n) | .waitFor' "$SCREEN_MAP")
-    run_steps "$screen_name"
+    run_steps "$screen_name" daemon
     agent-browser wait "$wait_for"
     local png_path="$OUT_DIR/renderer/${screen_name}.png"
     local sidecar_path="$OUT_DIR/renderer/${screen_name}.json"
     agent-browser screenshot "$png_path"
-    emit_sidecar "$sidecar_path" "$screen_name" "renderer-only"
+    emit_sidecar "$sidecar_path" "$screen_name" "renderer-only" "$png_path"
     echo "[qa-capture]   ✓ $screen_name → $png_path"
   done
   terminate_pid "$vite_pid"

@@ -1,7 +1,17 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-09T02:15:05Z
-fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
+# updated_at_utc: 2026-05-09T15:36:46Z
+fingerprint=7c62d4f69df6f79d1374ea5084a760a66350b8291595a96dadff5958c6cebf57
 source=docs/sdd/style-checklist.md
-note=P0.5 blocker note revision — remove Playwright/chrome-remote-interface fallback options. agent-browser is the only allowed automation tool per §C5 + .claude/rules/agent-browser-qa.md. Resolution path now lists agent-browser-only options (workflow re-validation, upstream issue, alternate attach flow).
+note=P0.5.2 fix-forward — OMT_QA_CAPTURE_MODE env + IPC capture handler (qa:capture-window) + orchestrator wiring (eval-based capture, /tmp+mv pattern, sidecar targetViewport+actualPx, INCLUDE_TBD skip default). Frontend-review: OK with fixes (6 LOW, 0 blocking; tracked as follow-up).
 
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.json
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-all-default.png
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.json
+docs/qa/runs/2026-05-10/baseline/canonical/dashboard-claude.png
 docs/sdd/dashboard-css-decomposition-gate.md
+electron/main.ts
+electron/preload.ts
+scripts/qa-capture-baseline.sh
+scripts/qa-capture-screen-map.json
+src/main.tsx
+src/types/electron.d.ts

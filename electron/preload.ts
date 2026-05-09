@@ -334,6 +334,12 @@ const api = {
       ipcRenderer.removeListener('backfill:complete', handler);
     };
   },
+
+  // QA-only (gate doc §7 P0.5 / U1-VR). The IPC handler in main.ts
+  // only registers when OMT_QA_CAPTURE_MODE=1, so this becomes a
+  // rejected promise on end-user runs.
+  qaCaptureWindow: (outputPath: string): Promise<{ path: string; bytes: number }> =>
+    ipcRenderer.invoke('qa:capture-window', outputPath),
 };
 
 contextBridge.exposeInMainWorld("api", api);
