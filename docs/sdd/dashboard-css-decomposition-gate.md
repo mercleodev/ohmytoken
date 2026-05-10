@@ -1653,7 +1653,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U10 — `dashboard/prompt-detail/ContextGauge.tsx` → `prompt-detail/ContextGauge.css` (Tier 1 single-owner, 7 classes / 8 selectors)
 
 - **Group**: Tier 1 single-owner (7 distinct classes, 8 selectors — seventh Tier 1 unit).
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `48c4311`
 - **Lines moved**: 54 (`dashboard.css` 4278 → 4224). Eight rule blocks extracted: `.prompt-detail-gauge` (7-line), `.gauge-circle-container` (6-line), `.gauge-circle-label` (8-line), `.gauge-circle-pct` (5-line), `.gauge-circle-sub` (4-line), `.gauge-circle-info` (6-line), `.gauge-circle-row` (6-line), `.gauge-circle-row span:first-child` (3-line descendant rule on the same class). The `/* Gauge Circle */` section comment was removed alongside (matches U3/U5/U7/U9 precedent). New `prompt-detail/ContextGauge.css` is 54 lines.
 - **Consumers updated**: `src/components/dashboard/prompt-detail/ContextGauge.tsx` adds `import './ContextGauge.css';` as the **first line** (sibling-relative within the prompt-detail subdir). Component renders inside `PromptDetailView`'s context section.
 - **Frontend review**: OK (fp `78ee9723de98b14fde2abfa6ff8e0c4dc2e67dede84d778d9bb3d35b74145866`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor. Banner present; import path is sibling-relative (`'./ContextGauge.css'`) within the prompt-detail subdir.
