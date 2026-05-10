@@ -23,6 +23,11 @@ import { readTodayStats } from "./watcher/statsCacheReader";
 import { initDatabase, closeDatabase } from "./db/index";
 import { onProxyScanComplete } from "./db/proxyAdapter";
 import { onHookScanComplete } from "./db/hookAdapter";
+import {
+  installHookOnStartup,
+  resolveStopHookCommand,
+  uninstallHookOnQuit,
+} from "./hooks/hookAutoInstall";
 import { onHistoryPromptParsed } from "./db/historyAdapter";
 import { migrateJsonlToDb } from "./db/migrator";
 import * as dbReader from "./db/reader";
@@ -897,6 +902,25 @@ const initApp = async (): Promise<void> => {
     console.log(`Proxy server auto-started on :${proxyPort}`);
   } catch (err) {
     console.error("Failed to auto-start proxy:", err);
+  }
+
+  // Stop-hook autoinstall (issue #345). Best-effort; never blocks startup
+  // and never surfaces a dialog — install is silent per product direction.
+  try {
+    const claudeSettingsPath = path.join(homedir(), ".claude", "settings.json");
+    const hookCommand = resolveStopHookCommand({
+      isPackaged: app.isPackaged,
+      appPath: app.getAppPath(),
+      resourcesPath: process.resourcesPath,
+    });
+    const result = installHookOnStartup(claudeSettingsPath, hookCommand);
+    if (result.status === "error") {
+      console.warn(`[hook-install] WARN: ${result.reason}`);
+    } else {
+      console.log(`[hook-install] ${result.status} (${hookCommand})`);
+    }
+  } catch (err) {
+    console.warn(`[hook-install] WARN: ${(err as Error).message}`);
   }
 };
 
@@ -2314,6 +2338,23 @@ app.on("will-quit", () => {
     stopProxyServer();
   } catch {
     /* ignore */
+  }
+  // Stop-hook autoremove (issue #345). Best-effort; never blocks quit.
+  try {
+    const claudeSettingsPath = path.join(homedir(), ".claude", "settings.json");
+    const hookCommand = resolveStopHookCommand({
+      isPackaged: app.isPackaged,
+      appPath: app.getAppPath(),
+      resourcesPath: process.resourcesPath,
+    });
+    const result = uninstallHookOnQuit(claudeSettingsPath, hookCommand);
+    if (result.status === "error") {
+      console.warn(`[hook-install] WARN: uninstall failed: ${result.reason}`);
+    } else {
+      console.log(`[hook-install] ${result.status}`);
+    }
+  } catch (err) {
+    console.warn(`[hook-install] WARN: uninstall threw: ${(err as Error).message}`);
   }
 });
 

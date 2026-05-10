@@ -1,9 +1,11 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T21:16:25Z
-fingerprint=7c262acc366c47ae76131170657f293bd10051a78cffbc23d53a7bd37a6106d3
+# updated_at_utc: 2026-05-10T21:29:19Z
+fingerprint=cfcc9d4945e2f6534b04bde65fd6c32684b7bc5a3b70ad9b79396aaa9c5ef02a
 source=docs/sdd/style-checklist.md
-note=Hook capture CI fix (#343): global CLAUDE.md fixture refactored to runtime os.tmpdir() write — repo .gitignore '**/*.md' rule was dropping the static fixture from CI checkouts. Three spec files now create + clean up the fixture in beforeAll/afterAll. No behavior change.
+note=Hook autoinstall (#345): lifecycle wiring on Electron app.whenReady + will-quit, atomic write via tmp+rename, no consent dialog per product direction, command path single-quoted for spaces, settingsInstaller also drops parent hooks:{} when empty for byte-clean round-trip. bin/ ships in extraResources outside asar. All failures fail-soft, never block app start/quit.
 
-electron/hooks/__tests__/scanFromTranscript.spec.ts
-electron/hooks/__tests__/scanFromTranscriptHandler.spec.ts
-electron/proxy/__tests__/serverHookRoute.integration.spec.ts
+electron/hooks/__tests__/hookAutoInstall.spec.ts
+electron/hooks/hookAutoInstall.ts
+electron/hooks/settingsInstaller.ts
+electron/main.ts
+package.json

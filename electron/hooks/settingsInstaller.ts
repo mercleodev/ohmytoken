@@ -58,5 +58,12 @@ export const uninstallStopHook = (settings: Settings, command: string): Settings
   } else {
     hooksObj.Stop = filtered;
   }
+
+  // If our presence was the only reason `hooks` existed, drop it so the
+  // round-trip is byte-clean against settings files that had no `hooks`
+  // key to begin with (issue #345 round-trip acceptance criterion).
+  if (next.hooks && Object.keys(next.hooks).length === 0) {
+    delete next.hooks;
+  }
   return next;
 };
