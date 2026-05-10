@@ -1,0 +1,36 @@
+# QA Run — Issue #336 (evidence label 2-way collapse)
+
+- Date: 2026-05-10
+- Branch: `feature/336-evidence-2way`
+- Mode: electron-cdp (full-stack via `scripts/qa-launch-electron.sh`)
+- Tester: claude
+
+## What ran
+
+1. `node scripts/ensure-sqlite-build.js electron` — rebuild better-sqlite3 against Electron ABI.
+2. `bash scripts/qa-launch-electron.sh` — launched Electron with `HOME=/tmp/omt-qa-home`, CDP on `127.0.0.1:9222`, isolated from real `~/.claude`.
+3. Started Vite (`npx vite --port 5173 --strictPort`) for renderer assets.
+4. Reloaded the dashboard window via CDP, confirmed `document.title === "OhMyToken"` and root mount.
+5. Snapshot of dashboard rendered the onboarding screen (expected — fresh QA HOME has no provider sessions yet).
+
+## Results
+
+- App build + boot + Electron CDP attach: **PASS**
+- Dashboard window reachable, React tree mounted: **PASS**
+- Renderer hot-reload after Vite restart: **PASS**
+- Onboarding visual: **PASS** (matches the empty-state contract — no provider data, three CLI cards with "Enable Tracking" actions)
+- New 2-way evidence badge visual confirmation: **DEFERRED**
+  - Reason: the Context Files section only renders when a `PromptScan` with `injected_files` is present. The QA HOME starts empty by design, and no Claude/Codex session JSONL fixtures are checked into the repo.
+  - `Page.captureScreenshot` over CDP also hung on the idle Electron renderer in this environment (a known issue when the Electron window is not the foreground compositing target). Both the agent-browser daemon and a hand-rolled CDP WS helper reproduced the hang past `Page.enable`.
+
+## Coverage compensating for the deferred visual
+
+- `src/components/dashboard/prompt-detail/__tests__/evidence.spec.ts` (new) — 6 cases covering all status combinations and the `total = confirmed + notConfirmed` invariant.
+- Existing specs `pendingEvidence.spec.ts`, `mergeEvidence.spec.ts`, `guardrailSummary.spec.ts` continue to pass alongside the new one (27/27 green via `npx vitest run`).
+- `npx tsc --noEmit` and `npx tsc -p tsconfig.electron.json --noEmit` pass clean.
+- `npx eslint` clean for all touched files (one pre-existing `no-control-regex` in `SessionDetailView.tsx` was fenced with `eslint-disable-next-line` since the file is now within "files you DID change"; unrelated to the evidence change).
+
+## Follow-up
+
+- Add a small JSONL fixture under `electron/__tests__/fixtures/` with one `PromptScan` containing `injected_files`, plus a renderer-only QA harness that loads it directly so future evidence-presentation changes can be screenshot-verified without an actual provider session.
+- Track the empty `vitest.config.electron.ts` `include` list — `src/**` specs do not run under `npm test`. They were exercised manually here via `npx vitest run`.

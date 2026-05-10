@@ -2,6 +2,42 @@ import type { PromptScan, EvidenceReport, SignalResult } from "../../../types";
 import type { EvidenceStatus, InjectedEvidenceItem } from "./types";
 import { DIRECT_FILE_ACTIONS, INDIRECT_FILE_TOOLS, normalizeText, getFileName } from "./constants";
 
+export type EvidenceCounts = {
+  confirmed: number;
+  notConfirmed: number;
+  total: number;
+};
+
+// Single source of truth for the 2-way presentation collapse. `confirmed`
+// signals real usage (direct file actions or scoring-engine confirmation);
+// everything else (heuristic `likely`, `unverified`) folds into not-confirmed
+// because neither bucket carries actionable signal at the summary level.
+// If EvidenceStatus gains a new value, the exhaustive switch below fails to
+// compile — preventing a silent miscount.
+export const collapseEvidenceToCounts = (
+  byStatus: Record<EvidenceStatus, InjectedEvidenceItem[]>,
+): EvidenceCounts => {
+  let confirmed = 0;
+  let notConfirmed = 0;
+  for (const status of Object.keys(byStatus) as EvidenceStatus[]) {
+    const count = byStatus[status].length;
+    switch (status) {
+      case "confirmed":
+        confirmed += count;
+        break;
+      case "likely":
+      case "unverified":
+        notConfirmed += count;
+        break;
+      default: {
+        const _exhaustive: never = status;
+        throw new Error(`Unhandled EvidenceStatus: ${_exhaustive as string}`);
+      }
+    }
+  }
+  return { confirmed, notConfirmed, total: confirmed + notConfirmed };
+};
+
 const getFileStem = (filePath: string): string => {
   const fileName = getFileName(filePath);
   const dotIndex = fileName.lastIndexOf(".");

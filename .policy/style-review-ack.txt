@@ -1,14 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-04-25T00:53:48Z
-fingerprint=124928f825a617a0c5089dcacd206d73209ac15ac47502dd4f9a0766b57a3b43
+# updated_at_utc: 2026-05-10T02:08:27Z
+fingerprint=fd724123100d4f7771b94f7d1e449362cca00cd2a7c93524fe4dc47426e36d44
 source=docs/sdd/style-checklist.md
-note=P6-mini concept-verification: oht statusline replaces stub with ws snapshot reader. runStatusline connects to 127.0.0.1:port, subscribes ['*'], waits for snapshot, prints one line, exits. timeout 800ms default, OHT_EVENT_BUS_PORT env override. runCli now async; existing cli.spec.ts adapted to await. ws library added to oht-cli package deps. Smoke verified: 'oht statusline' (no app running) prints 'OhMyToken not running' exit 2.
+note=Reviewed touched files against listed style review items; aligned with Toss fundamentals + OhMyToken Addendum (TS strict, arrow-fn, no any, helper extraction, no new deps). frontend-review subagent verdict: OK with fixes (1 minor follow-up: UI render regression spec for the new badge labels).
 
-docs/sdd/ohmytoken-sdd-lecture.html
-package-lock.json
-packages/oht-cli/package.json
-packages/oht-cli/src/__tests__/cli.spec.ts
-packages/oht-cli/src/__tests__/statusline.spec.ts
-packages/oht-cli/src/bin.ts
-packages/oht-cli/src/cli.ts
-packages/oht-cli/src/statusline.ts
+src/components/dashboard/dashboard.css
+src/components/dashboard/prompt-detail/__tests__/evidence.spec.ts
+src/components/dashboard/prompt-detail/evidence.ts
+src/components/dashboard/PromptDetailView.tsx
+src/components/dashboard/SessionDetailView.tsx
+src/components/notification/NotificationCard.tsx

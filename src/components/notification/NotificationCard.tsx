@@ -6,7 +6,7 @@ import type { PromptScan } from '../../types';
 import type { EvidenceStatus } from '../dashboard/prompt-detail/types';
 import { MiniSparkline } from './MiniSparkline';
 import { getContextLimit } from '../scan/shared';
-import { buildInjectedEvidence } from '../dashboard/prompt-detail/evidence';
+import { buildInjectedEvidence, collapseEvidenceToCounts } from '../dashboard/prompt-detail/evidence';
 import { EVIDENCE_STATUS_COLORS } from '../dashboard/prompt-detail/constants';
 import { resolveEvidenceView, PENDING_WINDOW_MS } from './pendingEvidence';
 import {
@@ -173,13 +173,27 @@ const ContextFilesSection = ({ scan, createdAt }: {
         {totalTokens > 0 && (
           <span className="notif-section-tokens">{formatTokens(totalTokens)} tok</span>
         )}
-        {allItems.length > 0 && (
-          <span className="notif-evidence-summary">
-            <span className="notif-evidence-count" style={{ color: EVIDENCE_STATUS_COLORS.confirmed }}>C {evidence.confirmed.length}</span>
-            <span className="notif-evidence-count" style={{ color: EVIDENCE_STATUS_COLORS.likely }}>L {evidence.likely.length}</span>
-            <span className="notif-evidence-count" style={{ color: EVIDENCE_STATUS_COLORS.unverified }}>U {evidence.unverified.length}</span>
-          </span>
-        )}
+        {allItems.length > 0 && (() => {
+          const counts = collapseEvidenceToCounts(evidence);
+          return (
+            <span className="notif-evidence-summary">
+              <span
+                className="notif-evidence-count"
+                style={{ color: EVIDENCE_STATUS_COLORS.confirmed }}
+                title="Files referenced by direct file actions or scoring-engine confirmation."
+              >
+                Confirmed {counts.confirmed}
+              </span>
+              <span
+                className="notif-evidence-count"
+                style={{ color: EVIDENCE_STATUS_COLORS.unverified }}
+                title="Files with only heuristic mentions or no trace. Expand for per-file detail."
+              >
+                Not-confirmed {counts.notConfirmed}
+              </span>
+            </span>
+          );
+        })()}
       </div>
       <div className="notif-injected-scroll" ref={scrollRef}>
         {allItems.length === 0 ? (
