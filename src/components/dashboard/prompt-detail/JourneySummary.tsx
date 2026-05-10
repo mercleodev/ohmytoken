@@ -1,3 +1,4 @@
+import './JourneySummary.css';
 import { formatTokens } from "../../scan/shared";
 import type { PromptScan, UsageLogEntry } from "../../../types";
 

@@ -1095,52 +1095,6 @@
   color: #636366;
 }
 
-.journey-summary {
-  padding: 10px 16px;
-  border-bottom: 1px solid #dedede;
-  background: rgba(0, 0, 0, 0.015);
-}
-
-.journey-summary-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #4d4d4e;
-  margin-bottom: 6px;
-}
-
-.journey-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 6px;
-}
-
-.journey-summary-card {
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.55);
-  padding: 6px 8px;
-  min-width: 0;
-}
-
-.journey-summary-label {
-  font-size: 10px;
-  color: #8e8e93;
-}
-
-.journey-summary-value {
-  margin-top: 2px;
-  font-size: 11px;
-  color: #454647;
-  font-weight: 600;
-}
-
-.journey-summary-sub {
-  margin-top: 2px;
-  font-size: 10px;
-  color: #7f8691;
-  line-height: 1.35;
-}
-
 .journey-summary-files {
   display: flex;
   flex-direction: column;

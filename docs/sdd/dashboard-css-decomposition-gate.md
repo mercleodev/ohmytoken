@@ -1669,6 +1669,25 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - `.gauge-circle-row span:first-child` is the only descendant selector in this unit — preserved verbatim including its position immediately after the parent `.gauge-circle-row` rule.
   - Other `.gauge-*` classes (`.gauge-bar-track`, `.gauge-bar-fill`, `.gauge-item`, `.gauge-label`, `.gauge-reset`, `.gauge-pace`) STAY in dashboard.css — those belong to **UsageGaugeCard** (U17), not ContextGauge. The `.prompt-detail-gauge` prefix on the container class disambiguates the two gauge variants. The `.gauge-circle-*` prefix on the inner circle classes is unique to the context gauge and was never used by UsageGaugeCard.
 
+#### U11 — `dashboard/prompt-detail/JourneySummary.tsx` → `prompt-detail/JourneySummary.css` (Tier 1 single-owner, 7 classes)
+
+- **Group**: Tier 1 single-owner (7 classes — eighth Tier 1 unit).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 46 (`dashboard.css` 4224 → 4178). Seven rule blocks extracted: `.journey-summary` (5-line), `.journey-summary-title` (6-line), `.journey-summary-grid` (5-line), `.journey-summary-card` (7-line), `.journey-summary-label` (4-line), `.journey-summary-value` (6-line), `.journey-summary-sub` (6-line). No section comment was present immediately before the rules; nothing to drop. New `prompt-detail/JourneySummary.css` is 47 lines (banner + 7 rule blocks).
+- **Consumers updated**: `src/components/dashboard/prompt-detail/JourneySummary.tsx` adds `import './JourneySummary.css';` as the **first line** (sibling-relative within prompt-detail subdir). Component renders inside `PromptDetailView` between the prompt header and the context section.
+- **Orphan preservation**: 4 adjacent `.journey-summary-file*` classes (`.journey-summary-files`, `.journey-summary-file` + its `:hover`, `.journey-summary-file-name`, `.journey-summary-file-tokens`) are inventoried as `consumerCount=0` (zero tsx references — verified by grep) and **intentionally left in `dashboard.css`** for U50 (dead-CSS marking phase). They are NOT in U11's scope.
+- **Frontend review**: OK (fp `d0d1ce331065a0cbea1f0dfb45b77205ae98b6a17a8bbef4c4285b452bf3fb9e`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor. Verified verbatim copy + orphan preservation.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U11 move .journey-summary* to prompt-detail/JourneySummary.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 583 → 576 entries (7 deletions). Zero re-ordering. Inventory: `495 → 488` distinct classes; `402 → 395` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (same moved-vs-moved limitation per §3 C7 last bullet).
+- **Visual diff**: PASS — **4/7 captured screens byte-equal** vs `docs/qa/runs/2026-05-10/baseline/canonical/` on the first pass, with the **§7 critical surface `dashboard-prompt-detail` (94,955 B) byte-equal**. Also byte-equal: `dashboard-claude` (146,288 B), `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B). The 3 drifts are exactly the documented U1-VR-d cold-daemon warm-up flake set: `dashboard-all-default` 96,209 B (canonical 96,467 B, −258 B), `memory-monitor-expanded` 141,450 B (canonical 141,277 B, +173 B), `memory-monitor-collapsed` 118,237 B (canonical 118,017 B, +220 B). JourneySummary does NOT render in any of these 3 screens — the drifts are independent of U11's CSS move. Per U2 §14 contract, a second pass would converge; first-pass §7 surface byte-equal is sufficient evidence per §8 step 8e second clause. Last 3 of 10 populated screens (`first-run-onboarding`, `setup-guide`, `backfill-dialog`) not captured (P0.5.6 deferred).
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged. 56 orphan classes unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U11) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - `.journey-summary-grid` uses `grid-template-columns: repeat(auto-fit, minmax(120px, 1fr))` — a responsive grid that adjusts column count by viewport. Preserved verbatim.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).
