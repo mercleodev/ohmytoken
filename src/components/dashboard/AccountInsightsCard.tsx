@@ -1,3 +1,4 @@
+import './AccountInsightsCard.css';
 import { motion } from 'framer-motion';
 import { ProviderConnectionStatus, AccountInsightsState } from '../../types';
 

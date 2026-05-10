@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T13:57:39Z
-fingerprint=05ab310d72f16ac95ca8073fbd2272b91883901562366316b7de3b22c580bdd8
+# updated_at_utc: 2026-05-10T21:16:54Z
+fingerprint=8e12788ea47cb6d169bc1ce6cec39174d0c8d4e2b426bced4b817d9517d5e728
 source=docs/sdd/style-checklist.md
-note=U4 move .stat-pill/.stat-pill-value/.stat-pill-label to StatPill.css (Tier 1)
+note=U5 move .account-insights-card* to AccountInsightsCard.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
+src/components/dashboard/AccountInsightsCard.css
+src/components/dashboard/AccountInsightsCard.tsx
 src/components/dashboard/dashboard.css
-src/components/dashboard/prompt-detail/StatPill.css
-src/components/dashboard/prompt-detail/StatPill.tsx
