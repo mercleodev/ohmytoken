@@ -1938,6 +1938,28 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - No `/* UNUSED candidate */` markers added (deferred to U50).
   - **Cumulative progress (post-U28)**: 20 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `3017` (post-U28), a **1,537-line / 33.7% reduction**. 20 new sibling CSS files. 214 cumulative selector deletions.
 
+#### U32 — `dashboard/RecentSessions.tsx` → `RecentSessions.css` (Tier 1 single-owner, 20 classes / 25 selectors, split-removal preserves orphan)
+
+- **Group**: Tier 1 single-owner (20 classes — twenty-first Tier 1 unit landed). Skipped U29 (FirstRunOnboarding, surface `first-run-onboarding` outside the 3-screen orchestrator window), U30 (BackfillDialog, similar — outside window), and U31 (StatsDetailView, requires opening Stats detail UI).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 199 (`dashboard.css` 3017 → 2818; **split-removal**). Twenty-five rule blocks extracted in 2 segments:
+  - **Segment 1** (pre-U32 L240-356, 117 lines): `.recent-sessions`, `.recent-sessions-header`, `.recent-sessions-title`, `.recent-sessions-count`, `.recent-sessions-empty` + `.recent-sessions-empty p` (descendant), `.recent-view-more-btn` + `:hover` + `:disabled` (pseudos), `.session-card` + `:hover` + `:last-child` (pseudos), `.session-card-top`, `.session-card-prompt`, `.session-card-time`, `.session-card-meta`.
+  - **Segment 2** (pre-U32 L362-439, 78 lines): `.session-card-row`, `.session-card-body`, `.session-card-compact-hint`, `.session-card-compacted-label`, `.session-card-branch`, `.provider-badge`, `.mini-ctx-gauge`, `.mini-ctx-gauge-pct`, `.mini-ctx-gauge--nodata`. Six preserved inline comments between rule blocks (`/* Session card row layout: ... */`, `/* Compact recommendation label (...) */`, `/* Compacted detection label (...) */`, `/* Git branch label */`, `/* Provider badge (...) */`, `/* Mini ctx donut gauge */`).
+  - Section comment `/* === Recent Sessions === */` dropped per precedent. New `RecentSessions.css` is 198 lines.
+- **Consumers updated**: `src/components/dashboard/RecentSessions.tsx` adds `import './RecentSessions.css';` as the **first line**.
+- **Orphan preservation (split)**: `.session-card-project` (pre-U32 L358-360, `consumerCount=0` per inventory, zero tsx references confirmed by grep) stays in `dashboard.css` between the two moved segments, for U50. After U32 it lives at new dashboard.css L238.
+- **Frontend review**: OK (fp `89f4941d08f667531d401cff359214b194ed766c27bd89c601306c60fb0347bc`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U32 move .recent-sessions* + .session-card* + .provider-badge + .mini-ctx-gauge* to RecentSessions.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 417 → 392 entries (25 deletions). Inventory: `358 → 338` distinct classes; `265 → 245` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **6/7 captured screens byte-equal on first pass**, with the **§7 critical surface `dashboard-all-default` (96,467 B) byte-equal**. Pass-1 byte-equal set: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `dashboard-prompt-detail` (94,955 B), `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B), `memory-monitor-collapsed` (118,017 B — canonical). One drift on `memory-monitor-expanded` (+173 B rotating warm-up). RecentSessions does not render in `memory-monitor-expanded`.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U32) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50). The orphan `.session-card-project` is a U50 candidate.
+  - **Cumulative progress (post-U32)**: 21 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `2818` (post-U32), a **1,736-line / 38.1% reduction**. 21 new sibling CSS files. 239 cumulative selector deletions.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

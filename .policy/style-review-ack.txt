@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T23:27:24Z
-fingerprint=a574b1243fa3bc1163ef36aafee59d6edbea7ddb1c82705621639a3a1f7061ba
+# updated_at_utc: 2026-05-10T23:32:06Z
+fingerprint=a9645bcccc1559eaccbd5a9840296fada6a66151d882454a70569d392d87dd60
 source=docs/sdd/style-checklist.md
-note=U28 move .provider-header* + .usage-last-updated + .prepaid-notice* + .credit-balance-* to UsageView.css (Tier 1)
+note=U32 move .recent-sessions* + .session-card* + .provider-badge + .mini-ctx-gauge* to RecentSessions.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/UsageView.css
-src/components/dashboard/UsageView.tsx
+src/components/dashboard/RecentSessions.css
+src/components/dashboard/RecentSessions.tsx
