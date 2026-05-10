@@ -1,3 +1,4 @@
+import './PromptDetailView.css';
 import { useState, useCallback, useMemo } from "react";
 import { AnimatePresence } from "framer-motion";
 import {

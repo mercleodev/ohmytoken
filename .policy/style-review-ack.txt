@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T23:01:26Z
-fingerprint=aff143ec14d1d008c54bf77a4db477cde04f5410908b3a04822c8b30a683cf41
+# updated_at_utc: 2026-05-10T23:07:30Z
+fingerprint=8848f3f261da344e189c082c4eb68c83e3fdf4d47e883e5fe89df243013db0e0
 source=docs/sdd/style-checklist.md
-note=U22 move .context-file-* to prompt-detail/ContextFileList.css (Tier 1)
+note=U23 move PromptDetailView's 12 classes (4-segment split) to PromptDetailView.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/prompt-detail/ContextFileList.css
-src/components/dashboard/prompt-detail/ContextFileList.tsx
+src/components/dashboard/PromptDetailView.css
+src/components/dashboard/PromptDetailView.tsx

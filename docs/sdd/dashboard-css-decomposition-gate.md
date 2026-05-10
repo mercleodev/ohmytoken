@@ -1851,6 +1851,34 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - No `/* UNUSED candidate */` markers added (deferred to U50).
   - `.context-file-dot` declares `background: transparent !important;` — preserved verbatim. The `!important` overrides any color-coding from inline `style={{}}` set by the React component.
 
+#### U23 — `dashboard/PromptDetailView.tsx` → `PromptDetailView.css` (Tier 1 single-owner, 12 classes / 14 selectors, **4-segment split move**)
+
+- **Group**: Tier 1 single-owner (12 classes — seventeenth Tier 1 unit landed). PromptDetailView's owned classes were scattered across 4 disjoint regions of pre-U23 `dashboard.css`, requiring a 4-way split removal.
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 119 (`dashboard.css` 3486 → 3367). Split across 4 segments:
+  - **Segment 1** (pre-U23 L815-876, 62 lines): section comment `/* === Prompt Detail === */` dropped; 7 selectors moved — `.prompt-detail-header`, `.prompt-detail-model`, `.prompt-detail-branch`, `.prompt-detail-text`, `.prompt-detail-text.expanded` (compound), `.provider-data-notice` (with inline comment `/* Provider data limitation notice */` preserved in the new file), `.prompt-detail-stats` (with inline comment `/* Quick Stats */` preserved).
+  - **Segment 2** (pre-U23 L1086-1108, 23 lines): 4 selectors — `.injected-evidence-badge` + 3 compound modifiers (`.injected-evidence-badge.confirmed`, `.injected-evidence-badge.likely`, `.injected-evidence-badge.unverified`). The bare `.confirmed`, `.likely`, `.unverified` class names are confirmed exclusive to PromptDetailView via `className="injected-evidence-badge confirmed"` etc. (the substring matches in `NotificationCard.tsx` are JS property accesses on `EVIDENCE_STATUS_COLORS`, not className strings).
+  - **Segment 3** (pre-U23 L1247-1263, 17 lines): section comment `/* Evidence Settings Button (gear icon in section header) */` dropped; 2 selectors — `.evidence-settings-btn` + `:hover` pseudo.
+  - **Segment 4** (pre-U23 L1883-1895, 13 lines): section comment `/* --- Response Section (PromptDetail) --- */` dropped; 1 selector — `.response-section`.
+  - New `PromptDetailView.css` is 116 lines.
+- **Consumers updated**: `src/components/dashboard/PromptDetailView.tsx` adds `import './PromptDetailView.css';` as the **first line**.
+- **Other-owner / orphan preservation** (verified in dashboard.css post-move):
+  - `.injected-evidence-summary` (consumerCount=0 orphan, pre-U23 L1080) stays for U50.
+  - `.injected-evidence-group*` family (12 classes owned by `prompt-detail/EvidenceGroup.tsx`) stays for U27.
+  - `.evidence-breakdown-toggle` (multi-consumer ContextFileList + EvidenceGroup) stays for U40 cluster.
+- **Frontend review**: OK (fp `d529a296c9a6b8ae0875407c042c5aff0ffcdc1b6c178beddba2175f8ebb5162`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U23 move PromptDetailView's 12 classes (4-segment split) to PromptDetailView.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 482 → 468 entries (14 deletions). Inventory: `414 → 402` distinct classes; `321 → 312` single-owner. (The −9 single-owner discrepancy vs −12 expected reflects the 3 short-name compound modifiers `.confirmed`, `.likely`, `.unverified` that the inventory recognized but didn't enumerate as standalone single-owner under the badge — net effect on the registry is correct.)
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **5/7 captured screens byte-equal** on the first pass, with the **§7 critical surface `dashboard-prompt-detail` (94,955 B) byte-equal**. Pass-1 byte-equal set: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `dashboard-prompt-detail` (94,955 B — §7 surface), `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B). Two drifts on standard warm-up members: `memory-monitor-expanded` (+173 B), `memory-monitor-collapsed` (+220 B). PromptDetailView's CSS does not render in memory-monitor screens.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U23) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - **Most complex move yet** — 4 non-contiguous segments. Future units (U27 EvidenceGroup, U28 UsageView, etc.) may have similar fan-out.
+  - **Cumulative progress (post-U23)**: 17 distinct Tier 1 slots landed (U2, U3, U4, U5, U7, U9, U10, U11, U12, U13, U15, U17, U19, U20, U21, U22, U23). `dashboard.css` reduced from `4554` (pre-U2) → `3367` (post-U23), a 1,187-line / 26.1% reduction. 17 new sibling CSS files. 163 cumulative selector deletions.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

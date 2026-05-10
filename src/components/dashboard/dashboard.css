@@ -812,69 +812,6 @@
   background: rgba(175, 82, 222, 0.1);
 }
 
-/* === Prompt Detail === */
-
-.prompt-detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  border-bottom: 1px solid #dedede;
-}
-
-.prompt-detail-model {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.prompt-detail-branch {
-  font-size: 11px;
-  font-weight: 500;
-  color: #6366f1;
-  background: rgba(99, 102, 241, 0.08);
-  padding: 1px 6px;
-  border-radius: 4px;
-  margin-left: 6px;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.prompt-detail-text {
-  padding: 12px 16px;
-  font-size: 13px;
-  color: #595959;
-  line-height: 1.5;
-  border-bottom: 1px solid #dedede;
-  overflow: hidden;
-  transition: max-height 0.2s ease;
-  max-height: 60px;
-}
-
-.prompt-detail-text.expanded {
-  max-height: none;
-}
-
-/* Provider data limitation notice */
-.provider-data-notice {
-  padding: 8px 12px;
-  margin: 8px 16px;
-  background: var(--bg-secondary, #1c1c1e);
-  border-radius: 8px;
-  color: var(--text-secondary, #8e8e93);
-  font-size: 12px;
-  text-align: center;
-}
-
-/* Quick Stats */
-.prompt-detail-stats {
-  display: flex;
-  gap: 6px;
-  padding: 10px 16px;
-  border-bottom: 1px solid #dedede;
-}
-
 /* ── Guardrail Summary ── */
 .guardrail-summary {
   padding: 10px 16px;
@@ -1083,30 +1020,6 @@
   margin-bottom: 8px;
 }
 
-.injected-evidence-badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 5px;
-  padding: 2px 7px;
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.injected-evidence-badge.confirmed {
-  color: #1f7a57;
-  background: rgba(31, 122, 87, 0.14);
-}
-
-.injected-evidence-badge.likely {
-  color: #9a6700;
-  background: rgba(154, 103, 0, 0.14);
-}
-
-.injected-evidence-badge.unverified {
-  color: #6b7280;
-  background: rgba(107, 114, 128, 0.16);
-}
-
 .injected-evidence-group {
   margin-top: 8px;
 }
@@ -1242,24 +1155,6 @@
 .evidence-breakdown-toggle:hover {
   background: rgba(0, 0, 0, 0.08);
   color: #595959;
-}
-
-/* Evidence Settings Button (gear icon in section header) */
-.evidence-settings-btn {
-  border: none;
-  background: transparent;
-  font-size: 13px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: #92949d;
-  transition: all 0.15s;
-  line-height: 1;
-}
-
-.evidence-settings-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #454647;
 }
 
 /* Section header right area */
@@ -1878,20 +1773,6 @@
   background: rgba(0, 0, 0, 0.05);
   color: #7c7c80;
   white-space: nowrap;
-}
-
-/* --- Response Section (PromptDetail) --- */
-.response-section {
-  font-size: 13px;
-  color: #7c7c80;
-  line-height: 1.5;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
-  padding: 10px 12px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 400px;
-  overflow-y: auto;
 }
 
 /* --- File Preview Language Badge --- */
