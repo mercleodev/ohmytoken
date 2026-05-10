@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T21:16:54Z
-fingerprint=8e12788ea47cb6d169bc1ce6cec39174d0c8d4e2b426bced4b817d9517d5e728
+# updated_at_utc: 2026-05-10T21:43:50Z
+fingerprint=9503afb70d19b22405f5c67704c078c89b97f52ccf339772e9fce8c294c1ad8f
 source=docs/sdd/style-checklist.md
-note=U5 move .account-insights-card* to AccountInsightsCard.css (Tier 1)
+note=U7 move .cache-growth-* + .stats-tooltip-{compacted,hint} to CacheGrowthChart.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
-src/components/dashboard/AccountInsightsCard.css
-src/components/dashboard/AccountInsightsCard.tsx
+src/components/dashboard/CacheGrowthChart.css
+src/components/dashboard/CacheGrowthChart.tsx
 src/components/dashboard/dashboard.css

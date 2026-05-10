@@ -1,3 +1,4 @@
+import './CacheGrowthChart.css';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   ComposedChart,
