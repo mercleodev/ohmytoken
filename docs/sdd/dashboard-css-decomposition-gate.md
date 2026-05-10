@@ -1771,7 +1771,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U19 — `dashboard/OutputProductivityCard.tsx` → `OutputProductivityCard.css` (Tier 1 single-owner, 9 classes)
 
 - **Group**: Tier 1 single-owner (9 classes — thirteenth Tier 1 unit landed; U18 (FilePreviewOverlay) was skipped because it requires triggering the overlay open state — deferred to a future session with screen-map work).
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `51fe334`
 - **Lines moved**: 56 (`dashboard.css` 3924 → 3868). Nine rule blocks extracted: `.output-card` (4-line), `.output-card-headline` (3-line), `.output-card-value` (5-line), `.output-card-unit` (5-line), `.output-card-sub` (5-line), `.output-card-bar-track` (6-line), `.output-card-bar-fill` (6-line), `.output-card-empty` (5-line), `.output-card-trend` (5-line). Sub-section comment `/* --- Output Productivity Card --- */` dropped. **The broader section header `/* === Token Output Productivity ... === */` (3-line big block at pre-U19 lines 2899-2901) was INTENTIONALLY PRESERVED in `dashboard.css`** — it scopes both U19's sub-section AND the surviving Token Composition Chart sub-section (U21). Removing it now would orphan the U21 sub-section under no parent header. New `OutputProductivityCard.css` is 55 lines.
 - **Consumers updated**: `src/components/dashboard/OutputProductivityCard.tsx` adds `import './OutputProductivityCard.css';` as the **first line**.
 - **Frontend review**: OK (fp `2fb858150ac9d6854f1cdbd8b338cc69a50855ed6329c02defca7dec2c209697`) — 0/0/0.
