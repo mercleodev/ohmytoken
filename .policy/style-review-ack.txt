@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T22:11:05Z
-fingerprint=0366c90ae40a02ba92c8a4d00ede1cabaf961a23c26050191ae17a518b429344
+# updated_at_utc: 2026-05-10T22:18:33Z
+fingerprint=c97dc629ebad8779aac7ab091dffb085ac70cf2ccc63be5b83dd0fdebaa880de
 source=docs/sdd/style-checklist.md
-note=U12 move .signal-breakdown* + .signal-bar-* + .signal-confidence-dot to prompt-detail/SignalBreakdown.css (Tier 1)
+note=U13 move .action-filter-* + .preset to prompt-detail/ActionFilterChips.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/prompt-detail/SignalBreakdown.css
-src/components/dashboard/prompt-detail/SignalBreakdown.tsx
+src/components/dashboard/prompt-detail/ActionFilterChips.css
+src/components/dashboard/prompt-detail/ActionFilterChips.tsx

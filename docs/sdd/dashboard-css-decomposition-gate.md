@@ -1708,6 +1708,26 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - `.signal-bar-fill` declares `transition: width 0.3s ease;` — preserved verbatim. The animation runs when the score updates; not exercised by the static capture.
   - **Cumulative progress (post-U12)**: 9 Tier 1 units landed (U2, U3, U4, U5, U7, U9, U10, U11, U12) out of 36 → 25%. 62 cumulative selector deletions; `dashboard.css` reduced from `4554` (pre-U2) to `4119` (post-U12), a 435-line / 9.6% reduction. New sibling CSS files: 9 (CostCard, PromptMemorySection, StatPill, AccountInsightsCard, CacheGrowthChart, ProviderTabs, ContextGauge, JourneySummary, SignalBreakdown).
 
+#### U13 — `dashboard/prompt-detail/ActionFilterChips.tsx` → `prompt-detail/ActionFilterChips.css` (Tier 1 single-owner, 7 classes / 10 selectors)
+
+- **Group**: Tier 1 single-owner (7 distinct classes, 10 selectors — tenth Tier 1 unit).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 79 (`dashboard.css` 4119 → 4040). Ten rule blocks extracted: `.action-filter-chips` (7-line), `.action-filter-chips-row` (6-line), `.action-filter-chip` (16-line), `.action-filter-chip:hover` (4-line), `.action-filter-chip.active` (5-line), `.action-filter-chip-dot` (6-line), `.action-filter-chip.active .action-filter-chip-dot` (descendant, 3-line), `.action-filter-divider` (6-line), `.action-filter-chip.preset` (4-line compound), `.action-filter-chips-count` (6-line). Two section comments dropped: `/* --- Action Filter Bar --- */` and the sub-comment `/* Action Filter Chips */` (matches U3/U5/U7/U9/U10/U12 precedent — entire section moved). New `prompt-detail/ActionFilterChips.css` is 77 lines.
+- **Consumers updated**: `src/components/dashboard/prompt-detail/ActionFilterChips.tsx` adds `import './ActionFilterChips.css';` as the **first line** (sibling-relative within prompt-detail subdir).
+- **Short-name modifier check**: `.preset` is a short generic class name used only as a compound modifier `.action-filter-chip.preset` (not standalone). Verified via grep: bare `.preset` className is exclusively in ActionFilterChips.tsx. Other "preset" matches in ContextLimitSettings.tsx are different class names (`ctx-settings-preset`, `ctx-preset-radio`) — distinct strings, no conflict.
+- **Frontend review**: OK (fp `ff24a0fcd76be19770768d03d02f07e02817a162c8daf3eef60fb271e556d490`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U13 move .action-filter-* + .preset to prompt-detail/ActionFilterChips.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 569 → 559 entries (10 deletions = exactly the moved selectors, including compound/pseudo). Zero re-ordering. Inventory: `481 → 474` distinct classes; `388 → 381` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved limitation per §3 C7 last bullet).
+- **Visual diff**: PASS — **6/7 captured screens byte-equal** vs baseline on the first pass, including the **§7 critical surface `dashboard-prompt-detail` (94,955 B) byte-equal**. Also byte-equal: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B), `memory-monitor-collapsed` (118,017 B). One drift: `memory-monitor-expanded` 141,450 B vs canonical 141,277 B (+173 B) — documented U1-VR-d warm-up flake; ActionFilterChips does not render there. Last 3 populated screens not captured (P0.5.6 deferred).
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged. 56 orphan classes unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U13) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - `.action-filter-chip.active .action-filter-chip-dot` declares `!important` — preserved verbatim. The `!important` overrides any per-color dot fill when the parent chip is active.
+  - `.action-filter-chip.active` uses `var(--chip-color, #007aff)` CSS custom property — the variable is set inline via React `style={{ '--chip-color': ... }}` based on the action-color map. Move preserves both the declaration and the fallback.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

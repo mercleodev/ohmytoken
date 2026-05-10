@@ -1,3 +1,4 @@
+import './ActionFilterChips.css';
 import { ACTION_COLORS } from "../../scan/shared";
 
 type ActionFilterChipsProps = {
