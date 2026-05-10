@@ -1413,6 +1413,53 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   3. **Determinism re-run**: after all 12 captures land (notification-overlay deferred), run `--all` into a separate `OUT_DIR` and assert byte-equal sha256 hashes vs the canonical baseline.
   4. **U1-VR final commit**: mark baseline complete (12/13, with notification-overlay permanently deferred). Update §7 P0.5 Decisions if any orchestrator behavior is meant to ship as-is.
 
+#### U1-VR-d — Final baseline (10 deterministic + 1 informational, refactor-ready)
+
+- **Group**: U1-VR (visual baseline, fourth and final batch). Resolves U1-VR-c's fixture-enrichment/renderer-twin checklist; closes the U1-VR phase so the dashboard.css decomposition refactor can begin.
+- **SHA**: _to be backfilled after merge_
+- **Captured screens** (10 byte-deterministic + 1 informational; total 10 of 13 canonical + 1 of 2 renderer twins):
+  - **Newly captured** (3): `settings-evidence`, `memory-monitor-expanded`, `memory-monitor-collapsed`.
+  - **Re-baselined** (2, fixture changes affected hash): `dashboard-claude` (memoryFiles seed renders the Claude memory card), `dashboard-prompt-detail` (the screen lands on sess-fixture-003 → req-005 by `last_timestamp DESC`/`timestamp DESC`; req-005's seeded `mcp__figma__download_figma_images` tool_call + 2 injected_files now render in the per-prompt summary).
+  - **Unchanged** (5, hashes byte-equal vs U1-VR-c): `dashboard-all-default`, `settings-context-limit`, `backfill-dialog`, `first-run-onboarding`, `setup-guide`.
+  - **Renderer twin** (1, informational only): `renderer-dashboard` — captured under `/renderer/` with viewport pinned to 400×640, but pixel-deterministic only at the dimensions level; pixel data drifts between runs because `src/main.tsx` mock uses `Math.random()` (lines 165–166) for the prompt-heatmap mock data. Treated as a smoke check, NOT a regression-detection target. To make it byte-equal in the future, replace `Math.random()` with a seeded PRNG.
+- **Final canonical hashes** (sha256, all under `docs/qa/runs/2026-05-10/baseline/canonical/`):
+  - `backfill-dialog.png` — `90d51560bcb9143d55562fe6c0695367b0683b768f92edd31f071ccb209085a0` (112,676 bytes, U1-VR-c)
+  - `dashboard-all-default.png` — `6aa729c8a53e78d09eb5ca95221089f98fe1a99401709c3864b7116e1690e0a8` (96,467 bytes, U1-VR-b unchanged)
+  - `dashboard-claude.png` — `ec4859840b7d2a3b249fdbca2ce2cd534d9bf721b8e7dbb42e0d08cc80886c2d` (146,288 bytes, **U1-VR-d new**)
+  - `dashboard-prompt-detail.png` — `e2f9eb35679abc7fa5e15a8fb09e394b747a562dd704f048c8f3dcda50f5c82e` (94,955 bytes, **U1-VR-d new**)
+  - `first-run-onboarding.png` — `41c9e00bb825e35fb212b16cf0d59d7022ea512a2a56fa7f4c4108abb0b82d09` (92,448 bytes, U1-VR-c)
+  - `memory-monitor-collapsed.png` — `18d7337cc60a9d312f2c64cffa7942440e0ff4d9c385ffe38a4ddb0c9aa9c27e` (118,017 bytes, **U1-VR-d new**)
+  - `memory-monitor-expanded.png` — `93d64f1c03d914a2793873a74d115a6da5bbd6d160a9bb911824862c930cca99` (141,277 bytes, **U1-VR-d new**)
+  - `settings-context-limit.png` — `9307209cd9281a210df32a0c427c9b6919741c31bac1ebd5a307a337ff665d98` (145,190 bytes, U1-VR-b unchanged)
+  - `settings-evidence.png` — `1f8c2669b7ae24bc21ca22b5c036004342d6e1569512506509d3a0d64d67f081` (139,846 bytes, **U1-VR-d new**)
+  - `setup-guide.png` — `0274ddbf1fc9801cb755bdab3114b7f2041ca16eb7355dd05d8c6e8fcb20ef9a` (90,955 bytes, U1-VR-c)
+  - `renderer/renderer-dashboard.png` — `ea1f266c98cf82a111c3603173afde5bd19e98ddbe134a7f24b49b79d2984e83` (informational; do not gate on)
+- **Permanently deferred (3 screens — out of scope for this epic)**:
+  - `mcp-insights-{expanded,collapsed}` (populated): `FEATURE_FLAGS.MCP_INSIGHTS = false` since #178 (2026-03-13). `McpInsightsCard` returns null at the parent JSX level (`UsageView.tsx` `{FEATURE_FLAGS.MCP_INSIGHTS && <McpInsightsCard />}`), so users never see it. The CSS rules for `.mcp-card-*` still live in `dashboard.css` and remain part of the decomposition surface — to capture these screens, flip the flag (or add a build-time env override) and re-run with `INCLUDE_TBD=1`. Tool-call fixture rows (8 entries spanning Read/Edit/Bash + 4 `mcp__*`) are pre-seeded, so the capture is unblocked once the gate flips.
+  - `notification-overlay`: skipped under `OMT_QA_CAPTURE_MODE=1` (notification BrowserWindow is not created in capture mode to avoid CDP target ambiguity). Same caveat as U1-VR-c.
+  - `renderer-settings`: out-of-scope for this epic. `.settings-section` is styled in `src/App.css:122-141`, NOT in `src/components/dashboard/dashboard.css`. The Settings view contains zero CSS rules touched by this decomposition, so capturing it adds no regression-detection value here. Re-evaluate when the `App.css` decomposition epic begins.
+- **Determinism check (U1-VR-d)**: ran `OUT_DIR=/tmp/u1vr-d-determinism-check{,2,4} bash scripts/qa-capture-baseline.sh populated` four times. Run 2 vs run 4 produced byte-identical hashes for all 7 populated screens (`cmp -s` PASS for `dashboard-all-default`, `dashboard-claude`, `dashboard-prompt-detail`, `settings-evidence`, `settings-context-limit`, `memory-monitor-expanded`, `memory-monitor-collapsed`). Run 1 was a warm-up outlier (different hashes for `dashboard-all-default` and `memory-monitor-expanded`); subsequent steady-state runs converge on the canonical hashes above. Treat the first capture after a fresh fixture or daemon restart as a warm-up — re-capture for byte-equal comparison.
+- **Fixture enrichment**:
+  - `qa-fixtures.json` `populated` profile: added `memoryFiles[]` (claude provider, MEMORY.md + 2 sibling .md files for the multi-file MemoryMonitorCard layout); added `db.tool_calls[]` (8 entries: 2× Read on req-001, Edit + 2× `mcp__figma__get_figma_data` + `mcp__playwright__playwright_screenshot` on req-002, Bash on req-003, `mcp__figma__download_figma_images` on req-005); added `db.injected_files[]` (2 rows on req-005 — MemoryMonitorCard.tsx + dashboard.css — to gate `hasInjectedFiles=true` for the settings-evidence flow that lands on sess-fixture-003 → req-005).
+  - `qa-seed-fixtures.mjs`: added step 1c for `memoryFiles` (computes the encoded-cwd path for claude provider via `process.cwd()` so it matches the orchestrator's `qa-launch-electron.sh` cwd), plus injected_files / tool_calls SQL inserts inside `seedSqlite()` (FK-resolved via the existing `promptIdByRequestId` map).
+- **Orchestrator P0.5.5 fixes**:
+  1. **`set -u` unbound-variable bug in `run_steps()`**: `${ab_prefix[@]}` is empty in daemon mode (renderer-only), and bash 5.x errors out under `set -u` when expanding an empty array. Replaced with `${ab_prefix[@]+"${ab_prefix[@]}"}` across all 4 step types (click/wait/eval/scroll-to). The bug was latent in U1-VR-{a,b,c} because no renderer-only screen exercised eval/click/scroll-to until U1-VR-d.
+  2. **Renderer-only viewport pin**: `agent-browser` does not auto-pin viewport in daemon mode, so PNG dimensions diverged across runs (observed 2400×2558 vs 2072×3518). Added `agent-browser set viewport <w> <h>` after `open` in `capture_renderer_only`, sourcing `<w>`/`<h>` from `qa-capture-screen-map.json` (`viewport.width`/`viewport.height`). Now produces 400×640 PNGs matching the headed-Electron capture dimensions. (Pixel data still drifts due to mock `Math.random()`; see renderer-twin caveat above.)
+- **Screen-map updates**:
+  - `settings-evidence`: removed tbd; click steps unchanged (sess-fixture-003 → req-005 via `.session-card`/`.prompt-card` first-match).
+  - `mcp-insights-{expanded,collapsed}`: tbd reworded from "needs validation" to a permanent FEATURE_FLAGS gate explanation; both will only capture under `INCLUDE_TBD=1` against a flag-flipped build.
+  - `memory-monitor-{expanded,collapsed}`: added `.provider-tabs .provider-tab:nth-child(2)` Claude-tab click prerequisite (UsageView.tsx `supportsMemoryCard` only returns true for claude/codex; the default 'all' tab does not render `.memory-card`).
+  - `renderer-dashboard`: removed tbd; added byte-determinism caveat in description.
+  - `renderer-settings`: tbd reworded from "needs `_trigger` hook" to "out-of-scope (App.css)".
+- **Hashing notes**: re-baselined `dashboard-claude` and `dashboard-prompt-detail` because the populated fixture now seeds memory files (visible on the Claude provider tab) and tool_calls (visible in the prompt-detail's per-prompt summary). The U1-VR-c hashes for those two screens (`d14452d4…` / `5af60838…`) are SUPERSEDED by the U1-VR-d hashes above.
+- **Frontend review**: docs + fixture-only landing — capture artifacts plus orchestrator/seeder enhancements; no production component or CSS source change. (Mock `src/main.tsx` Math.random() noted but intentionally left unchanged.)
+- **Cascade-order check**: N/A — no CSS source change.
+- **Visual diff**: PARTIAL EQUIVALENCE — 5 of 7 populated PNGs byte-equal vs U1-VR-c; 2 changed because of intentional fixture enrichment (no CSS regression). The 3 first-run/backfill PNGs from U1-VR-c are byte-equal in U1-VR-d (re-checked sha256).
+- **Notes / refactor handoff**:
+  - U1-VR is now CLOSED. The 10 canonical PNGs above are the authoritative regression baseline for the dashboard.css decomposition. Refactor units (U2+) compare against these hashes per §11.4.
+  - The renderer-dashboard PNG is NOT a regression target. If the refactor needs renderer-only verification, use `pixelmatch` or visual diff with a tolerance window — or seed the mock PRNG first.
+  - Baseline validity window: SQLite `date('now', 'localtime')` is not faked (only renderer `Date` is, via FakeDate), so cards that filter by today (e.g., `McpInsightsCard` default 'today' period) implicitly depend on system date staying close to fixture dates. The current populated fixture is anchored at 2026-05-05; the baseline is reproducible as long as the regression check runs on the same physical day or within the cards' wider time windows. Move fixture timestamps forward and re-baseline if a refactor verification spans many days.
+
 #### P1 — Cross-file class collision risk records
 
 - **Group**: cross-file collisions (no owner relocation)

@@ -168,27 +168,27 @@ run_steps() {
         # bypasses React's synthetic event system). U1-VR-b smoke
         # confirmed: `click @e6` against a React button reports "✓ Done"
         # but state never updates; `el.click()` works.
-        agent-browser "${ab_prefix[@]}" eval "document.querySelector('$sel').click()"
+        agent-browser ${ab_prefix[@]+"${ab_prefix[@]}"} eval "document.querySelector('$sel').click()"
         ;;
       wait)
         local sel
         sel=$(echo "$step" | jq -r '.selector')
-        agent-browser "${ab_prefix[@]}" wait "$sel"
+        agent-browser ${ab_prefix[@]+"${ab_prefix[@]}"} wait "$sel"
         ;;
       wait_ms)
         local ms
         ms=$(echo "$step" | jq -r '.ms')
-        agent-browser "${ab_prefix[@]}" wait "$ms"
+        agent-browser ${ab_prefix[@]+"${ab_prefix[@]}"} wait "$ms"
         ;;
       eval)
         local script
         script=$(echo "$step" | jq -r '.script')
-        agent-browser "${ab_prefix[@]}" eval "$script"
+        agent-browser ${ab_prefix[@]+"${ab_prefix[@]}"} eval "$script"
         ;;
       scroll-to)
         local sel
         sel=$(echo "$step" | jq -r '.selector')
-        agent-browser "${ab_prefix[@]}" scrollintoview "$sel"
+        agent-browser ${ab_prefix[@]+"${ab_prefix[@]}"} scrollintoview "$sel"
         ;;
       tab-switch)
         echo "[qa-capture] WARN: tab-switch step ignored in OMT_QA_CAPTURE_MODE (notif window not created)" >&2
@@ -471,6 +471,16 @@ capture_renderer_only() {
   fake_now=$(jq -r '.fakeNow' "$SCREEN_MAP")
   local qa_url="http://localhost:5173/?qa-fake-now=${fake_now}&qa-no-animations=1"
   agent-browser open "$qa_url"
+  # Pin viewport to match the headed-Electron capture (400x640 logical,
+  # 800x1280 px @ 2dpr). Without an explicit viewport, agent-browser
+  # falls back to whatever window size the daemon happens to have, which
+  # differs across runs (U1-VR-d found 2400x2558 vs 2072x3518 on
+  # consecutive captures). Pin viewport AND device-pixel-ratio so the
+  # PNG bytes are reproducible regardless of host display.
+  local target_w target_h
+  target_w=$(jq -r '.viewport.width' "$SCREEN_MAP")
+  target_h=$(jq -r '.viewport.height' "$SCREEN_MAP")
+  agent-browser set viewport "$target_w" "$target_h"
   jq -r '.screens | map(select(.profile == "renderer-only")) | .[].name' "$SCREEN_MAP" \
   | while IFS= read -r screen_name; do
     local tbd

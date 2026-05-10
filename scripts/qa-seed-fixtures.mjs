@@ -177,6 +177,28 @@ function seedSqlite(dbPath, dbProfile) {
       promptIdByRequestId.set(p.request_id, info.lastInsertRowid);
     }
 
+    const insertInjectedFile = db.prepare(`
+      INSERT INTO injected_files (
+        prompt_id, path, category, estimated_tokens
+      ) VALUES (?, ?, ?, ?)
+    `);
+    for (const f of dbProfile.injected_files ?? []) {
+      const promptId = promptIdByRequestId.get(f.prompt_request_id);
+      if (!promptId) continue;
+      insertInjectedFile.run(promptId, f.path, f.category, f.estimated_tokens ?? 0);
+    }
+
+    const insertToolCall = db.prepare(`
+      INSERT INTO tool_calls (
+        prompt_id, call_index, name, input_summary, timestamp
+      ) VALUES (?, ?, ?, ?, ?)
+    `);
+    for (const t of dbProfile.tool_calls ?? []) {
+      const promptId = promptIdByRequestId.get(t.prompt_request_id);
+      if (!promptId) continue;
+      insertToolCall.run(promptId, t.call_index, t.name, t.input_summary ?? null, t.timestamp ?? null);
+    }
+
     const insertEvidence = db.prepare(`
       INSERT INTO evidence_reports (
         prompt_id, request_id, timestamp, engine_version, fusion_method,
@@ -319,6 +341,32 @@ function main() {
     const lines = (entry.lines ?? []).map((l) => JSON.stringify(l)).join("\n");
     writeFileSync(filePath, lines + (lines ? "\n" : ""));
     outputs.push(filePath);
+  }
+
+  // 1c. Memory files: provider-scoped MEMORY.md (and any sibling .md)
+  // for MemoryMonitorCard. Path resolution mirrors
+  // electron/memory/providerMemory.ts resolveMemoryDir():
+  //   claude → <HOME>/.claude/projects/<encoded-cwd>/memory/
+  //   codex  → <HOME>/.codex/memories/
+  // Encoded cwd uses process.cwd() (the repo root, since
+  // qa-launch-electron.sh `cd "$REPO_ROOT"` matches the seeder cwd).
+  for (const entry of profile.memoryFiles ?? []) {
+    let memoryDir;
+    if (entry.provider === "claude") {
+      const cwd = entry.projectPath ?? process.cwd();
+      const encoded = cwd.replace(/\//g, "-");
+      memoryDir = join(homePath, ".claude", "projects", encoded, "memory");
+    } else if (entry.provider === "codex") {
+      memoryDir = join(homePath, ".codex", "memories");
+    } else {
+      die(1, `unknown memoryFiles provider: ${entry.provider}`);
+    }
+    ensureDir(memoryDir);
+    for (const f of entry.files ?? []) {
+      const filePath = join(memoryDir, f.filename);
+      writeFileSync(filePath, f.content, { encoding: "utf8" });
+      outputs.push(filePath);
+    }
   }
 
   // 2. ~/.claude/history.jsonl

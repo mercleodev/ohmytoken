@@ -7,10 +7,29 @@
   "productName": "OhMyToken",
   "profiles": {
     "populated": {
-      "description": "Realistic populated dashboard — 3 Claude sessions, 12 prompts, 2 evidence reports. Covers dashboard-all-default, dashboard-claude, dashboard-prompt-detail, settings-evidence, settings-context-limit, notification-overlay, mcp-insights-{expanded,collapsed}, memory-monitor-{expanded,collapsed} (10 of 13 canonical screens).",
+      "description": "Realistic populated dashboard — 3 Claude sessions, 5 prompts, 2 evidence reports. Covers dashboard-all-default, dashboard-claude, dashboard-prompt-detail, settings-evidence, settings-context-limit, memory-monitor-{expanded,collapsed} (7 of 13 canonical renderer screens). mcp-insights-{expanded,collapsed} are permanently deferred while FEATURE_FLAGS.MCP_INSIGHTS=false (since #178 on 2026-03-13); the seeded tool_calls + injected_files are still here so re-enabling the flag keeps the baseline reproducible.",
       "sessionRoots": [
         ".claude/projects/-Users-fixture-projectA",
         ".codex/sessions/2026-05-05-fixture"
+      ],
+      "memoryFiles": [
+        {
+          "provider": "claude",
+          "files": [
+            {
+              "filename": "MEMORY.md",
+              "content": "# Project Memory\n\n- [Decomposition baseline](baseline_notes.md) — fixture entry point for U1-VR.\n- [Cascade gate](cascade_gate.md) — Tier 1 components first, then dashboard.css decomposition.\n"
+            },
+            {
+              "filename": "baseline_notes.md",
+              "content": "---\nname: baseline_notes\ndescription: U1-VR fixture memory file used by MemoryMonitorCard render baseline.\ntype: project\n---\n\nBaseline U1-VR seed for the MemoryMonitorCard layout. Two memory files exercise the file-list scrolling and the index-vs-files split.\n"
+            },
+            {
+              "filename": "cascade_gate.md",
+              "content": "---\nname: cascade_gate\ndescription: Tier 1 cascade gate fixture.\ntype: feedback\n---\n\nCascade gate fixture for visual regression. Provides a non-empty file list so MemoryMonitorCard renders the expanded multi-file layout.\n"
+            }
+          ]
+        }
       ],
       "history": [
         {
@@ -98,6 +117,20 @@
         ],
         "daily_stats": [
           { "date": "2026-05-05", "provider": "claude", "request_count": 5, "total_cost_usd": 0.0689, "total_input_tokens": 17355, "total_output_tokens": 880, "total_context_tokens": 17661, "avg_context_tokens": 3532, "cache_hit_rate": 0.42, "models_used": "[\"claude-opus-4-7\",\"claude-sonnet-4-6\",\"claude-haiku-4-5\"]", "updated_at": "2026-05-05T11:58:00.000Z" }
+        ],
+        "injected_files": [
+          { "prompt_request_id": "req-005", "path": "src/components/dashboard/MemoryMonitorCard.tsx", "category": "edit", "estimated_tokens": 180 },
+          { "prompt_request_id": "req-005", "path": "src/components/dashboard/dashboard.css", "category": "edit", "estimated_tokens": 60 }
+        ],
+        "tool_calls": [
+          { "prompt_request_id": "req-001", "call_index": 0, "name": "Read", "input_summary": "src/components/dashboard/dashboard.css", "timestamp": "2026-05-05T11:00:35.000Z" },
+          { "prompt_request_id": "req-001", "call_index": 1, "name": "Read", "input_summary": "src/components/dashboard/CostCard.tsx", "timestamp": "2026-05-05T11:00:50.000Z" },
+          { "prompt_request_id": "req-002", "call_index": 0, "name": "Edit", "input_summary": "src/components/dashboard/CostCard.tsx", "timestamp": "2026-05-05T11:03:40.000Z" },
+          { "prompt_request_id": "req-002", "call_index": 1, "name": "mcp__figma__get_figma_data", "input_summary": "nodeId=1:42", "timestamp": "2026-05-05T11:04:00.000Z" },
+          { "prompt_request_id": "req-002", "call_index": 2, "name": "mcp__figma__get_figma_data", "input_summary": "nodeId=1:42", "timestamp": "2026-05-05T11:04:30.000Z" },
+          { "prompt_request_id": "req-002", "call_index": 3, "name": "mcp__playwright__playwright_screenshot", "input_summary": "name=cost-card", "timestamp": "2026-05-05T11:05:00.000Z" },
+          { "prompt_request_id": "req-003", "call_index": 0, "name": "Bash", "input_summary": "node scripts/css-decomp-cascade-check.mjs", "timestamp": "2026-05-05T11:06:35.000Z" },
+          { "prompt_request_id": "req-005", "call_index": 0, "name": "mcp__figma__download_figma_images", "input_summary": "nodeId=2:11", "timestamp": "2026-05-05T11:55:35.000Z" }
         ],
         "app_metadata": [
           { "key": "schemaSeededBy", "value": "qa-seed-fixtures populated" }

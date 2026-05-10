@@ -55,8 +55,7 @@
         { "type": "click", "selector": ".evidence-settings-btn" },
         { "type": "wait", "selector": ".evidence-settings-panel" }
       ],
-      "description": "Evidence scoring settings popup: navigate to PromptDetailView (same as dashboard-prompt-detail), then click .evidence-settings-btn (PromptDetailView.tsx:203). The button is inside a lazy-mounted Section so .prompt-detail-header alone isn't sufficient — wait explicitly for the button selector before clicking.",
-      "tbd": "(U1-VR-b finding) `.evidence-settings-btn` is only rendered when `hasInjectedFiles=true` (PromptDetailView.tsx:77, 192), which requires `displayScan.injected_files` to be a non-empty array. The populated fixture's prompts seed `tool_summary` (Read/Edit counts) but NOT `injected_files` rows in the DB. Fixture enrichment needed: add at least one prompt with seeded injected_files entries linked via the prompts.injected_files JSON column or join table. Tracked as fixture-enrichment follow-up; orchestrator path is correct."
+      "description": "Evidence scoring settings popup: navigate to PromptDetailView (same flow as dashboard-prompt-detail: 1st .session-card by last_timestamp DESC = sess-fixture-003 → 1st .prompt-card by timestamp DESC = req-005), then click .evidence-settings-btn (PromptDetailView.tsx:203). The button is inside a lazy-mounted Section so .prompt-detail-header alone isn't sufficient — wait explicitly for the button selector before clicking. U1-VR-d seeds populated.injected_files for req-005 to gate hasInjectedFiles=true; this also changes dashboard-prompt-detail's PNG (acceptable since memoryFiles + tool_calls already force a populated re-baseline)."
     },
     {
       "name": "settings-context-limit",
@@ -119,7 +118,7 @@
         { "type": "scroll-to", "selector": ".mcp-card" }
       ],
       "description": "McpInsightsCard with default expanded=true state (McpInsightsCard.tsx:71). Variant captures the open card layout.",
-      "tbd": "Selectors derived from source but `agent-browser scrollintoview` not exercised in P0.5.2 smoke. The populated profile may not seed any MCP data → card may render empty. U1-VR-b: verify .mcp-card .collapsible.open exists in the seeded populated dashboard, and that scroll lands the card in viewport."
+      "tbd": "(U1-VR-d) FEATURE_FLAGS.MCP_INSIGHTS=false since #178 (2026-03-13) — McpInsightsCard is unconditionally null in production renders. Card CSS rules still live in dashboard.css and are part of the decomposition surface, so this entry stays as a future-capture target. Tool_calls fixture rows are seeded; flip MCP_INSIGHTS to true (or wire a build-time env override) to unblock. INCLUDE_TBD=1 will not bypass this — capture would only succeed against a flag-flipped build."
     },
     {
       "name": "mcp-insights-collapsed",
@@ -132,18 +131,20 @@
         { "type": "wait", "selector": ".mcp-card .cost-chevron:not(.expanded)" }
       ],
       "description": "McpInsightsCard collapsed via the header toggle button. Variant captures the closed-card chevron + condensed layout.",
-      "tbd": "Blocked on mcp-insights-expanded validation (same card)."
+      "tbd": "(U1-VR-d) Same FEATURE_FLAGS.MCP_INSIGHTS=false gate as mcp-insights-expanded. Permanently deferred until the flag flips."
     },
     {
       "name": "memory-monitor-expanded",
       "profile": "populated",
       "target": "renderer",
-      "waitFor": ".memory-card .collapsible.open",
+      "waitFor": ".memory-card .memory-chevron.expanded",
       "steps": [
+        { "type": "click", "selector": ".provider-tabs .provider-tab:nth-child(2)" },
+        { "type": "wait", "selector": ".provider-tabs .provider-tab:nth-child(2).active" },
+        { "type": "wait", "selector": ".memory-card" },
         { "type": "scroll-to", "selector": ".memory-card" }
       ],
-      "description": "MemoryMonitorCard with default expanded=true state (MemoryMonitorCard.tsx:145).",
-      "tbd": "Selectors derived from source but not exercised in P0.5.2 smoke. populated profile may not seed memory monitor data. U1-VR-b: validate."
+      "description": "MemoryMonitorCard with default expanded=true state (MemoryMonitorCard.tsx:145). Card only renders for claude/codex provider (UsageView.tsx supportsMemoryCard gate), so the orchestrator clicks the Claude provider tab before scrolling to the card. U1-VR-d seeds populated.memoryFiles[claude] with MEMORY.md + 2 sibling .md files so readMemoryDir() returns a non-empty file list."
     },
     {
       "name": "memory-monitor-collapsed",
@@ -151,12 +152,14 @@
       "target": "renderer",
       "waitFor": ".memory-card .memory-chevron:not(.expanded)",
       "steps": [
+        { "type": "click", "selector": ".provider-tabs .provider-tab:nth-child(2)" },
+        { "type": "wait", "selector": ".provider-tabs .provider-tab:nth-child(2).active" },
+        { "type": "wait", "selector": ".memory-card" },
         { "type": "scroll-to", "selector": ".memory-card" },
         { "type": "click", "selector": ".memory-card .memory-header" },
         { "type": "wait", "selector": ".memory-card .memory-chevron:not(.expanded)" }
       ],
-      "description": "MemoryMonitorCard collapsed via the header click handler (MemoryMonitorCard.tsx:207).",
-      "tbd": "Blocked on memory-monitor-expanded validation (same card)."
+      "description": "MemoryMonitorCard collapsed via the header click handler (MemoryMonitorCard.tsx:207). Same provider-tab prerequisite as memory-monitor-expanded."
     },
     {
       "name": "renderer-dashboard",
@@ -164,8 +167,7 @@
       "target": "renderer-only",
       "waitFor": ".dashboard",
       "steps": [],
-      "description": "Renderer-only twin: dashboard view rendered against mock window.api (src/main.tsx). Captured via qa-launch-renderer.sh + agent-browser open <vite-url>. Fast-path check for Tier 1 units that don't need real IPC data.",
-      "tbd": "renderer-only flow not exercised in P0.5.2 smoke (focus was on headed-Electron path). U1-VR-b: launch vite dev server, agent-browser open canonical QA URL, verify .dashboard renders against mock window.api."
+      "description": "Renderer-only twin: dashboard view rendered against mock window.api (src/main.tsx). Captured via qa-launch-renderer.sh + agent-browser open <vite-url>, with viewport pinned to 400x640 (`agent-browser set viewport`). U1-VR-d findings: orchestrator now pins viewport so PNG dimensions are stable, but pixel data is NOT byte-deterministic — src/main.tsx mock uses Math.random() (lines 165-166) for the prompt-heatmap mock data, so each render produces different heatmap counts/colors. The Electron-headed dashboard-all-default already covers the same layout deterministically. Renderer-dashboard PNGs are kept under /renderer/ as INFORMATIONAL smoke-checks (not byte-equal regression targets); regression verification should rely on the canonical/ Electron captures. To make renderer-dashboard byte-equal in the future, replace Math.random() in src/main.tsx with a seeded PRNG."
     },
     {
       "name": "renderer-settings",
@@ -176,7 +178,7 @@
         { "type": "eval", "script": "window.api.onNavigateTo && window.api.onNavigateTo._trigger && window.api.onNavigateTo._trigger('settings')" }
       ],
       "description": "Renderer-only twin: settings view. Reached by triggering the onNavigateTo('settings') IPC mock (App.tsx:53-62).",
-      "tbd": "The mock window.api in src/main.tsx may or may not expose a _trigger hook for onNavigateTo. Verify at U1-VR run-time and add the test hook to main.tsx if missing (out of P0.5 scope)."
+      "tbd": "(U1-VR-d) Permanently OUT-OF-SCOPE for the dashboard.css decomposition baseline: `.settings-section` is styled in src/App.css (lines 122-141), NOT in src/components/dashboard/dashboard.css. The Settings view contains no CSS rules that would be touched by the decomposition refactor, so capturing it adds no regression-detection value for this epic. Additionally, the mock onNavigateTo in src/main.tsx does not expose a `_trigger` hook — adding one is unnecessary scope creep. Re-evaluate when the App.css decomposition epic begins."
     }
   ]
 }
