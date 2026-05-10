@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T23:15:35Z
-fingerprint=ca72c48e92c1b0ffa80e5d6856df894cbf9c7f3c2c0aa417fc1dfcc8c6312096
+# updated_at_utc: 2026-05-10T23:19:49Z
+fingerprint=7e0c4dc47134afd67a21c5aba56623335cf57dfb90422361d405c0193cc24462
 source=docs/sdd/style-checklist.md
-note=U26 move .heatmap-* to PromptHeatmap.css (Tier 1)
+note=U27 move .injected-evidence-{group,dot,list,entry,item}* + .evidence-score-* to prompt-detail/EvidenceGroup.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/PromptHeatmap.css
-src/components/dashboard/PromptHeatmap.tsx
+src/components/dashboard/prompt-detail/EvidenceGroup.css
+src/components/dashboard/prompt-detail/EvidenceGroup.tsx

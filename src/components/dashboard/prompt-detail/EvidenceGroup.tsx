@@ -1,3 +1,4 @@
+import './EvidenceGroup.css';
 import { useState, useCallback } from "react";
 import { formatTokens } from "../../scan/shared";
 import type { EvidenceStatus, InjectedEvidenceItem } from "./types";

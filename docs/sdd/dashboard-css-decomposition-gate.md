@@ -1897,6 +1897,26 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - No `/* UNUSED candidate */` markers added (deferred to U50).
   - **Clean contiguous section** — no other-owner classes interleaved. Simple single-segment move. Good counterweight to U23's 4-segment complexity.
 
+#### U27 — `dashboard/prompt-detail/EvidenceGroup.tsx` → `prompt-detail/EvidenceGroup.css` (Tier 1 single-owner, 14 classes / 18 selectors)
+
+- **Group**: Tier 1 single-owner (14 classes — nineteenth Tier 1 unit landed).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 119 (`dashboard.css` 3276 → 3157). Eighteen rule blocks extracted: 14 base classes (`.injected-evidence-group`, `.injected-evidence-group-title`, `.injected-evidence-dot`, `.injected-evidence-list`, `.injected-evidence-entry`, `.injected-evidence-item`, `.injected-evidence-item-main`, `.injected-evidence-item-path`, `.injected-evidence-item-reason`, `.injected-evidence-item-right`, `.injected-evidence-item-tokens`, `.evidence-score-bar`, `.evidence-score-fill`, `.evidence-score-pct`) + 3 compound modifiers on `.injected-evidence-dot` (`.confirmed`, `.likely`, `.unverified`) + 1 `:hover` pseudo on `.injected-evidence-item`. The preserved inline comment `/* Evidence Score Bar */` (between rule blocks) moves verbatim. New `prompt-detail/EvidenceGroup.css` is 120 lines.
+- **Consumers updated**: `src/components/dashboard/prompt-detail/EvidenceGroup.tsx` adds `import './EvidenceGroup.css';` as the **first line**.
+- **Bare-modifier note**: the same bare class names `.confirmed`, `.likely`, `.unverified` are compound-modifiers on `.injected-evidence-badge` (U23 PromptDetailView) and `.injected-evidence-dot` (U27 EvidenceGroup). After U23 + U27, both compound forms live in their respective sibling CSS files; the bare class names themselves are never standalone defined and never standalone used in tsx className strings. Inventory recorded `consumerCount=2` (one tsx for each owner); no collision because the compound parent class disambiguates the visual scope.
+- **Frontend review**: OK (fp `cdf85780ef43d2f20e735a36cf7a42f10118c0bac07d83b01dd026159d5282e8`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U27 move .injected-evidence-{group,dot,list,entry,item}* + .evidence-score-* to prompt-detail/EvidenceGroup.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 453 → 435 entries (18 deletions). Inventory: `388 → 374` distinct classes; `298 → 281` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **6/7 captured screens byte-equal** on the first pass, including the **§7 critical surface `dashboard-prompt-detail` (94,955 B) byte-equal**. Pass-1 byte-equal set: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `dashboard-prompt-detail` (94,955 B), `settings-evidence` (139,846 B), `memory-monitor-collapsed` (118,017 B), `memory-monitor-expanded` (141,277 B — **canonical hash this run, both memory-monitor screens converged**). One drift: `settings-context-limit` 145,131 B (-59 B, rotating warm-up). EvidenceGroup does not render in `settings-context-limit`.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U27) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - **Best capture-quality run yet** — 6/7 byte-equal on the first pass with both memory-monitor screens converged (the historically most-flaky pair). The orchestrator daemon-life survived all 7 captured screens.
+  - **Cumulative progress (post-U27)**: 19 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `3157` (post-U27), a **1,397-line / 30.7% reduction — first sub-30% milestone of the original size**. 19 new sibling CSS files. 196 cumulative selector deletions.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).
