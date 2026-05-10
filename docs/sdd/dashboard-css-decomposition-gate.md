@@ -1941,7 +1941,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U32 — `dashboard/RecentSessions.tsx` → `RecentSessions.css` (Tier 1 single-owner, 20 classes / 25 selectors, split-removal preserves orphan)
 
 - **Group**: Tier 1 single-owner (20 classes — twenty-first Tier 1 unit landed). Skipped U29 (FirstRunOnboarding, surface `first-run-onboarding` outside the 3-screen orchestrator window), U30 (BackfillDialog, similar — outside window), and U31 (StatsDetailView, requires opening Stats detail UI).
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `122d2e6`
 - **Lines moved**: 199 (`dashboard.css` 3017 → 2818; **split-removal**). Twenty-five rule blocks extracted in 2 segments:
   - **Segment 1** (pre-U32 L240-356, 117 lines): `.recent-sessions`, `.recent-sessions-header`, `.recent-sessions-title`, `.recent-sessions-count`, `.recent-sessions-empty` + `.recent-sessions-empty p` (descendant), `.recent-view-more-btn` + `:hover` + `:disabled` (pseudos), `.session-card` + `:hover` + `:last-child` (pseudos), `.session-card-top`, `.session-card-prompt`, `.session-card-time`, `.session-card-meta`.
   - **Segment 2** (pre-U32 L362-439, 78 lines): `.session-card-row`, `.session-card-body`, `.session-card-compact-hint`, `.session-card-compacted-label`, `.session-card-branch`, `.provider-badge`, `.mini-ctx-gauge`, `.mini-ctx-gauge-pct`, `.mini-ctx-gauge--nodata`. Six preserved inline comments between rule blocks (`/* Session card row layout: ... */`, `/* Compact recommendation label (...) */`, `/* Compacted detection label (...) */`, `/* Git branch label */`, `/* Provider badge (...) */`, `/* Mini ctx donut gauge */`).
