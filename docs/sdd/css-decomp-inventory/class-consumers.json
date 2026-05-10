@@ -1,10 +1,10 @@
 {
-  "generated": "2026-05-10T02:37:54.634Z",
+  "generated": "2026-05-10T08:55:55.627Z",
   "source": "src/components/dashboard/dashboard.css",
   "sharedTargetDir": "src/components/dashboard/_shared/",
-  "totalClasses": 535,
+  "totalClasses": 533,
   "counts": {
-    "single-owner": 442,
+    "single-owner": 440,
     "cluster": 25,
     "shared": 12,
     "orphan": 56,
@@ -7562,38 +7562,8 @@
       "orphanClass": null
     },
     {
-      "class": "prompt-memory-disclaimer",
-      "firstLine": 4340,
-      "firstSelector": ".prompt-memory-disclaimer",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/prompt-detail/PromptMemorySection.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard/prompt-detail"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "prompt-memory-notice",
-      "firstLine": 4352,
-      "firstSelector": ".prompt-memory-notice",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/prompt-detail/PromptMemorySection.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard/prompt-detail"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
       "class": "collapsible",
-      "firstLine": 4359,
+      "firstLine": 4340,
       "firstSelector": ".collapsible",
       "definitionCount": 3,
       "consumers": [
@@ -7615,7 +7585,7 @@
     },
     {
       "class": "open",
-      "firstLine": 4370,
+      "firstLine": 4351,
       "firstSelector": ".collapsible.open",
       "definitionCount": 2,
       "consumers": [],
@@ -7626,7 +7596,7 @@
     },
     {
       "class": "collapsible-inner",
-      "firstLine": 4374,
+      "firstLine": 4355,
       "firstSelector": ".collapsible-inner",
       "definitionCount": 2,
       "consumers": [
@@ -7648,7 +7618,7 @@
     },
     {
       "class": "first-run-screen",
-      "firstLine": 4392,
+      "firstLine": 4373,
       "firstSelector": ".first-run-screen",
       "definitionCount": 1,
       "consumers": [
@@ -7663,7 +7633,7 @@
     },
     {
       "class": "first-run-header",
-      "firstLine": 4403,
+      "firstLine": 4384,
       "firstSelector": ".first-run-header",
       "definitionCount": 1,
       "consumers": [
@@ -7678,7 +7648,7 @@
     },
     {
       "class": "first-run-title",
-      "firstLine": 4407,
+      "firstLine": 4388,
       "firstSelector": ".first-run-title",
       "definitionCount": 1,
       "consumers": [
@@ -7693,7 +7663,7 @@
     },
     {
       "class": "first-run-subtitle",
-      "firstLine": 4415,
+      "firstLine": 4396,
       "firstSelector": ".first-run-subtitle",
       "definitionCount": 1,
       "consumers": [
@@ -7708,7 +7678,7 @@
     },
     {
       "class": "first-run-providers",
-      "firstLine": 4422,
+      "firstLine": 4403,
       "firstSelector": ".first-run-providers",
       "definitionCount": 1,
       "consumers": [
@@ -7723,7 +7693,7 @@
     },
     {
       "class": "first-run-provider-card",
-      "firstLine": 4428,
+      "firstLine": 4409,
       "firstSelector": ".first-run-provider-card",
       "definitionCount": 1,
       "consumers": [
@@ -7738,7 +7708,7 @@
     },
     {
       "class": "first-run-provider-head",
-      "firstLine": 4438,
+      "firstLine": 4419,
       "firstSelector": ".first-run-provider-head",
       "definitionCount": 1,
       "consumers": [
@@ -7753,7 +7723,7 @@
     },
     {
       "class": "first-run-provider-icon",
-      "firstLine": 4444,
+      "firstLine": 4425,
       "firstSelector": ".first-run-provider-icon",
       "definitionCount": 1,
       "consumers": [
@@ -7768,7 +7738,7 @@
     },
     {
       "class": "first-run-provider-name",
-      "firstLine": 4451,
+      "firstLine": 4432,
       "firstSelector": ".first-run-provider-name",
       "definitionCount": 1,
       "consumers": [
@@ -7783,7 +7753,7 @@
     },
     {
       "class": "first-run-provider-state",
-      "firstLine": 4458,
+      "firstLine": 4439,
       "firstSelector": ".first-run-provider-state",
       "definitionCount": 1,
       "consumers": [
@@ -7798,7 +7768,7 @@
     },
     {
       "class": "first-run-primary-btn",
-      "firstLine": 4464,
+      "firstLine": 4445,
       "firstSelector": ".first-run-primary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -7813,7 +7783,7 @@
     },
     {
       "class": "first-run-secondary",
-      "firstLine": 4480,
+      "firstLine": 4461,
       "firstSelector": ".first-run-secondary",
       "definitionCount": 1,
       "consumers": [
@@ -7828,7 +7798,7 @@
     },
     {
       "class": "first-run-secondary-btn",
-      "firstLine": 4487,
+      "firstLine": 4468,
       "firstSelector": ".first-run-secondary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -7843,7 +7813,7 @@
     },
     {
       "class": "first-run-walkthrough",
-      "firstLine": 4500,
+      "firstLine": 4481,
       "firstSelector": ".first-run-walkthrough",
       "definitionCount": 1,
       "consumers": [
@@ -7858,7 +7828,7 @@
     },
     {
       "class": "first-run-waiting",
-      "firstLine": 4507,
+      "firstLine": 4488,
       "firstSelector": ".first-run-waiting",
       "definitionCount": 1,
       "consumers": [
@@ -7873,7 +7843,7 @@
     },
     {
       "class": "first-run-spinner",
-      "firstLine": 4517,
+      "firstLine": 4498,
       "firstSelector": ".first-run-spinner",
       "definitionCount": 1,
       "consumers": [

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { MemoryStatus, MemoryFile } from '../../../types/electron';
+import './PromptMemorySection.css';
 
 const TYPE_COLORS: Record<string, string> = {
   user: '#007AFF',

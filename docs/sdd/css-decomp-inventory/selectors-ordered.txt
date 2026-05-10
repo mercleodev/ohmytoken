@@ -1,6 +1,6 @@
 # dashboard.css selectors in declaration order
-# Generated: 2026-05-10T02:37:54.634Z
-# Total entries (including @-rules): 628
+# Generated: 2026-05-10T08:55:55.627Z
+# Total entries (including @-rules): 626
 # Format: <line>\t<selector>
 #
 # Use this as the cascade-order baseline. After moves, the relative order of
@@ -608,30 +608,28 @@
  4318	.memory-project-detail-title
  4324	.memory-project-detail-banner
  4333	.memory-project-detail-loading
- 4340	.prompt-memory-disclaimer
- 4352	.prompt-memory-notice
- 4359	.collapsible
- 4370	.collapsible.open
- 4374	.collapsible-inner
- 4381	.collapsible.open > .collapsible-inner
- 4385	@media (prefers-reduced-motion: reduce)
- 4392	.first-run-screen
- 4403	.first-run-header
- 4407	.first-run-title
- 4415	.first-run-subtitle
- 4422	.first-run-providers
- 4428	.first-run-provider-card
- 4438	.first-run-provider-head
- 4444	.first-run-provider-icon
- 4451	.first-run-provider-name
- 4458	.first-run-provider-state
- 4464	.first-run-primary-btn
- 4476	.first-run-primary-btn:hover
- 4480	.first-run-secondary
- 4487	.first-run-secondary-btn
- 4496	.first-run-secondary-btn:hover
- 4500	.first-run-walkthrough
- 4507	.first-run-waiting
- 4517	.first-run-spinner
- 4526	@keyframes first-run-spin
- 4532	@media (prefers-reduced-motion: reduce)
+ 4340	.collapsible
+ 4351	.collapsible.open
+ 4355	.collapsible-inner
+ 4362	.collapsible.open > .collapsible-inner
+ 4366	@media (prefers-reduced-motion: reduce)
+ 4373	.first-run-screen
+ 4384	.first-run-header
+ 4388	.first-run-title
+ 4396	.first-run-subtitle
+ 4403	.first-run-providers
+ 4409	.first-run-provider-card
+ 4419	.first-run-provider-head
+ 4425	.first-run-provider-icon
+ 4432	.first-run-provider-name
+ 4439	.first-run-provider-state
+ 4445	.first-run-primary-btn
+ 4457	.first-run-primary-btn:hover
+ 4461	.first-run-secondary
+ 4468	.first-run-secondary-btn
+ 4477	.first-run-secondary-btn:hover
+ 4481	.first-run-walkthrough
+ 4488	.first-run-waiting
+ 4498	.first-run-spinner
+ 4507	@keyframes first-run-spin
+ 4513	@media (prefers-reduced-motion: reduce)
