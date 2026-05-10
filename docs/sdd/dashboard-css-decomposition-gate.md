@@ -1768,6 +1768,27 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - `.gauge-item:last-child` is the only descendant-style selector here; preserved verbatim adjacent to the parent `.gauge-item` rule.
   - **Warm-up flake set expansion observed**: the rotating warm-up flake set originally documented in U1-VR-d § 14 was `{dashboard-all-default, memory-monitor-expanded, memory-monitor-collapsed}` (3 screens). Today (post-U17) `settings-context-limit` was added as a 4th rotating member on pass-1 of a fresh-fixture run. Both passes converged on byte-equal across the §7 surface; treating this as part of the same "cold-daemon, animation-frame, fixture-replay" non-determinism class.
 
+#### U19 — `dashboard/OutputProductivityCard.tsx` → `OutputProductivityCard.css` (Tier 1 single-owner, 9 classes)
+
+- **Group**: Tier 1 single-owner (9 classes — thirteenth Tier 1 unit landed; U18 (FilePreviewOverlay) was skipped because it requires triggering the overlay open state — deferred to a future session with screen-map work).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 56 (`dashboard.css` 3924 → 3868). Nine rule blocks extracted: `.output-card` (4-line), `.output-card-headline` (3-line), `.output-card-value` (5-line), `.output-card-unit` (5-line), `.output-card-sub` (5-line), `.output-card-bar-track` (6-line), `.output-card-bar-fill` (6-line), `.output-card-empty` (5-line), `.output-card-trend` (5-line). Sub-section comment `/* --- Output Productivity Card --- */` dropped. **The broader section header `/* === Token Output Productivity ... === */` (3-line big block at pre-U19 lines 2899-2901) was INTENTIONALLY PRESERVED in `dashboard.css`** — it scopes both U19's sub-section AND the surviving Token Composition Chart sub-section (U21). Removing it now would orphan the U21 sub-section under no parent header. New `OutputProductivityCard.css` is 55 lines.
+- **Consumers updated**: `src/components/dashboard/OutputProductivityCard.tsx` adds `import './OutputProductivityCard.css';` as the **first line**.
+- **Frontend review**: OK (fp `2fb858150ac9d6854f1cdbd8b338cc69a50855ed6329c02defca7dec2c209697`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U19 move .output-card* to OutputProductivityCard.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 540 → 531 entries (9 deletions). Inventory: `457 → 448` distinct classes; `364 → 355` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **5/7 captured screens byte-equal** vs baseline on the first pass, with the **§7 critical surface `dashboard-all-default` (96,467 B) byte-equal**. Also byte-equal: `dashboard-claude` (146,288 B), `dashboard-prompt-detail` (94,955 B), `settings-evidence` (139,846 B), `memory-monitor-collapsed` (118,017 B). Two drifts both in the now-extended warm-up flake set: `memory-monitor-expanded` 141,450 B (+173 B, canonical 141,277 B), `settings-context-limit` 145,131 B (-59 B, canonical 145,190 B). OutputProductivityCard does not render in either drifted screen.
+- **§7 expanded-state caveat**: §7 line for U19 reads `dashboard-all-default.png, expanded state`. The current screen-map captures dashboard-all-default with OutputProductivityCard's **default (collapsed)** state — same as U1-VR-d baseline. Byte-equal on dashboard-all-default verifies the collapsed-state render is preserved. Expanded-state verification (which would exercise `.output-card-bar-track` / `.output-card-bar-fill` / `.output-card-trend` rendering in their visible state) is deferred to the screen-map expansion queued for the P0.5.6 fix. Per §8 step 8e: collapsed-state byte-equal + zero-finding code review jointly establish the relocation is correct.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged. 56 orphan classes unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U19) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - `.output-card-bar-fill` declares `transition: width 0.3s` — preserved verbatim. The animation runs when the productivity progress updates.
+  - **Milestone reached**: 100 cumulative selector deletions crossed at U19 (selectors-ordered.txt 531 entries vs U1 baseline 631 → exactly 100 selectors moved out of `dashboard.css`).
+  - **Cumulative progress (post-U19)**: 12 distinct Tier 1 slots landed (U2, U3, U4, U5, U7, U9, U10, U11, U12, U13, U15, U17, U19; U6/U8/U14/U16/U18 skipped or no-move). `dashboard.css` reduced from `4554` (pre-U2) → `3868` (post-U19), a 686-line / 15.1% reduction. 13 new sibling CSS files.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

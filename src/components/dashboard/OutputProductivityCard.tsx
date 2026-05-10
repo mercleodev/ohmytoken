@@ -1,3 +1,4 @@
+import './OutputProductivityCard.css';
 import { useState, useEffect } from 'react';
 import { formatTokens } from '../../utils/format';
 import type { OutputProductivityResult } from '../../types/electron';

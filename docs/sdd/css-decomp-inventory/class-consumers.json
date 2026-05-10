@@ -1,10 +1,10 @@
 {
-  "generated": "2026-05-10T22:26:35.172Z",
+  "generated": "2026-05-10T22:35:23.694Z",
   "source": "src/components/dashboard/dashboard.css",
   "sharedTargetDir": "src/components/dashboard/_shared/",
-  "totalClasses": 456,
+  "totalClasses": 447,
   "counts": {
-    "single-owner": 364,
+    "single-owner": 355,
     "cluster": 25,
     "shared": 12,
     "orphan": 55,
@@ -4622,143 +4622,8 @@
       "orphanClass": null
     },
     {
-      "class": "output-card",
-      "firstLine": 2897,
-      "firstSelector": ".output-card",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/OutputProductivityCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "output-card-headline",
-      "firstLine": 2908,
-      "firstSelector": ".output-card-headline",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/OutputProductivityCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "output-card-value",
-      "firstLine": 2912,
-      "firstSelector": ".output-card-value",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/OutputProductivityCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "output-card-unit",
-      "firstLine": 2918,
-      "firstSelector": ".output-card-unit",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/OutputProductivityCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "output-card-sub",
-      "firstLine": 2924,
-      "firstSelector": ".output-card-sub",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/OutputProductivityCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "output-card-bar-track",
-      "firstLine": 2930,
-      "firstSelector": ".output-card-bar-track",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/OutputProductivityCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "output-card-bar-fill",
-      "firstLine": 2938,
-      "firstSelector": ".output-card-bar-fill",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/OutputProductivityCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "output-card-empty",
-      "firstLine": 2945,
-      "firstSelector": ".output-card-empty",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/OutputProductivityCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "output-card-trend",
-      "firstLine": 2951,
-      "firstSelector": ".output-card-trend",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/OutputProductivityCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
       "class": "token-composition-header",
-      "firstLine": 2957,
+      "firstLine": 2897,
       "firstSelector": ".token-composition-header",
       "definitionCount": 1,
       "consumers": [
@@ -4773,7 +4638,7 @@
     },
     {
       "class": "token-composition-toggle",
-      "firstLine": 2966,
+      "firstLine": 2910,
       "firstSelector": ".token-composition-toggle",
       "definitionCount": 1,
       "consumers": [
@@ -4788,7 +4653,7 @@
     },
     {
       "class": "token-composition-toggle-btn",
-      "firstLine": 2974,
+      "firstLine": 2918,
       "firstSelector": ".token-composition-toggle-btn",
       "definitionCount": 2,
       "consumers": [
@@ -4804,7 +4669,7 @@
     },
     {
       "class": "token-composition-chart",
-      "firstLine": 2992,
+      "firstLine": 2936,
       "firstSelector": ".token-composition-chart",
       "definitionCount": 1,
       "consumers": [
@@ -4819,7 +4684,7 @@
     },
     {
       "class": "token-composition-center-label",
-      "firstLine": 2996,
+      "firstLine": 2940,
       "firstSelector": ".token-composition-center-label",
       "definitionCount": 1,
       "consumers": [
@@ -4834,7 +4699,7 @@
     },
     {
       "class": "token-composition-center-pct",
-      "firstLine": 3005,
+      "firstLine": 2949,
       "firstSelector": ".token-composition-center-pct",
       "definitionCount": 1,
       "consumers": [
@@ -4849,7 +4714,7 @@
     },
     {
       "class": "token-composition-center-sub",
-      "firstLine": 3012,
+      "firstLine": 2956,
       "firstSelector": ".token-composition-center-sub",
       "definitionCount": 1,
       "consumers": [
@@ -4864,7 +4729,7 @@
     },
     {
       "class": "token-composition-legend",
-      "firstLine": 3018,
+      "firstLine": 2962,
       "firstSelector": ".token-composition-legend",
       "definitionCount": 1,
       "consumers": [
@@ -4879,7 +4744,7 @@
     },
     {
       "class": "token-composition-legend-row",
-      "firstLine": 3025,
+      "firstLine": 2969,
       "firstSelector": ".token-composition-legend-row",
       "definitionCount": 1,
       "consumers": [
@@ -4894,7 +4759,7 @@
     },
     {
       "class": "token-composition-legend-dot",
-      "firstLine": 3032,
+      "firstLine": 2976,
       "firstSelector": ".token-composition-legend-dot",
       "definitionCount": 1,
       "consumers": [
@@ -4909,7 +4774,7 @@
     },
     {
       "class": "token-composition-legend-label",
-      "firstLine": 3039,
+      "firstLine": 2983,
       "firstSelector": ".token-composition-legend-label",
       "definitionCount": 1,
       "consumers": [
@@ -4924,7 +4789,7 @@
     },
     {
       "class": "token-composition-legend-value",
-      "firstLine": 3044,
+      "firstLine": 2988,
       "firstSelector": ".token-composition-legend-value",
       "definitionCount": 1,
       "consumers": [
@@ -4939,7 +4804,7 @@
     },
     {
       "class": "session-alerts",
-      "firstLine": 3049,
+      "firstLine": 2993,
       "firstSelector": ".session-alerts",
       "definitionCount": 1,
       "consumers": [
@@ -4954,7 +4819,7 @@
     },
     {
       "class": "session-alert",
-      "firstLine": 3058,
+      "firstLine": 3002,
       "firstSelector": ".session-alert",
       "definitionCount": 1,
       "consumers": [
@@ -4969,7 +4834,7 @@
     },
     {
       "class": "session-alert--info",
-      "firstLine": 3064,
+      "firstLine": 3008,
       "firstSelector": ".session-alert--info",
       "definitionCount": 1,
       "consumers": [
@@ -4984,7 +4849,7 @@
     },
     {
       "class": "session-alert--warning",
-      "firstLine": 3069,
+      "firstLine": 3013,
       "firstSelector": ".session-alert--warning",
       "definitionCount": 1,
       "consumers": [
@@ -4999,7 +4864,7 @@
     },
     {
       "class": "session-alert-content",
-      "firstLine": 3074,
+      "firstLine": 3018,
       "firstSelector": ".session-alert-content",
       "definitionCount": 1,
       "consumers": [
@@ -5014,7 +4879,7 @@
     },
     {
       "class": "session-alert-icon",
-      "firstLine": 3080,
+      "firstLine": 3024,
       "firstSelector": ".session-alert-icon",
       "definitionCount": 1,
       "consumers": [
@@ -5029,7 +4894,7 @@
     },
     {
       "class": "session-alert-text",
-      "firstLine": 3086,
+      "firstLine": 3030,
       "firstSelector": ".session-alert-text",
       "definitionCount": 1,
       "consumers": [
@@ -5044,7 +4909,7 @@
     },
     {
       "class": "session-alert-message",
-      "firstLine": 3091,
+      "firstLine": 3035,
       "firstSelector": ".session-alert-message",
       "definitionCount": 1,
       "consumers": [
@@ -5059,7 +4924,7 @@
     },
     {
       "class": "session-alert-tip",
-      "firstLine": 3097,
+      "firstLine": 3041,
       "firstSelector": ".session-alert-tip",
       "definitionCount": 1,
       "consumers": [
@@ -5074,7 +4939,7 @@
     },
     {
       "class": "session-alert-close",
-      "firstLine": 3102,
+      "firstLine": 3046,
       "firstSelector": ".session-alert-close",
       "definitionCount": 2,
       "consumers": [
@@ -5089,7 +4954,7 @@
     },
     {
       "class": "efficiency-badge",
-      "firstLine": 3117,
+      "firstLine": 3061,
       "firstSelector": ".efficiency-badge",
       "definitionCount": 1,
       "consumers": [
@@ -5104,7 +4969,7 @@
     },
     {
       "class": "backfill-overlay",
-      "firstLine": 3125,
+      "firstLine": 3069,
       "firstSelector": ".backfill-overlay",
       "definitionCount": 1,
       "consumers": [
@@ -5119,7 +4984,7 @@
     },
     {
       "class": "backfill-dialog",
-      "firstLine": 3141,
+      "firstLine": 3085,
       "firstSelector": ".backfill-dialog",
       "definitionCount": 1,
       "consumers": [
@@ -5134,7 +4999,7 @@
     },
     {
       "class": "backfill-icon",
-      "firstLine": 3150,
+      "firstLine": 3094,
       "firstSelector": ".backfill-icon",
       "definitionCount": 1,
       "consumers": [
@@ -5149,7 +5014,7 @@
     },
     {
       "class": "backfill-title",
-      "firstLine": 3156,
+      "firstLine": 3100,
       "firstSelector": ".backfill-title",
       "definitionCount": 1,
       "consumers": [
@@ -5164,7 +5029,7 @@
     },
     {
       "class": "backfill-desc",
-      "firstLine": 3163,
+      "firstLine": 3107,
       "firstSelector": ".backfill-desc",
       "definitionCount": 1,
       "consumers": [
@@ -5179,7 +5044,7 @@
     },
     {
       "class": "backfill-actions",
-      "firstLine": 3170,
+      "firstLine": 3114,
       "firstSelector": ".backfill-actions",
       "definitionCount": 1,
       "consumers": [
@@ -5194,7 +5059,7 @@
     },
     {
       "class": "backfill-btn",
-      "firstLine": 3177,
+      "firstLine": 3121,
       "firstSelector": ".backfill-btn",
       "definitionCount": 2,
       "consumers": [
@@ -5209,7 +5074,7 @@
     },
     {
       "class": "backfill-btn-primary",
-      "firstLine": 3189,
+      "firstLine": 3133,
       "firstSelector": ".backfill-btn-primary",
       "definitionCount": 1,
       "consumers": [
@@ -5224,7 +5089,7 @@
     },
     {
       "class": "backfill-btn-secondary",
-      "firstLine": 3194,
+      "firstLine": 3138,
       "firstSelector": ".backfill-btn-secondary",
       "definitionCount": 1,
       "consumers": [
@@ -5239,7 +5104,7 @@
     },
     {
       "class": "backfill-progress-bar-track",
-      "firstLine": 3199,
+      "firstLine": 3143,
       "firstSelector": ".backfill-progress-bar-track",
       "definitionCount": 1,
       "consumers": [
@@ -5254,7 +5119,7 @@
     },
     {
       "class": "backfill-progress-bar-fill",
-      "firstLine": 3208,
+      "firstLine": 3152,
       "firstSelector": ".backfill-progress-bar-fill",
       "definitionCount": 1,
       "consumers": [
@@ -5269,7 +5134,7 @@
     },
     {
       "class": "backfill-progress-stats",
-      "firstLine": 3214,
+      "firstLine": 3158,
       "firstSelector": ".backfill-progress-stats",
       "definitionCount": 1,
       "consumers": [
@@ -5284,7 +5149,7 @@
     },
     {
       "class": "backfill-result-grid",
-      "firstLine": 3221,
+      "firstLine": 3165,
       "firstSelector": ".backfill-result-grid",
       "definitionCount": 1,
       "consumers": [
@@ -5299,7 +5164,7 @@
     },
     {
       "class": "backfill-result-item",
-      "firstLine": 3228,
+      "firstLine": 3172,
       "firstSelector": ".backfill-result-item",
       "definitionCount": 1,
       "consumers": [
@@ -5314,7 +5179,7 @@
     },
     {
       "class": "backfill-result-wide",
-      "firstLine": 3234,
+      "firstLine": 3178,
       "firstSelector": ".backfill-result-wide",
       "definitionCount": 1,
       "consumers": [
@@ -5329,7 +5194,7 @@
     },
     {
       "class": "backfill-result-value",
-      "firstLine": 3238,
+      "firstLine": 3182,
       "firstSelector": ".backfill-result-value",
       "definitionCount": 1,
       "consumers": [
@@ -5344,7 +5209,7 @@
     },
     {
       "class": "backfill-result-label",
-      "firstLine": 3244,
+      "firstLine": 3188,
       "firstSelector": ".backfill-result-label",
       "definitionCount": 1,
       "consumers": [
@@ -5359,7 +5224,7 @@
     },
     {
       "class": "mcp-card",
-      "firstLine": 3250,
+      "firstLine": 3194,
       "firstSelector": ".mcp-card",
       "definitionCount": 1,
       "consumers": [
@@ -5374,7 +5239,7 @@
     },
     {
       "class": "mcp-card-header",
-      "firstLine": 3257,
+      "firstLine": 3201,
       "firstSelector": ".mcp-card-header",
       "definitionCount": 2,
       "consumers": [
@@ -5389,7 +5254,7 @@
     },
     {
       "class": "mcp-card-toggle",
-      "firstLine": 3267,
+      "firstLine": 3211,
       "firstSelector": ".mcp-card-toggle",
       "definitionCount": 1,
       "consumers": [
@@ -5404,7 +5269,7 @@
     },
     {
       "class": "mcp-card-headline",
-      "firstLine": 3273,
+      "firstLine": 3217,
       "firstSelector": ".mcp-card-headline",
       "definitionCount": 1,
       "consumers": [
@@ -5419,7 +5284,7 @@
     },
     {
       "class": "mcp-card-value",
-      "firstLine": 3277,
+      "firstLine": 3221,
       "firstSelector": ".mcp-card-value",
       "definitionCount": 1,
       "consumers": [
@@ -5434,7 +5299,7 @@
     },
     {
       "class": "mcp-card-unit",
-      "firstLine": 3283,
+      "firstLine": 3227,
       "firstSelector": ".mcp-card-unit",
       "definitionCount": 1,
       "consumers": [
@@ -5449,7 +5314,7 @@
     },
     {
       "class": "mcp-card-ratio",
-      "firstLine": 3289,
+      "firstLine": 3233,
       "firstSelector": ".mcp-card-ratio",
       "definitionCount": 1,
       "consumers": [
@@ -5464,7 +5329,7 @@
     },
     {
       "class": "mcp-card-bar-track",
-      "firstLine": 3295,
+      "firstLine": 3239,
       "firstSelector": ".mcp-card-bar-track",
       "definitionCount": 1,
       "consumers": [
@@ -5479,7 +5344,7 @@
     },
     {
       "class": "mcp-card-bar-fill",
-      "firstLine": 3303,
+      "firstLine": 3247,
       "firstSelector": ".mcp-card-bar-fill",
       "definitionCount": 1,
       "consumers": [
@@ -5494,7 +5359,7 @@
     },
     {
       "class": "mcp-card-tools",
-      "firstLine": 3311,
+      "firstLine": 3255,
       "firstSelector": ".mcp-card-tools",
       "definitionCount": 1,
       "consumers": [
@@ -5509,7 +5374,7 @@
     },
     {
       "class": "mcp-card-tools-title",
-      "firstLine": 3315,
+      "firstLine": 3259,
       "firstSelector": ".mcp-card-tools-title",
       "definitionCount": 1,
       "consumers": [
@@ -5524,7 +5389,7 @@
     },
     {
       "class": "mcp-card-tool-row",
-      "firstLine": 3324,
+      "firstLine": 3268,
       "firstSelector": ".mcp-card-tool-row",
       "definitionCount": 1,
       "consumers": [
@@ -5539,7 +5404,7 @@
     },
     {
       "class": "mcp-card-tool-dot",
-      "firstLine": 3332,
+      "firstLine": 3276,
       "firstSelector": ".mcp-card-tool-dot",
       "definitionCount": 1,
       "consumers": [
@@ -5554,7 +5419,7 @@
     },
     {
       "class": "mcp-card-tool-name",
-      "firstLine": 3340,
+      "firstLine": 3284,
       "firstSelector": ".mcp-card-tool-name",
       "definitionCount": 1,
       "consumers": [
@@ -5569,7 +5434,7 @@
     },
     {
       "class": "mcp-card-tool-count",
-      "firstLine": 3348,
+      "firstLine": 3292,
       "firstSelector": ".mcp-card-tool-count",
       "definitionCount": 1,
       "consumers": [
@@ -5584,7 +5449,7 @@
     },
     {
       "class": "mcp-card-tokens",
-      "firstLine": 3353,
+      "firstLine": 3297,
       "firstSelector": ".mcp-card-tokens",
       "definitionCount": 1,
       "consumers": [
@@ -5599,7 +5464,7 @@
     },
     {
       "class": "mcp-card-redundant",
-      "firstLine": 3359,
+      "firstLine": 3303,
       "firstSelector": ".mcp-card-redundant",
       "definitionCount": 1,
       "consumers": [
@@ -5614,7 +5479,7 @@
     },
     {
       "class": "mcp-card-tip",
-      "firstLine": 3366,
+      "firstLine": 3310,
       "firstSelector": ".mcp-card-tip",
       "definitionCount": 1,
       "consumers": [
@@ -5629,7 +5494,7 @@
     },
     {
       "class": "mcp-card-tip-icon",
-      "firstLine": 3379,
+      "firstLine": 3323,
       "firstSelector": ".mcp-card-tip-icon",
       "definitionCount": 1,
       "consumers": [
@@ -5644,7 +5509,7 @@
     },
     {
       "class": "mcp-card-tip-text",
-      "firstLine": 3384,
+      "firstLine": 3328,
       "firstSelector": ".mcp-card-tip-text",
       "definitionCount": 1,
       "consumers": [
@@ -5659,7 +5524,7 @@
     },
     {
       "class": "mcp-card-empty",
-      "firstLine": 3388,
+      "firstLine": 3332,
       "firstSelector": ".mcp-card-empty",
       "definitionCount": 1,
       "consumers": [
@@ -5674,7 +5539,7 @@
     },
     {
       "class": "heatmap-header",
-      "firstLine": 3394,
+      "firstLine": 3338,
       "firstSelector": ".heatmap-header",
       "definitionCount": 1,
       "consumers": [
@@ -5689,7 +5554,7 @@
     },
     {
       "class": "heatmap-total",
-      "firstLine": 3400,
+      "firstLine": 3344,
       "firstSelector": ".heatmap-total",
       "definitionCount": 1,
       "consumers": [
@@ -5704,7 +5569,7 @@
     },
     {
       "class": "heatmap-container",
-      "firstLine": 3406,
+      "firstLine": 3350,
       "firstSelector": ".heatmap-container",
       "definitionCount": 1,
       "consumers": [
@@ -5719,7 +5584,7 @@
     },
     {
       "class": "heatmap-day-labels",
-      "firstLine": 3411,
+      "firstLine": 3355,
       "firstSelector": ".heatmap-day-labels",
       "definitionCount": 1,
       "consumers": [
@@ -5734,7 +5599,7 @@
     },
     {
       "class": "heatmap-day-label",
-      "firstLine": 3418,
+      "firstLine": 3362,
       "firstSelector": ".heatmap-day-label",
       "definitionCount": 1,
       "consumers": [
@@ -5749,7 +5614,7 @@
     },
     {
       "class": "heatmap-grid-scroll",
-      "firstLine": 3425,
+      "firstLine": 3369,
       "firstSelector": ".heatmap-grid-scroll",
       "definitionCount": 1,
       "consumers": [
@@ -5764,7 +5629,7 @@
     },
     {
       "class": "heatmap-month-labels",
-      "firstLine": 3432,
+      "firstLine": 3376,
       "firstSelector": ".heatmap-month-labels",
       "definitionCount": 1,
       "consumers": [
@@ -5779,7 +5644,7 @@
     },
     {
       "class": "heatmap-month-label",
-      "firstLine": 3436,
+      "firstLine": 3380,
       "firstSelector": ".heatmap-month-label",
       "definitionCount": 1,
       "consumers": [
@@ -5794,7 +5659,7 @@
     },
     {
       "class": "heatmap-grid",
-      "firstLine": 3444,
+      "firstLine": 3388,
       "firstSelector": ".heatmap-grid",
       "definitionCount": 1,
       "consumers": [
@@ -5809,7 +5674,7 @@
     },
     {
       "class": "heatmap-cell",
-      "firstLine": 3448,
+      "firstLine": 3392,
       "firstSelector": ".heatmap-cell",
       "definitionCount": 2,
       "consumers": [
@@ -5824,7 +5689,7 @@
     },
     {
       "class": "heatmap-tooltip",
-      "firstLine": 3459,
+      "firstLine": 3403,
       "firstSelector": ".heatmap-tooltip",
       "definitionCount": 1,
       "consumers": [
@@ -5839,7 +5704,7 @@
     },
     {
       "class": "heatmap-legend",
-      "firstLine": 3467,
+      "firstLine": 3411,
       "firstSelector": ".heatmap-legend",
       "definitionCount": 1,
       "consumers": [
@@ -5854,7 +5719,7 @@
     },
     {
       "class": "heatmap-legend-label",
-      "firstLine": 3475,
+      "firstLine": 3419,
       "firstSelector": ".heatmap-legend-label",
       "definitionCount": 1,
       "consumers": [
@@ -5869,7 +5734,7 @@
     },
     {
       "class": "heatmap-legend-cell",
-      "firstLine": 3481,
+      "firstLine": 3425,
       "firstSelector": ".heatmap-legend-cell",
       "definitionCount": 1,
       "consumers": [
@@ -5884,7 +5749,7 @@
     },
     {
       "class": "memory-card",
-      "firstLine": 3485,
+      "firstLine": 3429,
       "firstSelector": ".memory-card",
       "definitionCount": 1,
       "consumers": [
@@ -5899,7 +5764,7 @@
     },
     {
       "class": "memory-header",
-      "firstLine": 3496,
+      "firstLine": 3440,
       "firstSelector": ".memory-header",
       "definitionCount": 1,
       "consumers": [
@@ -5914,7 +5779,7 @@
     },
     {
       "class": "memory-title",
-      "firstLine": 3503,
+      "firstLine": 3447,
       "firstSelector": ".memory-title",
       "definitionCount": 1,
       "consumers": [
@@ -5929,7 +5794,7 @@
     },
     {
       "class": "memory-line-count",
-      "firstLine": 3510,
+      "firstLine": 3454,
       "firstSelector": ".memory-line-count",
       "definitionCount": 1,
       "consumers": [
@@ -5944,7 +5809,7 @@
     },
     {
       "class": "memory-chevron",
-      "firstLine": 3517,
+      "firstLine": 3461,
       "firstSelector": ".memory-chevron",
       "definitionCount": 2,
       "consumers": [
@@ -5959,7 +5824,7 @@
     },
     {
       "class": "memory-bar-track",
-      "firstLine": 3528,
+      "firstLine": 3472,
       "firstSelector": ".memory-bar-track",
       "definitionCount": 1,
       "consumers": [
@@ -5974,7 +5839,7 @@
     },
     {
       "class": "memory-bar-fill",
-      "firstLine": 3536,
+      "firstLine": 3480,
       "firstSelector": ".memory-bar-fill",
       "definitionCount": 1,
       "consumers": [
@@ -5989,7 +5854,7 @@
     },
     {
       "class": "memory-warning",
-      "firstLine": 3542,
+      "firstLine": 3486,
       "firstSelector": ".memory-warning",
       "definitionCount": 1,
       "consumers": [
@@ -6004,7 +5869,7 @@
     },
     {
       "class": "memory-warning--critical",
-      "firstLine": 3549,
+      "firstLine": 3493,
       "firstSelector": ".memory-warning--critical",
       "definitionCount": 1,
       "consumers": [
@@ -6019,7 +5884,7 @@
     },
     {
       "class": "memory-stats",
-      "firstLine": 3554,
+      "firstLine": 3498,
       "firstSelector": ".memory-stats",
       "definitionCount": 1,
       "consumers": [
@@ -6034,7 +5899,7 @@
     },
     {
       "class": "memory-stats-sep",
-      "firstLine": 3560,
+      "firstLine": 3504,
       "firstSelector": ".memory-stats-sep",
       "definitionCount": 1,
       "consumers": [
@@ -6049,7 +5914,7 @@
     },
     {
       "class": "memory-file-list",
-      "firstLine": 3564,
+      "firstLine": 3508,
       "firstSelector": ".memory-file-list",
       "definitionCount": 1,
       "consumers": [
@@ -6066,7 +5931,7 @@
     },
     {
       "class": "memory-file-item",
-      "firstLine": 3571,
+      "firstLine": 3515,
       "firstSelector": ".memory-file-item",
       "definitionCount": 1,
       "consumers": [
@@ -6083,7 +5948,7 @@
     },
     {
       "class": "memory-file-header",
-      "firstLine": 3577,
+      "firstLine": 3521,
       "firstSelector": ".memory-file-header",
       "definitionCount": 1,
       "consumers": [
@@ -6100,7 +5965,7 @@
     },
     {
       "class": "memory-file-type",
-      "firstLine": 3585,
+      "firstLine": 3529,
       "firstSelector": ".memory-file-type",
       "definitionCount": 1,
       "consumers": [
@@ -6117,7 +5982,7 @@
     },
     {
       "class": "memory-file-name",
-      "firstLine": 3594,
+      "firstLine": 3538,
       "firstSelector": ".memory-file-name",
       "definitionCount": 1,
       "consumers": [
@@ -6134,7 +5999,7 @@
     },
     {
       "class": "memory-file-lines",
-      "firstLine": 3604,
+      "firstLine": 3548,
       "firstSelector": ".memory-file-lines",
       "definitionCount": 1,
       "consumers": [
@@ -6151,7 +6016,7 @@
     },
     {
       "class": "memory-file-chevron",
-      "firstLine": 3610,
+      "firstLine": 3554,
       "firstSelector": ".memory-file-chevron",
       "definitionCount": 2,
       "consumers": [
@@ -6168,7 +6033,7 @@
     },
     {
       "class": "memory-file-desc",
-      "firstLine": 3621,
+      "firstLine": 3565,
       "firstSelector": ".memory-file-desc",
       "definitionCount": 1,
       "consumers": [
@@ -6185,7 +6050,7 @@
     },
     {
       "class": "memory-file-content",
-      "firstLine": 3631,
+      "firstLine": 3575,
       "firstSelector": ".memory-file-content",
       "definitionCount": 1,
       "consumers": [
@@ -6202,7 +6067,7 @@
     },
     {
       "class": "memory-other-projects",
-      "firstLine": 3646,
+      "firstLine": 3590,
       "firstSelector": ".memory-other-projects",
       "definitionCount": 1,
       "consumers": [
@@ -6217,7 +6082,7 @@
     },
     {
       "class": "memory-other-projects-label",
-      "firstLine": 3654,
+      "firstLine": 3598,
       "firstSelector": ".memory-other-projects-label",
       "definitionCount": 1,
       "consumers": [
@@ -6232,7 +6097,7 @@
     },
     {
       "class": "memory-project-chips",
-      "firstLine": 3663,
+      "firstLine": 3607,
       "firstSelector": ".memory-project-chips",
       "definitionCount": 1,
       "consumers": [
@@ -6247,7 +6112,7 @@
     },
     {
       "class": "memory-project-chip",
-      "firstLine": 3669,
+      "firstLine": 3613,
       "firstSelector": ".memory-project-chip",
       "definitionCount": 2,
       "consumers": [
@@ -6262,7 +6127,7 @@
     },
     {
       "class": "memory-project-chip-header",
-      "firstLine": 3681,
+      "firstLine": 3625,
       "firstSelector": ".memory-project-chip-header",
       "definitionCount": 1,
       "consumers": [
@@ -6277,7 +6142,7 @@
     },
     {
       "class": "memory-project-chip-name",
-      "firstLine": 3687,
+      "firstLine": 3631,
       "firstSelector": ".memory-project-chip-name",
       "definitionCount": 1,
       "consumers": [
@@ -6292,7 +6157,7 @@
     },
     {
       "class": "memory-project-chip-count",
-      "firstLine": 3693,
+      "firstLine": 3637,
       "firstSelector": ".memory-project-chip-count",
       "definitionCount": 1,
       "consumers": [
@@ -6307,7 +6172,7 @@
     },
     {
       "class": "memory-project-chip-meta",
-      "firstLine": 3699,
+      "firstLine": 3643,
       "firstSelector": ".memory-project-chip-meta",
       "definitionCount": 1,
       "consumers": [
@@ -6322,7 +6187,7 @@
     },
     {
       "class": "memory-project-detail",
-      "firstLine": 3705,
+      "firstLine": 3649,
       "firstSelector": ".memory-project-detail",
       "definitionCount": 1,
       "consumers": [
@@ -6337,7 +6202,7 @@
     },
     {
       "class": "memory-project-detail-header",
-      "firstLine": 3709,
+      "firstLine": 3653,
       "firstSelector": ".memory-project-detail-header",
       "definitionCount": 1,
       "consumers": [
@@ -6352,7 +6217,7 @@
     },
     {
       "class": "memory-project-detail-back",
-      "firstLine": 3716,
+      "firstLine": 3660,
       "firstSelector": ".memory-project-detail-back",
       "definitionCount": 1,
       "consumers": [
@@ -6367,7 +6232,7 @@
     },
     {
       "class": "memory-project-detail-title",
-      "firstLine": 3723,
+      "firstLine": 3667,
       "firstSelector": ".memory-project-detail-title",
       "definitionCount": 1,
       "consumers": [
@@ -6382,7 +6247,7 @@
     },
     {
       "class": "memory-project-detail-banner",
-      "firstLine": 3729,
+      "firstLine": 3673,
       "firstSelector": ".memory-project-detail-banner",
       "definitionCount": 1,
       "consumers": [
@@ -6397,7 +6262,7 @@
     },
     {
       "class": "memory-project-detail-loading",
-      "firstLine": 3738,
+      "firstLine": 3682,
       "firstSelector": ".memory-project-detail-loading",
       "definitionCount": 1,
       "consumers": [
@@ -6412,7 +6277,7 @@
     },
     {
       "class": "collapsible",
-      "firstLine": 3745,
+      "firstLine": 3689,
       "firstSelector": ".collapsible",
       "definitionCount": 3,
       "consumers": [
@@ -6434,7 +6299,7 @@
     },
     {
       "class": "open",
-      "firstLine": 3756,
+      "firstLine": 3700,
       "firstSelector": ".collapsible.open",
       "definitionCount": 2,
       "consumers": [],
@@ -6445,7 +6310,7 @@
     },
     {
       "class": "collapsible-inner",
-      "firstLine": 3760,
+      "firstLine": 3704,
       "firstSelector": ".collapsible-inner",
       "definitionCount": 2,
       "consumers": [
@@ -6467,7 +6332,7 @@
     },
     {
       "class": "first-run-screen",
-      "firstLine": 3778,
+      "firstLine": 3722,
       "firstSelector": ".first-run-screen",
       "definitionCount": 1,
       "consumers": [
@@ -6482,7 +6347,7 @@
     },
     {
       "class": "first-run-header",
-      "firstLine": 3789,
+      "firstLine": 3733,
       "firstSelector": ".first-run-header",
       "definitionCount": 1,
       "consumers": [
@@ -6497,7 +6362,7 @@
     },
     {
       "class": "first-run-title",
-      "firstLine": 3793,
+      "firstLine": 3737,
       "firstSelector": ".first-run-title",
       "definitionCount": 1,
       "consumers": [
@@ -6512,7 +6377,7 @@
     },
     {
       "class": "first-run-subtitle",
-      "firstLine": 3801,
+      "firstLine": 3745,
       "firstSelector": ".first-run-subtitle",
       "definitionCount": 1,
       "consumers": [
@@ -6527,7 +6392,7 @@
     },
     {
       "class": "first-run-providers",
-      "firstLine": 3808,
+      "firstLine": 3752,
       "firstSelector": ".first-run-providers",
       "definitionCount": 1,
       "consumers": [
@@ -6542,7 +6407,7 @@
     },
     {
       "class": "first-run-provider-card",
-      "firstLine": 3814,
+      "firstLine": 3758,
       "firstSelector": ".first-run-provider-card",
       "definitionCount": 1,
       "consumers": [
@@ -6557,7 +6422,7 @@
     },
     {
       "class": "first-run-provider-head",
-      "firstLine": 3824,
+      "firstLine": 3768,
       "firstSelector": ".first-run-provider-head",
       "definitionCount": 1,
       "consumers": [
@@ -6572,7 +6437,7 @@
     },
     {
       "class": "first-run-provider-icon",
-      "firstLine": 3830,
+      "firstLine": 3774,
       "firstSelector": ".first-run-provider-icon",
       "definitionCount": 1,
       "consumers": [
@@ -6587,7 +6452,7 @@
     },
     {
       "class": "first-run-provider-name",
-      "firstLine": 3837,
+      "firstLine": 3781,
       "firstSelector": ".first-run-provider-name",
       "definitionCount": 1,
       "consumers": [
@@ -6602,7 +6467,7 @@
     },
     {
       "class": "first-run-provider-state",
-      "firstLine": 3844,
+      "firstLine": 3788,
       "firstSelector": ".first-run-provider-state",
       "definitionCount": 1,
       "consumers": [
@@ -6617,7 +6482,7 @@
     },
     {
       "class": "first-run-primary-btn",
-      "firstLine": 3850,
+      "firstLine": 3794,
       "firstSelector": ".first-run-primary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -6632,7 +6497,7 @@
     },
     {
       "class": "first-run-secondary",
-      "firstLine": 3866,
+      "firstLine": 3810,
       "firstSelector": ".first-run-secondary",
       "definitionCount": 1,
       "consumers": [
@@ -6647,7 +6512,7 @@
     },
     {
       "class": "first-run-secondary-btn",
-      "firstLine": 3873,
+      "firstLine": 3817,
       "firstSelector": ".first-run-secondary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -6662,7 +6527,7 @@
     },
     {
       "class": "first-run-walkthrough",
-      "firstLine": 3886,
+      "firstLine": 3830,
       "firstSelector": ".first-run-walkthrough",
       "definitionCount": 1,
       "consumers": [
@@ -6677,7 +6542,7 @@
     },
     {
       "class": "first-run-waiting",
-      "firstLine": 3893,
+      "firstLine": 3837,
       "firstSelector": ".first-run-waiting",
       "definitionCount": 1,
       "consumers": [
@@ -6692,7 +6557,7 @@
     },
     {
       "class": "first-run-spinner",
-      "firstLine": 3903,
+      "firstLine": 3847,
       "firstSelector": ".first-run-spinner",
       "definitionCount": 1,
       "consumers": [

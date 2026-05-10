@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T22:33:36Z
-fingerprint=709224195652a50ce14e13aed0c18fa1ac1732981d66cdb409d6a629e4929994
+# updated_at_utc: 2026-05-10T22:37:41Z
+fingerprint=57fc35adc490672e3dea03b8f5efdc02f560f7c1ce3a7c29aed81fff7e59ff91
 source=docs/sdd/style-checklist.md
-note=U17 move .usage-gauges + .gauge-* (non-circle) to UsageGaugeCard.css (Tier 1)
+note=U19 move .output-card* to OutputProductivityCard.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/UsageGaugeCard.css
-src/components/dashboard/UsageGaugeCard.tsx
+src/components/dashboard/OutputProductivityCard.css
+src/components/dashboard/OutputProductivityCard.tsx
