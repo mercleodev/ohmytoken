@@ -1,12 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T02:08:27Z
-fingerprint=fd724123100d4f7771b94f7d1e449362cca00cd2a7c93524fe4dc47426e36d44
+# updated_at_utc: 2026-05-10T09:03:22Z
+fingerprint=790ebc5190fd84bbf87f050fcaa0e994f23d9a686b63844be3e28179849dcca9
 source=docs/sdd/style-checklist.md
-note=Reviewed touched files against listed style review items; aligned with Toss fundamentals + OhMyToken Addendum (TS strict, arrow-fn, no any, helper extraction, no new deps). frontend-review subagent verdict: OK with fixes (1 minor follow-up: UI render regression spec for the new badge labels).
+note=Manual style checklist passed: no new `any`, type-only imports unchanged, no renames, no new deps, helpers stay inside electron/proxy boundary, no logging of credentials, error handling on the SSE path is unchanged (passthrough-first), helper APIs documented with file:line references and #338 cause A/B citations.
 
-src/components/dashboard/dashboard.css
-src/components/dashboard/prompt-detail/__tests__/evidence.spec.ts
-src/components/dashboard/prompt-detail/evidence.ts
-src/components/dashboard/PromptDetailView.tsx
-src/components/dashboard/SessionDetailView.tsx
-src/components/notification/NotificationCard.tsx
+electron/proxy/__tests__/server.spec.ts
+electron/proxy/server.ts
