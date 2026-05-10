@@ -1,9 +1,31 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import path from "node:path";
+import fs from "node:fs";
+import os from "node:os";
 import { scanFromTranscript } from "../scanFromTranscript";
 
 const TRANSCRIPT = path.join(__dirname, "fixtures", "minimal-session.jsonl");
-const GLOBAL_CLAUDE_MD = path.join(__dirname, "fixtures", "global-CLAUDE.md");
+// The global CLAUDE.md fixture is written to an OS tmp path at runtime so the
+// repo's `**/*.md` gitignore rule cannot drop it from CI checkouts.
+const GLOBAL_CLAUDE_MD = path.join(
+  os.tmpdir(),
+  `oht-test-global-claude-${process.pid}-${Date.now()}.md`,
+);
+
+beforeAll(() => {
+  fs.writeFileSync(
+    GLOBAL_CLAUDE_MD,
+    "# Global Preferences (Fixture)\n\n- Sample global rule line for hook capture tests.\n",
+  );
+});
+
+afterAll(() => {
+  try {
+    fs.unlinkSync(GLOBAL_CLAUDE_MD);
+  } catch {
+    /* ignore missing tmp file */
+  }
+});
 
 describe("scanFromTranscript", () => {
   it("returns null when the transcript file is missing", () => {

@@ -1,9 +1,29 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import path from "node:path";
+import fs from "node:fs";
+import os from "node:os";
 import { handleScanFromTranscriptRequest } from "../scanFromTranscriptHandler";
 
 const TRANSCRIPT = path.join(__dirname, "fixtures", "minimal-session.jsonl");
-const GLOBAL_CLAUDE_MD = path.join(__dirname, "fixtures", "global-CLAUDE.md");
+const GLOBAL_CLAUDE_MD = path.join(
+  os.tmpdir(),
+  `oht-test-handler-global-claude-${process.pid}-${Date.now()}.md`,
+);
+
+beforeAll(() => {
+  fs.writeFileSync(
+    GLOBAL_CLAUDE_MD,
+    "# Global Preferences (Fixture)\n\n- Sample.\n",
+  );
+});
+
+afterAll(() => {
+  try {
+    fs.unlinkSync(GLOBAL_CLAUDE_MD);
+  } catch {
+    /* ignore */
+  }
+});
 
 describe("handleScanFromTranscriptRequest", () => {
   it("returns 400 when body is not valid JSON", () => {

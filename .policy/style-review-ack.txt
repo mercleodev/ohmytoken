@@ -1,25 +1,9 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T15:11:01Z
-fingerprint=fd97b4f1d7a89b61163e5deeddadc78bc41d2671698f46aad5e50f33df8f0c48
+# updated_at_utc: 2026-05-10T21:16:25Z
+fingerprint=7c262acc366c47ae76131170657f293bd10051a78cffbc23d53a7bd37a6106d3
 source=docs/sdd/style-checklist.md
-note=Hook capture (#343): TS-02 fixed (4 type-only imports), no new any, no new deps, hook code lives under electron/hooks/ keeping proxy boundary clean, settingsInstaller appends a new matcher block to coexist with pre-existing canary-collector Stop hook, schema unchanged (only adds 'hook' value to existing TEXT source column), tests use /tmp/fixture-app/ paths.
+note=Hook capture CI fix (#343): global CLAUDE.md fixture refactored to runtime os.tmpdir() write — repo .gitignore '**/*.md' rule was dropping the static fixture from CI checkouts. Three spec files now create + clean up the fixture in beforeAll/afterAll. No behavior change.
 
-bin/stop-hook.mjs
-electron/db/hookAdapter.ts
-electron/db/reader.ts
-electron/db/writer.ts
-electron/hooks/__tests__/fixtures/minimal-session.jsonl
 electron/hooks/__tests__/scanFromTranscript.spec.ts
 electron/hooks/__tests__/scanFromTranscriptHandler.spec.ts
-electron/hooks/__tests__/settingsInstaller.spec.ts
-electron/hooks/__tests__/transcriptReader.spec.ts
-electron/hooks/scanFromTranscript.ts
-electron/hooks/scanFromTranscriptHandler.ts
-electron/hooks/settingsInstaller.ts
-electron/hooks/transcriptReader.ts
-electron/main.ts
-electron/proxy/__tests__/buildProxyOptions.spec.ts
 electron/proxy/__tests__/serverHookRoute.integration.spec.ts
-electron/proxy/buildProxyOptions.ts
-electron/proxy/server.ts
-README.md

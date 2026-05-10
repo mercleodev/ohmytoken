@@ -7,8 +7,19 @@
 // test is route → handler → callback, not the disk pipeline.
 
 import * as http from "node:http";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 vi.mock("../scanWriter", () => ({ writeScanLog: vi.fn() }));
 vi.mock("../usageWriter", () => ({ writeUsageLog: vi.fn() }));
@@ -25,14 +36,24 @@ const TRANSCRIPT = path.join(
   "minimal-session.jsonl",
 );
 const GLOBAL_CLAUDE_MD = path.join(
-  __dirname,
-  "..",
-  "..",
-  "hooks",
-  "__tests__",
-  "fixtures",
-  "global-CLAUDE.md",
+  os.tmpdir(),
+  `oht-test-route-global-claude-${process.pid}-${Date.now()}.md`,
 );
+
+beforeAll(() => {
+  fs.writeFileSync(
+    GLOBAL_CLAUDE_MD,
+    "# Global Preferences (Fixture)\n\n- Sample.\n",
+  );
+});
+
+afterAll(() => {
+  try {
+    fs.unlinkSync(GLOBAL_CLAUDE_MD);
+  } catch {
+    /* ignore */
+  }
+});
 
 const post = (
   port: number,
