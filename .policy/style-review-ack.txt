@@ -1,7 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T09:35:12Z
-fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
+# updated_at_utc: 2026-05-10T13:57:39Z
+fingerprint=05ab310d72f16ac95ca8073fbd2272b91883901562366316b7de3b22c580bdd8
 source=docs/sdd/style-checklist.md
-note=docs(dashboard-css): codify §8 step 8a hard-reset preamble + §9.4.1 + §11 R9
+note=U4 move .stat-pill/.stat-pill-value/.stat-pill-label to StatPill.css (Tier 1)
 
+docs/sdd/css-decomp-inventory/class-consumers.json
+docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
+src/components/dashboard/dashboard.css
+src/components/dashboard/prompt-detail/StatPill.css
+src/components/dashboard/prompt-detail/StatPill.tsx

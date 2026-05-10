@@ -1,0 +1,23 @@
+/* Moved from dashboard.css in #330 U4. Owner: dashboard/prompt-detail/StatPill.tsx. */
+
+.stat-pill {
+  flex: 1;
+  text-align: center;
+  padding: 6px 4px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+}
+
+.stat-pill-value {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #454647;
+}
+
+.stat-pill-label {
+  display: block;
+  font-size: 10px;
+  color: #9b9c9e;
+  margin-top: 1px;
+}
