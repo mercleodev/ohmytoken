@@ -76,7 +76,15 @@
         "zip"
       ]
     },
-    "extraResources": [],
+    "extraResources": [
+      {
+        "from": "bin/",
+        "to": "bin/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "asar": true,
     "asarUnpack": [
       "node_modules/better-sqlite3/**"
