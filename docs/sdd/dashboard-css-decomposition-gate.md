@@ -1731,7 +1731,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U15 — `dashboard/StatsCard.tsx` → `StatsCard.css` (Tier 1 single-owner, 8 classes / 9 selectors) — landed ahead of U14
 
 - **Group**: Tier 1 single-owner (8 distinct classes, 9 selectors — eleventh Tier 1 unit landed; U14 (SessionAlert) was skipped because it requires a fixture trigger of alert state — deferred to a future session with fixture work).
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `931a194`
 - **Lines moved**: 59 (`dashboard.css` 4040 → 3981 — **first sub-4000 milestone**). Nine rule blocks extracted: `.stats-card` (11-line), `.stats-card:hover` (3-line), `.stats-card-header` (6-line), `.stats-card-title` (5-line), `.stats-card-chevron` (4-line), `.stats-card-chart` (3-line), `.stats-card-empty` (6-line), `.stats-card-summary` (7-line), `.stats-card-dot` (3-line). Section comment `/* === Stats Card (mini chart on dashboard) === */` dropped (matches precedent). New `StatsCard.css` is 58 lines.
 - **Consumers updated**: `src/components/dashboard/StatsCard.tsx` adds `import './StatsCard.css';` as the **first line** (sibling-relative — file lives directly under `dashboard/`, not `prompt-detail/`).
 - **Disambiguation**: the surviving `.stats-detail*` family (`.stats-detail`, `.stats-detail-header`, etc.) belongs to **StatsDetailView** (U31 in §7) — preserved in `dashboard.css`. The multi-consumer `.stats-tooltip*` family (`.stats-tooltip`, `.stats-tooltip-date`, `.stats-tooltip-row`) remains in `dashboard.css` for the U44 Stats cluster move.
