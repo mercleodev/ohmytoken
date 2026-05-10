@@ -1,3 +1,4 @@
+import './SignalBreakdown.css';
 import type { SignalResult } from "../../../types";
 import { SIGNAL_COLORS, getConfidenceInfo } from "./constants";
 

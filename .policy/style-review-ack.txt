@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T22:06:55Z
-fingerprint=0005b3cf90a695510a66a5e76c5e163bb3e77ef4657f10de636a80c0b57c8395
+# updated_at_utc: 2026-05-10T22:11:05Z
+fingerprint=0366c90ae40a02ba92c8a4d00ede1cabaf961a23c26050191ae17a518b429344
 source=docs/sdd/style-checklist.md
-note=U11 move .journey-summary* to prompt-detail/JourneySummary.css (Tier 1)
+note=U12 move .signal-breakdown* + .signal-bar-* + .signal-confidence-dot to prompt-detail/SignalBreakdown.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/prompt-detail/JourneySummary.css
-src/components/dashboard/prompt-detail/JourneySummary.tsx
+src/components/dashboard/prompt-detail/SignalBreakdown.css
+src/components/dashboard/prompt-detail/SignalBreakdown.tsx

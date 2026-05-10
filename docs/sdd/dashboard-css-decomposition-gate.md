@@ -1688,6 +1688,26 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - No `/* UNUSED candidate */` markers added (deferred to U50).
   - `.journey-summary-grid` uses `grid-template-columns: repeat(auto-fit, minmax(120px, 1fr))` — a responsive grid that adjusts column count by viewport. Preserved verbatim.
 
+#### U12 — `dashboard/prompt-detail/SignalBreakdown.tsx` → `prompt-detail/SignalBreakdown.css` (Tier 1 single-owner, 7 classes)
+
+- **Group**: Tier 1 single-owner (7 classes — ninth Tier 1 unit).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 59 (`dashboard.css` 4178 → 4119). Seven rule blocks extracted: `.signal-breakdown` (9-line), `.signal-breakdown-row` (6-line), `.signal-breakdown-name` (8-line), `.signal-breakdown-score` (8-line), `.signal-bar-track` (8-line), `.signal-bar-fill` (6-line), `.signal-confidence-dot` (6-line). The `/* Signal Breakdown */` section comment was removed alongside (matches U3/U5/U7/U9/U10 precedent — section entirely relocated). New `prompt-detail/SignalBreakdown.css` is 59 lines.
+- **Consumers updated**: `src/components/dashboard/prompt-detail/SignalBreakdown.tsx` adds `import './SignalBreakdown.css';` as the **first line** (sibling-relative within prompt-detail subdir). Component renders inside `PromptDetailView` as part of the per-prompt signal evaluation summary.
+- **Frontend review**: OK (fp `3fc106700763070e95daa4454dd1cd9f161749173af9d74f805a353595294ffe`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U12 move .signal-breakdown* + .signal-bar-* + .signal-confidence-dot to prompt-detail/SignalBreakdown.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 576 → 569 entries (7 deletions). Zero re-ordering. Inventory: `488 → 481` distinct classes; `395 → 388` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved limitation per §3 C7 last bullet).
+- **Visual diff**: PASS — **6/7 captured screens byte-equal** vs `docs/qa/runs/2026-05-10/baseline/canonical/` on the first pass, with the **§7 critical surface `dashboard-prompt-detail` (94,955 B) byte-equal**. Also byte-equal: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B), `memory-monitor-collapsed` (118,017 B). One screen drifted with the documented U1-VR-d warm-up pattern: `memory-monitor-expanded` 141,450 B vs canonical 141,277 B (+173 B). SignalBreakdown does not render in any non-prompt-detail screen, so the drift is independent of U12.
+- **§7 surface caveat**: §7 table line for U12 reads `dashboard-prompt-detail.png (expand SignalBreakdown)`. The current `qa-capture-screen-map.json` captures `dashboard-prompt-detail` with SignalBreakdown in its DEFAULT (collapsed-by-rotation) state — same as the U1-VR-d baseline was captured. Byte-equal on `dashboard-prompt-detail` confirms the **collapsed-state** render of SignalBreakdown is preserved. The **expanded-state** verification (which would exercise `.signal-breakdown-row` / `.signal-bar-*` / `.signal-confidence-dot` rendering) is deferred to a future screen-map expansion (queued alongside the P0.5.6 orchestrator fix). Acceptable per §8 step 8e: the moved CSS lives in a single new file whose import binding is the only delta against HEAD; collapsed-state byte-equal + zero-finding code review jointly establish the relocation is correct.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged. 56 orphan classes unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U12) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - `.signal-bar-fill` declares `transition: width 0.3s ease;` — preserved verbatim. The animation runs when the score updates; not exercised by the static capture.
+  - **Cumulative progress (post-U12)**: 9 Tier 1 units landed (U2, U3, U4, U5, U7, U9, U10, U11, U12) out of 36 → 25%. 62 cumulative selector deletions; `dashboard.css` reduced from `4554` (pre-U2) to `4119` (post-U12), a 435-line / 9.6% reduction. New sibling CSS files: 9 (CostCard, PromptMemorySection, StatPill, AccountInsightsCard, CacheGrowthChart, ProviderTabs, ContextGauge, JourneySummary, SignalBreakdown).
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

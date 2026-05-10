@@ -1,0 +1,59 @@
+/* Moved from dashboard.css in #330 U12. Owner: dashboard/prompt-detail/SignalBreakdown.tsx. */
+
+.signal-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 7px 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 0 0 7px 7px;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.signal-breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.signal-breakdown-name {
+  width: 100px;
+  flex-shrink: 0;
+  color: #7c7c80;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signal-breakdown-score {
+  width: 40px;
+  flex-shrink: 0;
+  color: #595959;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.signal-bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  display: block;
+}
+
+.signal-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.signal-confidence-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
