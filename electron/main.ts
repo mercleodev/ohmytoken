@@ -22,6 +22,7 @@ import {
 import { readTodayStats } from "./watcher/statsCacheReader";
 import { initDatabase, closeDatabase } from "./db/index";
 import { onProxyScanComplete } from "./db/proxyAdapter";
+import { onHookScanComplete } from "./db/hookAdapter";
 import { onHistoryPromptParsed } from "./db/historyAdapter";
 import { migrateJsonlToDb } from "./db/migrator";
 import * as dbReader from "./db/reader";
@@ -865,6 +866,7 @@ const initApp = async (): Promise<void> => {
         sendToMain: sendToMainWindow,
         sendToNotification: sendToNotificationWindow,
         onProxyScanComplete,
+        onHookScanComplete,
         parseSystemContents: (body: string) => {
           try {
             const parsed = JSON.parse(body);
@@ -955,6 +957,7 @@ const setupIPC = (): void => {
             sendToMain: sendToMainWindow,
             sendToNotification: sendToNotificationWindow,
             onProxyScanComplete,
+            onHookScanComplete,
             parseSystemContents: (body: string) => {
               try {
                 const parsed = JSON.parse(body);

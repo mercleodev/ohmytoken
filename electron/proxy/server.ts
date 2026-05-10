@@ -1,6 +1,8 @@
 import * as http from "http";
 import * as https from "https";
 import * as crypto from "crypto";
+import * as os from "os";
+import * as path from "path";
 import { SseParser } from "./sseParser";
 import { parseRequestMeta } from "./requestParser";
 import { calculateCost } from "./costCalculator";
@@ -12,6 +14,7 @@ import {
   recordClaudeUsageDelta,
   recordClaudeUsageFinal,
 } from "../eventBus/providers/claudeProxyEmit";
+import { handleScanFromTranscriptRequest } from "../hooks/scanFromTranscriptHandler";
 
 const DEFAULT_PORT = 8780;
 const ANTHROPIC_HOST = "api.anthropic.com";
@@ -29,7 +32,17 @@ export type ProxyOptions = {
   getSystemContents?: (body: string) => Record<string, string>;
   /** Previous evidence scores for session history signal */
   getPreviousScores?: (sessionId: string) => Record<string, number[]>;
+  /**
+   * Hook-based capture (issue #343, captured 2026-05-10). Invoked when a
+   * Stop hook POSTs to `/api/scan/from-transcript`. Same shape as
+   * `onScanComplete` so DB adapters can stay symmetric across transports.
+   */
+  onHookScanComplete?: (scan: PromptScan, usage: UsageLogEntry) => void;
+  /** Override the user-global CLAUDE.md path resolution (test seam). */
+  globalClaudeMdPath?: string;
 };
+
+const HOOK_SCAN_ROUTE = "/api/scan/from-transcript";
 
 let proxyServer: http.Server | null = null;
 let sessionId = crypto.randomUUID();
@@ -116,6 +129,23 @@ const forwardRequest = (
   proxyReq.end();
 };
 
+const handleHookScanRoute = (
+  body: string,
+  res: http.ServerResponse,
+  options: ProxyOptions,
+): void => {
+  const result = handleScanFromTranscriptRequest(body, {
+    globalClaudeMdPath:
+      options.globalClaudeMdPath ?? path.join(os.homedir(), ".claude", "CLAUDE.md"),
+    writeHookScan: (scan, usage) => {
+      writeScanLog(scan);
+      options.onHookScanComplete?.(scan, usage);
+    },
+  });
+  res.writeHead(result.status, { "Content-Type": "application/json" });
+  res.end(result.body);
+};
+
 const handleRequest = (
   req: http.IncomingMessage,
   res: http.ServerResponse,
@@ -128,6 +158,11 @@ const handleRequest = (
   });
   req.on("end", () => {
     requestsTotal++;
+
+    if (req.method === "POST" && (req.url || "").split("?")[0] === HOOK_SCAN_ROUTE) {
+      handleHookScanRoute(body, res, options);
+      return;
+    }
 
     const startTime = Date.now();
     const requestId = crypto.randomUUID();

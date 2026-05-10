@@ -6,6 +6,7 @@ const makeDeps = () => ({
   sendToMain: vi.fn(),
   sendToNotification: vi.fn(),
   onProxyScanComplete: vi.fn(),
+  onHookScanComplete: vi.fn(),
   parseSystemContents: vi.fn(() => ({})),
   getPreviousScores: vi.fn(() => ({})),
   persistEvidence: vi.fn(),

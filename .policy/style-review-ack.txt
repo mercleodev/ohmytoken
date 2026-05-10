@@ -1,10 +1,9 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T14:08:24Z
-fingerprint=20d0111eb20df4190dd2967a7bcaf4d0984ff16c28094823d462a4f2e29e2968
+# updated_at_utc: 2026-05-10T21:16:25Z
+fingerprint=7c262acc366c47ae76131170657f293bd10051a78cffbc23d53a7bd37a6106d3
 source=docs/sdd/style-checklist.md
-note=Manual style checklist passed: kernel extraction is behavior-preserving for parseSystemField, parseSystemFieldWithContent intentionally untouched, marker gate guards user-typed text from false-positives, no new `any`, no new deps, helpers stay inside electron/proxy boundary, JSDocs cite issue #341 + capture date 2026-05-10.
+note=Hook capture CI fix (#343): global CLAUDE.md fixture refactored to runtime os.tmpdir() write — repo .gitignore '**/*.md' rule was dropping the static fixture from CI checkouts. Three spec files now create + clean up the fixture in beforeAll/afterAll. No behavior change.
 
-electron/proxy/__tests__/injectedFromMessages.spec.ts
-electron/proxy/injectedFromMessages.ts
-electron/proxy/scanBuilder.ts
-electron/proxy/systemParser.ts
+electron/hooks/__tests__/scanFromTranscript.spec.ts
+electron/hooks/__tests__/scanFromTranscriptHandler.spec.ts
+electron/proxy/__tests__/serverHookRoute.integration.spec.ts

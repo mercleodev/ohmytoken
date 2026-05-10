@@ -25,6 +25,7 @@ export type BuildProxyOptionsArgs = {
 
   // DB writes
   onProxyScanComplete: (scan: PromptScan, usage: UsageLogEntry) => void;
+  onHookScanComplete: (scan: PromptScan, usage: UsageLogEntry) => void;
   persistEvidence: (requestId: string, report: EvidenceReport) => void;
 
   // Evidence hooks
@@ -44,6 +45,15 @@ export const buildProxyOptions = (args: BuildProxyOptionsArgs): ProxyOptions => 
       args.onProxyScanComplete(scan, usage);
     } catch (e) {
       console.error("[DB] proxy write error:", e);
+    }
+  },
+  onHookScanComplete: (scan, usage) => {
+    args.sendToMain("new-prompt-scan", { scan, usage });
+    args.sendToNotification("new-prompt-scan", { scan, usage });
+    try {
+      args.onHookScanComplete(scan, usage);
+    } catch (e) {
+      console.error("[DB] hook write error:", e);
     }
   },
   evidenceEngine: args.evidenceEngine ?? undefined,
