@@ -18,24 +18,15 @@ const classifyCategory = (filePath: string): InjectedFile['category'] => {
   return 'project';
 };
 
-const extractSystemText = (system: unknown): string => {
-  if (typeof system === 'string') return system;
-  if (Array.isArray(system)) {
-    return system
-      .map((block) => {
-        if (typeof block === 'string') return block;
-        if (block && typeof block === 'object' && 'text' in block) {
-          return String((block as { text: string }).text);
-        }
-        return '';
-      })
-      .join('\n');
-  }
-  return '';
-};
-
-export const parseSystemField = (system: unknown): InjectedFile[] => {
-  const text = extractSystemText(system);
+/**
+ * Run the `Contents of <path> (note):` regex over a single text body and
+ * return one `InjectedFile` per match. Pure: no `system`/`messages`
+ * traversal, no token-source assumption. Shared by `parseSystemField`
+ * (legacy system field origin) and `extractInjectedFromMessages`
+ * (CC 2.x `<system-reminder>` block origin — captured 2026-05-10,
+ * issue #341).
+ */
+export const extractInjectedFilesFromText = (text: string): InjectedFile[] => {
   if (!text) return [];
 
   const files: InjectedFile[] = [];
@@ -48,10 +39,8 @@ export const parseSystemField = (system: unknown): InjectedFile[] => {
     const endIdx = i + 1 < matches.length ? matches[i + 1].index! : text.length;
     const content = text.slice(startIdx, endIdx).trim();
 
-    // File path-based classification takes priority; parenthesized text is only used as fallback when path alone is ambiguous (e.g., CLAUDE.md)
     const fullMatch = match[0];
     let category = classifyCategory(filePath);
-    // rules/memory/skill are precisely classified by path, so don't override
     if (category !== 'rules' && category !== 'memory' && category !== 'skill') {
       if (fullMatch.includes("user's private global instructions")) {
         category = 'global';
@@ -69,6 +58,25 @@ export const parseSystemField = (system: unknown): InjectedFile[] => {
 
   return files;
 };
+
+const extractSystemText = (system: unknown): string => {
+  if (typeof system === 'string') return system;
+  if (Array.isArray(system)) {
+    return system
+      .map((block) => {
+        if (typeof block === 'string') return block;
+        if (block && typeof block === 'object' && 'text' in block) {
+          return String((block as { text: string }).text);
+        }
+        return '';
+      })
+      .join('\n');
+  }
+  return '';
+};
+
+export const parseSystemField = (system: unknown): InjectedFile[] =>
+  extractInjectedFilesFromText(extractSystemText(system));
 
 /**
  * Parse system field and return both InjectedFile list AND per-file content.
