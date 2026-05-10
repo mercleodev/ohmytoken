@@ -41,6 +41,47 @@ let currentPort: number | null = null;
 const isHttpsUpstream = (upstream: string): boolean =>
   upstream === ANTHROPIC_HOST || upstream.endsWith(".anthropic.com");
 
+/**
+ * Treats `/v1/messages` and `/v1/messages?<query>` as the same endpoint.
+ * Claude Code 2.x always sends `?beta=true`; the original strict equality
+ * check returned false for that path and silently disabled live SSE
+ * scanning (see issue #338, cause A).
+ *
+ * Trailing slash is intentionally not normalised — Anthropic rejects
+ * `/v1/messages/`, so any inbound request with that shape is treated as
+ * a non-messages call and falls through to the passthrough-only path.
+ */
+export const isMessagesUrl = (url: string | undefined): boolean =>
+  (url || "").split("?")[0] === "/v1/messages";
+
+/**
+ * Rewrites the inbound headers for upstream forwarding without mutating
+ * the input. Always rewrites `host`, drops `transfer-encoding`, and
+ * sets a fresh `content-length`. When `forceIdentityEncoding` is true
+ * (set by the caller for `/v1/messages` traffic only) it also replaces
+ * `accept-encoding` with `identity`, because the proxy's `SseParser`
+ * cannot decode the gzip-compressed SSE that Anthropic returns when the
+ * inbound header advertises gzip — without this override, chunks parse
+ * to zero events and `message_stop` never fires (#338, cause B). The
+ * override is intentionally scoped so that other endpoints (e.g.
+ * `/v1/models`) keep their original encoding negotiation.
+ */
+export const sanitizeForwardHeaders = (
+  inbound: http.IncomingHttpHeaders,
+  host: string,
+  bodyByteLength: number,
+  forceIdentityEncoding: boolean,
+): http.OutgoingHttpHeaders => {
+  const headers: http.OutgoingHttpHeaders = { ...inbound };
+  headers.host = host;
+  delete headers["transfer-encoding"];
+  if (forceIdentityEncoding) {
+    headers["accept-encoding"] = "identity";
+  }
+  headers["content-length"] = bodyByteLength.toString();
+  return headers;
+};
+
 const forwardRequest = (
   req: http.IncomingMessage,
   body: string,
@@ -52,10 +93,12 @@ const forwardRequest = (
   const [host, portStr] = upstream.split(":");
   const port = portStr ? parseInt(portStr, 10) : useHttps ? 443 : 80;
 
-  const headers = { ...req.headers };
-  headers.host = host;
-  delete headers["transfer-encoding"];
-  headers["content-length"] = Buffer.byteLength(body).toString();
+  const headers = sanitizeForwardHeaders(
+    req.headers,
+    host,
+    Buffer.byteLength(body),
+    isMessagesUrl(req.url),
+  );
 
   const options: http.RequestOptions = {
     hostname: host,
@@ -89,7 +132,7 @@ const handleRequest = (
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
     const meta = parseRequestMeta(body);
-    const isMessages = req.url === "/v1/messages";
+    const isMessages = isMessagesUrl(req.url);
 
     const resolvedSessionId = options.resolveSessionId?.() || sessionId;
 
