@@ -1,0 +1,108 @@
+/* Moved from dashboard.css in #330 U9. Owner: dashboard/ProviderTabs.tsx. */
+
+.provider-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #d4d4d7;
+  background: #e6e9f4;
+}
+
+.provider-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  border-radius: 11px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #92949d;
+  font-size: 11px;
+  font-weight: 500;
+  transition: color 0.15s;
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-tab:hover {
+  color: #6b6b8a;
+}
+
+.provider-tab.active {
+  color: #bed9fe;
+  font-weight: 700;
+}
+
+.provider-tab-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.provider-tab-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.provider-tab-indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: 11px;
+  z-index: -1;
+}
+
+.provider-tab-indicators {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.provider-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c7c7cc;
+}
+
+.provider-tab-dot.tracking-active {
+  background: #34c759;
+}
+
+.provider-tab-dot.tracking-waiting {
+  background: #ffd60a;
+}
+
+.provider-tab-dot.tracking-not-enabled {
+  background: #c7c7cc;
+}
+
+.provider-tab-dot.tracking-unknown {
+  background: #c7c7cc;
+}
+
+.provider-tab-account-badge {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+}
+
+.provider-tab-account-badge.account-connected {
+  background: transparent;
+  border-color: #007aff;
+}
+
+.provider-tab-account-badge.account-attention {
+  background: transparent;
+  border-color: #ff9500;
+}
+
+.provider-tab-account-badge.account-optional {
+  background: transparent;
+}

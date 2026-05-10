@@ -1,3 +1,4 @@
+import './ProviderTabs.css';
 import { motion } from 'framer-motion';
 import {
   UsageProviderType,
