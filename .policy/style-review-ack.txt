@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T22:22:26Z
-fingerprint=97f21dcf1446cb9fa0c2feecf1d457fa822ff40902bad81c8d52d03774210db3
+# updated_at_utc: 2026-05-10T22:33:36Z
+fingerprint=709224195652a50ce14e13aed0c18fa1ac1732981d66cdb409d6a629e4929994
 source=docs/sdd/style-checklist.md
-note=U15 move .stats-card* to StatsCard.css (Tier 1)
+note=U17 move .usage-gauges + .gauge-* (non-circle) to UsageGaugeCard.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/StatsCard.css
-src/components/dashboard/StatsCard.tsx
+src/components/dashboard/UsageGaugeCard.css
+src/components/dashboard/UsageGaugeCard.tsx

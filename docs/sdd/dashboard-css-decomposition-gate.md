@@ -1748,6 +1748,26 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - `.stats-card` is a `<button>` element styled as a clickable card with `border: none` + `cursor: pointer` + `text-align: left`. The hover state lightens the background. Both rules preserved verbatim.
   - **Cumulative progress (post-U15)**: 10 Tier 1 units landed (U2, U3, U4, U5, U7, U9, U10, U11, U12, U13, U15 — skipped U6/U8/U14) — counting 11 lands but 1 placeholder swap means 10 of 36 distinct slots ≈ 28%. `dashboard.css` reduced from `4554` (pre-U2) → `3981` (post-U15), a 573-line / 12.6% reduction. **Crossed the sub-4000 line mark.** 11 new sibling CSS files. 81 cumulative selector deletions.
 
+#### U17 — `dashboard/UsageGaugeCard.tsx` → `UsageGaugeCard.css` (Tier 1 single-owner, 9 classes / 10 selectors)
+
+- **Group**: Tier 1 single-owner (9 distinct classes, 10 selectors — twelfth Tier 1 unit landed).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 57 (`dashboard.css` 3981 → 3924). Ten rule blocks extracted: `.usage-gauges` (3-line), `.gauge-item` (4-line), `.gauge-item:last-child` (3-line pseudo on same class), `.gauge-label` (6-line), `.gauge-bar-track` (6-line), `.gauge-bar-fill` (4-line), `.gauge-info` (6-line), `.gauge-used` (4-line), `.gauge-reset` (3-line), `.gauge-pace` (6-line). Section comment `/* --- Usage Gauge Card --- */` dropped (matches precedent). New `UsageGaugeCard.css` is 56 lines.
+- **Consumers updated**: `src/components/dashboard/UsageGaugeCard.tsx` adds `import './UsageGaugeCard.css';` as the **first line**.
+- **Disambiguation**: confirmed disjoint from U10 ContextGauge — the `.gauge-circle-*` family (gauge inside prompt-detail) and `.prompt-detail-gauge` container live in `prompt-detail/ContextGauge.css`. U17's `.gauge-*` set (without `-circle` suffix) belongs to UsageGaugeCard's bar-style gauges.
+- **Frontend review**: OK (fp `c5b670c011ee5e11a916ea1eac20d154ccc97ead7fd960554f0e7b704c152026`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U17 move .usage-gauges + .gauge-* (non-circle) to UsageGaugeCard.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 550 → 540 entries (10 deletions). Zero re-ordering. Inventory: `466 → 457` distinct classes; `373 → 364` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **5/7 captured screens byte-equal** vs baseline on the second pass, with the **§7 critical surface `dashboard-claude` (146,288 B) byte-equal**. Pass-1 had an extra drift on `settings-context-limit` (-59 B, 145,131 vs 145,190) which converged to canonical on pass-2; this is the same cold-daemon warm-up pattern (the flake set turns out to be larger than the original U1-VR-d 3-screen set under heavy session load — `{dashboard-all-default, memory-monitor-{expanded,collapsed}, settings-context-limit}` is the now-observed superset). Pass-2 byte-equal results: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B, §7 surface), `dashboard-prompt-detail` (94,955 B), `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B). Drifts in pass-2: `memory-monitor-{expanded,collapsed}` (+173 / +220 B — both warm-up). UsageGaugeCard does not render in any memory-monitor screen.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged. 56 orphan classes unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U17) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - `.gauge-item:last-child` is the only descendant-style selector here; preserved verbatim adjacent to the parent `.gauge-item` rule.
+  - **Warm-up flake set expansion observed**: the rotating warm-up flake set originally documented in U1-VR-d § 14 was `{dashboard-all-default, memory-monitor-expanded, memory-monitor-collapsed}` (3 screens). Today (post-U17) `settings-context-limit` was added as a 4th rotating member on pass-1 of a fresh-fixture run. Both passes converged on byte-equal across the §7 surface; treating this as part of the same "cold-daemon, animation-frame, fixture-replay" non-determinism class.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

@@ -1,3 +1,4 @@
+import './UsageGaugeCard.css';
 import { motion } from 'framer-motion';
 import { UsageWindow } from '../../types';
 

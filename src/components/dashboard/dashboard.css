@@ -83,63 +83,6 @@
   color: #9c9c9f;
 }
 
-/* --- Usage Gauge Card --- */
-
-.usage-gauges {
-  padding: 4px 16px 8px;
-}
-
-.gauge-item {
-  padding: 10px 0;
-  border-bottom: 1px solid #dfe0e7;
-}
-
-.gauge-item:last-child {
-  border-bottom: none;
-}
-
-.gauge-label {
-  font-size: 15px;
-  font-weight: 600;
-  color: #535454;
-  margin-bottom: 8px;
-}
-
-.gauge-bar-track {
-  height: 8px;
-  background: #e8e8ed;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.gauge-bar-fill {
-  height: 100%;
-  border-radius: 4px;
-}
-
-.gauge-info {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 6px;
-  font-size: 13px;
-}
-
-.gauge-used {
-  color: #6b6b6c;
-  font-weight: 500;
-}
-
-.gauge-reset {
-  color: #a5a5a7;
-}
-
-.gauge-pace {
-  font-size: 12px;
-  color: #a1a1a2;
-  font-weight: 500;
-  margin-top: 2px;
-}
-
 /* --- Last Updated Label --- */
 
 .usage-last-updated {
