@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T21:54:20Z
-fingerprint=fb9b6d51d17232c416d2078aa04fc07b3344f5f7c7925d903b45e827adb0b052
+# updated_at_utc: 2026-05-10T22:01:13Z
+fingerprint=994690e756336fa5898e329aaf505bed6edc557356b0a5a5fecd77dde4fb541f
 source=docs/sdd/style-checklist.md
-note=U9 move .provider-tab* + .tracking-* + .account-* to ProviderTabs.css (Tier 1)
+note=U10 move .prompt-detail-gauge + .gauge-circle-* to prompt-detail/ContextGauge.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/ProviderTabs.css
-src/components/dashboard/ProviderTabs.tsx
+src/components/dashboard/prompt-detail/ContextGauge.css
+src/components/dashboard/prompt-detail/ContextGauge.tsx

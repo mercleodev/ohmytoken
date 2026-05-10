@@ -1650,6 +1650,25 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - `import './ProviderTabs.css';` is the first line of `ProviderTabs.tsx`, before `framer-motion` and types imports.
   - **Largest Tier 1 move yet**: 15 classes / 17 selectors / 109 lines. The motion-driven `.provider-tab-indicator` (framer-motion `layoutId="provider-indicator"`) is the visual that consistently flakes on cold capture; the byte-equal canonical-pass requirement is now firmly load-bearing for any tab-switch surface.
 
+#### U10 — `dashboard/prompt-detail/ContextGauge.tsx` → `prompt-detail/ContextGauge.css` (Tier 1 single-owner, 7 classes / 8 selectors)
+
+- **Group**: Tier 1 single-owner (7 distinct classes, 8 selectors — seventh Tier 1 unit).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 54 (`dashboard.css` 4278 → 4224). Eight rule blocks extracted: `.prompt-detail-gauge` (7-line), `.gauge-circle-container` (6-line), `.gauge-circle-label` (8-line), `.gauge-circle-pct` (5-line), `.gauge-circle-sub` (4-line), `.gauge-circle-info` (6-line), `.gauge-circle-row` (6-line), `.gauge-circle-row span:first-child` (3-line descendant rule on the same class). The `/* Gauge Circle */` section comment was removed alongside (matches U3/U5/U7/U9 precedent). New `prompt-detail/ContextGauge.css` is 54 lines.
+- **Consumers updated**: `src/components/dashboard/prompt-detail/ContextGauge.tsx` adds `import './ContextGauge.css';` as the **first line** (sibling-relative within the prompt-detail subdir). Component renders inside `PromptDetailView`'s context section.
+- **Frontend review**: OK (fp `78ee9723de98b14fde2abfa6ff8e0c4dc2e67dede84d778d9bb3d35b74145866`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor. Banner present; import path is sibling-relative (`'./ContextGauge.css'`) within the prompt-detail subdir.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U10 move .prompt-detail-gauge + .gauge-circle-* to prompt-detail/ContextGauge.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 591 → 583 entries (8 deletions = exactly the moved selectors). Zero re-ordering. Inventory: `502 → 495` distinct classes; `409 → 402` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent**. Same `.stat-pill` ↔ `.stats-tooltip-hint` moved-vs-moved divergence per §3 C7 last bullet. Visual diff (below) confirms zero pixel regression.
+- **Visual diff**: PASS — **3/3 captured screens byte-equal** vs `docs/qa/runs/2026-05-10/baseline/canonical/` on the first pass: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), **`dashboard-prompt-detail` (94,955 B — §7 critical surface, byte-equal)**. Orchestrator died at screen 4 with `os error 35` (typical P0.5.6-deferred window); §7 surface caught within the first 3 screens, no retry needed. Remaining 7 populated screens (`settings-evidence`, `settings-context-limit`, `memory-monitor-{expanded,collapsed}`, `first-run-onboarding`, `setup-guide`, `backfill-dialog`) not captured; none renders `ContextGauge` (which appears only inside `PromptDetailView`) — visible surface for U10 is exhausted by the §7 critical surface.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged. 56 orphan classes unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U10) is unchanged. No new lint errors.
+  - No `/* UNUSED candidate */` markers added (deferred to U50 per §8 step 3d).
+  - `.gauge-circle-row span:first-child` is the only descendant selector in this unit — preserved verbatim including its position immediately after the parent `.gauge-circle-row` rule.
+  - Other `.gauge-*` classes (`.gauge-bar-track`, `.gauge-bar-fill`, `.gauge-item`, `.gauge-label`, `.gauge-reset`, `.gauge-pace`) STAY in dashboard.css — those belong to **UsageGaugeCard** (U17), not ContextGauge. The `.prompt-detail-gauge` prefix on the container class disambiguates the two gauge variants. The `.gauge-circle-*` prefix on the inner circle classes is unique to the context gauge and was never used by UsageGaugeCard.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

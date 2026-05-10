@@ -1,3 +1,4 @@
+import './ContextGauge.css';
 import {
   formatCost,
   formatTokens,

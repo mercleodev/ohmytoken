@@ -1,0 +1,54 @@
+/* Moved from dashboard.css in #330 U10. Owner: dashboard/prompt-detail/ContextGauge.tsx. */
+
+.prompt-detail-gauge {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #dedede;
+}
+
+.gauge-circle-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.gauge-circle-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-circle-pct {
+  font-size: 18px;
+  font-weight: 700;
+  color: #454647;
+}
+
+.gauge-circle-sub {
+  font-size: 10px;
+  color: #9b9c9e;
+}
+
+.gauge-circle-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gauge-circle-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #595959;
+}
+
+.gauge-circle-row span:first-child {
+  color: #9b9c9e;
+}
