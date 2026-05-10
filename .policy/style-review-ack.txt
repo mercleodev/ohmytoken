@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T23:32:06Z
-fingerprint=a9645bcccc1559eaccbd5a9840296fada6a66151d882454a70569d392d87dd60
+# updated_at_utc: 2026-05-10T23:39:22Z
+fingerprint=6a0d9a7a9b042d817ec7d8255ec48d0a4d49b03f37b0f96faf3378fae32cd396
 source=docs/sdd/style-checklist.md
-note=U32 move .recent-sessions* + .session-card* + .provider-badge + .mini-ctx-gauge* to RecentSessions.css (Tier 1)
+note=U34 move .guardrail-* to prompt-detail/GuardrailSummary.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/RecentSessions.css
-src/components/dashboard/RecentSessions.tsx
+src/components/dashboard/prompt-detail/GuardrailSummary.css
+src/components/dashboard/prompt-detail/GuardrailSummary.tsx

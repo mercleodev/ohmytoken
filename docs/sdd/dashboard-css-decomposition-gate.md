@@ -1960,6 +1960,24 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - No `/* UNUSED candidate */` markers added (deferred to U50). The orphan `.session-card-project` is a U50 candidate.
   - **Cumulative progress (post-U32)**: 21 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `2818` (post-U32), a **1,736-line / 38.1% reduction**. 21 new sibling CSS files. 239 cumulative selector deletions.
 
+#### U34 — `dashboard/prompt-detail/GuardrailSummary.tsx` → `prompt-detail/GuardrailSummary.css` (Tier 1 single-owner, 24 classes — **largest single-segment unit so far**)
+
+- **Group**: Tier 1 single-owner (24 classes — twenty-second Tier 1 unit landed; **largest contiguous single-segment unit so far**). Skipped U33 (McpInsightsCard, surface `mcp-insights-*` outside the 3-screen orchestrator window).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 163 (`dashboard.css` 2818 → 2655). 24 rule blocks extracted in one contiguous segment (pre-U34 L476-637): `.guardrail-summary`, `.guardrail-summary-header`, `.guardrail-summary-title`, `.guardrail-health-badge`, `.guardrail-primary-detail`, `.guardrail-primary-title-row`, `.guardrail-primary-icon`, `.guardrail-primary-title`, `.guardrail-primary-confidence`, `.guardrail-primary-reason`, `.guardrail-primary-action`, `.guardrail-primary-savings`, `.guardrail-evidence-list`, `.guardrail-evidence-item`, `.guardrail-secondary-list`, `.guardrail-secondary-item`, `.guardrail-secondary-icon`, `.guardrail-secondary-content`, `.guardrail-secondary-title`, `.guardrail-secondary-reason`, `.guardrail-lowvalue-section`, `.guardrail-lowvalue-item`, `.guardrail-lowvalue-tokens`, `.guardrail-lowvalue-note`. Section comment `/* ── Guardrail Summary ── */` dropped per precedent. New `prompt-detail/GuardrailSummary.css` is 163 lines.
+- **Consumers updated**: `src/components/dashboard/prompt-detail/GuardrailSummary.tsx` adds `import './GuardrailSummary.css';` as the **first line**.
+- **Frontend review**: OK (fp `11867bd3dc47bbc48db3771c8049f6c4674949ddb342cf116fa1acdaf218c39b`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U34 move .guardrail-* to prompt-detail/GuardrailSummary.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 392 → 368 entries (24 deletions). Inventory: `338 → 314` distinct classes; `245 → 221` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **4/7 captured screens byte-equal on first pass** with the **§7 critical surface `dashboard-prompt-detail` (94,955 B) byte-equal**. Pass-1 byte-equal set: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `dashboard-prompt-detail` (94,955 B), `settings-evidence` (139,846 B). Three drifts on rotating warm-up members: `settings-context-limit` (-59 B), `memory-monitor-expanded` (+173 B), `memory-monitor-collapsed` (+220 B). GuardrailSummary does not render in any of the drifting screens.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U34) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - **Cumulative progress (post-U34)**: 22 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `2655` (post-U34), a **1,899-line / 41.7% reduction**. 22 new sibling CSS files. 263 cumulative selector deletions.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

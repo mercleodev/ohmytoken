@@ -1,3 +1,4 @@
+import './GuardrailSummary.css';
 import type { GuardrailAssessment } from '../../../guardrails/types';
 import {
   getSeverityColor,
