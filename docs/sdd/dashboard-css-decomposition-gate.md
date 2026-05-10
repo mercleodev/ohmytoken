@@ -1416,7 +1416,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U1-VR-d — Final baseline (10 deterministic + 1 informational, refactor-ready)
 
 - **Group**: U1-VR (visual baseline, fourth and final batch). Resolves U1-VR-c's fixture-enrichment/renderer-twin checklist; closes the U1-VR phase so the dashboard.css decomposition refactor can begin.
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `e4c317a`
 - **Captured screens** (10 byte-deterministic + 1 informational; total 10 of 13 canonical + 1 of 2 renderer twins):
   - **Newly captured** (3): `settings-evidence`, `memory-monitor-expanded`, `memory-monitor-collapsed`.
   - **Re-baselined** (2, fixture changes affected hash): `dashboard-claude` (memoryFiles seed renders the Claude memory card), `dashboard-prompt-detail` (the screen lands on sess-fixture-003 → req-005 by `last_timestamp DESC`/`timestamp DESC`; req-005's seeded `mcp__figma__download_figma_images` tool_call + 2 injected_files now render in the per-prompt summary).
