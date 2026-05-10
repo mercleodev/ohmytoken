@@ -1,0 +1,90 @@
+/* Moved from dashboard.css in #330 U26. Owner: dashboard/PromptHeatmap.tsx. */
+
+.heatmap-header {
+  margin-bottom: 8px;
+}
+
+.heatmap-total {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b6b6c;
+}
+
+.heatmap-container {
+  display: flex;
+  gap: 0;
+}
+
+.heatmap-day-labels {
+  display: flex;
+  flex-direction: column;
+  padding-top: 18px;
+  flex-shrink: 0;
+}
+
+.heatmap-day-label {
+  font-size: 9px;
+  color: #9b9c9e;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.heatmap-grid-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  flex: 1;
+  min-width: 0;
+}
+
+.heatmap-month-labels {
+  position: relative;
+}
+
+.heatmap-month-label {
+  position: absolute;
+  top: 0;
+  font-size: 9px;
+  color: #9b9c9e;
+  white-space: nowrap;
+}
+
+.heatmap-grid {
+  position: relative;
+}
+
+.heatmap-cell {
+  position: absolute;
+  cursor: pointer;
+  transition: outline 0.1s;
+}
+
+.heatmap-cell:hover {
+  outline: 1px solid rgba(0, 0, 0, 0.3);
+  outline-offset: -1px;
+}
+
+.heatmap-tooltip {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.heatmap-legend-label {
+  font-size: 9px;
+  color: #9b9c9e;
+  margin: 0 2px;
+}
+
+.heatmap-legend-cell {
+  flex-shrink: 0;
+}

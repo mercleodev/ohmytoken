@@ -1,10 +1,10 @@
 {
-  "generated": "2026-05-10T23:04:55.183Z",
+  "generated": "2026-05-10T23:12:09.376Z",
   "source": "src/components/dashboard/dashboard.css",
   "sharedTargetDir": "src/components/dashboard/_shared/",
-  "totalClasses": 402,
+  "totalClasses": 388,
   "counts": {
-    "single-owner": 312,
+    "single-owner": 298,
     "cluster": 25,
     "shared": 12,
     "orphan": 53,
@@ -4871,218 +4871,8 @@
       "orphanClass": null
     },
     {
-      "class": "heatmap-header",
-      "firstLine": 2837,
-      "firstSelector": ".heatmap-header",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-total",
-      "firstLine": 2843,
-      "firstSelector": ".heatmap-total",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-container",
-      "firstLine": 2849,
-      "firstSelector": ".heatmap-container",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-day-labels",
-      "firstLine": 2854,
-      "firstSelector": ".heatmap-day-labels",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-day-label",
-      "firstLine": 2861,
-      "firstSelector": ".heatmap-day-label",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-grid-scroll",
-      "firstLine": 2868,
-      "firstSelector": ".heatmap-grid-scroll",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-month-labels",
-      "firstLine": 2875,
-      "firstSelector": ".heatmap-month-labels",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-month-label",
-      "firstLine": 2879,
-      "firstSelector": ".heatmap-month-label",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-grid",
-      "firstLine": 2887,
-      "firstSelector": ".heatmap-grid",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-cell",
-      "firstLine": 2891,
-      "firstSelector": ".heatmap-cell",
-      "definitionCount": 2,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-tooltip",
-      "firstLine": 2902,
-      "firstSelector": ".heatmap-tooltip",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-legend",
-      "firstLine": 2910,
-      "firstSelector": ".heatmap-legend",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-legend-label",
-      "firstLine": 2918,
-      "firstSelector": ".heatmap-legend-label",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "heatmap-legend-cell",
-      "firstLine": 2924,
-      "firstSelector": ".heatmap-legend-cell",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/PromptHeatmap.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
       "class": "memory-card",
-      "firstLine": 2928,
+      "firstLine": 2837,
       "firstSelector": ".memory-card",
       "definitionCount": 1,
       "consumers": [
@@ -5097,7 +4887,7 @@
     },
     {
       "class": "memory-header",
-      "firstLine": 2939,
+      "firstLine": 2848,
       "firstSelector": ".memory-header",
       "definitionCount": 1,
       "consumers": [
@@ -5112,7 +4902,7 @@
     },
     {
       "class": "memory-title",
-      "firstLine": 2946,
+      "firstLine": 2855,
       "firstSelector": ".memory-title",
       "definitionCount": 1,
       "consumers": [
@@ -5127,7 +4917,7 @@
     },
     {
       "class": "memory-line-count",
-      "firstLine": 2953,
+      "firstLine": 2862,
       "firstSelector": ".memory-line-count",
       "definitionCount": 1,
       "consumers": [
@@ -5142,7 +4932,7 @@
     },
     {
       "class": "memory-chevron",
-      "firstLine": 2960,
+      "firstLine": 2869,
       "firstSelector": ".memory-chevron",
       "definitionCount": 2,
       "consumers": [
@@ -5157,7 +4947,7 @@
     },
     {
       "class": "memory-bar-track",
-      "firstLine": 2971,
+      "firstLine": 2880,
       "firstSelector": ".memory-bar-track",
       "definitionCount": 1,
       "consumers": [
@@ -5172,7 +4962,7 @@
     },
     {
       "class": "memory-bar-fill",
-      "firstLine": 2979,
+      "firstLine": 2888,
       "firstSelector": ".memory-bar-fill",
       "definitionCount": 1,
       "consumers": [
@@ -5187,7 +4977,7 @@
     },
     {
       "class": "memory-warning",
-      "firstLine": 2985,
+      "firstLine": 2894,
       "firstSelector": ".memory-warning",
       "definitionCount": 1,
       "consumers": [
@@ -5202,7 +4992,7 @@
     },
     {
       "class": "memory-warning--critical",
-      "firstLine": 2992,
+      "firstLine": 2901,
       "firstSelector": ".memory-warning--critical",
       "definitionCount": 1,
       "consumers": [
@@ -5217,7 +5007,7 @@
     },
     {
       "class": "memory-stats",
-      "firstLine": 2997,
+      "firstLine": 2906,
       "firstSelector": ".memory-stats",
       "definitionCount": 1,
       "consumers": [
@@ -5232,7 +5022,7 @@
     },
     {
       "class": "memory-stats-sep",
-      "firstLine": 3003,
+      "firstLine": 2912,
       "firstSelector": ".memory-stats-sep",
       "definitionCount": 1,
       "consumers": [
@@ -5247,7 +5037,7 @@
     },
     {
       "class": "memory-file-list",
-      "firstLine": 3007,
+      "firstLine": 2916,
       "firstSelector": ".memory-file-list",
       "definitionCount": 1,
       "consumers": [
@@ -5264,7 +5054,7 @@
     },
     {
       "class": "memory-file-item",
-      "firstLine": 3014,
+      "firstLine": 2923,
       "firstSelector": ".memory-file-item",
       "definitionCount": 1,
       "consumers": [
@@ -5281,7 +5071,7 @@
     },
     {
       "class": "memory-file-header",
-      "firstLine": 3020,
+      "firstLine": 2929,
       "firstSelector": ".memory-file-header",
       "definitionCount": 1,
       "consumers": [
@@ -5298,7 +5088,7 @@
     },
     {
       "class": "memory-file-type",
-      "firstLine": 3028,
+      "firstLine": 2937,
       "firstSelector": ".memory-file-type",
       "definitionCount": 1,
       "consumers": [
@@ -5315,7 +5105,7 @@
     },
     {
       "class": "memory-file-name",
-      "firstLine": 3037,
+      "firstLine": 2946,
       "firstSelector": ".memory-file-name",
       "definitionCount": 1,
       "consumers": [
@@ -5332,7 +5122,7 @@
     },
     {
       "class": "memory-file-lines",
-      "firstLine": 3047,
+      "firstLine": 2956,
       "firstSelector": ".memory-file-lines",
       "definitionCount": 1,
       "consumers": [
@@ -5349,7 +5139,7 @@
     },
     {
       "class": "memory-file-chevron",
-      "firstLine": 3053,
+      "firstLine": 2962,
       "firstSelector": ".memory-file-chevron",
       "definitionCount": 2,
       "consumers": [
@@ -5366,7 +5156,7 @@
     },
     {
       "class": "memory-file-desc",
-      "firstLine": 3064,
+      "firstLine": 2973,
       "firstSelector": ".memory-file-desc",
       "definitionCount": 1,
       "consumers": [
@@ -5383,7 +5173,7 @@
     },
     {
       "class": "memory-file-content",
-      "firstLine": 3074,
+      "firstLine": 2983,
       "firstSelector": ".memory-file-content",
       "definitionCount": 1,
       "consumers": [
@@ -5400,7 +5190,7 @@
     },
     {
       "class": "memory-other-projects",
-      "firstLine": 3089,
+      "firstLine": 2998,
       "firstSelector": ".memory-other-projects",
       "definitionCount": 1,
       "consumers": [
@@ -5415,7 +5205,7 @@
     },
     {
       "class": "memory-other-projects-label",
-      "firstLine": 3097,
+      "firstLine": 3006,
       "firstSelector": ".memory-other-projects-label",
       "definitionCount": 1,
       "consumers": [
@@ -5430,7 +5220,7 @@
     },
     {
       "class": "memory-project-chips",
-      "firstLine": 3106,
+      "firstLine": 3015,
       "firstSelector": ".memory-project-chips",
       "definitionCount": 1,
       "consumers": [
@@ -5445,7 +5235,7 @@
     },
     {
       "class": "memory-project-chip",
-      "firstLine": 3112,
+      "firstLine": 3021,
       "firstSelector": ".memory-project-chip",
       "definitionCount": 2,
       "consumers": [
@@ -5460,7 +5250,7 @@
     },
     {
       "class": "memory-project-chip-header",
-      "firstLine": 3124,
+      "firstLine": 3033,
       "firstSelector": ".memory-project-chip-header",
       "definitionCount": 1,
       "consumers": [
@@ -5475,7 +5265,7 @@
     },
     {
       "class": "memory-project-chip-name",
-      "firstLine": 3130,
+      "firstLine": 3039,
       "firstSelector": ".memory-project-chip-name",
       "definitionCount": 1,
       "consumers": [
@@ -5490,7 +5280,7 @@
     },
     {
       "class": "memory-project-chip-count",
-      "firstLine": 3136,
+      "firstLine": 3045,
       "firstSelector": ".memory-project-chip-count",
       "definitionCount": 1,
       "consumers": [
@@ -5505,7 +5295,7 @@
     },
     {
       "class": "memory-project-chip-meta",
-      "firstLine": 3142,
+      "firstLine": 3051,
       "firstSelector": ".memory-project-chip-meta",
       "definitionCount": 1,
       "consumers": [
@@ -5520,7 +5310,7 @@
     },
     {
       "class": "memory-project-detail",
-      "firstLine": 3148,
+      "firstLine": 3057,
       "firstSelector": ".memory-project-detail",
       "definitionCount": 1,
       "consumers": [
@@ -5535,7 +5325,7 @@
     },
     {
       "class": "memory-project-detail-header",
-      "firstLine": 3152,
+      "firstLine": 3061,
       "firstSelector": ".memory-project-detail-header",
       "definitionCount": 1,
       "consumers": [
@@ -5550,7 +5340,7 @@
     },
     {
       "class": "memory-project-detail-back",
-      "firstLine": 3159,
+      "firstLine": 3068,
       "firstSelector": ".memory-project-detail-back",
       "definitionCount": 1,
       "consumers": [
@@ -5565,7 +5355,7 @@
     },
     {
       "class": "memory-project-detail-title",
-      "firstLine": 3166,
+      "firstLine": 3075,
       "firstSelector": ".memory-project-detail-title",
       "definitionCount": 1,
       "consumers": [
@@ -5580,7 +5370,7 @@
     },
     {
       "class": "memory-project-detail-banner",
-      "firstLine": 3172,
+      "firstLine": 3081,
       "firstSelector": ".memory-project-detail-banner",
       "definitionCount": 1,
       "consumers": [
@@ -5595,7 +5385,7 @@
     },
     {
       "class": "memory-project-detail-loading",
-      "firstLine": 3181,
+      "firstLine": 3090,
       "firstSelector": ".memory-project-detail-loading",
       "definitionCount": 1,
       "consumers": [
@@ -5610,7 +5400,7 @@
     },
     {
       "class": "collapsible",
-      "firstLine": 3188,
+      "firstLine": 3097,
       "firstSelector": ".collapsible",
       "definitionCount": 3,
       "consumers": [
@@ -5632,7 +5422,7 @@
     },
     {
       "class": "open",
-      "firstLine": 3199,
+      "firstLine": 3108,
       "firstSelector": ".collapsible.open",
       "definitionCount": 2,
       "consumers": [],
@@ -5643,7 +5433,7 @@
     },
     {
       "class": "collapsible-inner",
-      "firstLine": 3203,
+      "firstLine": 3112,
       "firstSelector": ".collapsible-inner",
       "definitionCount": 2,
       "consumers": [
@@ -5665,7 +5455,7 @@
     },
     {
       "class": "first-run-screen",
-      "firstLine": 3221,
+      "firstLine": 3130,
       "firstSelector": ".first-run-screen",
       "definitionCount": 1,
       "consumers": [
@@ -5680,7 +5470,7 @@
     },
     {
       "class": "first-run-header",
-      "firstLine": 3232,
+      "firstLine": 3141,
       "firstSelector": ".first-run-header",
       "definitionCount": 1,
       "consumers": [
@@ -5695,7 +5485,7 @@
     },
     {
       "class": "first-run-title",
-      "firstLine": 3236,
+      "firstLine": 3145,
       "firstSelector": ".first-run-title",
       "definitionCount": 1,
       "consumers": [
@@ -5710,7 +5500,7 @@
     },
     {
       "class": "first-run-subtitle",
-      "firstLine": 3244,
+      "firstLine": 3153,
       "firstSelector": ".first-run-subtitle",
       "definitionCount": 1,
       "consumers": [
@@ -5725,7 +5515,7 @@
     },
     {
       "class": "first-run-providers",
-      "firstLine": 3251,
+      "firstLine": 3160,
       "firstSelector": ".first-run-providers",
       "definitionCount": 1,
       "consumers": [
@@ -5740,7 +5530,7 @@
     },
     {
       "class": "first-run-provider-card",
-      "firstLine": 3257,
+      "firstLine": 3166,
       "firstSelector": ".first-run-provider-card",
       "definitionCount": 1,
       "consumers": [
@@ -5755,7 +5545,7 @@
     },
     {
       "class": "first-run-provider-head",
-      "firstLine": 3267,
+      "firstLine": 3176,
       "firstSelector": ".first-run-provider-head",
       "definitionCount": 1,
       "consumers": [
@@ -5770,7 +5560,7 @@
     },
     {
       "class": "first-run-provider-icon",
-      "firstLine": 3273,
+      "firstLine": 3182,
       "firstSelector": ".first-run-provider-icon",
       "definitionCount": 1,
       "consumers": [
@@ -5785,7 +5575,7 @@
     },
     {
       "class": "first-run-provider-name",
-      "firstLine": 3280,
+      "firstLine": 3189,
       "firstSelector": ".first-run-provider-name",
       "definitionCount": 1,
       "consumers": [
@@ -5800,7 +5590,7 @@
     },
     {
       "class": "first-run-provider-state",
-      "firstLine": 3287,
+      "firstLine": 3196,
       "firstSelector": ".first-run-provider-state",
       "definitionCount": 1,
       "consumers": [
@@ -5815,7 +5605,7 @@
     },
     {
       "class": "first-run-primary-btn",
-      "firstLine": 3293,
+      "firstLine": 3202,
       "firstSelector": ".first-run-primary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -5830,7 +5620,7 @@
     },
     {
       "class": "first-run-secondary",
-      "firstLine": 3309,
+      "firstLine": 3218,
       "firstSelector": ".first-run-secondary",
       "definitionCount": 1,
       "consumers": [
@@ -5845,7 +5635,7 @@
     },
     {
       "class": "first-run-secondary-btn",
-      "firstLine": 3316,
+      "firstLine": 3225,
       "firstSelector": ".first-run-secondary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -5860,7 +5650,7 @@
     },
     {
       "class": "first-run-walkthrough",
-      "firstLine": 3329,
+      "firstLine": 3238,
       "firstSelector": ".first-run-walkthrough",
       "definitionCount": 1,
       "consumers": [
@@ -5875,7 +5665,7 @@
     },
     {
       "class": "first-run-waiting",
-      "firstLine": 3336,
+      "firstLine": 3245,
       "firstSelector": ".first-run-waiting",
       "definitionCount": 1,
       "consumers": [
@@ -5890,7 +5680,7 @@
     },
     {
       "class": "first-run-spinner",
-      "firstLine": 3346,
+      "firstLine": 3255,
       "firstSelector": ".first-run-spinner",
       "definitionCount": 1,
       "consumers": [

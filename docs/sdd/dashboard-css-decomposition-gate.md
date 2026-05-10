@@ -1879,6 +1879,24 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - **Most complex move yet** — 4 non-contiguous segments. Future units (U27 EvidenceGroup, U28 UsageView, etc.) may have similar fan-out.
   - **Cumulative progress (post-U23)**: 17 distinct Tier 1 slots landed (U2, U3, U4, U5, U7, U9, U10, U11, U12, U13, U15, U17, U19, U20, U21, U22, U23). `dashboard.css` reduced from `4554` (pre-U2) → `3367` (post-U23), a 1,187-line / 26.1% reduction. 17 new sibling CSS files. 163 cumulative selector deletions.
 
+#### U26 — `dashboard/PromptHeatmap.tsx` → `PromptHeatmap.css` (Tier 1 single-owner, 14 classes / 15 selectors)
+
+- **Group**: Tier 1 single-owner (14 classes — eighteenth Tier 1 unit landed). U24 (ContextTreemap) was deferred — same multi-selector blocker as U8 CostTreemap (`.context-treemap, .cost-treemap` shared rule blocks); both deferred to a Tier 2 cluster move. U25 (ContextLimitSettings) needs cluster-aware split-removal; deferred to a later round.
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 91 (`dashboard.css` 3367 → 3276). Fifteen rule blocks extracted (14 classes + 1 `:hover` pseudo): `.heatmap-header`, `.heatmap-total`, `.heatmap-container`, `.heatmap-day-labels`, `.heatmap-day-label`, `.heatmap-grid-scroll`, `.heatmap-month-labels`, `.heatmap-month-label`, `.heatmap-grid`, `.heatmap-cell`, `.heatmap-cell:hover`, `.heatmap-tooltip`, `.heatmap-legend`, `.heatmap-legend-label`, `.heatmap-legend-cell`. Section comment `/* --- Prompt Heatmap (GitHub-style) --- */` dropped per precedent. New `PromptHeatmap.css` is 90 lines.
+- **Consumers updated**: `src/components/dashboard/PromptHeatmap.tsx` adds `import './PromptHeatmap.css';` as the **first line**.
+- **Frontend review**: OK (fp `ecec15330027e04014c6ecc9d1e7d16d1e370f6079d3aeaf948e9cb37afa31ed`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U26 move .heatmap-* to PromptHeatmap.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 468 → 453 entries (15 deletions). Inventory: `402 → 388` distinct classes; `312 → 298` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **5/7 captured screens byte-equal on pass-2 with §7 surface byte-equal**. Pass-1 captured §7 surface `dashboard-all-default` at 96,209 B (drift -258 B — warm-up flake); pass-2 (hard-reset) captured at canonical 96,467 B byte-equal. Pass-2 byte-equal set: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `dashboard-prompt-detail` (94,955 B), `settings-evidence` (139,846 B), `memory-monitor-collapsed` (118,017 B). Pass-2 drifts on rotating warm-up members: `memory-monitor-expanded` (+173 B), `settings-context-limit` (-59 B). PromptHeatmap renders only inside `dashboard-all-default` of the captured screens; the drifting screens do not render PromptHeatmap.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U26) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - **Clean contiguous section** — no other-owner classes interleaved. Simple single-segment move. Good counterweight to U23's 4-segment complexity.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

@@ -1,3 +1,4 @@
+import './PromptHeatmap.css';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { toLocalDateKey } from '../../utils/format';
 import { clampTooltipX } from '../../utils/tooltipPlacement';

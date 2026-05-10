@@ -1,6 +1,6 @@
 # dashboard.css selectors in declaration order
-# Generated: 2026-05-10T23:04:55.183Z
-# Total entries (including @-rules): 468
+# Generated: 2026-05-10T23:12:09.376Z
+# Total entries (including @-rules): 453
 # Format: <line>\t<selector>
 #
 # Use this as the cascade-order baseline. After moves, the relative order of
@@ -398,80 +398,65 @@
  2822	.mcp-card-tip-icon
  2827	.mcp-card-tip-text
  2831	.mcp-card-empty
- 2837	.heatmap-header
- 2843	.heatmap-total
- 2849	.heatmap-container
- 2854	.heatmap-day-labels
- 2861	.heatmap-day-label
- 2868	.heatmap-grid-scroll
- 2875	.heatmap-month-labels
- 2879	.heatmap-month-label
- 2887	.heatmap-grid
- 2891	.heatmap-cell
- 2897	.heatmap-cell:hover
- 2902	.heatmap-tooltip
- 2910	.heatmap-legend
- 2918	.heatmap-legend-label
- 2924	.heatmap-legend-cell
- 2928	.memory-card
- 2939	.memory-header
- 2946	.memory-title
- 2953	.memory-line-count
- 2960	.memory-chevron
- 2967	.memory-chevron.expanded
- 2971	.memory-bar-track
- 2979	.memory-bar-fill
- 2985	.memory-warning
- 2992	.memory-warning--critical
- 2997	.memory-stats
- 3003	.memory-stats-sep
- 3007	.memory-file-list
- 3014	.memory-file-item
- 3020	.memory-file-header
- 3028	.memory-file-type
- 3037	.memory-file-name
- 3047	.memory-file-lines
- 3053	.memory-file-chevron
- 3060	.memory-file-chevron.expanded
- 3064	.memory-file-desc
- 3074	.memory-file-content
- 3089	.memory-other-projects
- 3097	.memory-other-projects-label
- 3106	.memory-project-chips
- 3112	.memory-project-chip
- 3120	.memory-project-chip:hover
- 3124	.memory-project-chip-header
- 3130	.memory-project-chip-name
- 3136	.memory-project-chip-count
- 3142	.memory-project-chip-meta
- 3148	.memory-project-detail
- 3152	.memory-project-detail-header
- 3159	.memory-project-detail-back
- 3166	.memory-project-detail-title
- 3172	.memory-project-detail-banner
- 3181	.memory-project-detail-loading
- 3188	.collapsible
- 3199	.collapsible.open
- 3203	.collapsible-inner
- 3210	.collapsible.open > .collapsible-inner
- 3214	@media (prefers-reduced-motion: reduce)
- 3221	.first-run-screen
- 3232	.first-run-header
- 3236	.first-run-title
- 3244	.first-run-subtitle
- 3251	.first-run-providers
- 3257	.first-run-provider-card
- 3267	.first-run-provider-head
- 3273	.first-run-provider-icon
- 3280	.first-run-provider-name
- 3287	.first-run-provider-state
- 3293	.first-run-primary-btn
- 3305	.first-run-primary-btn:hover
- 3309	.first-run-secondary
- 3316	.first-run-secondary-btn
- 3325	.first-run-secondary-btn:hover
- 3329	.first-run-walkthrough
- 3336	.first-run-waiting
- 3346	.first-run-spinner
- 3355	@keyframes first-run-spin
- 3361	@media (prefers-reduced-motion: reduce)
+ 2837	.memory-card
+ 2848	.memory-header
+ 2855	.memory-title
+ 2862	.memory-line-count
+ 2869	.memory-chevron
+ 2876	.memory-chevron.expanded
+ 2880	.memory-bar-track
+ 2888	.memory-bar-fill
+ 2894	.memory-warning
+ 2901	.memory-warning--critical
+ 2906	.memory-stats
+ 2912	.memory-stats-sep
+ 2916	.memory-file-list
+ 2923	.memory-file-item
+ 2929	.memory-file-header
+ 2937	.memory-file-type
+ 2946	.memory-file-name
+ 2956	.memory-file-lines
+ 2962	.memory-file-chevron
+ 2969	.memory-file-chevron.expanded
+ 2973	.memory-file-desc
+ 2983	.memory-file-content
+ 2998	.memory-other-projects
+ 3006	.memory-other-projects-label
+ 3015	.memory-project-chips
+ 3021	.memory-project-chip
+ 3029	.memory-project-chip:hover
+ 3033	.memory-project-chip-header
+ 3039	.memory-project-chip-name
+ 3045	.memory-project-chip-count
+ 3051	.memory-project-chip-meta
+ 3057	.memory-project-detail
+ 3061	.memory-project-detail-header
+ 3068	.memory-project-detail-back
+ 3075	.memory-project-detail-title
+ 3081	.memory-project-detail-banner
+ 3090	.memory-project-detail-loading
+ 3097	.collapsible
+ 3108	.collapsible.open
+ 3112	.collapsible-inner
+ 3119	.collapsible.open > .collapsible-inner
+ 3123	@media (prefers-reduced-motion: reduce)
+ 3130	.first-run-screen
+ 3141	.first-run-header
+ 3145	.first-run-title
+ 3153	.first-run-subtitle
+ 3160	.first-run-providers
+ 3166	.first-run-provider-card
+ 3176	.first-run-provider-head
+ 3182	.first-run-provider-icon
+ 3189	.first-run-provider-name
+ 3196	.first-run-provider-state
+ 3202	.first-run-primary-btn
+ 3214	.first-run-primary-btn:hover
+ 3218	.first-run-secondary
+ 3225	.first-run-secondary-btn
+ 3234	.first-run-secondary-btn:hover
+ 3238	.first-run-walkthrough
+ 3245	.first-run-waiting
+ 3255	.first-run-spinner
+ 3264	@keyframes first-run-spin
+ 3270	@media (prefers-reduced-motion: reduce)
