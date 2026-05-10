@@ -1525,7 +1525,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U2 — `dashboard/CostCard.tsx` → `CostCard.css` (Tier 1 single-owner, 2 classes)
 
 - **Group**: Tier 1 single-owner (smallest-first; 2 classes — kicks off the Tier 1 sequence)
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `66c4faa`
 - **Lines moved**: 13 (`dashboard.css` 4554 → 4538). Three rule blocks extracted: `.cost-card` (4-line block), `.cost-row` (6-line block including `.cost-row span` descendant rule), and the surrounding blank lines. New `CostCard.css` is 17 lines (banner + 3 rule blocks).
 - **Consumers updated**: `src/components/dashboard/CostCard.tsx` adds `import './CostCard.css';` after the existing imports (component-local CSS import; no `_shared`/cluster imports yet — those land in U41/U48). The `/* --- Cost Card --- */` section comment in `dashboard.css` is intentionally retained because `.cost-header`, `.cost-title`, `.cost-chevron(.expanded)` still live there until U41 (Tier 2 cluster move).
 - **Frontend review**: OK (fp `f302a0cd2345239bc304ef8b769bd963360949067d77b6bc8d4159fa79254e74`) — verdict from `code-reviewer` subagent: 0 critical / 0 major / 0 minor. Byte-identical declaration text confirmed (`.cost-card`, `.cost-row`, `.cost-row span` declarations match the original `dashboard.css:259–301` block 1:1). Banner present. Import path correct. Cluster/shared classes correctly retained in `dashboard.css`.
@@ -1543,7 +1543,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U3 — `dashboard/prompt-detail/PromptMemorySection.tsx` → `prompt-detail/PromptMemorySection.css` (Tier 1 single-owner, 2 classes)
 
 - **Group**: Tier 1 single-owner (2 classes — second smallest-first unit)
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `2a87d08`
 - **Lines moved**: 19 (`dashboard.css` 4538 → 4519). Two rule blocks extracted: `.prompt-memory-disclaimer` (10-line block) and `.prompt-memory-notice` (6-line block), plus the `/* Prompt detail memory section */` section comment and surrounding blank lines (the section comment is removed entirely because both classes under it are now relocated — no residual classes remain in that subsection of `dashboard.css`, unlike the U2 Cost Card region which kept the comment for `.cost-header`/`.cost-title`/`.cost-chevron`). New `PromptMemorySection.css` is 18 lines (banner + 2 rule blocks).
 - **Consumers updated**: `src/components/dashboard/prompt-detail/PromptMemorySection.tsx` adds `import './PromptMemorySection.css';` after the existing imports (sibling-relative; component-local). No `_shared`/cluster imports yet — those land in U43 (detail-section-cluster), U47 (memory-file shared), and U48 (collapsible shared).
 - **Frontend review**: OK (fp `81ad88865f16d69f317a82e884750a6a33aa9809045a925d9fabfef6fa2fac6d`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor. Byte-identical declaration text confirmed via diff against the original block. Banner present. Import path correct. Spot-check: `.detail-section*` (1672–1705), `.memory-file-*` (4161–4228), `.collapsible*` (4347–4370) all retained for U43/U47/U48.
@@ -1561,7 +1561,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U4 — `dashboard/prompt-detail/StatPill.tsx` → `prompt-detail/StatPill.css` (Tier 1 single-owner, 3 classes)
 
 - **Group**: Tier 1 single-owner (3 classes — third smallest-first unit)
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `9f09707`
 - **Lines moved**: 22 (`dashboard.css` 4519 → 4497). Three rule blocks extracted: `.stat-pill` (8-line block), `.stat-pill-value` (6-line block), `.stat-pill-label` (6-line block), plus surrounding blank lines. New `StatPill.css` is 23 lines (banner + 3 rule blocks). The `/* Stat pills */` section comment was already absent in `dashboard.css`, so no comment relocation needed (unlike U3 which removed the section comment alongside).
 - **Consumers updated**: `src/components/dashboard/prompt-detail/StatPill.tsx` adds `import './StatPill.css';` as the first line (sibling-relative; component-local). Component is exclusively rendered inside `PromptDetailView`'s prompt-meta strip, so no fan-out concerns.
 - **Frontend review**: OK (fp `06c25f6f1e0bc9970a0ece509e4d2c50f4fdc267edccfcf95b30c0575eebb182`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor. Byte-identical declaration text confirmed via diff against the original block. Banner present. Import path correct.
