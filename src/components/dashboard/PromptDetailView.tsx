@@ -11,7 +11,7 @@ import { ActionFlowList } from "./ActionFlowList";
 import { EvidenceSettings } from "./EvidenceSettings";
 import type { PromptScan, UsageLogEntry } from "../../types";
 import { usePromptDetail } from "./prompt-detail/usePromptDetail";
-import { buildInjectedEvidence } from "./prompt-detail/evidence";
+import { buildInjectedEvidence, collapseEvidenceToCounts } from "./prompt-detail/evidence";
 import { StatPill } from "./prompt-detail/StatPill";
 import { Section } from "./prompt-detail/Section";
 import { ContextFileList } from "./prompt-detail/ContextFileList";
@@ -197,9 +197,25 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
           onToggle={toggle}
           headerExtra={
             <>
-              <span className="injected-evidence-badge confirmed">C {injectedEvidence.confirmed.length}</span>
-              <span className="injected-evidence-badge likely">L {injectedEvidence.likely.length}</span>
-              <span className="injected-evidence-badge unverified">U {injectedEvidence.unverified.length}</span>
+              {(() => {
+                const counts = collapseEvidenceToCounts(injectedEvidence);
+                return (
+                  <>
+                    <span
+                      className="injected-evidence-badge confirmed"
+                      title="Files referenced by direct file actions (Read/Edit/Write) or scoring-engine confirmation."
+                    >
+                      Confirmed {counts.confirmed}
+                    </span>
+                    <span
+                      className="injected-evidence-badge not-confirmed"
+                      title="Files with only heuristic mentions (Bash input, response text, prompt text) or no trace at all. Expand the list for per-file detail."
+                    >
+                      Not-confirmed {counts.notConfirmed}
+                    </span>
+                  </>
+                );
+              })()}
               <button className="evidence-settings-btn" onClick={(e) => { e.stopPropagation(); setShowEvidenceSettings(true); }} aria-label="Evidence scoring settings">
                 &#x2699;
               </button>

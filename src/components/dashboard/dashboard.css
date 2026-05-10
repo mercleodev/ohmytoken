@@ -1463,6 +1463,11 @@
   background: rgba(107, 114, 128, 0.16);
 }
 
+.injected-evidence-badge.not-confirmed {
+  color: #6b7280;
+  background: rgba(107, 114, 128, 0.16);
+}
+
 .injected-evidence-group {
   margin-top: 8px;
 }

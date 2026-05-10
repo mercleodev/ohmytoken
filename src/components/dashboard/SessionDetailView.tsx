@@ -12,6 +12,7 @@ import {
 import { scrollToBottom } from "../../hooks";
 import type { PromptScan, UsageLogEntry, HistoryEntry, SessionMcpAnalysis } from "../../types";
 import { CacheGrowthChart } from "./CacheGrowthChart";
+import { buildInjectedEvidence, collapseEvidenceToCounts } from "./prompt-detail/evidence";
 import { SessionAlertBanner } from "./SessionAlert";
 import { getSessionAlerts } from "../../utils/sessionAlerts";
 import { getEfficiency } from "../../utils/efficiency";
@@ -50,6 +51,7 @@ const getMessageKey = (item: MessageItem): string => {
 const COMPACTION_MARKER = "Compacted (ctrl+o to see full summary)";
 
 const stripAnsi = (text: string): string =>
+  // eslint-disable-next-line no-control-regex -- ANSI escape (0x1b) is intentional here
   text.replace(/\x1b\[[0-9;]*m/g, "").replace(/\[[\d;]*m/g, "");
 
 const isDisplayablePrompt = (scan: PromptScan): boolean => {
@@ -520,7 +522,16 @@ export const SessionDetailView = ({
                       Prompt {formatTokens(item.scan.user_prompt_tokens || 0)}
                     </span>
                     <span className="prompt-card-journey-chip">
-                      Injected {item.scan.injected_files.length} files
+                      {(() => {
+                        const injectedCount = item.scan.injected_files.length;
+                        if (injectedCount === 0) return "Injected 0 files";
+                        const counts = collapseEvidenceToCounts(
+                          buildInjectedEvidence(item.scan),
+                        );
+                        return counts.confirmed > 0
+                          ? `Injected ${injectedCount} files (${counts.confirmed} confirmed)`
+                          : `Injected ${injectedCount} files`;
+                      })()}
                     </span>
                     <span className="prompt-card-journey-chip">
                       Actions {item.scan.tool_calls.length}
