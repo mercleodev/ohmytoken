@@ -1,17 +1,10 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T21:41:28Z
-fingerprint=86e614e1a67ee9643dab4c19f8c5a6cf38a20a896ed1ef2336feece8baa88591
+# updated_at_utc: 2026-05-10T21:56:28Z
+fingerprint=e3d959754b7d74270266c6fecc2f64979b2e4b9960edc71abcaa5ec0a4785b5a
 source=docs/sdd/style-checklist.md
-note=DOC-02: README.md already in allowlist; new assets are non-markdown (PNG+GIF). DOC-03: README and issue/PR text all English.
+note=DOC-02: README.md remains in allowlist; new asset is binary GIF. DOC-03: README caption and PR text in English.
 
-assets/readme/backfill-dialog.png
-assets/readme/dashboard-all.png
-assets/readme/dashboard-claude.png
 assets/readme/hero.gif
-assets/readme/memory-monitor.png
-assets/readme/onboarding.png
-assets/readme/prompt-detail.png
-assets/readme/settings-evidence.png
 docs/idea/landing-mockup.html
 docs/idea/logo-assets/favicon.svg
 docs/idea/logo-assets/logo-lockup.svg
