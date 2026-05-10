@@ -1,11 +1,11 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T21:29:19Z
-fingerprint=cfcc9d4945e2f6534b04bde65fd6c32684b7bc5a3b70ad9b79396aaa9c5ef02a
+# updated_at_utc: 2026-05-10T22:08:29Z
+fingerprint=8030b0735cb26810870ab72b6d35c0ff7f89356d0ba55b7a7321fedc2d95d650
 source=docs/sdd/style-checklist.md
-note=Hook autoinstall (#345): lifecycle wiring on Electron app.whenReady + will-quit, atomic write via tmp+rename, no consent dialog per product direction, command path single-quoted for spaces, settingsInstaller also drops parent hooks:{} when empty for byte-clean round-trip. bin/ ships in extraResources outside asar. All failures fail-soft, never block app start/quit.
+note=Stop-hook race fix (#349): server-side settle detection with stable-for window (intervalMs/stableForMs/maxWaitMs); handler + route async; existing 6 handler cases ported to await; new 4 settle cases + 1 race-reproduction case (intermediate→FINAL request_id transition + project nested_memory pickup). No new any/deps/assertions. Settle is non-blocking for claude (bin/stop-hook.mjs silent-fail + maxWaitMs cap).
 
-electron/hooks/__tests__/hookAutoInstall.spec.ts
-electron/hooks/hookAutoInstall.ts
-electron/hooks/settingsInstaller.ts
-electron/main.ts
-package.json
+electron/hooks/__tests__/scanFromTranscriptHandler.spec.ts
+electron/hooks/__tests__/transcriptSettle.spec.ts
+electron/hooks/scanFromTranscriptHandler.ts
+electron/hooks/transcriptReader.ts
+electron/proxy/server.ts

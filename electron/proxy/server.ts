@@ -129,12 +129,12 @@ const forwardRequest = (
   proxyReq.end();
 };
 
-const handleHookScanRoute = (
+const handleHookScanRoute = async (
   body: string,
   res: http.ServerResponse,
   options: ProxyOptions,
-): void => {
-  const result = handleScanFromTranscriptRequest(body, {
+): Promise<void> => {
+  const result = await handleScanFromTranscriptRequest(body, {
     globalClaudeMdPath:
       options.globalClaudeMdPath ?? path.join(os.homedir(), ".claude", "CLAUDE.md"),
     writeHookScan: (scan, usage) => {
@@ -160,7 +160,13 @@ const handleRequest = (
     requestsTotal++;
 
     if (req.method === "POST" && (req.url || "").split("?")[0] === HOOK_SCAN_ROUTE) {
-      handleHookScanRoute(body, res, options);
+      handleHookScanRoute(body, res, options).catch((err) => {
+        console.error("[hook-route] unexpected error:", err);
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "internal_error" }));
+        }
+      });
       return;
     }
 

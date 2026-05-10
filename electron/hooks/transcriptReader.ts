@@ -1,5 +1,77 @@
 import fs from "node:fs";
 
+export type TranscriptSettleOptions = {
+  /** Polling interval between size probes. */
+  intervalMs?: number;
+  /** File size must be unchanged for this many ms before we declare stable. */
+  stableForMs?: number;
+  /** Hard ceiling on total time spent waiting. */
+  maxWaitMs?: number;
+};
+
+export type TranscriptSettleResult = {
+  /** true when the file size held steady for `stableForMs` before the timeout. */
+  stable: boolean;
+  finalSize: number;
+  waitedMs: number;
+};
+
+const probeSize = (filePath: string): number => {
+  try {
+    return fs.statSync(filePath).size;
+  } catch {
+    return -1;
+  }
+};
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Waits until the transcript file size has been unchanged for at least
+ * `stableForMs`, or until `maxWaitMs` elapses. Resolves immediately if
+ * the file does not exist (nothing to read anyway).
+ *
+ * Issue #349: Claude Code's Stop hook fires before the runner flushes
+ * the final assistant message + nested_memory attachments for the cycle.
+ * A simple "two equal probes" check is fooled by writer-side pauses
+ * between flushes, so we require the size to hold steady for a window.
+ */
+export const waitForTranscriptSettle = async (
+  filePath: string,
+  options: TranscriptSettleOptions = {},
+): Promise<TranscriptSettleResult> => {
+  const intervalMs = options.intervalMs ?? 100;
+  const stableForMs = options.stableForMs ?? 300;
+  const maxWaitMs = options.maxWaitMs ?? 3000;
+  const start = Date.now();
+
+  let lastSize = probeSize(filePath);
+  if (lastSize < 0) {
+    return { stable: true, finalSize: 0, waitedMs: Date.now() - start };
+  }
+  let lastChangeAt = start;
+
+  while (true) {
+    await sleep(intervalMs);
+    const now = Date.now();
+    const current = probeSize(filePath);
+
+    if (current < 0) {
+      return { stable: true, finalSize: lastSize, waitedMs: now - start };
+    }
+    if (current !== lastSize) {
+      lastSize = current;
+      lastChangeAt = now;
+    }
+    if (now - lastChangeAt >= stableForMs) {
+      return { stable: true, finalSize: current, waitedMs: now - start };
+    }
+    if (now - start >= maxWaitMs) {
+      return { stable: false, finalSize: current, waitedMs: now - start };
+    }
+  }
+};
+
 export type TranscriptUsage = {
   input_tokens: number;
   output_tokens: number;
