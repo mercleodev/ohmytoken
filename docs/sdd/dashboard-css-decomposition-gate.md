@@ -1833,6 +1833,24 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - No `/* UNUSED candidate */` markers added (deferred to U50).
   - **Cluster orphan** `.token-composition-toggle-btn` (and `.token-composition-toggle-btn.active`) remain in `dashboard.css` at the original line position. Pending U38 (Tier 2 C8 cluster) for their final relocation to `dashboard/token-cluster.css`.
 
+#### U22 — `dashboard/prompt-detail/ContextFileList.tsx` → `prompt-detail/ContextFileList.css` (Tier 1 single-owner, 11 classes / 12 selectors)
+
+- **Group**: Tier 1 single-owner (11 classes — sixteenth Tier 1 unit landed).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 99 (`dashboard.css` 3585 → 3486). Twelve rule blocks extracted (11 classes + 1 `:hover` pseudo): `.context-file-list` (5-line), `.context-file-entry` (4-line), `.context-file-item` (14-line), `.context-file-item:hover` (3-line), `.context-file-left` (7-line), `.context-file-dot` (13-line, with `background: transparent !important`), `.context-file-info` (6-line), `.context-file-path` (7-line), `.context-file-reason` (7-line), `.context-file-right` (6-line), `.context-file-tokens` (5-line), `.context-file-low-util` (9-line). Section comment `/* Context File List (merged evidence + files) */` dropped. New `prompt-detail/ContextFileList.css` is 99 lines.
+- **Consumers updated**: `src/components/dashboard/prompt-detail/ContextFileList.tsx` adds `import './ContextFileList.css';` as the **first line**.
+- **Frontend review**: OK (fp `38174fa99f9410962f856ac332a6088c199ffb34c32f578129bfe7204e966e37`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U22 move .context-file-* to prompt-detail/ContextFileList.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 494 → 482 entries (12 deletions). Inventory: `425 → 414` distinct classes; `332 → 321` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **6/7 captured screens byte-equal** on the second pass with the **§7 critical surface `dashboard-prompt-detail` (94,955 B) byte-equal**. Pass-1 was an orchestrator early-death (only 2 screens captured — `dashboard-all-default` + `dashboard-claude`, both byte-equal; orchestrator died at screen 3 with `os error 35`). Pass-2 (hard-reset) recovered to 7 screens. Pass-2 byte-equal set: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), **`dashboard-prompt-detail` (94,955 B — §7 surface)**, `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B), `memory-monitor-collapsed` (118,017 B — canonical). One drift on `memory-monitor-expanded` (+173 B warm-up). ContextFileList does not render in any non-prompt-detail screen.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U22) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - `.context-file-dot` declares `background: transparent !important;` — preserved verbatim. The `!important` overrides any color-coding from inline `style={{}}` set by the React component.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

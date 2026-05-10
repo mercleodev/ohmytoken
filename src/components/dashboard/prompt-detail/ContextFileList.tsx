@@ -1,3 +1,4 @@
+import './ContextFileList.css';
 import { useState, useCallback, useMemo } from "react";
 import { formatTokens } from "../../scan/shared";
 import type { EvidenceStatus, InjectedEvidenceItem } from "./types";
