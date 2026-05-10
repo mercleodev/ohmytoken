@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatCost, formatTokens } from '../../utils/format';
+import './CostCard.css';
 
 type CostData = {
   todayCostUSD: number;

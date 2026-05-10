@@ -1,7 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-09T16:20:58Z
-fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
+# updated_at_utc: 2026-05-10T02:50:01Z
+fingerprint=83f1e491dbaaa262220d8d9c73cdc29698d627b3f4fe35ced6a343b1a397cf65
 source=docs/sdd/style-checklist.md
-note=U1-VR-b SHA backfill — replace placeholder with a8aaf64. Per §14 cadence rule.
+note=U2 move .cost-card/.cost-row to CostCard.css (Tier 1)
 
+docs/sdd/css-decomp-inventory/class-consumers.json
+docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
+src/components/dashboard/CostCard.css
+src/components/dashboard/CostCard.tsx
+src/components/dashboard/dashboard.css
