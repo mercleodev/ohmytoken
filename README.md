@@ -14,7 +14,10 @@
 </p>
 
 <p align="center">
-  <img src="assets/marketing/demo/ohmytoken-overview-demo.gif" alt="OhMyToken live usage notification demo" width="800" />
+  <img src="assets/readme/hero.gif" alt="OhMyToken in action — captured via agent-browser against the renderer mock harness" width="400" />
+</p>
+<p align="center">
+  <sub>Captured via <a href="https://github.com/vercel-labs/agent-browser">agent-browser</a> against the renderer mock harness — same window size as the real Electron app (400×640).</sub>
 </p>
 
 A privacy-first usage monitor for **Claude**, **Codex**, and **Gemini**. Tracking starts the moment you run a CLI session. No login, no OAuth, no cloud sync. Connect a provider account later if you want plan quotas and reset timing on top.
@@ -107,24 +110,32 @@ Deep tracking for the three CLIs developers actually use day-to-day.
 
 ## Screenshots
 
-Captured from real local usage views.
+Captured directly from the React renderer via [agent-browser](https://github.com/vercel-labs/agent-browser) at the real Electron window size (400×640, DPR 2). Mock fixtures shown — no real user data.
 
 <table>
   <tr>
-    <td width="50%"><img src="assets/marketing/screenshots/usage-overview-compact-suggested.png" alt="Usage overview showing compact suggested state" /></td>
-    <td width="50%"><img src="assets/marketing/screenshots/session-context-usage.png" alt="Session detail with context usage and cache growth" /></td>
+    <td width="50%"><img src="assets/readme/dashboard-all.png" alt="Unified dashboard with cost, prompt heatmap, stats, and recent prompts" /></td>
+    <td width="50%"><img src="assets/readme/dashboard-claude.png" alt="Claude tab with account-not-connected state and memory monitor" /></td>
   </tr>
   <tr>
-    <td><strong>Compact suggested.</strong> The dashboard flags prompts approaching the context limit.</td>
-    <td><strong>Session context.</strong> Context usage, cache growth, compaction markers, and prompt details.</td>
+    <td><strong>Unified dashboard.</strong> Cost, 365-day prompt heatmap, stats, and recent prompts in one view.</td>
+    <td><strong>Per-provider tab.</strong> Optional account-insights CTA, Claude memory monitor, and provider-scoped cost.</td>
   </tr>
   <tr>
-    <td width="50%"><img src="assets/marketing/screenshots/context-files-memory.png" alt="Prompt detail showing context files, memory, and actions" /></td>
-    <td width="50%"><img src="assets/marketing/screenshots/live-notification-insights.png" alt="Live notification overlay with reusable script warning and per-turn charts" /></td>
+    <td width="50%"><img src="assets/readme/prompt-detail.png" alt="Prompt detail showing context window treemap, model, cost, cache hit" /></td>
+    <td width="50%"><img src="assets/readme/memory-monitor.png" alt="Memory monitor expanded with project and feedback memory entries" /></td>
   </tr>
   <tr>
-    <td><strong>Context and memory.</strong> Injected files, memory entries, and action details in one prompt view.</td>
-    <td><strong>Live notification insights.</strong> A streaming prompt card surfaces reusable-script candidates, context files, session health, and per-turn context, cost, and output trends.</td>
+    <td><strong>Prompt detail.</strong> Context-window treemap, model and cost, cache hit, injected files, and prompt journey.</td>
+    <td><strong>Memory monitor.</strong> Claude memory files expanded with byte usage against the 200-line context budget.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/readme/onboarding.png" alt="First-run onboarding with three provider CLI cards" /></td>
+    <td width="50%"><img src="assets/readme/settings-evidence.png" alt="Evidence scoring settings panel" /></td>
+  </tr>
+  <tr>
+    <td><strong>First-run onboarding.</strong> Detected CLIs are listed with per-provider enable buttons — no account hookup required.</td>
+    <td><strong>Evidence scoring.</strong> Per-signal weights and thresholds for the guardrail assessment engine.</td>
   </tr>
 </table>
 
