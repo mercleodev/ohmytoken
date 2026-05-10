@@ -1816,7 +1816,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U21 — `dashboard/TokenCompositionChart.tsx` → `TokenCompositionChart.css` (Tier 1 single-owner, 11 classes, split-removal preserves cluster)
 
 - **Group**: Tier 1 single-owner (11 classes — fifteenth Tier 1 unit landed).
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `9027f9a`
 - **Lines moved**: 78 (`dashboard.css` 3663 → 3585; **split-removal**). Eleven rule blocks extracted: `.token-composition-header` (6-line), `.token-composition-toggle` (7-line), `.token-composition-chart` (3-line), `.token-composition-center-label` (8-line), `.token-composition-center-pct` (6-line), `.token-composition-center-sub` (5-line), `.token-composition-legend` (6-line), `.token-composition-legend-row` (6-line), `.token-composition-legend-dot` (6-line), `.token-composition-legend-label` (4-line), `.token-composition-legend-value` (4-line). New `TokenCompositionChart.css` is 72 lines.
 - **Split-removal pattern (new for this epic)**: U21 is the **first Tier 1 unit to perform a split removal** — it deletes pre-U21 dashboard.css lines `2694-2714` AND `2733-2789`, but **deliberately preserves** lines `2715-2732` containing `.token-composition-toggle-btn` and `.token-composition-toggle-btn.active` (multi-consumer cluster classes shared with `McpInsightsCard.tsx`; reserved for U38 C8 cluster move). Both section headers (`/* === Token Output Productivity === */` and `/* --- Token Composition Chart --- */`) dropped — the big header scoped U19 + U21 which are both now moved.
 - **Consumers updated**: `src/components/dashboard/TokenCompositionChart.tsx` adds `import './TokenCompositionChart.css';` as the **first line**.
