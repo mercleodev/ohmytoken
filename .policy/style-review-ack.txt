@@ -1,8 +1,10 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T09:03:22Z
-fingerprint=790ebc5190fd84bbf87f050fcaa0e994f23d9a686b63844be3e28179849dcca9
+# updated_at_utc: 2026-05-10T14:08:24Z
+fingerprint=20d0111eb20df4190dd2967a7bcaf4d0984ff16c28094823d462a4f2e29e2968
 source=docs/sdd/style-checklist.md
-note=Manual style checklist passed: no new `any`, type-only imports unchanged, no renames, no new deps, helpers stay inside electron/proxy boundary, no logging of credentials, error handling on the SSE path is unchanged (passthrough-first), helper APIs documented with file:line references and #338 cause A/B citations.
+note=Manual style checklist passed: kernel extraction is behavior-preserving for parseSystemField, parseSystemFieldWithContent intentionally untouched, marker gate guards user-typed text from false-positives, no new `any`, no new deps, helpers stay inside electron/proxy boundary, JSDocs cite issue #341 + capture date 2026-05-10.
 
-electron/proxy/__tests__/server.spec.ts
-electron/proxy/server.ts
+electron/proxy/__tests__/injectedFromMessages.spec.ts
+electron/proxy/injectedFromMessages.ts
+electron/proxy/scanBuilder.ts
+electron/proxy/systemParser.ts

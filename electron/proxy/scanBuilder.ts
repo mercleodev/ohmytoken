@@ -1,7 +1,32 @@
-import { PromptScan } from './types';
+import { InjectedFile, PromptScan } from './types';
 import { parseSystemField, estimateSystemTokens } from './systemParser';
+import { extractInjectedFromMessages } from './injectedFromMessages';
 import { analyzeMessages } from './messagesAnalyzer';
 import { countTokens } from '../analyzer/tokenCounter';
+
+/**
+ * Merge files captured from the legacy `system` field and from the CC
+ * 2.x `<system-reminder># claudeMd` user-message block (captured
+ * 2026-05-10, issue #341). Same path may appear in both transports
+ * during a CC version transition; keep the entry with the higher
+ * `estimated_tokens` so the row reflects the most informative copy.
+ * System-field entries lead the list; message-only entries are
+ * appended in the order returned by `extractInjectedFromMessages`.
+ */
+const mergeInjectedFiles = (
+  fromSystem: InjectedFile[],
+  fromMessages: InjectedFile[],
+): InjectedFile[] => {
+  const merged = new Map<string, InjectedFile>();
+  for (const f of fromSystem) merged.set(f.path, f);
+  for (const f of fromMessages) {
+    const prev = merged.get(f.path);
+    if (!prev || f.estimated_tokens > prev.estimated_tokens) {
+      merged.set(f.path, f);
+    }
+  }
+  return [...merged.values()];
+};
 
 export const buildPromptScan = (
   rawBody: string,
@@ -11,8 +36,11 @@ export const buildPromptScan = (
   try {
     const parsed = JSON.parse(rawBody);
 
-    // Parse system field
-    const injectedFiles = parseSystemField(parsed.system);
+    // Parse legacy system field + the CC 2.x `<system-reminder># claudeMd` user-message block (#341).
+    const injectedFiles = mergeInjectedFiles(
+      parseSystemField(parsed.system),
+      extractInjectedFromMessages(parsed.messages),
+    );
     const totalInjectedTokens = injectedFiles.reduce((sum, f) => sum + f.estimated_tokens, 0);
     const systemTokens = estimateSystemTokens(parsed.system);
 
