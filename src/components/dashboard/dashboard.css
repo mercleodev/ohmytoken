@@ -2763,65 +2763,6 @@
   cursor: default;
 }
 
-/* === Stats Card (mini chart on dashboard) === */
-
-.stats-card {
-  display: block;
-  width: 100%;
-  padding: 10px 16px 12px;
-  border: none;
-  border-top: 1px solid #ddddde;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.12s;
-}
-
-.stats-card:hover {
-  background: rgba(0, 0, 0, 0.03);
-}
-
-.stats-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.stats-card-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #4d4d4e;
-}
-
-.stats-card-chevron {
-  font-size: 16px;
-  color: #c7c7cc;
-}
-
-.stats-card-chart {
-  margin-bottom: 6px;
-}
-
-.stats-card-empty {
-  font-size: 12px;
-  color: #9b9c9e;
-  text-align: center;
-  padding: 8px 0;
-}
-
-.stats-card-summary {
-  font-size: 11px;
-  color: #9b9c9e;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.stats-card-dot {
-  color: #d0d0d2;
-}
-
 /* === Stats Detail View === */
 
 .stats-detail {

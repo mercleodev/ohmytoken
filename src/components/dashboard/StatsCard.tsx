@@ -1,3 +1,4 @@
+import './StatsCard.css';
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 import type { ScanStats } from '../../types';

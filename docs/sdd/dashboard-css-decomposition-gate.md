@@ -1728,6 +1728,26 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - `.action-filter-chip.active .action-filter-chip-dot` declares `!important` — preserved verbatim. The `!important` overrides any per-color dot fill when the parent chip is active.
   - `.action-filter-chip.active` uses `var(--chip-color, #007aff)` CSS custom property — the variable is set inline via React `style={{ '--chip-color': ... }}` based on the action-color map. Move preserves both the declaration and the fallback.
 
+#### U15 — `dashboard/StatsCard.tsx` → `StatsCard.css` (Tier 1 single-owner, 8 classes / 9 selectors) — landed ahead of U14
+
+- **Group**: Tier 1 single-owner (8 distinct classes, 9 selectors — eleventh Tier 1 unit landed; U14 (SessionAlert) was skipped because it requires a fixture trigger of alert state — deferred to a future session with fixture work).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 59 (`dashboard.css` 4040 → 3981 — **first sub-4000 milestone**). Nine rule blocks extracted: `.stats-card` (11-line), `.stats-card:hover` (3-line), `.stats-card-header` (6-line), `.stats-card-title` (5-line), `.stats-card-chevron` (4-line), `.stats-card-chart` (3-line), `.stats-card-empty` (6-line), `.stats-card-summary` (7-line), `.stats-card-dot` (3-line). Section comment `/* === Stats Card (mini chart on dashboard) === */` dropped (matches precedent). New `StatsCard.css` is 58 lines.
+- **Consumers updated**: `src/components/dashboard/StatsCard.tsx` adds `import './StatsCard.css';` as the **first line** (sibling-relative — file lives directly under `dashboard/`, not `prompt-detail/`).
+- **Disambiguation**: the surviving `.stats-detail*` family (`.stats-detail`, `.stats-detail-header`, etc.) belongs to **StatsDetailView** (U31 in §7) — preserved in `dashboard.css`. The multi-consumer `.stats-tooltip*` family (`.stats-tooltip`, `.stats-tooltip-date`, `.stats-tooltip-row`) remains in `dashboard.css` for the U44 Stats cluster move.
+- **Frontend review**: OK (fp `1a95d3fd674886ac7ef301df10495dd0b8439188d5e5c23ff5b2cae3672ed44f`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U15 move .stats-card* to StatsCard.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 559 → 550 entries (9 deletions). Zero re-ordering. Inventory: `474 → 466` distinct classes; `381 → 373` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **6/7 captured screens byte-equal** vs baseline on the first pass, with the **§7 critical surface `dashboard-all-default` (96,467 B) byte-equal**. Also byte-equal: `dashboard-claude` (146,288 B), `dashboard-prompt-detail` (94,955 B), `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B), and **`memory-monitor-expanded` (141,277 B — canonical hash this run)**. One drift: `memory-monitor-collapsed` 118,237 B vs canonical 118,017 B (+220 B). The U1-VR-d warm-up flake set rotates which screen happens to drift on a cold-daemon run; StatsCard does not render in any memory-monitor screen. Last 3 populated screens not captured (P0.5.6 deferred).
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged. 56 orphan classes unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U15) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - `.stats-card` is a `<button>` element styled as a clickable card with `border: none` + `cursor: pointer` + `text-align: left`. The hover state lightens the background. Both rules preserved verbatim.
+  - **Cumulative progress (post-U15)**: 10 Tier 1 units landed (U2, U3, U4, U5, U7, U9, U10, U11, U12, U13, U15 — skipped U6/U8/U14) — counting 11 lands but 1 placeholder swap means 10 of 36 distinct slots ≈ 28%. `dashboard.css` reduced from `4554` (pre-U2) → `3981` (post-U15), a 573-line / 12.6% reduction. **Crossed the sub-4000 line mark.** 11 new sibling CSS files. 81 cumulative selector deletions.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).
