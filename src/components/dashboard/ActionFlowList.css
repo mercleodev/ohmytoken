@@ -1,0 +1,206 @@
+/* Moved from dashboard.css in #330 U20. Owner: dashboard/ActionFlowList.tsx. */
+
+.action-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.action-time {
+  font-size: 10px;
+  color: #9b9c9e;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.action-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #595959;
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: center;
+}
+
+.action-detail {
+  font-size: 12px;
+  color: #595959;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-detail.expanded {
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
+}
+
+.action-clickable {
+  cursor: pointer;
+}
+
+.action-clickable:hover .action-detail {
+  color: #007aff;
+}
+
+.action-expandable {
+  cursor: pointer;
+}
+
+.action-expandable:hover .action-detail {
+  color: #6366f1;
+}
+
+.action-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.action-flow-live-label {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #4f46e5;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+}
+
+.action-flow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.action-flow-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.action-flow-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.02) 0%,
+    rgba(0, 0, 0, 0.012) 100%
+  );
+  text-align: left;
+  cursor: default;
+  transition:
+    background 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.action-flow-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.action-flow-order {
+  min-width: 24px;
+  margin-top: 1px;
+  font-size: 10px;
+  line-height: 1.2;
+  color: #9b9c9e;
+  font-variant-numeric: tabular-nums;
+}
+
+.action-flow-item .action-dot,
+.action-flow-item .action-badge {
+  margin-top: 2px;
+}
+
+.action-flow-item .action-dot-live {
+  animation: action-dot-live-pulse 0.95s ease-in-out infinite;
+}
+
+.action-flow-item-live {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 0 1px rgba(99, 102, 241, 0.3),
+    0 8px 20px rgba(99, 102, 241, 0.1);
+}
+
+.action-flow-item-live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0) 25%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0) 75%
+  );
+  transform: translateX(-130%);
+  animation: action-flow-shimmer 1.2s linear infinite;
+  pointer-events: none;
+}
+
+.action-flow-arrow {
+  margin-left: 14px;
+  height: 12px;
+  font-size: 10px;
+  line-height: 12px;
+  color: rgba(99, 102, 241, 0.5);
+  animation: action-flow-arrow 1s ease-in-out infinite;
+  user-select: none;
+}
+
+.action-flow-arrow-live {
+  color: rgba(99, 102, 241, 0.85);
+}
+
+@keyframes action-flow-arrow {
+  0% {
+    opacity: 0.18;
+    transform: translateY(-2px);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateY(1px);
+  }
+  100% {
+    opacity: 0.18;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes action-flow-shimmer {
+  from {
+    transform: translateX(-130%);
+  }
+  to {
+    transform: translateX(130%);
+  }
+}
+
+@keyframes action-dot-live-pulse {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.82);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.28);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(0.82);
+  }
+}

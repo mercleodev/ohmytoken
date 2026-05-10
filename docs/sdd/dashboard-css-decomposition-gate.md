@@ -1789,6 +1789,30 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - **Milestone reached**: 100 cumulative selector deletions crossed at U19 (selectors-ordered.txt 531 entries vs U1 baseline 631 → exactly 100 selectors moved out of `dashboard.css`).
   - **Cumulative progress (post-U19)**: 12 distinct Tier 1 slots landed (U2, U3, U4, U5, U7, U9, U10, U11, U12, U13, U15, U17, U19; U6/U8/U14/U16/U18 skipped or no-move). `dashboard.css` reduced from `4554` (pre-U2) → `3868` (post-U19), a 686-line / 15.1% reduction. 13 new sibling CSS files.
 
+#### U20 — `dashboard/ActionFlowList.tsx` → `ActionFlowList.css` (Tier 1 single-owner, 14 classes / 22 selectors + 3 @keyframes)
+
+- **Group**: Tier 1 single-owner (14 distinct classes, 22 selectors, 3 @keyframes — fourteenth Tier 1 unit landed). **Largest move so far** by line count (205 lines).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 205 (`dashboard.css` 3868 → 3663). Content moved from pre-U20 lines 1648-1852:
+  - 14 base/compound classes: `.action-dot`, `.action-time`, `.action-badge`, `.action-detail`, `.action-detail.expanded`, `.action-clickable`, `.action-clickable:hover .action-detail`, `.action-expandable`, `.action-expandable:hover .action-detail`, `.action-flow`, `.action-flow-live-label`, `.action-flow-list`, `.action-flow-entry`, `.action-flow-item`, `.action-flow-item:hover`, `.action-flow-order`, `.action-flow-item .action-dot, .action-flow-item .action-badge` (descendant), `.action-flow-item .action-dot-live` (descendant), `.action-flow-item-live`, `.action-flow-item-live::after` (pseudo), `.action-flow-arrow`, `.action-flow-arrow-live`.
+  - 3 `@keyframes` (animations triggered by classes above): `action-flow-arrow`, `action-flow-shimmer`, `action-dot-live-pulse`.
+  - New `ActionFlowList.css` is 206 lines (banner + 204 content lines from L1648-1851).
+- **Consumers updated**: `src/components/dashboard/ActionFlowList.tsx` adds `import './ActionFlowList.css';` as the **first line**.
+- **Dynamic className handling**: `.action-expandable` and `.action-flow-item-live` appear in the inventory as `consumerCount=0` because they are composed via template literal at `ActionFlowList.tsx:102` (` className={`action-flow-item${...}${canExpand ? " action-expandable" : ""}${isLiveTail ? " action-flow-item-live" : ""}`}`). The static analyzer missed them; manual grep confirmed they belong to ActionFlowList and they moved with it.
+- **Orphan preservation (separate from the dynamic-class concern above)**: a SEPARATE truly-orphan class `.action-item` (with descendant rules `.action-item .action-dot, .action-item .action-badge` and `.action-item:hover`) STAYS in `dashboard.css` for U50. Inventory `consumerCount=0`; grep confirms zero tsx references; appears to be dead code from an old rename to `.action-flow-item`. The section comment `/* Action List (replaces Tool List) */` also stays since the orphan `.action-item` lives under it.
+- **Frontend review**: OK (fp `b2fe65ba6fd61460b83e75a6a815b485fcef8573b7cdcdff4d3fb10107e92b91`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U20 move .action-{dot,badge,time,detail,clickable,expandable,flow}* + 3 keyframes to ActionFlowList.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 531 → 505 entries (26 deletions = 22 selectors + 3 @keyframes + 1 compound). Zero re-ordering. Inventory: `448 → 436` distinct classes; `355 → 343` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **5/7 captured screens byte-equal** vs baseline on the first pass, with the **§7 critical surface `dashboard-prompt-detail` (94,955 B) byte-equal**. Also byte-equal: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B). Two drifts on standard warm-up flake members: `memory-monitor-expanded` (+173 B), `memory-monitor-collapsed` (+220 B) — ActionFlowList does not render in either.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U20) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50). The orphan `.action-item` is a candidate for U50 marking.
+  - **3 @keyframes** all move with their consuming classes; this is the first Tier 1 unit to relocate keyframes (per §3 C4 "keyframes ... copy verbatim").
+  - **Cumulative progress (post-U20)**: 13 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `3663` (post-U20), an 891-line / 19.6% reduction. 14 new sibling CSS files. 126 cumulative selector-order deletions.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).
