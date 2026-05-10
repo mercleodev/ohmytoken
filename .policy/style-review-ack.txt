@@ -1,12 +1,7 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T09:09:23Z
-fingerprint=489c663ce785c405c842209b625e63afb05a10acc735ae9c25b2122ac7fa5bfb
+# updated_at_utc: 2026-05-10T09:35:12Z
+fingerprint=2f98cb6d5097d257884455785ab72945f0d7322199222dcb165fd53fbd3ed0ec
 source=docs/sdd/style-checklist.md
-note=U3 move .prompt-memory-disclaimer/.prompt-memory-notice to PromptMemorySection.css (Tier 1)
+note=docs(dashboard-css): codify §8 step 8a hard-reset preamble + §9.4.1 + §11 R9
 
-docs/sdd/css-decomp-inventory/class-consumers.json
-docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
-src/components/dashboard/dashboard.css
-src/components/dashboard/prompt-detail/PromptMemorySection.css
-src/components/dashboard/prompt-detail/PromptMemorySection.tsx

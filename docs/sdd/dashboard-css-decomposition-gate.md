@@ -882,11 +882,36 @@ Reproduced once; every U2+ unit references this SOP.
    bash scripts/ack-style-review.sh "U<n> <description>"
 
 8. Visual regression (mandatory):
-   - Capture canonical screens (§9.1)
-   - Capture this unit's declared visual surface (from §7 unit row)
-   - Diff each against U1 baseline; expect pixel-equal
-   - Acceptance: 0 pixels different. Any non-zero diff → root-cause and fix
-     before commit, OR document exception in §14 with user approval
+   8a. Hard-reset preamble (REQUIRED before every capture pass — see §9.4
+       and §11 R9; introduced after U3 found that cumulative state from
+       prior runs causes spurious diff and mid-run agent-browser EAGAIN):
+         agent-browser close 2>/dev/null || true
+         pkill -9 -f "Electron.app" 2>/dev/null || true
+         pkill -9 -f "agent-browser-darwin" 2>/dev/null || true
+         rm -rf /tmp/omt-qa-css-decomp-home-* \
+                /tmp/omt-qa-electron-*.log \
+                /tmp/omt-qa-renderer.log
+         sleep 2
+   8b. Capture into a unit-scoped OUT_DIR (verification artifact, not the
+       baseline; deleted after the diff is recorded in §14):
+         OUT_DIR="$PWD/docs/qa/runs/$(date -u +%Y-%m-%d)/U<n>" \
+           bash scripts/qa-capture-baseline.sh populated
+       (For units whose §7 surface lives in first-run/backfill/setup-guide
+       profiles, capture that profile too — most Tier 1 units only need
+       populated since the affected component renders inside UsageDashboard.)
+   8c. Capture this unit's declared visual surface (from §7 unit row).
+   8d. cmp against U1-VR-d baseline at docs/qa/runs/2026-05-10/baseline/
+       canonical/<screen>.png.
+   8e. Acceptance: 0 pixels different. Any non-zero diff → root-cause and
+       fix before commit, OR document exception in §14 with user approval.
+       For mass run-to-run flake without root cause: re-execute 8a + 8b
+       once. If a single post-reset run still does not produce 7/7
+       byte-equal, halt and root-cause before continuing — repeat-until-
+       green is NOT a valid acceptance path.
+   8f. After diff PASS recorded in §14, delete the unit OUT_DIR
+       (`rm -rf docs/qa/runs/$(date -u +%Y-%m-%d)/U<n>`). Per-unit captures
+       are evidence, not artifacts; the U1-VR-d baseline remains the only
+       PNG set tracked in git.
 
 9. Commit:
    git add -A
@@ -933,6 +958,22 @@ In addition to §9.1, each unit declares any extra surface its owner renders (ov
 - Wait selector: `[data-loaded="true"]` (or domain-specific) before each capture.
 - Fonts: Inter only; verify `font-family` resolved at capture time.
 - Fixture HOME: `/tmp/omt-qa-css-decomp-home` (seeded once in U1 baseline; reused by every later unit).
+
+### §9.4.1 Hard-reset preamble (added after U3 — required before every Tier 1+ capture pass)
+
+`scripts/qa-capture-baseline.sh` re-seeds the per-profile HOME on every invocation, but it does not reset adjacent Electron-side state — better-sqlite3 WAL files, the agent-browser daemon's CDP-session cache, and Electron's per-instance `Library/Application Support` namespacing all persist across runs. During U3 capture this caused (a) run-to-run flake on screens that don't even touch the moved CSS (e.g., `dashboard-claude` swinging 146 KB ↔ 94 KB between back-to-back runs) and (b) mid-run `agent-browser` EAGAIN failures. Issuing the following preamble before every visual capture pass eliminated both modes and produced 7/7 byte-equal on the very next run:
+
+```bash
+agent-browser close 2>/dev/null || true
+pkill -9 -f "Electron.app" 2>/dev/null || true
+pkill -9 -f "agent-browser-darwin" 2>/dev/null || true
+rm -rf /tmp/omt-qa-css-decomp-home-* \
+       /tmp/omt-qa-electron-*.log \
+       /tmp/omt-qa-renderer.log
+sleep 2
+```
+
+This preamble is now mandatory in §8 step 8a for every Tier 1/2/3 unit. The U1-VR-d "first capture is a warm-up" note in §14 generalizes to "first capture after any prior session is unstable; hard-reset is the canonical fix". `qa-capture-baseline.sh` itself was deliberately not modified — the preamble is the orchestrator's responsibility because some downstream invocations (e.g., Tier 3 full-stack runs in §9.3) may want to keep state warm intentionally.
 
 ### §9.5 Diff method
 
@@ -981,7 +1022,7 @@ In addition to §9.1, each unit declares any extra surface its owner renders (ov
 | R6 | Discovery of dead classes (orphan inventory) | High (already known: 56) | Low | U50 marks the 48 `true-orphan-candidate` entries; the other 8 require manual verification (overrides.json or grep proof) before any deletion attempt; full deletion deferred to follow-up epic |
 | R7 | `main` advances during epic; new component or new class added | Medium | Medium | §11 L7 (drift handling) — re-run inventory at start of each unit; halt if class set or consumer set changes for an in-flight class |
 | R8 | A unit's commit author/identity slips (<canonical-account> → <non-canonical-account-A> or <non-canonical-account-B>) | Low | Medium | C2 identity verification before every gh mutation; commit author is pinned by `.git-identity.local` |
-| R9 | Visual diff persistently fails on stabilization-related noise (font hinting, timezone) | Medium | Medium | §9.4 stabilization SOP; if still noisy, expand the wait-selector list and re-baseline once |
+| R9 | Visual diff persistently fails on stabilization-related noise (font hinting, timezone, cumulative SQLite/Electron state) | Medium | Medium | §9.4 stabilization SOP; §9.4.1 hard-reset preamble (added after U3, mandatory in §8 step 8a); if still noisy after a single post-reset run, halt and root-cause — repeat-until-green is not a valid acceptance path |
 | R10 | A unit accidentally widens scope (touches CSS declarations, renames classes) | Low | High | C4 reuse-first; frontend-review gate catches; if it slips, L1 revert |
 
 ### §11.2 Rollback ladder
