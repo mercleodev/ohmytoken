@@ -14,10 +14,10 @@
 </p>
 
 <p align="center">
-  <img src="assets/readme/hero.gif" alt="OhMyToken in action — provider tabs, recent prompts, and prompt detail showing the context-window treemap with memory, context files, and actions" width="400" />
+  <img src="assets/readme/hero.gif" alt="OhMyToken walkthrough — dashboard scroll, prompt detail context-window treemap, click a context file to open the markdown inline, then cycle Claude/Codex/Gemini tabs" width="400" />
 </p>
 <p align="center">
-  <sub>Provider tabs → recent prompts → prompt detail with the context-window treemap (memory, context files, actions). Captured via <a href="https://github.com/vercel-labs/agent-browser">agent-browser</a> against the renderer mock harness at the real Electron window size (400×640).</sub>
+  <sub>Dashboard scroll → prompt detail with the context-window treemap (memory, context files, actions) → click a context file to open the markdown inline → provider tabs. Captured via <a href="https://github.com/vercel-labs/agent-browser">agent-browser</a> against the renderer mock harness at the real Electron window size (400×640).</sub>
 </p>
 
 A privacy-first usage monitor for **Claude**, **Codex**, and **Gemini**. Tracking starts the moment you run a CLI session. No login, no OAuth, no cloud sync. Connect a provider account later if you want plan quotas and reset timing on top.

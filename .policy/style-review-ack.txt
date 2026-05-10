@@ -1,8 +1,8 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T21:56:28Z
+# updated_at_utc: 2026-05-10T22:05:26Z
 fingerprint=e3d959754b7d74270266c6fecc2f64979b2e4b9960edc71abcaa5ec0a4785b5a
 source=docs/sdd/style-checklist.md
-note=DOC-02: README.md remains in allowlist; new asset is binary GIF. DOC-03: README caption and PR text in English.
+note=DOC-02/03: README caption update only; GIF re-encoded; all English
 
 assets/readme/hero.gif
 docs/idea/landing-mockup.html
