@@ -5,7 +5,7 @@ export type PromptRow = {
   request_id: string;
   session_id: string;
   timestamp: string;
-  source: "proxy" | "history" | "file-scan";
+  source: "proxy" | "history" | "file-scan" | "hook";
   provider?: string; // "claude" | "codex" | "gemini" — defaults to "claude"
   user_prompt?: string;
   user_prompt_tokens?: number;

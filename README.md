@@ -172,12 +172,14 @@ Account state: `not_connected → connected` (or `expired` / `access_denied` / `
 ```
 electron/          Electron main process
   proxy/           HTTP proxy — intercept, parse SSE, calculate cost
+  hooks/           Stop-hook capture path — transcript reader + scan builder
   db/              SQLite persistence layer
   providers/       Multi-provider session watchers and account fetchers
   watcher/         Generic session-file watcher
   backfill/        Historical recovery plugins (Claude, Codex)
   evidence/        Evidence scoring engine
 src/               React frontend — usage dashboard and visualizations
+bin/               User-facing CLI entrypoints (e.g., Stop-hook script)
 assets/            Tray icons, sprites, marketing
 ```
 

@@ -16,7 +16,7 @@ type PromptQueryOptions = {
   session_id?: string;
   date?: string; // 'YYYY-MM-DD'
   model?: string;
-  source?: "proxy" | "history" | "file-scan";
+  source?: "proxy" | "history" | "file-scan" | "hook";
   provider?: string; // "claude" | "codex" | "gemini" — omit for all
 };
 
