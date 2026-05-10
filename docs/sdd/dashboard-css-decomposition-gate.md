@@ -1691,7 +1691,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U12 — `dashboard/prompt-detail/SignalBreakdown.tsx` → `prompt-detail/SignalBreakdown.css` (Tier 1 single-owner, 7 classes)
 
 - **Group**: Tier 1 single-owner (7 classes — ninth Tier 1 unit).
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `a541317`
 - **Lines moved**: 59 (`dashboard.css` 4178 → 4119). Seven rule blocks extracted: `.signal-breakdown` (9-line), `.signal-breakdown-row` (6-line), `.signal-breakdown-name` (8-line), `.signal-breakdown-score` (8-line), `.signal-bar-track` (8-line), `.signal-bar-fill` (6-line), `.signal-confidence-dot` (6-line). The `/* Signal Breakdown */` section comment was removed alongside (matches U3/U5/U7/U9/U10 precedent — section entirely relocated). New `prompt-detail/SignalBreakdown.css` is 59 lines.
 - **Consumers updated**: `src/components/dashboard/prompt-detail/SignalBreakdown.tsx` adds `import './SignalBreakdown.css';` as the **first line** (sibling-relative within prompt-detail subdir). Component renders inside `PromptDetailView` as part of the per-prompt signal evaluation summary.
 - **Frontend review**: OK (fp `3fc106700763070e95daa4454dd1cd9f161749173af9d74f805a353595294ffe`) — `code-reviewer` subagent verdict: 0 critical / 0 major / 0 minor.
