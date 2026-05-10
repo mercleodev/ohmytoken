@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T23:19:49Z
-fingerprint=7e0c4dc47134afd67a21c5aba56623335cf57dfb90422361d405c0193cc24462
+# updated_at_utc: 2026-05-10T23:27:24Z
+fingerprint=a574b1243fa3bc1163ef36aafee59d6edbea7ddb1c82705621639a3a1f7061ba
 source=docs/sdd/style-checklist.md
-note=U27 move .injected-evidence-{group,dot,list,entry,item}* + .evidence-score-* to prompt-detail/EvidenceGroup.css (Tier 1)
+note=U28 move .provider-header* + .usage-last-updated + .prepaid-notice* + .credit-balance-* to UsageView.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/prompt-detail/EvidenceGroup.css
-src/components/dashboard/prompt-detail/EvidenceGroup.tsx
+src/components/dashboard/UsageView.css
+src/components/dashboard/UsageView.tsx

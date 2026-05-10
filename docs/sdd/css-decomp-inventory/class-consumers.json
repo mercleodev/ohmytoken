@@ -1,10 +1,10 @@
 {
-  "generated": "2026-05-10T23:17:23.453Z",
+  "generated": "2026-05-10T23:25:07.032Z",
   "source": "src/components/dashboard/dashboard.css",
   "sharedTargetDir": "src/components/dashboard/_shared/",
-  "totalClasses": 371,
+  "totalClasses": 355,
   "counts": {
-    "single-owner": 281,
+    "single-owner": 265,
     "cluster": 25,
     "shared": 12,
     "orphan": 53,
@@ -94,98 +94,8 @@
       "orphanClass": null
     },
     {
-      "class": "provider-header",
-      "firstLine": 51,
-      "firstSelector": ".provider-header",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "provider-header-left",
-      "firstLine": 60,
-      "firstSelector": ".provider-header-left",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "provider-header-name",
-      "firstLine": 66,
-      "firstSelector": ".provider-header-name",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "provider-header-updated",
-      "firstLine": 72,
-      "firstSelector": ".provider-header-updated",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "provider-header-plan",
-      "firstLine": 78,
-      "firstSelector": ".provider-header-plan",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "usage-last-updated",
-      "firstLine": 84,
-      "firstSelector": ".usage-last-updated",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
       "class": "cost-header",
-      "firstLine": 93,
+      "firstLine": 51,
       "firstSelector": ".cost-header",
       "definitionCount": 2,
       "consumers": [
@@ -202,7 +112,7 @@
     },
     {
       "class": "cost-title",
-      "firstLine": 103,
+      "firstLine": 61,
       "firstSelector": ".cost-title",
       "definitionCount": 1,
       "consumers": [
@@ -219,7 +129,7 @@
     },
     {
       "class": "cost-chevron",
-      "firstLine": 109,
+      "firstLine": 67,
       "firstSelector": ".cost-chevron",
       "definitionCount": 2,
       "consumers": [
@@ -236,7 +146,7 @@
     },
     {
       "class": "expanded",
-      "firstLine": 115,
+      "firstLine": 73,
       "firstSelector": ".cost-chevron.expanded",
       "definitionCount": 4,
       "consumers": [],
@@ -247,7 +157,7 @@
     },
     {
       "class": "dashboard-menu",
-      "firstLine": 119,
+      "firstLine": 77,
       "firstSelector": ".dashboard-menu",
       "definitionCount": 1,
       "consumers": [],
@@ -258,7 +168,7 @@
     },
     {
       "class": "menu-item",
-      "firstLine": 126,
+      "firstLine": 84,
       "firstSelector": ".menu-item",
       "definitionCount": 2,
       "consumers": [],
@@ -269,7 +179,7 @@
     },
     {
       "class": "menu-item-icon",
-      "firstLine": 146,
+      "firstLine": 104,
       "firstSelector": ".menu-item-icon",
       "definitionCount": 1,
       "consumers": [],
@@ -280,7 +190,7 @@
     },
     {
       "class": "setup-guide",
-      "firstLine": 153,
+      "firstLine": 111,
       "firstSelector": ".setup-guide",
       "definitionCount": 1,
       "consumers": [
@@ -296,7 +206,7 @@
     },
     {
       "class": "setup-guide-icon",
-      "firstLine": 160,
+      "firstLine": 118,
       "firstSelector": ".setup-guide-icon",
       "definitionCount": 1,
       "consumers": [
@@ -312,7 +222,7 @@
     },
     {
       "class": "setup-guide-title",
-      "firstLine": 166,
+      "firstLine": 124,
       "firstSelector": ".setup-guide-title",
       "definitionCount": 1,
       "consumers": [
@@ -328,7 +238,7 @@
     },
     {
       "class": "setup-guide-desc",
-      "firstLine": 173,
+      "firstLine": 131,
       "firstSelector": ".setup-guide-desc",
       "definitionCount": 1,
       "consumers": [
@@ -343,7 +253,7 @@
     },
     {
       "class": "setup-command-block",
-      "firstLine": 180,
+      "firstLine": 138,
       "firstSelector": ".setup-command-block",
       "definitionCount": 1,
       "consumers": [
@@ -358,7 +268,7 @@
     },
     {
       "class": "setup-command-text",
-      "firstLine": 190,
+      "firstLine": 148,
       "firstSelector": ".setup-command-text",
       "definitionCount": 1,
       "consumers": [
@@ -373,7 +283,7 @@
     },
     {
       "class": "setup-copy-btn",
-      "firstLine": 199,
+      "firstLine": 157,
       "firstSelector": ".setup-copy-btn",
       "definitionCount": 3,
       "consumers": [
@@ -388,7 +298,7 @@
     },
     {
       "class": "copied",
-      "firstLine": 216,
+      "firstLine": 174,
       "firstSelector": ".setup-copy-btn.copied",
       "definitionCount": 1,
       "consumers": [],
@@ -399,7 +309,7 @@
     },
     {
       "class": "setup-guide-hint",
-      "firstLine": 221,
+      "firstLine": 179,
       "firstSelector": ".setup-guide-hint",
       "definitionCount": 1,
       "consumers": [
@@ -413,158 +323,8 @@
       "orphanClass": null
     },
     {
-      "class": "prepaid-notice",
-      "firstLine": 227,
-      "firstSelector": ".prepaid-notice",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "prepaid-notice-icon",
-      "firstLine": 239,
-      "firstSelector": ".prepaid-notice-icon",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "prepaid-notice-text",
-      "firstLine": 254,
-      "firstSelector": ".prepaid-notice-text",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "credit-balance-card",
-      "firstLine": 260,
-      "firstSelector": ".credit-balance-card",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "credit-balance-header",
-      "firstLine": 274,
-      "firstSelector": ".credit-balance-header",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "credit-balance-amount",
-      "firstLine": 281,
-      "firstSelector": ".credit-balance-amount",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "credit-balance-detail",
-      "firstLine": 289,
-      "firstSelector": ".credit-balance-detail",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "credit-balance-row",
-      "firstLine": 296,
-      "firstSelector": ".credit-balance-row",
-      "definitionCount": 3,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "credit-balance-bar-track",
-      "firstLine": 311,
-      "firstSelector": ".credit-balance-bar-track",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "credit-balance-bar-fill",
-      "firstLine": 318,
-      "firstSelector": ".credit-balance-bar-fill",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/UsageView.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
       "class": "dashboard-content",
-      "firstLine": 325,
+      "firstLine": 185,
       "firstSelector": ".dashboard-content",
       "definitionCount": 1,
       "consumers": [
@@ -579,7 +339,7 @@
     },
     {
       "class": "dashboard-refresh-btn",
-      "firstLine": 333,
+      "firstLine": 193,
       "firstSelector": ".dashboard-refresh-btn",
       "definitionCount": 3,
       "consumers": [
@@ -594,7 +354,7 @@
     },
     {
       "class": "loading",
-      "firstLine": 351,
+      "firstLine": 211,
       "firstSelector": ".dashboard-refresh-btn.loading",
       "definitionCount": 1,
       "consumers": [],
@@ -605,7 +365,7 @@
     },
     {
       "class": "dashboard-back-btn",
-      "firstLine": 355,
+      "firstLine": 215,
       "firstSelector": ".dashboard-back-btn",
       "definitionCount": 2,
       "consumers": [],
@@ -616,7 +376,7 @@
     },
     {
       "class": "recent-sessions",
-      "firstLine": 375,
+      "firstLine": 235,
       "firstSelector": ".recent-sessions",
       "definitionCount": 1,
       "consumers": [
@@ -631,7 +391,7 @@
     },
     {
       "class": "recent-sessions-header",
-      "firstLine": 383,
+      "firstLine": 243,
       "firstSelector": ".recent-sessions-header",
       "definitionCount": 1,
       "consumers": [
@@ -646,7 +406,7 @@
     },
     {
       "class": "recent-sessions-title",
-      "firstLine": 390,
+      "firstLine": 250,
       "firstSelector": ".recent-sessions-title",
       "definitionCount": 1,
       "consumers": [
@@ -661,7 +421,7 @@
     },
     {
       "class": "recent-sessions-count",
-      "firstLine": 396,
+      "firstLine": 256,
       "firstSelector": ".recent-sessions-count",
       "definitionCount": 1,
       "consumers": [
@@ -676,7 +436,7 @@
     },
     {
       "class": "recent-sessions-empty",
-      "firstLine": 404,
+      "firstLine": 264,
       "firstSelector": ".recent-sessions-empty",
       "definitionCount": 2,
       "consumers": [
@@ -691,7 +451,7 @@
     },
     {
       "class": "recent-view-more-btn",
-      "firstLine": 415,
+      "firstLine": 275,
       "firstSelector": ".recent-view-more-btn",
       "definitionCount": 3,
       "consumers": [
@@ -706,7 +466,7 @@
     },
     {
       "class": "session-card",
-      "firstLine": 442,
+      "firstLine": 302,
       "firstSelector": ".session-card",
       "definitionCount": 3,
       "consumers": [
@@ -721,7 +481,7 @@
     },
     {
       "class": "session-card-top",
-      "firstLine": 463,
+      "firstLine": 323,
       "firstSelector": ".session-card-top",
       "definitionCount": 1,
       "consumers": [
@@ -736,7 +496,7 @@
     },
     {
       "class": "session-card-prompt",
-      "firstLine": 470,
+      "firstLine": 330,
       "firstSelector": ".session-card-prompt",
       "definitionCount": 1,
       "consumers": [
@@ -751,7 +511,7 @@
     },
     {
       "class": "session-card-time",
-      "firstLine": 480,
+      "firstLine": 340,
       "firstSelector": ".session-card-time",
       "definitionCount": 1,
       "consumers": [
@@ -766,7 +526,7 @@
     },
     {
       "class": "session-card-meta",
-      "firstLine": 488,
+      "firstLine": 348,
       "firstSelector": ".session-card-meta",
       "definitionCount": 1,
       "consumers": [
@@ -781,7 +541,7 @@
     },
     {
       "class": "session-card-project",
-      "firstLine": 496,
+      "firstLine": 356,
       "firstSelector": ".session-card-project",
       "definitionCount": 1,
       "consumers": [],
@@ -792,7 +552,7 @@
     },
     {
       "class": "session-card-row",
-      "firstLine": 500,
+      "firstLine": 360,
       "firstSelector": ".session-card-row",
       "definitionCount": 1,
       "consumers": [
@@ -807,7 +567,7 @@
     },
     {
       "class": "session-card-body",
-      "firstLine": 507,
+      "firstLine": 367,
       "firstSelector": ".session-card-body",
       "definitionCount": 1,
       "consumers": [
@@ -822,7 +582,7 @@
     },
     {
       "class": "session-card-compact-hint",
-      "firstLine": 512,
+      "firstLine": 372,
       "firstSelector": ".session-card-compact-hint",
       "definitionCount": 1,
       "consumers": [
@@ -837,7 +597,7 @@
     },
     {
       "class": "session-card-compacted-label",
-      "firstLine": 525,
+      "firstLine": 385,
       "firstSelector": ".session-card-compacted-label",
       "definitionCount": 1,
       "consumers": [
@@ -852,7 +612,7 @@
     },
     {
       "class": "session-card-branch",
-      "firstLine": 538,
+      "firstLine": 398,
       "firstSelector": ".session-card-branch",
       "definitionCount": 1,
       "consumers": [
@@ -867,7 +627,7 @@
     },
     {
       "class": "provider-badge",
-      "firstLine": 552,
+      "firstLine": 412,
       "firstSelector": ".provider-badge",
       "definitionCount": 1,
       "consumers": [
@@ -882,7 +642,7 @@
     },
     {
       "class": "mini-ctx-gauge",
-      "firstLine": 559,
+      "firstLine": 419,
       "firstSelector": ".mini-ctx-gauge",
       "definitionCount": 1,
       "consumers": [
@@ -897,7 +657,7 @@
     },
     {
       "class": "mini-ctx-gauge-pct",
-      "firstLine": 568,
+      "firstLine": 428,
       "firstSelector": ".mini-ctx-gauge-pct",
       "definitionCount": 1,
       "consumers": [
@@ -912,7 +672,7 @@
     },
     {
       "class": "mini-ctx-gauge--nodata",
-      "firstLine": 575,
+      "firstLine": 435,
       "firstSelector": ".mini-ctx-gauge--nodata",
       "definitionCount": 1,
       "consumers": [
@@ -927,7 +687,7 @@
     },
     {
       "class": "session-detail-header",
-      "firstLine": 579,
+      "firstLine": 439,
       "firstSelector": ".session-detail-header",
       "definitionCount": 1,
       "consumers": [
@@ -942,7 +702,7 @@
     },
     {
       "class": "session-back-btn",
-      "firstLine": 589,
+      "firstLine": 449,
       "firstSelector": ".session-back-btn",
       "definitionCount": 2,
       "consumers": [
@@ -958,7 +718,7 @@
     },
     {
       "class": "session-detail-title",
-      "firstLine": 605,
+      "firstLine": 465,
       "firstSelector": ".session-detail-title",
       "definitionCount": 1,
       "consumers": [
@@ -973,7 +733,7 @@
     },
     {
       "class": "session-detail-summary",
-      "firstLine": 615,
+      "firstLine": 475,
       "firstSelector": ".session-detail-summary",
       "definitionCount": 1,
       "consumers": [],
@@ -984,7 +744,7 @@
     },
     {
       "class": "prompt-list",
-      "firstLine": 626,
+      "firstLine": 486,
       "firstSelector": ".prompt-list",
       "definitionCount": 1,
       "consumers": [
@@ -999,7 +759,7 @@
     },
     {
       "class": "prompt-list-loading",
-      "firstLine": 634,
+      "firstLine": 494,
       "firstSelector": ".prompt-list-loading",
       "definitionCount": 1,
       "consumers": [
@@ -1014,7 +774,7 @@
     },
     {
       "class": "prompt-list-empty",
-      "firstLine": 641,
+      "firstLine": 501,
       "firstSelector": ".prompt-list-empty",
       "definitionCount": 1,
       "consumers": [
@@ -1029,7 +789,7 @@
     },
     {
       "class": "prompt-card",
-      "firstLine": 648,
+      "firstLine": 508,
       "firstSelector": ".prompt-card",
       "definitionCount": 2,
       "consumers": [
@@ -1044,7 +804,7 @@
     },
     {
       "class": "prompt-card-top",
-      "firstLine": 665,
+      "firstLine": 525,
       "firstSelector": ".prompt-card-top",
       "definitionCount": 1,
       "consumers": [
@@ -1059,7 +819,7 @@
     },
     {
       "class": "prompt-card-model",
-      "firstLine": 672,
+      "firstLine": 532,
       "firstSelector": ".prompt-card-model",
       "definitionCount": 1,
       "consumers": [
@@ -1074,7 +834,7 @@
     },
     {
       "class": "prompt-card-time",
-      "firstLine": 677,
+      "firstLine": 537,
       "firstSelector": ".prompt-card-time",
       "definitionCount": 1,
       "consumers": [
@@ -1089,7 +849,7 @@
     },
     {
       "class": "prompt-card-text",
-      "firstLine": 682,
+      "firstLine": 542,
       "firstSelector": ".prompt-card-text",
       "definitionCount": 1,
       "consumers": [
@@ -1104,7 +864,7 @@
     },
     {
       "class": "prompt-card-journey",
-      "firstLine": 692,
+      "firstLine": 552,
       "firstSelector": ".prompt-card-journey",
       "definitionCount": 1,
       "consumers": [
@@ -1119,7 +879,7 @@
     },
     {
       "class": "prompt-card-journey-chip",
-      "firstLine": 699,
+      "firstLine": 559,
       "firstSelector": ".prompt-card-journey-chip",
       "definitionCount": 3,
       "consumers": [
@@ -1134,7 +894,7 @@
     },
     {
       "class": "cache",
-      "firstLine": 710,
+      "firstLine": 570,
       "firstSelector": ".prompt-card-journey-chip.cache",
       "definitionCount": 1,
       "consumers": [
@@ -1149,7 +909,7 @@
     },
     {
       "class": "delta",
-      "firstLine": 715,
+      "firstLine": 575,
       "firstSelector": ".prompt-card-journey-chip.delta",
       "definitionCount": 1,
       "consumers": [
@@ -1164,7 +924,7 @@
     },
     {
       "class": "prompt-card-meta",
-      "firstLine": 720,
+      "firstLine": 580,
       "firstSelector": ".prompt-card-meta",
       "definitionCount": 1,
       "consumers": [
@@ -1179,7 +939,7 @@
     },
     {
       "class": "prompt-card-chevron",
-      "firstLine": 728,
+      "firstLine": 588,
       "firstSelector": ".prompt-card-chevron",
       "definitionCount": 1,
       "consumers": [
@@ -1194,7 +954,7 @@
     },
     {
       "class": "prompt-card-injected",
-      "firstLine": 734,
+      "firstLine": 594,
       "firstSelector": ".prompt-card-injected",
       "definitionCount": 1,
       "consumers": [
@@ -1209,7 +969,7 @@
     },
     {
       "class": "prompt-card-injected-bar",
-      "firstLine": 739,
+      "firstLine": 599,
       "firstSelector": ".prompt-card-injected-bar",
       "definitionCount": 4,
       "consumers": [
@@ -1224,7 +984,7 @@
     },
     {
       "class": "injected-segment",
-      "firstLine": 758,
+      "firstLine": 618,
       "firstSelector": ".injected-segment",
       "definitionCount": 3,
       "consumers": [
@@ -1239,7 +999,7 @@
     },
     {
       "class": "prompt-card-injected-label",
-      "firstLine": 792,
+      "firstLine": 652,
       "firstSelector": ".prompt-card-injected-label",
       "definitionCount": 1,
       "consumers": [],
@@ -1250,7 +1010,7 @@
     },
     {
       "class": "prompt-card-injected-pct",
-      "firstLine": 803,
+      "firstLine": 663,
       "firstSelector": ".prompt-card-injected-pct",
       "definitionCount": 1,
       "consumers": [],
@@ -1261,7 +1021,7 @@
     },
     {
       "class": "guardrail-summary",
-      "firstLine": 813,
+      "firstLine": 673,
       "firstSelector": ".guardrail-summary",
       "definitionCount": 1,
       "consumers": [
@@ -1276,7 +1036,7 @@
     },
     {
       "class": "guardrail-summary-header",
-      "firstLine": 820,
+      "firstLine": 680,
       "firstSelector": ".guardrail-summary-header",
       "definitionCount": 1,
       "consumers": [
@@ -1291,7 +1051,7 @@
     },
     {
       "class": "guardrail-summary-title",
-      "firstLine": 827,
+      "firstLine": 687,
       "firstSelector": ".guardrail-summary-title",
       "definitionCount": 1,
       "consumers": [
@@ -1306,7 +1066,7 @@
     },
     {
       "class": "guardrail-health-badge",
-      "firstLine": 833,
+      "firstLine": 693,
       "firstSelector": ".guardrail-health-badge",
       "definitionCount": 1,
       "consumers": [
@@ -1321,7 +1081,7 @@
     },
     {
       "class": "guardrail-primary-detail",
-      "firstLine": 842,
+      "firstLine": 702,
       "firstSelector": ".guardrail-primary-detail",
       "definitionCount": 1,
       "consumers": [
@@ -1336,7 +1096,7 @@
     },
     {
       "class": "guardrail-primary-title-row",
-      "firstLine": 851,
+      "firstLine": 711,
       "firstSelector": ".guardrail-primary-title-row",
       "definitionCount": 1,
       "consumers": [
@@ -1351,7 +1111,7 @@
     },
     {
       "class": "guardrail-primary-icon",
-      "firstLine": 858,
+      "firstLine": 718,
       "firstSelector": ".guardrail-primary-icon",
       "definitionCount": 1,
       "consumers": [
@@ -1366,7 +1126,7 @@
     },
     {
       "class": "guardrail-primary-title",
-      "firstLine": 863,
+      "firstLine": 723,
       "firstSelector": ".guardrail-primary-title",
       "definitionCount": 1,
       "consumers": [
@@ -1381,7 +1141,7 @@
     },
     {
       "class": "guardrail-primary-confidence",
-      "firstLine": 870,
+      "firstLine": 730,
       "firstSelector": ".guardrail-primary-confidence",
       "definitionCount": 1,
       "consumers": [
@@ -1396,7 +1156,7 @@
     },
     {
       "class": "guardrail-primary-reason",
-      "firstLine": 876,
+      "firstLine": 736,
       "firstSelector": ".guardrail-primary-reason",
       "definitionCount": 1,
       "consumers": [
@@ -1411,7 +1171,7 @@
     },
     {
       "class": "guardrail-primary-action",
-      "firstLine": 883,
+      "firstLine": 743,
       "firstSelector": ".guardrail-primary-action",
       "definitionCount": 1,
       "consumers": [
@@ -1426,7 +1186,7 @@
     },
     {
       "class": "guardrail-primary-savings",
-      "firstLine": 890,
+      "firstLine": 750,
       "firstSelector": ".guardrail-primary-savings",
       "definitionCount": 1,
       "consumers": [
@@ -1441,7 +1201,7 @@
     },
     {
       "class": "guardrail-evidence-list",
-      "firstLine": 897,
+      "firstLine": 757,
       "firstSelector": ".guardrail-evidence-list",
       "definitionCount": 1,
       "consumers": [
@@ -1456,7 +1216,7 @@
     },
     {
       "class": "guardrail-evidence-item",
-      "firstLine": 903,
+      "firstLine": 763,
       "firstSelector": ".guardrail-evidence-item",
       "definitionCount": 1,
       "consumers": [
@@ -1471,7 +1231,7 @@
     },
     {
       "class": "guardrail-secondary-list",
-      "firstLine": 909,
+      "firstLine": 769,
       "firstSelector": ".guardrail-secondary-list",
       "definitionCount": 1,
       "consumers": [
@@ -1486,7 +1246,7 @@
     },
     {
       "class": "guardrail-secondary-item",
-      "firstLine": 916,
+      "firstLine": 776,
       "firstSelector": ".guardrail-secondary-item",
       "definitionCount": 1,
       "consumers": [
@@ -1501,7 +1261,7 @@
     },
     {
       "class": "guardrail-secondary-icon",
-      "firstLine": 927,
+      "firstLine": 787,
       "firstSelector": ".guardrail-secondary-icon",
       "definitionCount": 1,
       "consumers": [
@@ -1516,7 +1276,7 @@
     },
     {
       "class": "guardrail-secondary-content",
-      "firstLine": 933,
+      "firstLine": 793,
       "firstSelector": ".guardrail-secondary-content",
       "definitionCount": 1,
       "consumers": [
@@ -1531,7 +1291,7 @@
     },
     {
       "class": "guardrail-secondary-title",
-      "firstLine": 940,
+      "firstLine": 800,
       "firstSelector": ".guardrail-secondary-title",
       "definitionCount": 1,
       "consumers": [
@@ -1546,7 +1306,7 @@
     },
     {
       "class": "guardrail-secondary-reason",
-      "firstLine": 946,
+      "firstLine": 806,
       "firstSelector": ".guardrail-secondary-reason",
       "definitionCount": 1,
       "consumers": [
@@ -1561,7 +1321,7 @@
     },
     {
       "class": "guardrail-lowvalue-section",
-      "firstLine": 952,
+      "firstLine": 812,
       "firstSelector": ".guardrail-lowvalue-section",
       "definitionCount": 1,
       "consumers": [
@@ -1576,7 +1336,7 @@
     },
     {
       "class": "guardrail-lowvalue-item",
-      "firstLine": 956,
+      "firstLine": 816,
       "firstSelector": ".guardrail-lowvalue-item",
       "definitionCount": 1,
       "consumers": [
@@ -1591,7 +1351,7 @@
     },
     {
       "class": "guardrail-lowvalue-tokens",
-      "firstLine": 963,
+      "firstLine": 823,
       "firstSelector": ".guardrail-lowvalue-tokens",
       "definitionCount": 1,
       "consumers": [
@@ -1606,7 +1366,7 @@
     },
     {
       "class": "guardrail-lowvalue-note",
-      "firstLine": 971,
+      "firstLine": 831,
       "firstSelector": ".guardrail-lowvalue-note",
       "definitionCount": 1,
       "consumers": [
@@ -1621,7 +1381,7 @@
     },
     {
       "class": "journey-summary-files",
-      "firstLine": 976,
+      "firstLine": 836,
       "firstSelector": ".journey-summary-files",
       "definitionCount": 1,
       "consumers": [],
@@ -1632,7 +1392,7 @@
     },
     {
       "class": "journey-summary-file",
-      "firstLine": 983,
+      "firstLine": 843,
       "firstSelector": ".journey-summary-file",
       "definitionCount": 2,
       "consumers": [],
@@ -1643,7 +1403,7 @@
     },
     {
       "class": "journey-summary-file-name",
-      "firstLine": 1001,
+      "firstLine": 861,
       "firstSelector": ".journey-summary-file-name",
       "definitionCount": 1,
       "consumers": [],
@@ -1654,7 +1414,7 @@
     },
     {
       "class": "journey-summary-file-tokens",
-      "firstLine": 1010,
+      "firstLine": 870,
       "firstSelector": ".journey-summary-file-tokens",
       "definitionCount": 1,
       "consumers": [],
@@ -1665,7 +1425,7 @@
     },
     {
       "class": "injected-evidence-summary",
-      "firstLine": 1015,
+      "firstLine": 875,
       "firstSelector": ".injected-evidence-summary",
       "definitionCount": 1,
       "consumers": [],
@@ -1676,7 +1436,7 @@
     },
     {
       "class": "evidence-breakdown-toggle",
-      "firstLine": 1021,
+      "firstLine": 881,
       "firstSelector": ".evidence-breakdown-toggle",
       "definitionCount": 2,
       "consumers": [
@@ -1692,7 +1452,7 @@
     },
     {
       "class": "detail-section-header-right",
-      "firstLine": 1039,
+      "firstLine": 899,
       "firstSelector": ".detail-section-header-right",
       "definitionCount": 1,
       "consumers": [
@@ -1708,7 +1468,7 @@
     },
     {
       "class": "detail-section",
-      "firstLine": 1046,
+      "firstLine": 906,
       "firstSelector": ".detail-section",
       "definitionCount": 1,
       "consumers": [
@@ -1724,7 +1484,7 @@
     },
     {
       "class": "detail-section-header",
-      "firstLine": 1051,
+      "firstLine": 911,
       "firstSelector": ".detail-section-header",
       "definitionCount": 2,
       "consumers": [
@@ -1740,7 +1500,7 @@
     },
     {
       "class": "detail-section-chevron",
-      "firstLine": 1070,
+      "firstLine": 930,
       "firstSelector": ".detail-section-chevron",
       "definitionCount": 2,
       "consumers": [
@@ -1756,7 +1516,7 @@
     },
     {
       "class": "detail-section-body",
-      "firstLine": 1080,
+      "firstLine": 940,
       "firstSelector": ".detail-section-body",
       "definitionCount": 1,
       "consumers": [
@@ -1772,7 +1532,7 @@
     },
     {
       "class": "section-empty",
-      "firstLine": 1084,
+      "firstLine": 944,
       "firstSelector": ".section-empty",
       "definitionCount": 1,
       "consumers": [
@@ -1789,7 +1549,7 @@
     },
     {
       "class": "ctx-breakdown-bar-wrap",
-      "firstLine": 1090,
+      "firstLine": 950,
       "firstSelector": ".ctx-breakdown-bar-wrap",
       "definitionCount": 1,
       "consumers": [],
@@ -1800,7 +1560,7 @@
     },
     {
       "class": "ctx-breakdown-bar",
-      "firstLine": 1096,
+      "firstLine": 956,
       "firstSelector": ".ctx-breakdown-bar",
       "definitionCount": 3,
       "consumers": [],
@@ -1811,7 +1571,7 @@
     },
     {
       "class": "ctx-segment",
-      "firstLine": 1104,
+      "firstLine": 964,
       "firstSelector": ".ctx-breakdown-bar > .ctx-segment",
       "definitionCount": 2,
       "consumers": [],
@@ -1822,7 +1582,7 @@
     },
     {
       "class": "breakdown-popover",
-      "firstLine": 1114,
+      "firstLine": 974,
       "firstSelector": ".breakdown-popover",
       "definitionCount": 1,
       "consumers": [],
@@ -1833,7 +1593,7 @@
     },
     {
       "class": "breakdown-popover-header",
-      "firstLine": 1132,
+      "firstLine": 992,
       "firstSelector": ".breakdown-popover-header",
       "definitionCount": 1,
       "consumers": [],
@@ -1844,7 +1604,7 @@
     },
     {
       "class": "breakdown-popover-dot",
-      "firstLine": 1141,
+      "firstLine": 1001,
       "firstSelector": ".breakdown-popover-dot",
       "definitionCount": 1,
       "consumers": [],
@@ -1855,7 +1615,7 @@
     },
     {
       "class": "breakdown-popover-desc",
-      "firstLine": 1148,
+      "firstLine": 1008,
       "firstSelector": ".breakdown-popover-desc",
       "definitionCount": 1,
       "consumers": [],
@@ -1866,7 +1626,7 @@
     },
     {
       "class": "breakdown-popover-list",
-      "firstLine": 1154,
+      "firstLine": 1014,
       "firstSelector": ".breakdown-popover-list",
       "definitionCount": 1,
       "consumers": [],
@@ -1877,7 +1637,7 @@
     },
     {
       "class": "breakdown-popover-item",
-      "firstLine": 1160,
+      "firstLine": 1020,
       "firstSelector": ".breakdown-popover-item",
       "definitionCount": 1,
       "consumers": [],
@@ -1888,7 +1648,7 @@
     },
     {
       "class": "breakdown-popover-item--clickable",
-      "firstLine": 1175,
+      "firstLine": 1035,
       "firstSelector": ".breakdown-popover-item--clickable",
       "definitionCount": 2,
       "consumers": [],
@@ -1899,7 +1659,7 @@
     },
     {
       "class": "breakdown-popover-file-dot",
-      "firstLine": 1183,
+      "firstLine": 1043,
       "firstSelector": ".breakdown-popover-file-dot",
       "definitionCount": 1,
       "consumers": [],
@@ -1910,7 +1670,7 @@
     },
     {
       "class": "breakdown-popover-file-path",
-      "firstLine": 1190,
+      "firstLine": 1050,
       "firstSelector": ".breakdown-popover-file-path",
       "definitionCount": 1,
       "consumers": [],
@@ -1921,7 +1681,7 @@
     },
     {
       "class": "breakdown-popover-file-tokens",
-      "firstLine": 1198,
+      "firstLine": 1058,
       "firstSelector": ".breakdown-popover-file-tokens",
       "definitionCount": 1,
       "consumers": [],
@@ -1932,7 +1692,7 @@
     },
     {
       "class": "breakdown-popover-badge",
-      "firstLine": 1204,
+      "firstLine": 1064,
       "firstSelector": ".breakdown-popover-badge",
       "definitionCount": 1,
       "consumers": [],
@@ -1943,7 +1703,7 @@
     },
     {
       "class": "breakdown-popover-response",
-      "firstLine": 1214,
+      "firstLine": 1074,
       "firstSelector": ".breakdown-popover-response",
       "definitionCount": 1,
       "consumers": [],
@@ -1954,7 +1714,7 @@
     },
     {
       "class": "ctx-breakdown-legend",
-      "firstLine": 1222,
+      "firstLine": 1082,
       "firstSelector": ".ctx-breakdown-legend",
       "definitionCount": 1,
       "consumers": [],
@@ -1965,7 +1725,7 @@
     },
     {
       "class": "legend-dot-item",
-      "firstLine": 1228,
+      "firstLine": 1088,
       "firstSelector": ".legend-dot-item",
       "definitionCount": 1,
       "consumers": [],
@@ -1976,7 +1736,7 @@
     },
     {
       "class": "legend-dot",
-      "firstLine": 1235,
+      "firstLine": 1095,
       "firstSelector": ".legend-dot",
       "definitionCount": 1,
       "consumers": [],
@@ -1987,7 +1747,7 @@
     },
     {
       "class": "legend-label",
-      "firstLine": 1242,
+      "firstLine": 1102,
       "firstSelector": ".legend-label",
       "definitionCount": 1,
       "consumers": [],
@@ -1998,7 +1758,7 @@
     },
     {
       "class": "legend-value",
-      "firstLine": 1246,
+      "firstLine": 1106,
       "firstSelector": ".legend-value",
       "definitionCount": 1,
       "consumers": [],
@@ -2009,7 +1769,7 @@
     },
     {
       "class": "file-list",
-      "firstLine": 1251,
+      "firstLine": 1111,
       "firstSelector": ".file-list",
       "definitionCount": 1,
       "consumers": [],
@@ -2020,7 +1780,7 @@
     },
     {
       "class": "file-item",
-      "firstLine": 1258,
+      "firstLine": 1118,
       "firstSelector": ".file-item",
       "definitionCount": 2,
       "consumers": [],
@@ -2031,7 +1791,7 @@
     },
     {
       "class": "file-dot",
-      "firstLine": 1276,
+      "firstLine": 1136,
       "firstSelector": ".file-dot",
       "definitionCount": 1,
       "consumers": [],
@@ -2042,7 +1802,7 @@
     },
     {
       "class": "file-path",
-      "firstLine": 1283,
+      "firstLine": 1143,
       "firstSelector": ".file-path",
       "definitionCount": 1,
       "consumers": [],
@@ -2053,7 +1813,7 @@
     },
     {
       "class": "file-tokens",
-      "firstLine": 1292,
+      "firstLine": 1152,
       "firstSelector": ".file-tokens",
       "definitionCount": 1,
       "consumers": [],
@@ -2064,7 +1824,7 @@
     },
     {
       "class": "action-item",
-      "firstLine": 1298,
+      "firstLine": 1158,
       "firstSelector": ".action-item",
       "definitionCount": 4,
       "consumers": [],
@@ -2075,7 +1835,7 @@
     },
     {
       "class": "action-dot",
-      "firstLine": 1314,
+      "firstLine": 1174,
       "firstSelector": ".action-item .action-dot",
       "definitionCount": 1,
       "consumers": [
@@ -2090,7 +1850,7 @@
     },
     {
       "class": "action-badge",
-      "firstLine": 1314,
+      "firstLine": 1174,
       "firstSelector": ".action-item .action-badge",
       "definitionCount": 1,
       "consumers": [
@@ -2105,7 +1865,7 @@
     },
     {
       "class": "token-breakdown",
-      "firstLine": 1323,
+      "firstLine": 1183,
       "firstSelector": ".token-breakdown",
       "definitionCount": 1,
       "consumers": [],
@@ -2116,7 +1876,7 @@
     },
     {
       "class": "token-row",
-      "firstLine": 1330,
+      "firstLine": 1190,
       "firstSelector": ".token-row",
       "definitionCount": 1,
       "consumers": [],
@@ -2127,7 +1887,7 @@
     },
     {
       "class": "token-row-label",
-      "firstLine": 1336,
+      "firstLine": 1196,
       "firstSelector": ".token-row-label",
       "definitionCount": 1,
       "consumers": [],
@@ -2138,7 +1898,7 @@
     },
     {
       "class": "token-row-value",
-      "firstLine": 1340,
+      "firstLine": 1200,
       "firstSelector": ".token-row-value",
       "definitionCount": 1,
       "consumers": [],
@@ -2149,7 +1909,7 @@
     },
     {
       "class": "context-treemap",
-      "firstLine": 1345,
+      "firstLine": 1205,
       "firstSelector": ".context-treemap",
       "definitionCount": 1,
       "consumers": [
@@ -2164,7 +1924,7 @@
     },
     {
       "class": "cost-treemap",
-      "firstLine": 1345,
+      "firstLine": 1205,
       "firstSelector": ".cost-treemap",
       "definitionCount": 1,
       "consumers": [
@@ -2179,7 +1939,7 @@
     },
     {
       "class": "context-treemap-title",
-      "firstLine": 1353,
+      "firstLine": 1213,
       "firstSelector": ".context-treemap-title",
       "definitionCount": 1,
       "consumers": [
@@ -2194,7 +1954,7 @@
     },
     {
       "class": "cost-treemap-title",
-      "firstLine": 1353,
+      "firstLine": 1213,
       "firstSelector": ".cost-treemap-title",
       "definitionCount": 1,
       "consumers": [
@@ -2209,7 +1969,7 @@
     },
     {
       "class": "context-treemap-chart",
-      "firstLine": 1361,
+      "firstLine": 1221,
       "firstSelector": ".context-treemap-chart",
       "definitionCount": 1,
       "consumers": [
@@ -2224,7 +1984,7 @@
     },
     {
       "class": "cost-treemap-chart",
-      "firstLine": 1361,
+      "firstLine": 1221,
       "firstSelector": ".cost-treemap-chart",
       "definitionCount": 1,
       "consumers": [
@@ -2239,7 +1999,7 @@
     },
     {
       "class": "treemap-hover-tooltip",
-      "firstLine": 1367,
+      "firstLine": 1227,
       "firstSelector": ".treemap-hover-tooltip",
       "definitionCount": 1,
       "consumers": [
@@ -2254,7 +2014,7 @@
     },
     {
       "class": "treemap-tooltip-name",
-      "firstLine": 1379,
+      "firstLine": 1239,
       "firstSelector": ".treemap-tooltip-name",
       "definitionCount": 1,
       "consumers": [
@@ -2269,7 +2029,7 @@
     },
     {
       "class": "treemap-tooltip-tokens",
-      "firstLine": 1384,
+      "firstLine": 1244,
       "firstSelector": ".treemap-tooltip-tokens",
       "definitionCount": 1,
       "consumers": [
@@ -2284,7 +2044,7 @@
     },
     {
       "class": "treemap-tooltip-hint",
-      "firstLine": 1388,
+      "firstLine": 1248,
       "firstSelector": ".treemap-tooltip-hint",
       "definitionCount": 1,
       "consumers": [
@@ -2299,7 +2059,7 @@
     },
     {
       "class": "treemap-file-list",
-      "firstLine": 1394,
+      "firstLine": 1254,
       "firstSelector": ".treemap-file-list",
       "definitionCount": 1,
       "consumers": [
@@ -2314,7 +2074,7 @@
     },
     {
       "class": "treemap-file-item",
-      "firstLine": 1402,
+      "firstLine": 1262,
       "firstSelector": ".treemap-file-item",
       "definitionCount": 2,
       "consumers": [
@@ -2329,7 +2089,7 @@
     },
     {
       "class": "treemap-file-dot",
-      "firstLine": 1420,
+      "firstLine": 1280,
       "firstSelector": ".treemap-file-dot",
       "definitionCount": 1,
       "consumers": [
@@ -2344,7 +2104,7 @@
     },
     {
       "class": "treemap-file-name",
-      "firstLine": 1427,
+      "firstLine": 1287,
       "firstSelector": ".treemap-file-name",
       "definitionCount": 1,
       "consumers": [
@@ -2359,7 +2119,7 @@
     },
     {
       "class": "treemap-file-tokens",
-      "firstLine": 1436,
+      "firstLine": 1296,
       "firstSelector": ".treemap-file-tokens",
       "definitionCount": 1,
       "consumers": [
@@ -2374,7 +2134,7 @@
     },
     {
       "class": "cost-treemap-header",
-      "firstLine": 1442,
+      "firstLine": 1302,
       "firstSelector": ".cost-treemap-header",
       "definitionCount": 1,
       "consumers": [
@@ -2389,7 +2149,7 @@
     },
     {
       "class": "cost-treemap-total",
-      "firstLine": 1449,
+      "firstLine": 1309,
       "firstSelector": ".cost-treemap-total",
       "definitionCount": 1,
       "consumers": [
@@ -2404,7 +2164,7 @@
     },
     {
       "class": "prompt-card-compacted",
-      "firstLine": 1455,
+      "firstLine": 1315,
       "firstSelector": ".prompt-card-compacted",
       "definitionCount": 1,
       "consumers": [
@@ -2419,7 +2179,7 @@
     },
     {
       "class": "session-ctx-gauge",
-      "firstLine": 1469,
+      "firstLine": 1329,
       "firstSelector": ".session-ctx-gauge",
       "definitionCount": 2,
       "consumers": [],
@@ -2430,7 +2190,7 @@
     },
     {
       "class": "session-donut-gauge",
-      "firstLine": 1481,
+      "firstLine": 1341,
       "firstSelector": ".session-donut-gauge",
       "definitionCount": 1,
       "consumers": [
@@ -2445,7 +2205,7 @@
     },
     {
       "class": "session-donut-svg-wrap",
-      "firstLine": 1492,
+      "firstLine": 1352,
       "firstSelector": ".session-donut-svg-wrap",
       "definitionCount": 1,
       "consumers": [
@@ -2460,7 +2220,7 @@
     },
     {
       "class": "session-donut-label",
-      "firstLine": 1497,
+      "firstLine": 1357,
       "firstSelector": ".session-donut-label",
       "definitionCount": 1,
       "consumers": [
@@ -2475,7 +2235,7 @@
     },
     {
       "class": "session-donut-pct",
-      "firstLine": 1507,
+      "firstLine": 1367,
       "firstSelector": ".session-donut-pct",
       "definitionCount": 1,
       "consumers": [
@@ -2490,7 +2250,7 @@
     },
     {
       "class": "session-donut-sub",
-      "firstLine": 1513,
+      "firstLine": 1373,
       "firstSelector": ".session-donut-sub",
       "definitionCount": 1,
       "consumers": [
@@ -2505,7 +2265,7 @@
     },
     {
       "class": "session-donut-info",
-      "firstLine": 1519,
+      "firstLine": 1379,
       "firstSelector": ".session-donut-info",
       "definitionCount": 1,
       "consumers": [
@@ -2520,7 +2280,7 @@
     },
     {
       "class": "session-donut-row",
-      "firstLine": 1526,
+      "firstLine": 1386,
       "firstSelector": ".session-donut-row",
       "definitionCount": 3,
       "consumers": [
@@ -2535,7 +2295,7 @@
     },
     {
       "class": "session-donut-row--cost",
-      "firstLine": 1541,
+      "firstLine": 1401,
       "firstSelector": ".session-donut-row--cost span:last-child",
       "definitionCount": 1,
       "consumers": [
@@ -2550,7 +2310,7 @@
     },
     {
       "class": "file-preview-overlay",
-      "firstLine": 1546,
+      "firstLine": 1406,
       "firstSelector": ".file-preview-overlay",
       "definitionCount": 1,
       "consumers": [
@@ -2565,7 +2325,7 @@
     },
     {
       "class": "file-preview-panel",
-      "firstLine": 1559,
+      "firstLine": 1419,
       "firstSelector": ".file-preview-panel",
       "definitionCount": 1,
       "consumers": [
@@ -2580,7 +2340,7 @@
     },
     {
       "class": "file-preview-header",
-      "firstLine": 1571,
+      "firstLine": 1431,
       "firstSelector": ".file-preview-header",
       "definitionCount": 1,
       "consumers": [
@@ -2595,7 +2355,7 @@
     },
     {
       "class": "file-preview-name",
-      "firstLine": 1579,
+      "firstLine": 1439,
       "firstSelector": ".file-preview-name",
       "definitionCount": 1,
       "consumers": [
@@ -2610,7 +2370,7 @@
     },
     {
       "class": "file-preview-close",
-      "firstLine": 1585,
+      "firstLine": 1445,
       "firstSelector": ".file-preview-close",
       "definitionCount": 2,
       "consumers": [
@@ -2625,7 +2385,7 @@
     },
     {
       "class": "file-preview-path",
-      "firstLine": 1600,
+      "firstLine": 1460,
       "firstSelector": ".file-preview-path",
       "definitionCount": 1,
       "consumers": [
@@ -2640,7 +2400,7 @@
     },
     {
       "class": "file-preview-body",
-      "firstLine": 1607,
+      "firstLine": 1467,
       "firstSelector": ".file-preview-body",
       "definitionCount": 1,
       "consumers": [
@@ -2655,7 +2415,7 @@
     },
     {
       "class": "file-preview-content",
-      "firstLine": 1613,
+      "firstLine": 1473,
       "firstSelector": ".file-preview-content",
       "definitionCount": 1,
       "consumers": [
@@ -2670,7 +2430,7 @@
     },
     {
       "class": "prompt-card-response",
-      "firstLine": 1623,
+      "firstLine": 1483,
       "firstSelector": ".prompt-card-response",
       "definitionCount": 2,
       "consumers": [
@@ -2685,7 +2445,7 @@
     },
     {
       "class": "prompt-card-badges",
-      "firstLine": 1639,
+      "firstLine": 1499,
       "firstSelector": ".prompt-card-badges",
       "definitionCount": 1,
       "consumers": [],
@@ -2696,7 +2456,7 @@
     },
     {
       "class": "tool-badge",
-      "firstLine": 1647,
+      "firstLine": 1507,
       "firstSelector": ".tool-badge",
       "definitionCount": 1,
       "consumers": [],
@@ -2707,7 +2467,7 @@
     },
     {
       "class": "file-preview-lang",
-      "firstLine": 1657,
+      "firstLine": 1517,
       "firstSelector": ".file-preview-lang",
       "definitionCount": 1,
       "consumers": [
@@ -2722,7 +2482,7 @@
     },
     {
       "class": "dashboard-settings-btn",
-      "firstLine": 1669,
+      "firstLine": 1529,
       "firstSelector": ".dashboard-settings-btn",
       "definitionCount": 2,
       "consumers": [
@@ -2737,7 +2497,7 @@
     },
     {
       "class": "ctx-settings-overlay",
-      "firstLine": 1689,
+      "firstLine": 1549,
       "firstSelector": ".ctx-settings-overlay",
       "definitionCount": 1,
       "consumers": [
@@ -2753,7 +2513,7 @@
     },
     {
       "class": "ctx-settings-panel",
-      "firstLine": 1702,
+      "firstLine": 1562,
       "firstSelector": ".ctx-settings-panel",
       "definitionCount": 1,
       "consumers": [
@@ -2768,7 +2528,7 @@
     },
     {
       "class": "ctx-settings-header",
-      "firstLine": 1711,
+      "firstLine": 1571,
       "firstSelector": ".ctx-settings-header",
       "definitionCount": 1,
       "consumers": [
@@ -2784,7 +2544,7 @@
     },
     {
       "class": "ctx-settings-title",
-      "firstLine": 1719,
+      "firstLine": 1579,
       "firstSelector": ".ctx-settings-title",
       "definitionCount": 1,
       "consumers": [
@@ -2800,7 +2560,7 @@
     },
     {
       "class": "ctx-settings-close",
-      "firstLine": 1725,
+      "firstLine": 1585,
       "firstSelector": ".ctx-settings-close",
       "definitionCount": 1,
       "consumers": [
@@ -2816,7 +2576,7 @@
     },
     {
       "class": "ctx-settings-plan",
-      "firstLine": 1735,
+      "firstLine": 1595,
       "firstSelector": ".ctx-settings-plan",
       "definitionCount": 1,
       "consumers": [
@@ -2831,7 +2591,7 @@
     },
     {
       "class": "ctx-settings-plan-label",
-      "firstLine": 1744,
+      "firstLine": 1604,
       "firstSelector": ".ctx-settings-plan-label",
       "definitionCount": 1,
       "consumers": [
@@ -2846,7 +2606,7 @@
     },
     {
       "class": "ctx-settings-plan-value",
-      "firstLine": 1748,
+      "firstLine": 1608,
       "firstSelector": ".ctx-settings-plan-value",
       "definitionCount": 1,
       "consumers": [
@@ -2861,7 +2621,7 @@
     },
     {
       "class": "ctx-settings-plan-limit",
-      "firstLine": 1753,
+      "firstLine": 1613,
       "firstSelector": ".ctx-settings-plan-limit",
       "definitionCount": 1,
       "consumers": [
@@ -2876,7 +2636,7 @@
     },
     {
       "class": "ctx-settings-presets",
-      "firstLine": 1758,
+      "firstLine": 1618,
       "firstSelector": ".ctx-settings-presets",
       "definitionCount": 1,
       "consumers": [
@@ -2891,7 +2651,7 @@
     },
     {
       "class": "ctx-settings-preset",
-      "firstLine": 1765,
+      "firstLine": 1625,
       "firstSelector": ".ctx-settings-preset",
       "definitionCount": 3,
       "consumers": [
@@ -2906,7 +2666,7 @@
     },
     {
       "class": "active",
-      "firstLine": 1784,
+      "firstLine": 1644,
       "firstSelector": ".ctx-settings-preset.active",
       "definitionCount": 3,
       "consumers": [],
@@ -2917,7 +2677,7 @@
     },
     {
       "class": "ctx-preset-radio",
-      "firstLine": 1789,
+      "firstLine": 1649,
       "firstSelector": ".ctx-preset-radio",
       "definitionCount": 1,
       "consumers": [
@@ -2932,7 +2692,7 @@
     },
     {
       "class": "ctx-settings-custom",
-      "firstLine": 1794,
+      "firstLine": 1654,
       "firstSelector": ".ctx-settings-custom",
       "definitionCount": 1,
       "consumers": [
@@ -2947,7 +2707,7 @@
     },
     {
       "class": "ctx-settings-input",
-      "firstLine": 1801,
+      "firstLine": 1661,
       "firstSelector": ".ctx-settings-input",
       "definitionCount": 2,
       "consumers": [
@@ -2962,7 +2722,7 @@
     },
     {
       "class": "ctx-settings-input-hint",
-      "firstLine": 1817,
+      "firstLine": 1677,
       "firstSelector": ".ctx-settings-input-hint",
       "definitionCount": 1,
       "consumers": [
@@ -2977,7 +2737,7 @@
     },
     {
       "class": "ctx-settings-preview",
-      "firstLine": 1822,
+      "firstLine": 1682,
       "firstSelector": ".ctx-settings-preview",
       "definitionCount": 2,
       "consumers": [
@@ -2992,7 +2752,7 @@
     },
     {
       "class": "ctx-settings-actions",
-      "firstLine": 1834,
+      "firstLine": 1694,
       "firstSelector": ".ctx-settings-actions",
       "definitionCount": 1,
       "consumers": [
@@ -3007,7 +2767,7 @@
     },
     {
       "class": "ctx-settings-save",
-      "firstLine": 1840,
+      "firstLine": 1700,
       "firstSelector": ".ctx-settings-save",
       "definitionCount": 2,
       "consumers": [
@@ -3023,7 +2783,7 @@
     },
     {
       "class": "ctx-settings-cancel",
-      "firstLine": 1857,
+      "firstLine": 1717,
       "firstSelector": ".ctx-settings-cancel",
       "definitionCount": 2,
       "consumers": [
@@ -3039,7 +2799,7 @@
     },
     {
       "class": "evidence-settings-panel",
-      "firstLine": 1873,
+      "firstLine": 1733,
       "firstSelector": ".evidence-settings-panel",
       "definitionCount": 1,
       "consumers": [
@@ -3054,7 +2814,7 @@
     },
     {
       "class": "evidence-settings-body",
-      "firstLine": 1887,
+      "firstLine": 1747,
       "firstSelector": ".evidence-settings-body",
       "definitionCount": 1,
       "consumers": [
@@ -3069,7 +2829,7 @@
     },
     {
       "class": "evidence-settings-loading",
-      "firstLine": 1893,
+      "firstLine": 1753,
       "firstSelector": ".evidence-settings-loading",
       "definitionCount": 1,
       "consumers": [
@@ -3084,7 +2844,7 @@
     },
     {
       "class": "evidence-settings-row",
-      "firstLine": 1900,
+      "firstLine": 1760,
       "firstSelector": ".evidence-settings-row",
       "definitionCount": 1,
       "consumers": [
@@ -3099,7 +2859,7 @@
     },
     {
       "class": "evidence-settings-label",
-      "firstLine": 1908,
+      "firstLine": 1768,
       "firstSelector": ".evidence-settings-label",
       "definitionCount": 1,
       "consumers": [
@@ -3114,7 +2874,7 @@
     },
     {
       "class": "evidence-toggle",
-      "firstLine": 1914,
+      "firstLine": 1774,
       "firstSelector": ".evidence-toggle",
       "definitionCount": 6,
       "consumers": [
@@ -3129,7 +2889,7 @@
     },
     {
       "class": "on",
-      "firstLine": 1928,
+      "firstLine": 1788,
       "firstSelector": ".evidence-toggle.on",
       "definitionCount": 3,
       "consumers": [],
@@ -3140,7 +2900,7 @@
     },
     {
       "class": "small",
-      "firstLine": 1932,
+      "firstLine": 1792,
       "firstSelector": ".evidence-toggle.small",
       "definitionCount": 4,
       "consumers": [
@@ -3155,7 +2915,7 @@
     },
     {
       "class": "evidence-toggle-thumb",
-      "firstLine": 1938,
+      "firstLine": 1798,
       "firstSelector": ".evidence-toggle-thumb",
       "definitionCount": 4,
       "consumers": [
@@ -3170,7 +2930,7 @@
     },
     {
       "class": "evidence-settings-section",
-      "firstLine": 1963,
+      "firstLine": 1823,
       "firstSelector": ".evidence-settings-section",
       "definitionCount": 1,
       "consumers": [
@@ -3185,7 +2945,7 @@
     },
     {
       "class": "evidence-settings-section-title",
-      "firstLine": 1969,
+      "firstLine": 1829,
       "firstSelector": ".evidence-settings-section-title",
       "definitionCount": 1,
       "consumers": [
@@ -3200,7 +2960,7 @@
     },
     {
       "class": "evidence-settings-radios",
-      "firstLine": 1978,
+      "firstLine": 1838,
       "firstSelector": ".evidence-settings-radios",
       "definitionCount": 1,
       "consumers": [
@@ -3215,7 +2975,7 @@
     },
     {
       "class": "evidence-radio",
-      "firstLine": 1983,
+      "firstLine": 1843,
       "firstSelector": ".evidence-radio",
       "definitionCount": 2,
       "consumers": [
@@ -3230,7 +2990,7 @@
     },
     {
       "class": "evidence-settings-threshold-row",
-      "firstLine": 1996,
+      "firstLine": 1856,
       "firstSelector": ".evidence-settings-threshold-row",
       "definitionCount": 1,
       "consumers": [
@@ -3245,7 +3005,7 @@
     },
     {
       "class": "evidence-threshold-label",
-      "firstLine": 2003,
+      "firstLine": 1863,
       "firstSelector": ".evidence-threshold-label",
       "definitionCount": 1,
       "consumers": [
@@ -3260,7 +3020,7 @@
     },
     {
       "class": "evidence-settings-input",
-      "firstLine": 2008,
+      "firstLine": 1868,
       "firstSelector": ".evidence-settings-input",
       "definitionCount": 3,
       "consumers": [
@@ -3275,7 +3035,7 @@
     },
     {
       "class": "evidence-signal-card",
-      "firstLine": 2031,
+      "firstLine": 1891,
       "firstSelector": ".evidence-signal-card",
       "definitionCount": 2,
       "consumers": [
@@ -3290,7 +3050,7 @@
     },
     {
       "class": "disabled",
-      "firstLine": 2040,
+      "firstLine": 1900,
       "firstSelector": ".evidence-signal-card.disabled",
       "definitionCount": 1,
       "consumers": [],
@@ -3301,7 +3061,7 @@
     },
     {
       "class": "evidence-signal-card-header",
-      "firstLine": 2044,
+      "firstLine": 1904,
       "firstSelector": ".evidence-signal-card-header",
       "definitionCount": 1,
       "consumers": [
@@ -3316,7 +3076,7 @@
     },
     {
       "class": "evidence-signal-card-expand",
-      "firstLine": 2052,
+      "firstLine": 1912,
       "firstSelector": ".evidence-signal-card-expand",
       "definitionCount": 1,
       "consumers": [
@@ -3331,7 +3091,7 @@
     },
     {
       "class": "evidence-signal-card-name",
-      "firstLine": 2062,
+      "firstLine": 1922,
       "firstSelector": ".evidence-signal-card-name",
       "definitionCount": 1,
       "consumers": [
@@ -3346,7 +3106,7 @@
     },
     {
       "class": "evidence-signal-card-weight",
-      "firstLine": 2070,
+      "firstLine": 1930,
       "firstSelector": ".evidence-signal-card-weight",
       "definitionCount": 1,
       "consumers": [
@@ -3361,7 +3121,7 @@
     },
     {
       "class": "evidence-weight-input",
-      "firstLine": 2078,
+      "firstLine": 1938,
       "firstSelector": ".evidence-weight-input",
       "definitionCount": 2,
       "consumers": [
@@ -3376,7 +3136,7 @@
     },
     {
       "class": "evidence-signal-card-body",
-      "firstLine": 2094,
+      "firstLine": 1954,
       "firstSelector": ".evidence-signal-card-body",
       "definitionCount": 1,
       "consumers": [
@@ -3391,7 +3151,7 @@
     },
     {
       "class": "evidence-signal-desc",
-      "firstLine": 2099,
+      "firstLine": 1959,
       "firstSelector": ".evidence-signal-desc",
       "definitionCount": 1,
       "consumers": [
@@ -3406,7 +3166,7 @@
     },
     {
       "class": "evidence-signal-paper",
-      "firstLine": 2106,
+      "firstLine": 1966,
       "firstSelector": ".evidence-signal-paper",
       "definitionCount": 1,
       "consumers": [
@@ -3421,7 +3181,7 @@
     },
     {
       "class": "evidence-signal-params",
-      "firstLine": 2113,
+      "firstLine": 1973,
       "firstSelector": ".evidence-signal-params",
       "definitionCount": 1,
       "consumers": [
@@ -3436,7 +3196,7 @@
     },
     {
       "class": "evidence-signal-param-row",
-      "firstLine": 2119,
+      "firstLine": 1979,
       "firstSelector": ".evidence-signal-param-row",
       "definitionCount": 1,
       "consumers": [
@@ -3451,7 +3211,7 @@
     },
     {
       "class": "evidence-signal-param-label",
-      "firstLine": 2125,
+      "firstLine": 1985,
       "firstSelector": ".evidence-signal-param-label",
       "definitionCount": 1,
       "consumers": [
@@ -3466,7 +3226,7 @@
     },
     {
       "class": "evidence-settings-footer",
-      "firstLine": 2131,
+      "firstLine": 1991,
       "firstSelector": ".evidence-settings-footer",
       "definitionCount": 1,
       "consumers": [
@@ -3481,7 +3241,7 @@
     },
     {
       "class": "evidence-settings-footer-right",
-      "firstLine": 2140,
+      "firstLine": 2000,
       "firstSelector": ".evidence-settings-footer-right",
       "definitionCount": 1,
       "consumers": [
@@ -3496,7 +3256,7 @@
     },
     {
       "class": "evidence-settings-reset",
-      "firstLine": 2145,
+      "firstLine": 2005,
       "firstSelector": ".evidence-settings-reset",
       "definitionCount": 3,
       "consumers": [
@@ -3511,7 +3271,7 @@
     },
     {
       "class": "stats-detail",
-      "firstLine": 2165,
+      "firstLine": 2025,
       "firstSelector": ".stats-detail",
       "definitionCount": 1,
       "consumers": [
@@ -3526,7 +3286,7 @@
     },
     {
       "class": "stats-detail-header",
-      "firstLine": 2172,
+      "firstLine": 2032,
       "firstSelector": ".stats-detail-header",
       "definitionCount": 1,
       "consumers": [
@@ -3541,7 +3301,7 @@
     },
     {
       "class": "stats-back-btn",
-      "firstLine": 2180,
+      "firstLine": 2040,
       "firstSelector": ".stats-back-btn",
       "definitionCount": 2,
       "consumers": [
@@ -3556,7 +3316,7 @@
     },
     {
       "class": "stats-detail-title",
-      "firstLine": 2196,
+      "firstLine": 2056,
       "firstSelector": ".stats-detail-title",
       "definitionCount": 1,
       "consumers": [
@@ -3571,7 +3331,7 @@
     },
     {
       "class": "stats-period-toggle",
-      "firstLine": 2203,
+      "firstLine": 2063,
       "firstSelector": ".stats-period-toggle",
       "definitionCount": 1,
       "consumers": [
@@ -3586,7 +3346,7 @@
     },
     {
       "class": "stats-period-btn",
-      "firstLine": 2213,
+      "firstLine": 2073,
       "firstSelector": ".stats-period-btn",
       "definitionCount": 2,
       "consumers": [
@@ -3601,7 +3361,7 @@
     },
     {
       "class": "stats-summary-grid",
-      "firstLine": 2231,
+      "firstLine": 2091,
       "firstSelector": ".stats-summary-grid",
       "definitionCount": 1,
       "consumers": [
@@ -3616,7 +3376,7 @@
     },
     {
       "class": "stats-summary-card",
-      "firstLine": 2239,
+      "firstLine": 2099,
       "firstSelector": ".stats-summary-card",
       "definitionCount": 1,
       "consumers": [
@@ -3631,7 +3391,7 @@
     },
     {
       "class": "stats-summary-value",
-      "firstLine": 2246,
+      "firstLine": 2106,
       "firstSelector": ".stats-summary-value",
       "definitionCount": 1,
       "consumers": [
@@ -3646,7 +3406,7 @@
     },
     {
       "class": "stats-summary-label",
-      "firstLine": 2253,
+      "firstLine": 2113,
       "firstSelector": ".stats-summary-label",
       "definitionCount": 1,
       "consumers": [
@@ -3661,7 +3421,7 @@
     },
     {
       "class": "stats-summary-sub",
-      "firstLine": 2259,
+      "firstLine": 2119,
       "firstSelector": ".stats-summary-sub",
       "definitionCount": 1,
       "consumers": [
@@ -3676,7 +3436,7 @@
     },
     {
       "class": "stats-section",
-      "firstLine": 2265,
+      "firstLine": 2125,
       "firstSelector": ".stats-section",
       "definitionCount": 1,
       "consumers": [
@@ -3693,7 +3453,7 @@
     },
     {
       "class": "stats-section-title",
-      "firstLine": 2271,
+      "firstLine": 2131,
       "firstSelector": ".stats-section-title",
       "definitionCount": 1,
       "consumers": [
@@ -3709,7 +3469,7 @@
     },
     {
       "class": "stats-chart-container",
-      "firstLine": 2278,
+      "firstLine": 2138,
       "firstSelector": ".stats-chart-container",
       "definitionCount": 1,
       "consumers": [
@@ -3724,7 +3484,7 @@
     },
     {
       "class": "stats-tooltip",
-      "firstLine": 2283,
+      "firstLine": 2143,
       "firstSelector": ".stats-tooltip",
       "definitionCount": 1,
       "consumers": [
@@ -3742,7 +3502,7 @@
     },
     {
       "class": "stats-tooltip-date",
-      "firstLine": 2294,
+      "firstLine": 2154,
       "firstSelector": ".stats-tooltip-date",
       "definitionCount": 1,
       "consumers": [
@@ -3759,7 +3519,7 @@
     },
     {
       "class": "stats-tooltip-row",
-      "firstLine": 2299,
+      "firstLine": 2159,
       "firstSelector": ".stats-tooltip-row",
       "definitionCount": 2,
       "consumers": [
@@ -3776,7 +3536,7 @@
     },
     {
       "class": "stats-tool-list",
-      "firstLine": 2309,
+      "firstLine": 2169,
       "firstSelector": ".stats-tool-list",
       "definitionCount": 1,
       "consumers": [
@@ -3791,7 +3551,7 @@
     },
     {
       "class": "stats-tool-row",
-      "firstLine": 2316,
+      "firstLine": 2176,
       "firstSelector": ".stats-tool-row",
       "definitionCount": 1,
       "consumers": [
@@ -3806,7 +3566,7 @@
     },
     {
       "class": "stats-tool-name",
-      "firstLine": 2322,
+      "firstLine": 2182,
       "firstSelector": ".stats-tool-name",
       "definitionCount": 1,
       "consumers": [
@@ -3821,7 +3581,7 @@
     },
     {
       "class": "stats-tool-bar-track",
-      "firstLine": 2332,
+      "firstLine": 2192,
       "firstSelector": ".stats-tool-bar-track",
       "definitionCount": 1,
       "consumers": [
@@ -3836,7 +3596,7 @@
     },
     {
       "class": "stats-tool-bar-fill",
-      "firstLine": 2340,
+      "firstLine": 2200,
       "firstSelector": ".stats-tool-bar-fill",
       "definitionCount": 1,
       "consumers": [
@@ -3851,7 +3611,7 @@
     },
     {
       "class": "stats-tool-count",
-      "firstLine": 2347,
+      "firstLine": 2207,
       "firstSelector": ".stats-tool-count",
       "definitionCount": 1,
       "consumers": [
@@ -3866,7 +3626,7 @@
     },
     {
       "class": "token-composition-toggle-btn",
-      "firstLine": 2355,
+      "firstLine": 2215,
       "firstSelector": ".token-composition-toggle-btn",
       "definitionCount": 2,
       "consumers": [
@@ -3882,7 +3642,7 @@
     },
     {
       "class": "session-alerts",
-      "firstLine": 2373,
+      "firstLine": 2233,
       "firstSelector": ".session-alerts",
       "definitionCount": 1,
       "consumers": [
@@ -3897,7 +3657,7 @@
     },
     {
       "class": "session-alert",
-      "firstLine": 2382,
+      "firstLine": 2242,
       "firstSelector": ".session-alert",
       "definitionCount": 1,
       "consumers": [
@@ -3912,7 +3672,7 @@
     },
     {
       "class": "session-alert--info",
-      "firstLine": 2388,
+      "firstLine": 2248,
       "firstSelector": ".session-alert--info",
       "definitionCount": 1,
       "consumers": [
@@ -3927,7 +3687,7 @@
     },
     {
       "class": "session-alert--warning",
-      "firstLine": 2393,
+      "firstLine": 2253,
       "firstSelector": ".session-alert--warning",
       "definitionCount": 1,
       "consumers": [
@@ -3942,7 +3702,7 @@
     },
     {
       "class": "session-alert-content",
-      "firstLine": 2398,
+      "firstLine": 2258,
       "firstSelector": ".session-alert-content",
       "definitionCount": 1,
       "consumers": [
@@ -3957,7 +3717,7 @@
     },
     {
       "class": "session-alert-icon",
-      "firstLine": 2404,
+      "firstLine": 2264,
       "firstSelector": ".session-alert-icon",
       "definitionCount": 1,
       "consumers": [
@@ -3972,7 +3732,7 @@
     },
     {
       "class": "session-alert-text",
-      "firstLine": 2410,
+      "firstLine": 2270,
       "firstSelector": ".session-alert-text",
       "definitionCount": 1,
       "consumers": [
@@ -3987,7 +3747,7 @@
     },
     {
       "class": "session-alert-message",
-      "firstLine": 2415,
+      "firstLine": 2275,
       "firstSelector": ".session-alert-message",
       "definitionCount": 1,
       "consumers": [
@@ -4002,7 +3762,7 @@
     },
     {
       "class": "session-alert-tip",
-      "firstLine": 2421,
+      "firstLine": 2281,
       "firstSelector": ".session-alert-tip",
       "definitionCount": 1,
       "consumers": [
@@ -4017,7 +3777,7 @@
     },
     {
       "class": "session-alert-close",
-      "firstLine": 2426,
+      "firstLine": 2286,
       "firstSelector": ".session-alert-close",
       "definitionCount": 2,
       "consumers": [
@@ -4032,7 +3792,7 @@
     },
     {
       "class": "efficiency-badge",
-      "firstLine": 2441,
+      "firstLine": 2301,
       "firstSelector": ".efficiency-badge",
       "definitionCount": 1,
       "consumers": [
@@ -4047,7 +3807,7 @@
     },
     {
       "class": "backfill-overlay",
-      "firstLine": 2449,
+      "firstLine": 2309,
       "firstSelector": ".backfill-overlay",
       "definitionCount": 1,
       "consumers": [
@@ -4062,7 +3822,7 @@
     },
     {
       "class": "backfill-dialog",
-      "firstLine": 2465,
+      "firstLine": 2325,
       "firstSelector": ".backfill-dialog",
       "definitionCount": 1,
       "consumers": [
@@ -4077,7 +3837,7 @@
     },
     {
       "class": "backfill-icon",
-      "firstLine": 2474,
+      "firstLine": 2334,
       "firstSelector": ".backfill-icon",
       "definitionCount": 1,
       "consumers": [
@@ -4092,7 +3852,7 @@
     },
     {
       "class": "backfill-title",
-      "firstLine": 2480,
+      "firstLine": 2340,
       "firstSelector": ".backfill-title",
       "definitionCount": 1,
       "consumers": [
@@ -4107,7 +3867,7 @@
     },
     {
       "class": "backfill-desc",
-      "firstLine": 2487,
+      "firstLine": 2347,
       "firstSelector": ".backfill-desc",
       "definitionCount": 1,
       "consumers": [
@@ -4122,7 +3882,7 @@
     },
     {
       "class": "backfill-actions",
-      "firstLine": 2494,
+      "firstLine": 2354,
       "firstSelector": ".backfill-actions",
       "definitionCount": 1,
       "consumers": [
@@ -4137,7 +3897,7 @@
     },
     {
       "class": "backfill-btn",
-      "firstLine": 2501,
+      "firstLine": 2361,
       "firstSelector": ".backfill-btn",
       "definitionCount": 2,
       "consumers": [
@@ -4152,7 +3912,7 @@
     },
     {
       "class": "backfill-btn-primary",
-      "firstLine": 2513,
+      "firstLine": 2373,
       "firstSelector": ".backfill-btn-primary",
       "definitionCount": 1,
       "consumers": [
@@ -4167,7 +3927,7 @@
     },
     {
       "class": "backfill-btn-secondary",
-      "firstLine": 2518,
+      "firstLine": 2378,
       "firstSelector": ".backfill-btn-secondary",
       "definitionCount": 1,
       "consumers": [
@@ -4182,7 +3942,7 @@
     },
     {
       "class": "backfill-progress-bar-track",
-      "firstLine": 2523,
+      "firstLine": 2383,
       "firstSelector": ".backfill-progress-bar-track",
       "definitionCount": 1,
       "consumers": [
@@ -4197,7 +3957,7 @@
     },
     {
       "class": "backfill-progress-bar-fill",
-      "firstLine": 2532,
+      "firstLine": 2392,
       "firstSelector": ".backfill-progress-bar-fill",
       "definitionCount": 1,
       "consumers": [
@@ -4212,7 +3972,7 @@
     },
     {
       "class": "backfill-progress-stats",
-      "firstLine": 2538,
+      "firstLine": 2398,
       "firstSelector": ".backfill-progress-stats",
       "definitionCount": 1,
       "consumers": [
@@ -4227,7 +3987,7 @@
     },
     {
       "class": "backfill-result-grid",
-      "firstLine": 2545,
+      "firstLine": 2405,
       "firstSelector": ".backfill-result-grid",
       "definitionCount": 1,
       "consumers": [
@@ -4242,7 +4002,7 @@
     },
     {
       "class": "backfill-result-item",
-      "firstLine": 2552,
+      "firstLine": 2412,
       "firstSelector": ".backfill-result-item",
       "definitionCount": 1,
       "consumers": [
@@ -4257,7 +4017,7 @@
     },
     {
       "class": "backfill-result-wide",
-      "firstLine": 2558,
+      "firstLine": 2418,
       "firstSelector": ".backfill-result-wide",
       "definitionCount": 1,
       "consumers": [
@@ -4272,7 +4032,7 @@
     },
     {
       "class": "backfill-result-value",
-      "firstLine": 2562,
+      "firstLine": 2422,
       "firstSelector": ".backfill-result-value",
       "definitionCount": 1,
       "consumers": [
@@ -4287,7 +4047,7 @@
     },
     {
       "class": "backfill-result-label",
-      "firstLine": 2568,
+      "firstLine": 2428,
       "firstSelector": ".backfill-result-label",
       "definitionCount": 1,
       "consumers": [
@@ -4302,7 +4062,7 @@
     },
     {
       "class": "mcp-card",
-      "firstLine": 2574,
+      "firstLine": 2434,
       "firstSelector": ".mcp-card",
       "definitionCount": 1,
       "consumers": [
@@ -4317,7 +4077,7 @@
     },
     {
       "class": "mcp-card-header",
-      "firstLine": 2581,
+      "firstLine": 2441,
       "firstSelector": ".mcp-card-header",
       "definitionCount": 2,
       "consumers": [
@@ -4332,7 +4092,7 @@
     },
     {
       "class": "mcp-card-toggle",
-      "firstLine": 2591,
+      "firstLine": 2451,
       "firstSelector": ".mcp-card-toggle",
       "definitionCount": 1,
       "consumers": [
@@ -4347,7 +4107,7 @@
     },
     {
       "class": "mcp-card-headline",
-      "firstLine": 2597,
+      "firstLine": 2457,
       "firstSelector": ".mcp-card-headline",
       "definitionCount": 1,
       "consumers": [
@@ -4362,7 +4122,7 @@
     },
     {
       "class": "mcp-card-value",
-      "firstLine": 2601,
+      "firstLine": 2461,
       "firstSelector": ".mcp-card-value",
       "definitionCount": 1,
       "consumers": [
@@ -4377,7 +4137,7 @@
     },
     {
       "class": "mcp-card-unit",
-      "firstLine": 2607,
+      "firstLine": 2467,
       "firstSelector": ".mcp-card-unit",
       "definitionCount": 1,
       "consumers": [
@@ -4392,7 +4152,7 @@
     },
     {
       "class": "mcp-card-ratio",
-      "firstLine": 2613,
+      "firstLine": 2473,
       "firstSelector": ".mcp-card-ratio",
       "definitionCount": 1,
       "consumers": [
@@ -4407,7 +4167,7 @@
     },
     {
       "class": "mcp-card-bar-track",
-      "firstLine": 2619,
+      "firstLine": 2479,
       "firstSelector": ".mcp-card-bar-track",
       "definitionCount": 1,
       "consumers": [
@@ -4422,7 +4182,7 @@
     },
     {
       "class": "mcp-card-bar-fill",
-      "firstLine": 2627,
+      "firstLine": 2487,
       "firstSelector": ".mcp-card-bar-fill",
       "definitionCount": 1,
       "consumers": [
@@ -4437,7 +4197,7 @@
     },
     {
       "class": "mcp-card-tools",
-      "firstLine": 2635,
+      "firstLine": 2495,
       "firstSelector": ".mcp-card-tools",
       "definitionCount": 1,
       "consumers": [
@@ -4452,7 +4212,7 @@
     },
     {
       "class": "mcp-card-tools-title",
-      "firstLine": 2639,
+      "firstLine": 2499,
       "firstSelector": ".mcp-card-tools-title",
       "definitionCount": 1,
       "consumers": [
@@ -4467,7 +4227,7 @@
     },
     {
       "class": "mcp-card-tool-row",
-      "firstLine": 2648,
+      "firstLine": 2508,
       "firstSelector": ".mcp-card-tool-row",
       "definitionCount": 1,
       "consumers": [
@@ -4482,7 +4242,7 @@
     },
     {
       "class": "mcp-card-tool-dot",
-      "firstLine": 2656,
+      "firstLine": 2516,
       "firstSelector": ".mcp-card-tool-dot",
       "definitionCount": 1,
       "consumers": [
@@ -4497,7 +4257,7 @@
     },
     {
       "class": "mcp-card-tool-name",
-      "firstLine": 2664,
+      "firstLine": 2524,
       "firstSelector": ".mcp-card-tool-name",
       "definitionCount": 1,
       "consumers": [
@@ -4512,7 +4272,7 @@
     },
     {
       "class": "mcp-card-tool-count",
-      "firstLine": 2672,
+      "firstLine": 2532,
       "firstSelector": ".mcp-card-tool-count",
       "definitionCount": 1,
       "consumers": [
@@ -4527,7 +4287,7 @@
     },
     {
       "class": "mcp-card-tokens",
-      "firstLine": 2677,
+      "firstLine": 2537,
       "firstSelector": ".mcp-card-tokens",
       "definitionCount": 1,
       "consumers": [
@@ -4542,7 +4302,7 @@
     },
     {
       "class": "mcp-card-redundant",
-      "firstLine": 2683,
+      "firstLine": 2543,
       "firstSelector": ".mcp-card-redundant",
       "definitionCount": 1,
       "consumers": [
@@ -4557,7 +4317,7 @@
     },
     {
       "class": "mcp-card-tip",
-      "firstLine": 2690,
+      "firstLine": 2550,
       "firstSelector": ".mcp-card-tip",
       "definitionCount": 1,
       "consumers": [
@@ -4572,7 +4332,7 @@
     },
     {
       "class": "mcp-card-tip-icon",
-      "firstLine": 2703,
+      "firstLine": 2563,
       "firstSelector": ".mcp-card-tip-icon",
       "definitionCount": 1,
       "consumers": [
@@ -4587,7 +4347,7 @@
     },
     {
       "class": "mcp-card-tip-text",
-      "firstLine": 2708,
+      "firstLine": 2568,
       "firstSelector": ".mcp-card-tip-text",
       "definitionCount": 1,
       "consumers": [
@@ -4602,7 +4362,7 @@
     },
     {
       "class": "mcp-card-empty",
-      "firstLine": 2712,
+      "firstLine": 2572,
       "firstSelector": ".mcp-card-empty",
       "definitionCount": 1,
       "consumers": [
@@ -4617,7 +4377,7 @@
     },
     {
       "class": "memory-card",
-      "firstLine": 2718,
+      "firstLine": 2578,
       "firstSelector": ".memory-card",
       "definitionCount": 1,
       "consumers": [
@@ -4632,7 +4392,7 @@
     },
     {
       "class": "memory-header",
-      "firstLine": 2729,
+      "firstLine": 2589,
       "firstSelector": ".memory-header",
       "definitionCount": 1,
       "consumers": [
@@ -4647,7 +4407,7 @@
     },
     {
       "class": "memory-title",
-      "firstLine": 2736,
+      "firstLine": 2596,
       "firstSelector": ".memory-title",
       "definitionCount": 1,
       "consumers": [
@@ -4662,7 +4422,7 @@
     },
     {
       "class": "memory-line-count",
-      "firstLine": 2743,
+      "firstLine": 2603,
       "firstSelector": ".memory-line-count",
       "definitionCount": 1,
       "consumers": [
@@ -4677,7 +4437,7 @@
     },
     {
       "class": "memory-chevron",
-      "firstLine": 2750,
+      "firstLine": 2610,
       "firstSelector": ".memory-chevron",
       "definitionCount": 2,
       "consumers": [
@@ -4692,7 +4452,7 @@
     },
     {
       "class": "memory-bar-track",
-      "firstLine": 2761,
+      "firstLine": 2621,
       "firstSelector": ".memory-bar-track",
       "definitionCount": 1,
       "consumers": [
@@ -4707,7 +4467,7 @@
     },
     {
       "class": "memory-bar-fill",
-      "firstLine": 2769,
+      "firstLine": 2629,
       "firstSelector": ".memory-bar-fill",
       "definitionCount": 1,
       "consumers": [
@@ -4722,7 +4482,7 @@
     },
     {
       "class": "memory-warning",
-      "firstLine": 2775,
+      "firstLine": 2635,
       "firstSelector": ".memory-warning",
       "definitionCount": 1,
       "consumers": [
@@ -4737,7 +4497,7 @@
     },
     {
       "class": "memory-warning--critical",
-      "firstLine": 2782,
+      "firstLine": 2642,
       "firstSelector": ".memory-warning--critical",
       "definitionCount": 1,
       "consumers": [
@@ -4752,7 +4512,7 @@
     },
     {
       "class": "memory-stats",
-      "firstLine": 2787,
+      "firstLine": 2647,
       "firstSelector": ".memory-stats",
       "definitionCount": 1,
       "consumers": [
@@ -4767,7 +4527,7 @@
     },
     {
       "class": "memory-stats-sep",
-      "firstLine": 2793,
+      "firstLine": 2653,
       "firstSelector": ".memory-stats-sep",
       "definitionCount": 1,
       "consumers": [
@@ -4782,7 +4542,7 @@
     },
     {
       "class": "memory-file-list",
-      "firstLine": 2797,
+      "firstLine": 2657,
       "firstSelector": ".memory-file-list",
       "definitionCount": 1,
       "consumers": [
@@ -4799,7 +4559,7 @@
     },
     {
       "class": "memory-file-item",
-      "firstLine": 2804,
+      "firstLine": 2664,
       "firstSelector": ".memory-file-item",
       "definitionCount": 1,
       "consumers": [
@@ -4816,7 +4576,7 @@
     },
     {
       "class": "memory-file-header",
-      "firstLine": 2810,
+      "firstLine": 2670,
       "firstSelector": ".memory-file-header",
       "definitionCount": 1,
       "consumers": [
@@ -4833,7 +4593,7 @@
     },
     {
       "class": "memory-file-type",
-      "firstLine": 2818,
+      "firstLine": 2678,
       "firstSelector": ".memory-file-type",
       "definitionCount": 1,
       "consumers": [
@@ -4850,7 +4610,7 @@
     },
     {
       "class": "memory-file-name",
-      "firstLine": 2827,
+      "firstLine": 2687,
       "firstSelector": ".memory-file-name",
       "definitionCount": 1,
       "consumers": [
@@ -4867,7 +4627,7 @@
     },
     {
       "class": "memory-file-lines",
-      "firstLine": 2837,
+      "firstLine": 2697,
       "firstSelector": ".memory-file-lines",
       "definitionCount": 1,
       "consumers": [
@@ -4884,7 +4644,7 @@
     },
     {
       "class": "memory-file-chevron",
-      "firstLine": 2843,
+      "firstLine": 2703,
       "firstSelector": ".memory-file-chevron",
       "definitionCount": 2,
       "consumers": [
@@ -4901,7 +4661,7 @@
     },
     {
       "class": "memory-file-desc",
-      "firstLine": 2854,
+      "firstLine": 2714,
       "firstSelector": ".memory-file-desc",
       "definitionCount": 1,
       "consumers": [
@@ -4918,7 +4678,7 @@
     },
     {
       "class": "memory-file-content",
-      "firstLine": 2864,
+      "firstLine": 2724,
       "firstSelector": ".memory-file-content",
       "definitionCount": 1,
       "consumers": [
@@ -4935,7 +4695,7 @@
     },
     {
       "class": "memory-other-projects",
-      "firstLine": 2879,
+      "firstLine": 2739,
       "firstSelector": ".memory-other-projects",
       "definitionCount": 1,
       "consumers": [
@@ -4950,7 +4710,7 @@
     },
     {
       "class": "memory-other-projects-label",
-      "firstLine": 2887,
+      "firstLine": 2747,
       "firstSelector": ".memory-other-projects-label",
       "definitionCount": 1,
       "consumers": [
@@ -4965,7 +4725,7 @@
     },
     {
       "class": "memory-project-chips",
-      "firstLine": 2896,
+      "firstLine": 2756,
       "firstSelector": ".memory-project-chips",
       "definitionCount": 1,
       "consumers": [
@@ -4980,7 +4740,7 @@
     },
     {
       "class": "memory-project-chip",
-      "firstLine": 2902,
+      "firstLine": 2762,
       "firstSelector": ".memory-project-chip",
       "definitionCount": 2,
       "consumers": [
@@ -4995,7 +4755,7 @@
     },
     {
       "class": "memory-project-chip-header",
-      "firstLine": 2914,
+      "firstLine": 2774,
       "firstSelector": ".memory-project-chip-header",
       "definitionCount": 1,
       "consumers": [
@@ -5010,7 +4770,7 @@
     },
     {
       "class": "memory-project-chip-name",
-      "firstLine": 2920,
+      "firstLine": 2780,
       "firstSelector": ".memory-project-chip-name",
       "definitionCount": 1,
       "consumers": [
@@ -5025,7 +4785,7 @@
     },
     {
       "class": "memory-project-chip-count",
-      "firstLine": 2926,
+      "firstLine": 2786,
       "firstSelector": ".memory-project-chip-count",
       "definitionCount": 1,
       "consumers": [
@@ -5040,7 +4800,7 @@
     },
     {
       "class": "memory-project-chip-meta",
-      "firstLine": 2932,
+      "firstLine": 2792,
       "firstSelector": ".memory-project-chip-meta",
       "definitionCount": 1,
       "consumers": [
@@ -5055,7 +4815,7 @@
     },
     {
       "class": "memory-project-detail",
-      "firstLine": 2938,
+      "firstLine": 2798,
       "firstSelector": ".memory-project-detail",
       "definitionCount": 1,
       "consumers": [
@@ -5070,7 +4830,7 @@
     },
     {
       "class": "memory-project-detail-header",
-      "firstLine": 2942,
+      "firstLine": 2802,
       "firstSelector": ".memory-project-detail-header",
       "definitionCount": 1,
       "consumers": [
@@ -5085,7 +4845,7 @@
     },
     {
       "class": "memory-project-detail-back",
-      "firstLine": 2949,
+      "firstLine": 2809,
       "firstSelector": ".memory-project-detail-back",
       "definitionCount": 1,
       "consumers": [
@@ -5100,7 +4860,7 @@
     },
     {
       "class": "memory-project-detail-title",
-      "firstLine": 2956,
+      "firstLine": 2816,
       "firstSelector": ".memory-project-detail-title",
       "definitionCount": 1,
       "consumers": [
@@ -5115,7 +4875,7 @@
     },
     {
       "class": "memory-project-detail-banner",
-      "firstLine": 2962,
+      "firstLine": 2822,
       "firstSelector": ".memory-project-detail-banner",
       "definitionCount": 1,
       "consumers": [
@@ -5130,7 +4890,7 @@
     },
     {
       "class": "memory-project-detail-loading",
-      "firstLine": 2971,
+      "firstLine": 2831,
       "firstSelector": ".memory-project-detail-loading",
       "definitionCount": 1,
       "consumers": [
@@ -5145,7 +4905,7 @@
     },
     {
       "class": "collapsible",
-      "firstLine": 2978,
+      "firstLine": 2838,
       "firstSelector": ".collapsible",
       "definitionCount": 3,
       "consumers": [
@@ -5167,7 +4927,7 @@
     },
     {
       "class": "open",
-      "firstLine": 2989,
+      "firstLine": 2849,
       "firstSelector": ".collapsible.open",
       "definitionCount": 2,
       "consumers": [],
@@ -5178,7 +4938,7 @@
     },
     {
       "class": "collapsible-inner",
-      "firstLine": 2993,
+      "firstLine": 2853,
       "firstSelector": ".collapsible-inner",
       "definitionCount": 2,
       "consumers": [
@@ -5200,7 +4960,7 @@
     },
     {
       "class": "first-run-screen",
-      "firstLine": 3011,
+      "firstLine": 2871,
       "firstSelector": ".first-run-screen",
       "definitionCount": 1,
       "consumers": [
@@ -5215,7 +4975,7 @@
     },
     {
       "class": "first-run-header",
-      "firstLine": 3022,
+      "firstLine": 2882,
       "firstSelector": ".first-run-header",
       "definitionCount": 1,
       "consumers": [
@@ -5230,7 +4990,7 @@
     },
     {
       "class": "first-run-title",
-      "firstLine": 3026,
+      "firstLine": 2886,
       "firstSelector": ".first-run-title",
       "definitionCount": 1,
       "consumers": [
@@ -5245,7 +5005,7 @@
     },
     {
       "class": "first-run-subtitle",
-      "firstLine": 3034,
+      "firstLine": 2894,
       "firstSelector": ".first-run-subtitle",
       "definitionCount": 1,
       "consumers": [
@@ -5260,7 +5020,7 @@
     },
     {
       "class": "first-run-providers",
-      "firstLine": 3041,
+      "firstLine": 2901,
       "firstSelector": ".first-run-providers",
       "definitionCount": 1,
       "consumers": [
@@ -5275,7 +5035,7 @@
     },
     {
       "class": "first-run-provider-card",
-      "firstLine": 3047,
+      "firstLine": 2907,
       "firstSelector": ".first-run-provider-card",
       "definitionCount": 1,
       "consumers": [
@@ -5290,7 +5050,7 @@
     },
     {
       "class": "first-run-provider-head",
-      "firstLine": 3057,
+      "firstLine": 2917,
       "firstSelector": ".first-run-provider-head",
       "definitionCount": 1,
       "consumers": [
@@ -5305,7 +5065,7 @@
     },
     {
       "class": "first-run-provider-icon",
-      "firstLine": 3063,
+      "firstLine": 2923,
       "firstSelector": ".first-run-provider-icon",
       "definitionCount": 1,
       "consumers": [
@@ -5320,7 +5080,7 @@
     },
     {
       "class": "first-run-provider-name",
-      "firstLine": 3070,
+      "firstLine": 2930,
       "firstSelector": ".first-run-provider-name",
       "definitionCount": 1,
       "consumers": [
@@ -5335,7 +5095,7 @@
     },
     {
       "class": "first-run-provider-state",
-      "firstLine": 3077,
+      "firstLine": 2937,
       "firstSelector": ".first-run-provider-state",
       "definitionCount": 1,
       "consumers": [
@@ -5350,7 +5110,7 @@
     },
     {
       "class": "first-run-primary-btn",
-      "firstLine": 3083,
+      "firstLine": 2943,
       "firstSelector": ".first-run-primary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -5365,7 +5125,7 @@
     },
     {
       "class": "first-run-secondary",
-      "firstLine": 3099,
+      "firstLine": 2959,
       "firstSelector": ".first-run-secondary",
       "definitionCount": 1,
       "consumers": [
@@ -5380,7 +5140,7 @@
     },
     {
       "class": "first-run-secondary-btn",
-      "firstLine": 3106,
+      "firstLine": 2966,
       "firstSelector": ".first-run-secondary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -5395,7 +5155,7 @@
     },
     {
       "class": "first-run-walkthrough",
-      "firstLine": 3119,
+      "firstLine": 2979,
       "firstSelector": ".first-run-walkthrough",
       "definitionCount": 1,
       "consumers": [
@@ -5410,7 +5170,7 @@
     },
     {
       "class": "first-run-waiting",
-      "firstLine": 3126,
+      "firstLine": 2986,
       "firstSelector": ".first-run-waiting",
       "definitionCount": 1,
       "consumers": [
@@ -5425,7 +5185,7 @@
     },
     {
       "class": "first-run-spinner",
-      "firstLine": 3136,
+      "firstLine": 2996,
       "firstSelector": ".first-run-spinner",
       "definitionCount": 1,
       "consumers": [

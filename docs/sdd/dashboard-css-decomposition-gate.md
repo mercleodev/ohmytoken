@@ -1917,6 +1917,27 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - **Best capture-quality run yet** — 6/7 byte-equal on the first pass with both memory-monitor screens converged (the historically most-flaky pair). The orchestrator daemon-life survived all 7 captured screens.
   - **Cumulative progress (post-U27)**: 19 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `3157` (post-U27), a **1,397-line / 30.7% reduction — first sub-30% milestone of the original size**. 19 new sibling CSS files. 196 cumulative selector deletions.
 
+#### U28 — `dashboard/UsageView.tsx` → `UsageView.css` (Tier 1 single-owner, 16 classes / 18 selectors, 2-segment split)
+
+- **Group**: Tier 1 single-owner (16 classes — twentieth Tier 1 unit landed).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 140 (`dashboard.css` 3157 → 3017). 2-segment split removal:
+  - **Segment 1** (pre-U28 L53-93, 42 lines): 6 classes — `.provider-header`, `.provider-header-left`, `.provider-header-name`, `.provider-header-updated`, `.provider-header-plan`, `.usage-last-updated`. Two section headers dropped (`/* --- Provider Header --- */`, `/* --- Last Updated Label --- */`).
+  - **Segment 2** (pre-U28 L229-325, 98 lines): 10 classes — `.prepaid-notice`, `.prepaid-notice-icon`, `.prepaid-notice-text`, `.credit-balance-card`, `.credit-balance-header`, `.credit-balance-amount`, `.credit-balance-detail`, `.credit-balance-row` + 2 descendant `.credit-balance-row span:first-child` / `:last-child`, `.credit-balance-bar-track`, `.credit-balance-bar-fill`. Two section headers dropped.
+  - New `UsageView.css` is 137 lines.
+- **Consumers updated**: `src/components/dashboard/UsageView.tsx` adds `import './UsageView.css';` as the **first line**.
+- **Frontend review**: OK (fp `60fe42b77025704e9339a176516850e8b07cf06037445d186fa6a743c1c6201e`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U28 move .provider-header* + .usage-last-updated + .prepaid-notice* + .credit-balance-* to UsageView.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 435 → 417 entries (18 deletions). Inventory: `374 → 358` distinct classes; `281 → 265` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **5/7 captured screens byte-equal on first pass** with the **§7 critical surface `dashboard-claude` (146,288 B) byte-equal**. Pass-1 byte-equal set: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `dashboard-prompt-detail` (94,955 B), `settings-evidence` (139,846 B), `settings-context-limit` (145,190 B — back to canonical this run). Two drifts: `memory-monitor-expanded` (+173 B), `memory-monitor-collapsed` (+220 B) — both standard rotating warm-up members. UsageView does not render in either memory-monitor screen.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U28) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - **Cumulative progress (post-U28)**: 20 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `3017` (post-U28), a **1,537-line / 33.7% reduction**. 20 new sibling CSS files. 214 cumulative selector deletions.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).
