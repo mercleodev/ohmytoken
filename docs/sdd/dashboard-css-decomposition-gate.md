@@ -1813,6 +1813,26 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - **3 @keyframes** all move with their consuming classes; this is the first Tier 1 unit to relocate keyframes (per §3 C4 "keyframes ... copy verbatim").
   - **Cumulative progress (post-U20)**: 13 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `3663` (post-U20), an 891-line / 19.6% reduction. 14 new sibling CSS files. 126 cumulative selector-order deletions.
 
+#### U21 — `dashboard/TokenCompositionChart.tsx` → `TokenCompositionChart.css` (Tier 1 single-owner, 11 classes, split-removal preserves cluster)
+
+- **Group**: Tier 1 single-owner (11 classes — fifteenth Tier 1 unit landed).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 78 (`dashboard.css` 3663 → 3585; **split-removal**). Eleven rule blocks extracted: `.token-composition-header` (6-line), `.token-composition-toggle` (7-line), `.token-composition-chart` (3-line), `.token-composition-center-label` (8-line), `.token-composition-center-pct` (6-line), `.token-composition-center-sub` (5-line), `.token-composition-legend` (6-line), `.token-composition-legend-row` (6-line), `.token-composition-legend-dot` (6-line), `.token-composition-legend-label` (4-line), `.token-composition-legend-value` (4-line). New `TokenCompositionChart.css` is 72 lines.
+- **Split-removal pattern (new for this epic)**: U21 is the **first Tier 1 unit to perform a split removal** — it deletes pre-U21 dashboard.css lines `2694-2714` AND `2733-2789`, but **deliberately preserves** lines `2715-2732` containing `.token-composition-toggle-btn` and `.token-composition-toggle-btn.active` (multi-consumer cluster classes shared with `McpInsightsCard.tsx`; reserved for U38 C8 cluster move). Both section headers (`/* === Token Output Productivity === */` and `/* --- Token Composition Chart --- */`) dropped — the big header scoped U19 + U21 which are both now moved.
+- **Consumers updated**: `src/components/dashboard/TokenCompositionChart.tsx` adds `import './TokenCompositionChart.css';` as the **first line**.
+- **Cluster orphan note**: post-U21, `.token-composition-toggle-btn` and `.token-composition-toggle-btn.active` sit alone in `dashboard.css` (no surrounding section comment) until U38 relocates them. Per the precedent of preserving original declaration text, no new placeholder comment was added.
+- **Frontend review**: OK (fp `6a345065a7671dc063fc8b953750c10ba0213f3ef0e910b7bea0e3162e205495`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U21 move .token-composition-{header,toggle,chart,center,legend}* to TokenCompositionChart.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 505 → 494 entries (11 deletions). Inventory: `436 → 425` distinct classes; `343 → 332` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **4/7 captured screens byte-equal on pass-2 with the §7 critical surface byte-equal**. Pass-1 captured §7 surface `dashboard-all-default` at 96,209 B (drift -258 B from canonical 96,467 B — typical warm-up flake on the first capture per U1-VR-d note). Pass-2 (after hard-reset) captured `dashboard-all-default` at canonical 96,467 B byte-equal. Pass-2 byte-equal set: `dashboard-all-default`, `dashboard-claude`, `dashboard-prompt-detail`, `settings-evidence`. Pass-2 drifts (all rotating warm-up members): `settings-context-limit` (-59 B), `memory-monitor-expanded` (+173 B), `memory-monitor-collapsed` (+220 B). TokenCompositionChart does not render in any of the drifting screens.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U21) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - **Cluster orphan** `.token-composition-toggle-btn` (and `.token-composition-toggle-btn.active`) remain in `dashboard.css` at the original line position. Pending U38 (Tier 2 C8 cluster) for their final relocation to `dashboard/token-cluster.css`.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).

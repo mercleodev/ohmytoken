@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T22:46:12Z
-fingerprint=38d337899f6815ea18bc308326f0bf036249a528bffc59e5f4248279ebe56569
+# updated_at_utc: 2026-05-10T22:51:41Z
+fingerprint=6e79495340c096836fe4ba492d6fbe1e4155d0187e303e653e20fb87d72e0cf3
 source=docs/sdd/style-checklist.md
-note=U20 move .action-{dot,badge,time,detail,clickable,expandable,flow}* + 3 keyframes to ActionFlowList.css (Tier 1)
+note=U21 move .token-composition-{header,toggle,chart,center,legend}* to TokenCompositionChart.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
-src/components/dashboard/ActionFlowList.css
-src/components/dashboard/ActionFlowList.tsx
 src/components/dashboard/dashboard.css
+src/components/dashboard/TokenCompositionChart.css
+src/components/dashboard/TokenCompositionChart.tsx

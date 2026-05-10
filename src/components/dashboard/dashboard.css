@@ -2691,27 +2691,6 @@
   flex-shrink: 0;
 }
 
-/* =============================================
-   Token Output Productivity
-   ============================================= */
-
-/* --- Token Composition Chart --- */
-
-.token-composition-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.token-composition-toggle {
-  display: flex;
-  gap: 2px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 6px;
-  padding: 2px;
-}
-
 .token-composition-toggle-btn {
   font-size: 10px;
   font-weight: 500;
@@ -2728,63 +2707,6 @@
   background: #fff;
   color: #4d4d4d;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-
-.token-composition-chart {
-  position: relative;
-}
-
-.token-composition-center-label {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  pointer-events: none;
-}
-
-.token-composition-center-pct {
-  display: block;
-  font-size: 14px;
-  font-weight: 700;
-  color: #34D399;
-}
-
-.token-composition-center-sub {
-  display: block;
-  font-size: 9px;
-  color: #9b9c9e;
-}
-
-.token-composition-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 4px;
-}
-
-.token-composition-legend-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-}
-
-.token-composition-legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.token-composition-legend-label {
-  color: #676767;
-  min-width: 80px;
-}
-
-.token-composition-legend-value {
-  color: #9b9c9e;
-  margin-left: auto;
 }
 
 /* --- Session Alerts --- */

@@ -1,3 +1,4 @@
+import './TokenCompositionChart.css';
 import { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatTokens } from '../../utils/format';
