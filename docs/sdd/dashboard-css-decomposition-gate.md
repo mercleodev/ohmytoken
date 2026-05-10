@@ -1854,7 +1854,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U23 — `dashboard/PromptDetailView.tsx` → `PromptDetailView.css` (Tier 1 single-owner, 12 classes / 14 selectors, **4-segment split move**)
 
 - **Group**: Tier 1 single-owner (12 classes — seventeenth Tier 1 unit landed). PromptDetailView's owned classes were scattered across 4 disjoint regions of pre-U23 `dashboard.css`, requiring a 4-way split removal.
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `8e0d31a`
 - **Lines moved**: 119 (`dashboard.css` 3486 → 3367). Split across 4 segments:
   - **Segment 1** (pre-U23 L815-876, 62 lines): section comment `/* === Prompt Detail === */` dropped; 7 selectors moved — `.prompt-detail-header`, `.prompt-detail-model`, `.prompt-detail-branch`, `.prompt-detail-text`, `.prompt-detail-text.expanded` (compound), `.provider-data-notice` (with inline comment `/* Provider data limitation notice */` preserved in the new file), `.prompt-detail-stats` (with inline comment `/* Quick Stats */` preserved).
   - **Segment 2** (pre-U23 L1086-1108, 23 lines): 4 selectors — `.injected-evidence-badge` + 3 compound modifiers (`.injected-evidence-badge.confirmed`, `.injected-evidence-badge.likely`, `.injected-evidence-badge.unverified`). The bare `.confirmed`, `.likely`, `.unverified` class names are confirmed exclusive to PromptDetailView via `className="injected-evidence-badge confirmed"` etc. (the substring matches in `NotificationCard.tsx` are JS property accesses on `EVIDENCE_STATUS_COLORS`, not className strings).
