@@ -2027,6 +2027,29 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - **Largest single-segment Tier 1 unit so far**: 30 base classes + 11 compound/pseudo/descendant = 41 selectors moved in one 291-line block.
   - **Cumulative progress (post-U36)**: 24 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `2186` (post-U36), a **2,368-line / 52.0% reduction — crosses the halfway mark**. 24 new sibling CSS files. 331 cumulative selector deletions.
 
+#### U37 deferred — SessionDetailView complexity analysis (2026-05-11)
+
+- **Status**: Tier 1 unit NOT YET LANDED. Deferred to a future session for careful planning.
+- **Group**: would-be twenty-fifth Tier 1 unit landed; the final Tier 1 unit overall.
+- **Reason for deferral**: U37 is the most structurally complex Tier 1 unit in the epic:
+  - **30 single-owner classes scattered across ≥5 disjoint segments** of `dashboard.css` (post-U36 line numbers):
+    1. L244-? `.session-detail-header`, `.session-detail-title`
+    2. (orphan `.session-detail-summary` interleaved — KEEP for U50)
+    3. L291-466 `.prompt-list`, `.prompt-list-loading`, `.prompt-list-empty`, `.prompt-card`, `.prompt-card:hover`, `.prompt-card-top`, `.prompt-card-model`, `.prompt-card-time`, `.prompt-card-text`, `.prompt-card-journey`, `.prompt-card-journey-chip`, `.prompt-card-journey-chip.cache` (compound), `.prompt-card-journey-chip.delta` (compound), `.prompt-card-meta`, `.prompt-card-chevron`, `.prompt-card-injected`, `.prompt-card-injected-bar`, `.prompt-card-injected-bar > div:first-child` (descendant on attribute-style), `.prompt-card-injected-bar > div:last-child`, `.prompt-card-injected-bar > div:only-child`, `.injected-segment`, `.injected-segment::after`, `.injected-segment:hover::after`.
+    4. (orphans `.prompt-card-injected-label`, `.prompt-card-injected-pct` interleaved — KEEP for U50)
+    5. L958-967 `.prompt-card-compacted` (with inline section comments `/* === Context Usage (Session Detail) === */` and `/* Compacted label */`).
+    6. (orphan `.session-ctx-gauge` + descendant `.session-ctx-gauge span` interleaved — KEEP for U50)
+    7. L982-1041 `.session-donut-gauge`, `.session-donut-svg-wrap`, `.session-donut-label`, `.session-donut-pct`, `.session-donut-sub`, `.session-donut-info`, `.session-donut-row`, `.session-donut-row span:first-child` (descendant), `.session-donut-row span:last-child`, `.session-donut-row--cost`, `.session-donut-row--cost span:last-child`.
+    8. L1124-? `.prompt-card-response`, `.prompt-card-response::before` (pseudo).
+    9. (orphan `.prompt-card-badges` interleaved — KEEP for U50)
+    10. L1648-? `.efficiency-badge` (single-class, far from main cluster).
+  - **Compound/pseudo/descendant selector density**: ~13 extra selectors beyond the 30 base classes — `.prompt-card-journey-chip.{cache,delta}` (compound), `.prompt-card:hover` (pseudo), `.prompt-card-injected-bar > div:{first,last,only}-child` (descendant on child position), `.injected-segment::after` (pseudo-element), `.injected-segment:hover::after` (pseudo combo), `.session-donut-row span:{first,last}-child`, `.session-donut-row--cost span:last-child`, `.prompt-card-response::before`.
+  - **§7 surface unreachable**: SessionDetailView renders only when the user opens a Session Detail view from RecentSessions. The current `qa-capture-screen-map.json` has no entry for this surface. Visual verification would require expanding the screen-map alongside fixture work to seed a session detail navigation path.
+  - **Multi-consumer / cluster preservation**: `.session-back-btn` (U39 cluster) and `.session-alert*` family (U14 deferred — SessionAlert needs fixture trigger) live interleaved in the same broad region. Both must be preserved at original positions during U37's split removal.
+- **Complexity estimate**: 1-2 hours of careful planning, including verification that each segment's surrounding orphan/cluster classes are correctly preserved, plus the §7 surface verification chain — likely PARTIAL PASS with the established fallback chain (code-reviewer 0/0/0 + source cascade PASS + sentinel `dashboard-all-default` byte-equal + verbatim relocation logic). User approval required per §8 step 8e second clause.
+- **Tier 1 closure status at U36**: 24 of 36 Tier 1 slots landed. Deferred: U6 (SetupGuide — surface outside window), U8 (CostTreemap — multi-selector blocker), U14 (SessionAlert — fixture needed), U16 (UsageDashboard shell residuals — no-move per §7), U18 (FilePreviewOverlay — UI trigger), U24 (ContextTreemap — multi-selector blocker, same as U8), U25 (ContextLimitSettings — cluster-aware split), U29 (FirstRunOnboarding — surface outside window), U30 (BackfillDialog — surface outside window), U31 (StatsDetailView — UI trigger), U33 (McpInsightsCard — surface outside window), U37 (this entry). 12 of 36 deferred = **67% Tier 1 completion at session boundary**.
+- **Decision**: prefer planning correctness over speed. U37 ships in a future session with a written segment-by-segment removal plan and a screen-map extension for the session-detail surface (or PARTIAL PASS with explicit fallback justification).
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).
