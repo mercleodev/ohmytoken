@@ -1981,7 +1981,7 @@ Earlier units committed their work without filling §14. Reconstructed from `git
 #### U35 — `dashboard/MemoryMonitorCard.tsx` → `MemoryMonitorCard.css` (Tier 1 single-owner, 25 classes / 27 selectors, **partial visual evidence — user-approved**)
 
 - **Group**: Tier 1 single-owner (25 classes — twenty-third Tier 1 unit landed).
-- **SHA**: _to be backfilled after merge_
+- **SHA**: `81706d2`
 - **Lines moved**: 178 (`dashboard.css` 2655 → 2477; split-removal preserving U47 cluster). 2 segments:
   - **Segment 1** (pre-U35 L2218-2295, 79 lines including dropped 3-line section header `/* === Memory Monitor Card === */`): 11 classes — `.memory-card`, `.memory-header`, `.memory-title`, `.memory-line-count`, `.memory-chevron`, `.memory-chevron.expanded` (compound), `.memory-bar-track`, `.memory-bar-fill`, `.memory-warning`, `.memory-warning--critical` (BEM modifier as separate class), `.memory-stats`, `.memory-stats-sep`.
   - **Segment 2** (pre-U35 L2379-2476, 99 lines): preserved inline comment `/* Multi-project memory */` + 14 classes — `.memory-other-projects`, `.memory-other-projects-label`, `.memory-project-chips`, `.memory-project-chip` + `:hover` pseudo, `.memory-project-chip-header`, `.memory-project-chip-name`, `.memory-project-chip-count`, `.memory-project-chip-meta`, `.memory-project-detail`, `.memory-project-detail-header`, `.memory-project-detail-back`, `.memory-project-detail-title`, `.memory-project-detail-banner`, `.memory-project-detail-loading`.
