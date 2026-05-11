@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T23:39:22Z
-fingerprint=6a0d9a7a9b042d817ec7d8255ec48d0a4d49b03f37b0f96faf3378fae32cd396
+# updated_at_utc: 2026-05-11T02:05:43Z
+fingerprint=35aff192a6d14b405bea0a08573fe00ee902df92cfa72ae0763a4120c8a7db0b
 source=docs/sdd/style-checklist.md
-note=U34 move .guardrail-* to prompt-detail/GuardrailSummary.css (Tier 1)
+note=U35 move .memory-{card,header,title,line-count,chevron,bar,warning,stats,other,project}* to MemoryMonitorCard.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/prompt-detail/GuardrailSummary.css
-src/components/dashboard/prompt-detail/GuardrailSummary.tsx
+src/components/dashboard/MemoryMonitorCard.css
+src/components/dashboard/MemoryMonitorCard.tsx

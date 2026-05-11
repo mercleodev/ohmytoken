@@ -1,10 +1,10 @@
 {
-  "generated": "2026-05-10T23:36:57.833Z",
+  "generated": "2026-05-10T23:42:01.884Z",
   "source": "src/components/dashboard/dashboard.css",
   "sharedTargetDir": "src/components/dashboard/_shared/",
-  "totalClasses": 311,
+  "totalClasses": 286,
   "counts": {
-    "single-owner": 221,
+    "single-owner": 196,
     "cluster": 25,
     "shared": 12,
     "orphan": 53,
@@ -148,7 +148,7 @@
       "class": "expanded",
       "firstLine": 73,
       "firstSelector": ".cost-chevron.expanded",
-      "definitionCount": 4,
+      "definitionCount": 3,
       "consumers": [],
       "consumerCount": 0,
       "folders": [],
@@ -3716,173 +3716,8 @@
       "orphanClass": null
     },
     {
-      "class": "memory-card",
-      "firstLine": 2216,
-      "firstSelector": ".memory-card",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-header",
-      "firstLine": 2227,
-      "firstSelector": ".memory-header",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-title",
-      "firstLine": 2234,
-      "firstSelector": ".memory-title",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-line-count",
-      "firstLine": 2241,
-      "firstSelector": ".memory-line-count",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-chevron",
-      "firstLine": 2248,
-      "firstSelector": ".memory-chevron",
-      "definitionCount": 2,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-bar-track",
-      "firstLine": 2259,
-      "firstSelector": ".memory-bar-track",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-bar-fill",
-      "firstLine": 2267,
-      "firstSelector": ".memory-bar-fill",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-warning",
-      "firstLine": 2273,
-      "firstSelector": ".memory-warning",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-warning--critical",
-      "firstLine": 2280,
-      "firstSelector": ".memory-warning--critical",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-stats",
-      "firstLine": 2285,
-      "firstSelector": ".memory-stats",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-stats-sep",
-      "firstLine": 2291,
-      "firstSelector": ".memory-stats-sep",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
       "class": "memory-file-list",
-      "firstLine": 2295,
+      "firstLine": 2216,
       "firstSelector": ".memory-file-list",
       "definitionCount": 1,
       "consumers": [
@@ -3899,7 +3734,7 @@
     },
     {
       "class": "memory-file-item",
-      "firstLine": 2302,
+      "firstLine": 2223,
       "firstSelector": ".memory-file-item",
       "definitionCount": 1,
       "consumers": [
@@ -3916,7 +3751,7 @@
     },
     {
       "class": "memory-file-header",
-      "firstLine": 2308,
+      "firstLine": 2229,
       "firstSelector": ".memory-file-header",
       "definitionCount": 1,
       "consumers": [
@@ -3933,7 +3768,7 @@
     },
     {
       "class": "memory-file-type",
-      "firstLine": 2316,
+      "firstLine": 2237,
       "firstSelector": ".memory-file-type",
       "definitionCount": 1,
       "consumers": [
@@ -3950,7 +3785,7 @@
     },
     {
       "class": "memory-file-name",
-      "firstLine": 2325,
+      "firstLine": 2246,
       "firstSelector": ".memory-file-name",
       "definitionCount": 1,
       "consumers": [
@@ -3967,7 +3802,7 @@
     },
     {
       "class": "memory-file-lines",
-      "firstLine": 2335,
+      "firstLine": 2256,
       "firstSelector": ".memory-file-lines",
       "definitionCount": 1,
       "consumers": [
@@ -3984,7 +3819,7 @@
     },
     {
       "class": "memory-file-chevron",
-      "firstLine": 2341,
+      "firstLine": 2262,
       "firstSelector": ".memory-file-chevron",
       "definitionCount": 2,
       "consumers": [
@@ -4001,7 +3836,7 @@
     },
     {
       "class": "memory-file-desc",
-      "firstLine": 2352,
+      "firstLine": 2273,
       "firstSelector": ".memory-file-desc",
       "definitionCount": 1,
       "consumers": [
@@ -4018,7 +3853,7 @@
     },
     {
       "class": "memory-file-content",
-      "firstLine": 2362,
+      "firstLine": 2283,
       "firstSelector": ".memory-file-content",
       "definitionCount": 1,
       "consumers": [
@@ -4034,218 +3869,8 @@
       "orphanClass": null
     },
     {
-      "class": "memory-other-projects",
-      "firstLine": 2377,
-      "firstSelector": ".memory-other-projects",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-other-projects-label",
-      "firstLine": 2385,
-      "firstSelector": ".memory-other-projects-label",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-chips",
-      "firstLine": 2394,
-      "firstSelector": ".memory-project-chips",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-chip",
-      "firstLine": 2400,
-      "firstSelector": ".memory-project-chip",
-      "definitionCount": 2,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-chip-header",
-      "firstLine": 2412,
-      "firstSelector": ".memory-project-chip-header",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-chip-name",
-      "firstLine": 2418,
-      "firstSelector": ".memory-project-chip-name",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-chip-count",
-      "firstLine": 2424,
-      "firstSelector": ".memory-project-chip-count",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-chip-meta",
-      "firstLine": 2430,
-      "firstSelector": ".memory-project-chip-meta",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-detail",
-      "firstLine": 2436,
-      "firstSelector": ".memory-project-detail",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-detail-header",
-      "firstLine": 2440,
-      "firstSelector": ".memory-project-detail-header",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-detail-back",
-      "firstLine": 2447,
-      "firstSelector": ".memory-project-detail-back",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-detail-title",
-      "firstLine": 2454,
-      "firstSelector": ".memory-project-detail-title",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-detail-banner",
-      "firstLine": 2460,
-      "firstSelector": ".memory-project-detail-banner",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
-      "class": "memory-project-detail-loading",
-      "firstLine": 2469,
-      "firstSelector": ".memory-project-detail-loading",
-      "definitionCount": 1,
-      "consumers": [
-        "src/components/dashboard/MemoryMonitorCard.tsx"
-      ],
-      "consumerCount": 1,
-      "folders": [
-        "dashboard"
-      ],
-      "tier": "single-owner",
-      "orphanClass": null
-    },
-    {
       "class": "collapsible",
-      "firstLine": 2476,
+      "firstLine": 2298,
       "firstSelector": ".collapsible",
       "definitionCount": 3,
       "consumers": [
@@ -4267,7 +3892,7 @@
     },
     {
       "class": "open",
-      "firstLine": 2487,
+      "firstLine": 2309,
       "firstSelector": ".collapsible.open",
       "definitionCount": 2,
       "consumers": [],
@@ -4278,7 +3903,7 @@
     },
     {
       "class": "collapsible-inner",
-      "firstLine": 2491,
+      "firstLine": 2313,
       "firstSelector": ".collapsible-inner",
       "definitionCount": 2,
       "consumers": [
@@ -4300,7 +3925,7 @@
     },
     {
       "class": "first-run-screen",
-      "firstLine": 2509,
+      "firstLine": 2331,
       "firstSelector": ".first-run-screen",
       "definitionCount": 1,
       "consumers": [
@@ -4315,7 +3940,7 @@
     },
     {
       "class": "first-run-header",
-      "firstLine": 2520,
+      "firstLine": 2342,
       "firstSelector": ".first-run-header",
       "definitionCount": 1,
       "consumers": [
@@ -4330,7 +3955,7 @@
     },
     {
       "class": "first-run-title",
-      "firstLine": 2524,
+      "firstLine": 2346,
       "firstSelector": ".first-run-title",
       "definitionCount": 1,
       "consumers": [
@@ -4345,7 +3970,7 @@
     },
     {
       "class": "first-run-subtitle",
-      "firstLine": 2532,
+      "firstLine": 2354,
       "firstSelector": ".first-run-subtitle",
       "definitionCount": 1,
       "consumers": [
@@ -4360,7 +3985,7 @@
     },
     {
       "class": "first-run-providers",
-      "firstLine": 2539,
+      "firstLine": 2361,
       "firstSelector": ".first-run-providers",
       "definitionCount": 1,
       "consumers": [
@@ -4375,7 +4000,7 @@
     },
     {
       "class": "first-run-provider-card",
-      "firstLine": 2545,
+      "firstLine": 2367,
       "firstSelector": ".first-run-provider-card",
       "definitionCount": 1,
       "consumers": [
@@ -4390,7 +4015,7 @@
     },
     {
       "class": "first-run-provider-head",
-      "firstLine": 2555,
+      "firstLine": 2377,
       "firstSelector": ".first-run-provider-head",
       "definitionCount": 1,
       "consumers": [
@@ -4405,7 +4030,7 @@
     },
     {
       "class": "first-run-provider-icon",
-      "firstLine": 2561,
+      "firstLine": 2383,
       "firstSelector": ".first-run-provider-icon",
       "definitionCount": 1,
       "consumers": [
@@ -4420,7 +4045,7 @@
     },
     {
       "class": "first-run-provider-name",
-      "firstLine": 2568,
+      "firstLine": 2390,
       "firstSelector": ".first-run-provider-name",
       "definitionCount": 1,
       "consumers": [
@@ -4435,7 +4060,7 @@
     },
     {
       "class": "first-run-provider-state",
-      "firstLine": 2575,
+      "firstLine": 2397,
       "firstSelector": ".first-run-provider-state",
       "definitionCount": 1,
       "consumers": [
@@ -4450,7 +4075,7 @@
     },
     {
       "class": "first-run-primary-btn",
-      "firstLine": 2581,
+      "firstLine": 2403,
       "firstSelector": ".first-run-primary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -4465,7 +4090,7 @@
     },
     {
       "class": "first-run-secondary",
-      "firstLine": 2597,
+      "firstLine": 2419,
       "firstSelector": ".first-run-secondary",
       "definitionCount": 1,
       "consumers": [
@@ -4480,7 +4105,7 @@
     },
     {
       "class": "first-run-secondary-btn",
-      "firstLine": 2604,
+      "firstLine": 2426,
       "firstSelector": ".first-run-secondary-btn",
       "definitionCount": 2,
       "consumers": [
@@ -4495,7 +4120,7 @@
     },
     {
       "class": "first-run-walkthrough",
-      "firstLine": 2617,
+      "firstLine": 2439,
       "firstSelector": ".first-run-walkthrough",
       "definitionCount": 1,
       "consumers": [
@@ -4510,7 +4135,7 @@
     },
     {
       "class": "first-run-waiting",
-      "firstLine": 2624,
+      "firstLine": 2446,
       "firstSelector": ".first-run-waiting",
       "definitionCount": 1,
       "consumers": [
@@ -4525,7 +4150,7 @@
     },
     {
       "class": "first-run-spinner",
-      "firstLine": 2634,
+      "firstLine": 2456,
       "firstSelector": ".first-run-spinner",
       "definitionCount": 1,
       "consumers": [

@@ -1,6 +1,6 @@
 # dashboard.css selectors in declaration order
-# Generated: 2026-05-10T23:36:57.833Z
-# Total entries (including @-rules): 368
+# Generated: 2026-05-10T23:42:01.884Z
+# Total entries (including @-rules): 341
 # Format: <line>\t<selector>
 #
 # Use this as the cascade-order baseline. After moves, the relative order of
@@ -313,65 +313,38 @@
  2201	.mcp-card-tip-icon
  2206	.mcp-card-tip-text
  2210	.mcp-card-empty
- 2216	.memory-card
- 2227	.memory-header
- 2234	.memory-title
- 2241	.memory-line-count
- 2248	.memory-chevron
- 2255	.memory-chevron.expanded
- 2259	.memory-bar-track
- 2267	.memory-bar-fill
- 2273	.memory-warning
- 2280	.memory-warning--critical
- 2285	.memory-stats
- 2291	.memory-stats-sep
- 2295	.memory-file-list
- 2302	.memory-file-item
- 2308	.memory-file-header
- 2316	.memory-file-type
- 2325	.memory-file-name
- 2335	.memory-file-lines
- 2341	.memory-file-chevron
- 2348	.memory-file-chevron.expanded
- 2352	.memory-file-desc
- 2362	.memory-file-content
- 2377	.memory-other-projects
- 2385	.memory-other-projects-label
- 2394	.memory-project-chips
- 2400	.memory-project-chip
- 2408	.memory-project-chip:hover
- 2412	.memory-project-chip-header
- 2418	.memory-project-chip-name
- 2424	.memory-project-chip-count
- 2430	.memory-project-chip-meta
- 2436	.memory-project-detail
- 2440	.memory-project-detail-header
- 2447	.memory-project-detail-back
- 2454	.memory-project-detail-title
- 2460	.memory-project-detail-banner
- 2469	.memory-project-detail-loading
- 2476	.collapsible
- 2487	.collapsible.open
- 2491	.collapsible-inner
- 2498	.collapsible.open > .collapsible-inner
- 2502	@media (prefers-reduced-motion: reduce)
- 2509	.first-run-screen
- 2520	.first-run-header
- 2524	.first-run-title
- 2532	.first-run-subtitle
- 2539	.first-run-providers
- 2545	.first-run-provider-card
- 2555	.first-run-provider-head
- 2561	.first-run-provider-icon
- 2568	.first-run-provider-name
- 2575	.first-run-provider-state
- 2581	.first-run-primary-btn
- 2593	.first-run-primary-btn:hover
- 2597	.first-run-secondary
- 2604	.first-run-secondary-btn
- 2613	.first-run-secondary-btn:hover
- 2617	.first-run-walkthrough
- 2624	.first-run-waiting
- 2634	.first-run-spinner
- 2643	@keyframes first-run-spin
- 2649	@media (prefers-reduced-motion: reduce)
+ 2216	.memory-file-list
+ 2223	.memory-file-item
+ 2229	.memory-file-header
+ 2237	.memory-file-type
+ 2246	.memory-file-name
+ 2256	.memory-file-lines
+ 2262	.memory-file-chevron
+ 2269	.memory-file-chevron.expanded
+ 2273	.memory-file-desc
+ 2283	.memory-file-content
+ 2298	.collapsible
+ 2309	.collapsible.open
+ 2313	.collapsible-inner
+ 2320	.collapsible.open > .collapsible-inner
+ 2324	@media (prefers-reduced-motion: reduce)
+ 2331	.first-run-screen
+ 2342	.first-run-header
+ 2346	.first-run-title
+ 2354	.first-run-subtitle
+ 2361	.first-run-providers
+ 2367	.first-run-provider-card
+ 2377	.first-run-provider-head
+ 2383	.first-run-provider-icon
+ 2390	.first-run-provider-name
+ 2397	.first-run-provider-state
+ 2403	.first-run-primary-btn
+ 2415	.first-run-primary-btn:hover
+ 2419	.first-run-secondary
+ 2426	.first-run-secondary-btn
+ 2435	.first-run-secondary-btn:hover
+ 2439	.first-run-walkthrough
+ 2446	.first-run-waiting
+ 2456	.first-run-spinner
+ 2465	@keyframes first-run-spin
+ 2471	@media (prefers-reduced-motion: reduce)

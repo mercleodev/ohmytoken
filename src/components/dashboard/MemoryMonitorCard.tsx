@@ -1,3 +1,4 @@
+import './MemoryMonitorCard.css';
 import { useState, useEffect } from 'react';
 import type { MemoryStatus, MemoryFile, ProjectMemorySummary } from '../../types/electron';
 import {

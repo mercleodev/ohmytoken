@@ -1978,6 +1978,35 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - No `/* UNUSED candidate */` markers added (deferred to U50).
   - **Cumulative progress (post-U34)**: 22 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `2655` (post-U34), a **1,899-line / 41.7% reduction**. 22 new sibling CSS files. 263 cumulative selector deletions.
 
+#### U35 — `dashboard/MemoryMonitorCard.tsx` → `MemoryMonitorCard.css` (Tier 1 single-owner, 25 classes / 27 selectors, **partial visual evidence — user-approved**)
+
+- **Group**: Tier 1 single-owner (25 classes — twenty-third Tier 1 unit landed).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 178 (`dashboard.css` 2655 → 2477; split-removal preserving U47 cluster). 2 segments:
+  - **Segment 1** (pre-U35 L2218-2295, 79 lines including dropped 3-line section header `/* === Memory Monitor Card === */`): 11 classes — `.memory-card`, `.memory-header`, `.memory-title`, `.memory-line-count`, `.memory-chevron`, `.memory-chevron.expanded` (compound), `.memory-bar-track`, `.memory-bar-fill`, `.memory-warning`, `.memory-warning--critical` (BEM modifier as separate class), `.memory-stats`, `.memory-stats-sep`.
+  - **Segment 2** (pre-U35 L2379-2476, 99 lines): preserved inline comment `/* Multi-project memory */` + 14 classes — `.memory-other-projects`, `.memory-other-projects-label`, `.memory-project-chips`, `.memory-project-chip` + `:hover` pseudo, `.memory-project-chip-header`, `.memory-project-chip-name`, `.memory-project-chip-count`, `.memory-project-chip-meta`, `.memory-project-detail`, `.memory-project-detail-header`, `.memory-project-detail-back`, `.memory-project-detail-title`, `.memory-project-detail-banner`, `.memory-project-detail-loading`.
+  - New `MemoryMonitorCard.css` is 175 lines.
+- **Consumers updated**: `src/components/dashboard/MemoryMonitorCard.tsx` adds `import './MemoryMonitorCard.css';` as the **first line**.
+- **Cluster preservation**: `.memory-file-*` family (9 classes — multi-consumer between MemoryMonitorCard.tsx AND prompt-detail/PromptMemorySection.tsx) **STAYS in `dashboard.css`** for U47 (Tier 3 shared move). Split removal preserves this 81-line cluster between U35's two moved segments.
+- **Frontend review**: OK (fp `b719f86f043770a42550023d2f5027b37a3b715a7e87b950123f8ce959f9695a`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U35 move .memory-{card,header,title,line-count,chevron,bar,warning,stats,other,project}* to MemoryMonitorCard.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 368 → 341 entries (27 deletions). Inventory: `314 → 289` distinct classes; `221 → 196` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: **PARTIAL PASS — §7 surfaces not captured due to orchestrator early-death; user-approved exception per §8 step 8e second clause**. The §7 surfaces for MemoryMonitorCard are `memory-monitor-expanded` (screen 6) and `memory-monitor-collapsed` (screen 7) — both in the deep end of the populated capture order. **Four consecutive capture passes died at screen 3 or earlier** with `os error 35` EAGAIN (passes captured 1, 2, 2, 2 screens respectively; pass-2-3-4 also had `dashboard-claude` rendering as a 20-96 KB partial/duplicate of dashboard-all-default — confirming the orchestrator is in a degraded state during this session, the same P0.5.6-deferred infrastructure flake documented elsewhere). The orchestrator never reached MemoryMonitorCard's §7 surface, so direct byte-equal verification is not possible.
+- **Visual diff justification chain (user-approved fallback)**:
+  1. **Code review verdict**: 0 critical / 0 major / 0 minor (fp `b719f86f...`). 27 rule blocks verbatim-copied; banner present; `:hover` and `.expanded` pseudos preserved; BEM modifier `.memory-warning--critical` preserved as separate rule block; inline comment `/* Multi-project memory */` preserved.
+  2. **Source-side cascade-order PASS**: `selectors-ordered.txt` shows exactly 27 clean deletions of the moved selectors — no re-ordering of the 341 surviving selectors. This proves the relative declaration order within `dashboard.css` is unchanged for everything that didn't move.
+  3. **Bundle-side analysis**: emit order is `dashboard.css` first (shell) then sub-component CSS (per current §3 C7 wording). The new `MemoryMonitorCard.css` is now emitted after `dashboard.css` in the bundle. Since MemoryMonitorCard's classes never appear as compound modifiers on a shell class (verified by grep — no `dashboard.css` rule contains `.memory-card`, `.memory-project-*`, etc. as descendant or compound), the bundle re-arrangement cannot cause specificity conflicts. The structural moved-vs-moved C7 caveat applies but is visually inconsequential.
+  4. **Sentinel surface**: `dashboard-all-default` (96,467 B) is byte-equal vs the U1-VR-d baseline post-U35. This is a critical sentinel because (a) MemoryMonitorCard is NOT rendered on `dashboard-all-default` (it's a Claude-tab-specific component in the populated profile), and (b) the byte-equal hash confirms the bundle's overall layout/painting is unaffected by U35's move. If U35's CSS were corrupted or its `.memory-*` styles were leaking onto the All-tab section, the sentinel would have drifted.
+  5. **Per §8 step 8e second clause**: "Exceptions require user approval before commit." User explicitly approved this PARTIAL PASS via prompt at the time of commit, acknowledging the orchestrator infrastructure constraint.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U35) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - **First Tier 1 unit landing with NO §7-surface byte-equal capture** (since U4's partial); the prior Tier 1 units always had at least one §7-surface capture available. The justification chain above is the established fallback when orchestrator flake blocks the §7 surface, and it sets the precedent for U30 / U33 / U36-style late-screen units that may face the same constraint.
+  - **Cumulative progress (post-U35)**: 23 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `2477` (post-U35), a **2,077-line / 45.6% reduction**. 23 new sibling CSS files. 290 cumulative selector deletions.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).
