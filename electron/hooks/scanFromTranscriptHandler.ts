@@ -1,10 +1,17 @@
 import type { PromptScan, UsageLogEntry } from "../proxy/types";
 import { scanFromTranscript } from "./scanFromTranscript";
-import type { TranscriptUsage } from "./transcriptReader";
+import { waitForTranscriptSettle } from "./transcriptReader";
+import type { TranscriptSettleOptions, TranscriptUsage } from "./transcriptReader";
 
 export type HandleScanDeps = {
   writeHookScan: (scan: PromptScan, usage: UsageLogEntry) => void;
   globalClaudeMdPath?: string;
+  /**
+   * Issue #349: Claude Code's Stop hook fires before the runner flushes
+   * the final assistant message + nested_memory attachments. Wait for
+   * the JSONL byte size to hold steady before parsing.
+   */
+  settleOptions?: TranscriptSettleOptions;
 };
 
 export type HandleScanResponse = { status: number; body: string };
@@ -35,10 +42,10 @@ export const buildHookUsageEntry = (
   duration_ms: 0,
 });
 
-export const handleScanFromTranscriptRequest = (
+export const handleScanFromTranscriptRequest = async (
   rawBody: string,
   deps: HandleScanDeps,
-): HandleScanResponse => {
+): Promise<HandleScanResponse> => {
   let parsed: { session_id?: string; transcript_path?: string };
   try {
     parsed = JSON.parse(rawBody);
@@ -49,6 +56,8 @@ export const handleScanFromTranscriptRequest = (
   if (!parsed || typeof parsed !== "object" || !parsed.transcript_path) {
     return { status: 400, body: json({ error: "transcript_path required" }) };
   }
+
+  await waitForTranscriptSettle(parsed.transcript_path, deps.settleOptions);
 
   const result = scanFromTranscript({
     transcriptPath: parsed.transcript_path,
