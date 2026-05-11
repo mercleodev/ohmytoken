@@ -1,12 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-11T02:05:43Z
-fingerprint=35aff192a6d14b405bea0a08573fe00ee902df92cfa72ae0763a4120c8a7db0b
+# updated_at_utc: 2026-05-11T02:22:24Z
+fingerprint=f0a23e66e753c576427edcb127140b324c7713689f4149ddaab4b792c5a626ad
 source=docs/sdd/style-checklist.md
-note=U35 move .memory-{card,header,title,line-count,chevron,bar,warning,stats,other,project}* to MemoryMonitorCard.css (Tier 1)
+note=U36 move .evidence-{settings,toggle,signal,radio,threshold,weight}* + .small to EvidenceSettings.css (Tier 1)
 
 docs/sdd/css-decomp-inventory/class-consumers.json
 docs/sdd/css-decomp-inventory/selectors-ordered.txt
 docs/sdd/dashboard-css-decomposition-gate.md
 src/components/dashboard/dashboard.css
-src/components/dashboard/MemoryMonitorCard.css
-src/components/dashboard/MemoryMonitorCard.tsx
+src/components/dashboard/EvidenceSettings.css
+src/components/dashboard/EvidenceSettings.tsx

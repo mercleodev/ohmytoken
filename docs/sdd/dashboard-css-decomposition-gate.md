@@ -2007,6 +2007,26 @@ Earlier units committed their work without filling §14. Reconstructed from `git
   - **First Tier 1 unit landing with NO §7-surface byte-equal capture** (since U4's partial); the prior Tier 1 units always had at least one §7-surface capture available. The justification chain above is the established fallback when orchestrator flake blocks the §7 surface, and it sets the precedent for U30 / U33 / U36-style late-screen units that may face the same constraint.
   - **Cumulative progress (post-U35)**: 23 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `2477` (post-U35), a **2,077-line / 45.6% reduction**. 23 new sibling CSS files. 290 cumulative selector deletions.
 
+#### U36 — `dashboard/EvidenceSettings.tsx` → `EvidenceSettings.css` (Tier 1 single-owner, 30 classes / ~41 selectors)
+
+- **Group**: Tier 1 single-owner (30 classes — twenty-fourth Tier 1 unit landed; **largest single-segment unit yet**).
+- **SHA**: _to be backfilled after merge_
+- **Lines moved**: 291 (`dashboard.css` 2477 → 2186). One contiguous segment at pre-U36 L1373-1663 containing 30 base classes plus ~11 compound/pseudo/descendant selectors: section comment `/* === Evidence Settings Overlay === */` dropped; base classes `.evidence-settings-panel`, `.evidence-settings-body`, `.evidence-settings-loading`, `.evidence-settings-row`, `.evidence-settings-label`, `.evidence-toggle`, `.evidence-toggle-thumb`, `.evidence-settings-section`, `.evidence-settings-section-title`, `.evidence-settings-radios`, `.evidence-radio`, `.evidence-settings-threshold-row`, `.evidence-threshold-label`, `.evidence-settings-input`, `.evidence-signal-card`, `.evidence-signal-card-header`, `.evidence-signal-card-expand`, `.evidence-signal-card-name`, `.evidence-signal-card-weight`, `.evidence-weight-input`, `.evidence-signal-card-body`, `.evidence-signal-desc`, `.evidence-signal-paper`, `.evidence-signal-params`, `.evidence-signal-param-row`, `.evidence-signal-param-label`, `.evidence-settings-footer`, `.evidence-settings-footer-right`, `.evidence-settings-reset`, `.small` (bare modifier — exclusively compound `.evidence-toggle.small` / `.evidence-settings-input.small`). Compound/pseudo selectors moved alongside: `.evidence-toggle.on`, `.evidence-toggle.small`, `.evidence-toggle.on .evidence-toggle-thumb` (descendant), `.evidence-toggle.small .evidence-toggle-thumb`, `.evidence-toggle.small.on .evidence-toggle-thumb`, `.evidence-radio input[type="radio"]` (descendant on attribute), `.evidence-settings-input:focus`, `.evidence-settings-input.small`, `.evidence-signal-card.disabled`, `.evidence-weight-input:focus`, `.evidence-settings-reset:hover`, `.evidence-settings-reset:disabled`. New `EvidenceSettings.css` is 290 lines.
+- **Consumers updated**: `src/components/dashboard/EvidenceSettings.tsx` adds `import './EvidenceSettings.css';` as the **first line**.
+- **Cluster preservation**: `.evidence-breakdown-toggle` (multi-consumer ContextFileList + EvidenceGroup, for U40 cluster) STAYS in `dashboard.css` at post-U36 L522. Multi-consumer `.ctx-settings-*` family (Tier 2 cluster U45) also preserved.
+- **Frontend review**: OK (fp `8118616e7851ae87c79950a47649ed86d1a9c204a82f05c1a3e82cd192574a3c`) — 0/0/0.
+- **Style review ack**: `bash scripts/ack-style-review.sh "U36 move .evidence-{settings,toggle,signal,radio,threshold,weight}* + .small to EvidenceSettings.css (Tier 1)"` recorded.
+- **Cascade-order check**:
+  - **Source-side: PASS**. `selectors-ordered.txt` 341 → 300 entries (41 deletions). Inventory: `289 → 259` distinct classes; `196 → 166` single-owner.
+  - **Bundle-side: STRUCTURAL FAIL — visual-equivalent** (moved-vs-moved per §3 C7 last bullet).
+- **Visual diff**: PASS — **5/5 captured screens byte-equal on first pass** with the **§7 critical surface `settings-evidence` (139,846 B) byte-equal**. Pass-1 byte-equal set: `dashboard-all-default` (96,467 B), `dashboard-claude` (146,288 B), `dashboard-prompt-detail` (94,955 B), `settings-evidence` (139,846 B — **§7 surface**), `settings-context-limit` (145,190 B). Orchestrator died at screen 6 (`memory-monitor-expanded`) with the standard P0.5.6-deferred `os error 35`, but U36's §7 surface was already captured. The orchestrator behaved better this run vs U35's 4 consecutive early deaths — daemon state appears stochastic across sessions.
+- **Inventory rerun**: `Cross-file collisions notification: 0  App: 1  TokenTreemap: 2` unchanged.
+- **Notes / design points**:
+  - Lint baseline (33 errors at HEAD before U36) is unchanged.
+  - No `/* UNUSED candidate */` markers added (deferred to U50).
+  - **Largest single-segment Tier 1 unit so far**: 30 base classes + 11 compound/pseudo/descendant = 41 selectors moved in one 291-line block.
+  - **Cumulative progress (post-U36)**: 24 distinct Tier 1 slots landed. `dashboard.css` reduced from `4554` (pre-U2) → `2186` (post-U36), a **2,368-line / 52.0% reduction — crosses the halfway mark**. 24 new sibling CSS files. 331 cumulative selector deletions.
+
 #### P1.X falsified — bundle-side C7 cannot be satisfied by import-order alone (2026-05-11)
 
 - **Group**: cascade-order infrastructure investigation, no commit lands. Documents the negative result + C7 caveat (now codified in §3 C7 last bullet).
