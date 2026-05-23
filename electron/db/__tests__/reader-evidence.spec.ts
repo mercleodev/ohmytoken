@@ -46,7 +46,7 @@ const makeReport = (requestId: string): EvidenceReport => ({
   timestamp: "2026-04-14T10:00:00.000Z",
   engine_version: "1.0.0",
   fusion_method: "weighted_sum",
-  thresholds: { confirmed_min: 0.7, likely_min: 0.4 },
+  thresholds: { confirmed_min_raw: 0.7, likely_min_raw: 0.4 },
   files: [
     {
       filePath: "CLAUDE.md",

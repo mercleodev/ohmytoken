@@ -9,6 +9,8 @@
 
 import type { PaperReference, ParamDef, SignalInput, SignalResult } from '../types';
 
+export type SignalKind = 'prior' | 'evidence';
+
 export type SignalPlugin = {
   /** Unique identifier (kebab-case) */
   id: string;
@@ -16,6 +18,13 @@ export type SignalPlugin = {
   name: string;
   /** Semver — bump when formula changes */
   version: string;
+  /**
+   * Distinguishes signals derived from delivery metadata alone (`prior`)
+   * from signals that require LLM-side proof of use (`evidence`).
+   * Classification requires at least one non-zero `evidence` signal —
+   * priors-only files fall to `unverified`. See engine.ts.
+   */
+  kind: SignalKind;
   /** Referenced papers (required, at least one) */
   papers: PaperReference[];
   /** Tunable parameter schema */

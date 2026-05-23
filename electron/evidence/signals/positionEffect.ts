@@ -15,6 +15,7 @@ export const positionEffectSignal: SignalPlugin = {
   id: 'position-effect',
   name: 'Position Effect',
   version: '1.0.0',
+  kind: 'prior',
   papers: [
     {
       authors: 'Liu et al.',

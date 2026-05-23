@@ -96,8 +96,8 @@ export type EvidenceReport = {
   fusion_method: string;
   files: FileEvidenceScore[];
   thresholds: {
-    confirmed_min: number;
-    likely_min: number;
+    confirmed_min_raw: number;
+    likely_min_raw: number;
   };
 };
 
@@ -116,7 +116,7 @@ export type EvidenceEngineConfig = {
   signals: Record<string, SignalConfig>;
   fusion_method: 'weighted_sum' | 'dempster_shafer';
   thresholds: {
-    confirmed_min: number;
-    likely_min: number;
+    confirmed_min_raw: number;
+    likely_min_raw: number;
   };
 };

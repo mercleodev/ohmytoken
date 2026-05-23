@@ -869,8 +869,8 @@ export const getEvidenceReport = (requestId: string): EvidenceReport | null => {
     fusion_method: reportRow.fusion_method,
     files,
     thresholds: {
-      confirmed_min: reportRow.confirmed_min,
-      likely_min: reportRow.likely_min,
+      confirmed_min_raw: reportRow.confirmed_min,
+      likely_min_raw: reportRow.likely_min,
     },
   };
 };

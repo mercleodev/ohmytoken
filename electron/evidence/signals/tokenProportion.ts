@@ -15,6 +15,7 @@ export const tokenProportionSignal: SignalPlugin = {
   id: 'token-proportion',
   name: 'Token Proportion',
   version: '1.0.0',
+  kind: 'prior',
   papers: [
     {
       authors: 'Vaswani et al.',

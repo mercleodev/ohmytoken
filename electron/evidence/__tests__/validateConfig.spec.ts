@@ -7,7 +7,7 @@ describe('validateEvidenceConfig', () => {
       signals: {
         toolLoop: { signalId: 'toolLoop', enabled: true, weight: 0.8, params: {} },
       },
-      thresholds: { confirmed_min: 0.8, likely_min: 0.5 },
+      thresholds: { confirmed_min_raw: 0.8, likely_min_raw: 0.5 },
     });
     expect(result.ok).toBe(true);
   });
@@ -35,16 +35,16 @@ describe('validateEvidenceConfig', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('rejects confirmed_min < likely_min (EVIDENCE-BUG-002)', () => {
+  it('rejects confirmed_min_raw < likely_min_raw (EVIDENCE-BUG-002)', () => {
     const result = validateEvidenceConfig({
-      thresholds: { confirmed_min: 0.3, likely_min: 0.7 },
+      thresholds: { confirmed_min_raw: 0.3, likely_min_raw: 0.7 },
     });
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toMatch(/confirmed_min/);
+    if (!result.ok) expect(result.error).toMatch(/confirmed_min_raw/);
   });
 
-  it('accepts confirmed_min === likely_min', () => {
-    expect(validateEvidenceConfig({ thresholds: { confirmed_min: 0.5, likely_min: 0.5 } }).ok).toBe(true);
+  it('accepts confirmed_min_raw === likely_min_raw', () => {
+    expect(validateEvidenceConfig({ thresholds: { confirmed_min_raw: 0.5, likely_min_raw: 0.5 } }).ok).toBe(true);
   });
 
   it('accepts partial config with only signals', () => {
@@ -52,7 +52,7 @@ describe('validateEvidenceConfig', () => {
   });
 
   it('accepts partial config with only thresholds', () => {
-    expect(validateEvidenceConfig({ thresholds: { confirmed_min: 0.9, likely_min: 0.4 } }).ok).toBe(true);
+    expect(validateEvidenceConfig({ thresholds: { confirmed_min_raw: 0.9, likely_min_raw: 0.4 } }).ok).toBe(true);
   });
 
   it('accepts empty partial config', () => {

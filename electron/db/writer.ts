@@ -361,8 +361,10 @@ export const insertEvidenceReport = (
       timestamp: report.timestamp,
       engine_version: report.engine_version,
       fusion_method: report.fusion_method,
-      confirmed_min: report.thresholds.confirmed_min,
-      likely_min: report.thresholds.likely_min,
+      // DB columns keep their original names; the application-level type
+      // moved to raw thresholds (#359). DB now stores raw-score values.
+      confirmed_min: report.thresholds.confirmed_min_raw,
+      likely_min: report.thresholds.likely_min_raw,
     }) as { id: number } | undefined;
 
     if (!row) return;

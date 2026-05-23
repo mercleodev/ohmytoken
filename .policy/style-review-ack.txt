@@ -1,21 +1,27 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-23T15:18:44Z
-fingerprint=a1dfed3cb071d028a47f4786dff557dbf020fc34dbc82a4eaf2f6909ea7fb70b
+# updated_at_utc: 2026-05-23T16:00:59Z
+fingerprint=feba9d718899cde344fe7fee35a5fdec126851606d874d34f30e4410c8d61d6f
 source=docs/sdd/style-checklist.md
-note=Step 2 (#357): instructionCompliance uses effectiveAssistantText + basename citation bonus. Pivoted from <thinking> extraction (proxy does not preserve). code-reviewer verdict OK; 1 minor (NM-02 paraphrase risk on short basenames) tracked in PR Tech Debt; docstring updated to explain pivot. Backend-only.
+note=PR 5 (#359): raw thresholds + direct tool ref override + decision-gate-ack signal. Unifies #354/#356/#358. code-reviewer verdict OK (0 critical/0 major/4 minor); minors filed in PR Tech Debt.
 
-docs/idea/landing-mockup.html
-docs/idea/logo-assets/favicon.svg
-docs/idea/logo-assets/logo-lockup.svg
-docs/idea/logo-assets/logo-mark-mono.svg
-docs/idea/logo-assets/logo-mark.svg
-docs/idea/logo-assets/preview.html
-docs/idea/logo-mockup.html
-docs/idea/quota-share-ux-mockup.html
-docs/idea/readme-mockup.html
-electron/evidence/__tests__/signals.spec.ts
+electron/db/__tests__/reader-evidence.spec.ts
+electron/db/__tests__/writer-evidence.spec.ts
+electron/db/reader.ts
+electron/db/writer.ts
+electron/evidence/__tests__/emitScoredScan.spec.ts
+electron/evidence/__tests__/engine.spec.ts
+electron/evidence/__tests__/validateConfig.spec.ts
+electron/evidence/config.ts
+electron/evidence/engine.ts
+electron/evidence/registry.ts
+electron/evidence/signals/categoryPrior.ts
+electron/evidence/signals/decisionGateAck.ts
 electron/evidence/signals/instructionCompliance.ts
-electron/evidence/utils/__tests__/effectiveAssistantText.spec.ts
-electron/evidence/utils/effectiveAssistantText.ts
-landing_preview.html
-readme_preview.html
+electron/evidence/signals/positionEffect.ts
+electron/evidence/signals/sessionHistory.ts
+electron/evidence/signals/textOverlap.ts
+electron/evidence/signals/tokenProportion.ts
+electron/evidence/signals/toolReference.ts
+electron/evidence/signals/types.ts
+electron/evidence/types.ts
+electron/evidence/validateConfig.ts

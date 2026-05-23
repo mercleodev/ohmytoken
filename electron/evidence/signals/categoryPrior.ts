@@ -17,6 +17,7 @@ export const categoryPriorSignal: SignalPlugin = {
   id: 'category-prior',
   name: 'Category Prior',
   version: '1.0.0',
+  kind: 'prior',
   papers: [
     {
       authors: 'McCallum & Nigam',

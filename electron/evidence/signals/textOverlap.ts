@@ -14,11 +14,13 @@
 import type { SignalPlugin } from './types';
 import { extractNgrams } from '../utils/ngram';
 import { computeMinHash, estimateJaccard } from '../utils/minhash';
+import { effectiveAssistantText } from '../utils/effectiveAssistantText';
 
 export const textOverlapSignal: SignalPlugin = {
   id: 'text-overlap',
   name: 'Text Overlap',
   version: '1.0.0',
+  kind: 'evidence',
   papers: [
     {
       authors: 'Broder',
@@ -40,7 +42,10 @@ export const textOverlapSignal: SignalPlugin = {
     const maxScore = Number(params.max_score ?? 25);
 
     const fileContent = input.file.content ?? '';
-    const response = input.scan.assistant_response ?? '';
+    const response = effectiveAssistantText(
+      input.scan.assistant_response,
+      input.scan.tool_calls,
+    );
 
     if (!fileContent || !response) {
       return {
@@ -48,7 +53,7 @@ export const textOverlapSignal: SignalPlugin = {
         score: 0,
         maxScore,
         confidence: 0,
-        detail: fileContent ? 'No assistant response' : 'No file content available',
+        detail: fileContent ? 'No assistant response or tool inputs' : 'No file content available',
       };
     }
 

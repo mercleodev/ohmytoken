@@ -16,7 +16,7 @@ import type { FusionStrategy } from './fusion/types';
 import { builtinSignals } from './registry';
 import { weightedSumFusion } from './fusion/weightedSum';
 import { dempsterShaferFusion } from './fusion/dempsterShafer';
-import { DEFAULT_ENGINE_CONFIG, mergeConfig } from './config';
+import { mergeConfig } from './config';
 
 const ENGINE_VERSION = '1.0.0';
 
@@ -44,15 +44,35 @@ const getFusionStrategy = (method: string): FusionStrategy => {
   return weightedSumFusion;
 };
 
+type AckVerdict = 'USED' | 'NOT_APPLICABLE' | null;
+
 /**
- * Classify a normalized score into C/L/U.
+ * Classify a file based on its raw score and the strongest signal it carried.
+ *
+ * Priority:
+ *   1. USED ack token        → confirmed (LLM self-declared engagement)
+ *   2. NOT_APPLICABLE ack    → likely (LLM acknowledged + judged irrelevant)
+ *   3. Direct tool reference → confirmed (Read/Edit/Write/Glob/Grep hit the file)
+ *   4. No evidence signal    → unverified (priors-only — see #353)
+ *   5. Raw-score thresholds  → confirmed/likely/unverified
+ *
+ * The raw score is used (not normalized) because the weighted-sum normalizer's
+ * "active-signal-only denominator" perversely scored files with *more* evidence
+ * lower than files with less. See #359.
  */
 const classify = (
-  normalizedScore: number,
-  thresholds: { confirmed_min: number; likely_min: number },
+  rawScore: number,
+  hasEvidenceSignal: boolean,
+  hasDirectToolReference: boolean,
+  ackVerdict: AckVerdict,
+  thresholds: { confirmed_min_raw: number; likely_min_raw: number },
 ): EvidenceClassification => {
-  if (normalizedScore >= thresholds.confirmed_min) return 'confirmed';
-  if (normalizedScore >= thresholds.likely_min) return 'likely';
+  if (ackVerdict === 'USED') return 'confirmed';
+  if (ackVerdict === 'NOT_APPLICABLE') return 'likely';
+  if (hasDirectToolReference) return 'confirmed';
+  if (!hasEvidenceSignal) return 'unverified';
+  if (rawScore >= thresholds.confirmed_min_raw) return 'confirmed';
+  if (rawScore >= thresholds.likely_min_raw) return 'likely';
   return 'unverified';
 };
 
@@ -65,6 +85,23 @@ export class EvidenceEngine {
     this.config = mergeConfig(userConfig);
     this.signals = this.resolveSignals();
     this.fusion = getFusionStrategy(this.config.fusion_method);
+  }
+
+  private hasEvidenceSignal(signals: SignalResult[]): boolean {
+    return this.signals.some(
+      (plugin, i) => plugin.kind === 'evidence' && signals[i].score > 0,
+    );
+  }
+
+  private hasDirectToolReference(signals: SignalResult[]): boolean {
+    const ref = signals.find((s) => s.signalId === 'tool-reference');
+    return ref ? ref.confidence === 1 : false;
+  }
+
+  private ackVerdict(signals: SignalResult[]): AckVerdict {
+    const ack = signals.find((s) => s.signalId === 'decision-gate-ack');
+    if (!ack || ack.score === 0) return null;
+    return ack.confidence === 1 ? 'USED' : 'NOT_APPLICABLE';
   }
 
   /**
@@ -140,7 +177,13 @@ export class EvidenceEngine {
         signals,
         rawScore: fused.rawScore,
         normalizedScore: fused.normalizedScore,
-        classification: classify(fused.normalizedScore, this.config.thresholds),
+        classification: classify(
+          fused.rawScore,
+          this.hasEvidenceSignal(signals),
+          this.hasDirectToolReference(signals),
+          this.ackVerdict(signals),
+          this.config.thresholds,
+        ),
       };
     });
 
@@ -191,7 +234,13 @@ export class EvidenceEngine {
       signals,
       rawScore: fused.rawScore,
       normalizedScore: fused.normalizedScore,
-      classification: classify(fused.normalizedScore, this.config.thresholds),
+      classification: classify(
+        fused.rawScore,
+        this.hasEvidenceSignal(signals),
+        this.hasDirectToolReference(signals),
+        this.ackVerdict(signals),
+        this.config.thresholds,
+      ),
     };
   }
 }
