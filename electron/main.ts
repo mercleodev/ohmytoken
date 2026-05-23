@@ -45,6 +45,19 @@ import { generateWorkflowDraft } from "./draftGenerator";
 import { exportWorkflowDraft } from "./draftExporter";
 import { getMemoryStatusForProvider } from "./memory/providerMemory";
 import { mergeConfig } from "./evidence/config";
+import {
+  scanRuleFiles,
+  buildPlan,
+  applyPlan,
+  rollbackApply,
+  type PlanEntry,
+  type InsertPlan,
+} from "./onboarding/ruleAckInsert";
+import {
+  readLastApply,
+  writeLastApply,
+  clearLastApply,
+} from "./onboarding/lastApplyStore";
 import { parseSystemFieldWithContent } from "./proxy/systemParser";
 import { insertEvidenceReport, recordWorkflowAction } from "./db/writer";
 import {
@@ -2311,6 +2324,131 @@ const setupIPC = (): void => {
       console.error("[Evidence] rescore-evidence error:", err);
       return null;
     }
+  });
+
+  const RULE_ACK_DEFAULT_ROOTS = (): string[] => [
+    path.join(process.cwd(), ".claude", "rules"),
+    path.join(homedir(), ".claude", "rules"),
+  ];
+
+  const RULE_ACK_ID_REGEX = /^[A-Za-z0-9_-]+$/;
+
+  // Main retains the last scan's resolved roots + per-path original content so
+  // the apply handler can validate every renderer-supplied entry against them.
+  // A compromised renderer cannot write outside the scanned roots, override
+  // file content with arbitrary bytes, or pick a malformed canary id.
+  type ScanContext = {
+    resolvedRoots: string[];
+    knownFiles: Map<string, string>; // absolute path -> original content
+  };
+  let lastScanContext: ScanContext | null = null;
+
+  const isWithinRoots = (absPath: string, roots: readonly string[]): boolean => {
+    return roots.some((root) => {
+      const rel = path.relative(root, absPath);
+      return rel && !rel.startsWith("..") && !path.isAbsolute(rel);
+    });
+  };
+
+  ipcMain.handle(
+    "rule-ack-onboarding:scan",
+    async (_event, rootPaths?: string[]) => {
+      const roots = (
+        rootPaths && rootPaths.length > 0 ? rootPaths : RULE_ACK_DEFAULT_ROOTS()
+      ).map((r) => path.resolve(r));
+      const files = await scanRuleFiles(roots);
+      const plan = buildPlan(files);
+
+      const knownFiles = new Map<string, string>();
+      for (const f of files) knownFiles.set(path.resolve(f.filePath), f.content);
+      lastScanContext = { resolvedRoots: roots, knownFiles };
+
+      return {
+        entries: plan.entries,
+        duplicateIds: Object.fromEntries(plan.duplicateIds),
+      };
+    },
+  );
+
+  ipcMain.handle(
+    "rule-ack-onboarding:apply",
+    async (_event, selectedEntries: PlanEntry[]) => {
+      if (!lastScanContext) {
+        return {
+          ok: false,
+          applied: [],
+          skipped: [],
+          failedAt: { filePath: "(none)", error: "scan must run before apply" },
+        };
+      }
+      const { resolvedRoots, knownFiles } = lastScanContext;
+
+      const safeEntries: PlanEntry[] = [];
+      for (const entry of selectedEntries) {
+        const absPath = path.resolve(entry.filePath);
+        if (!isWithinRoots(absPath, resolvedRoots)) {
+          return {
+            ok: false,
+            applied: [],
+            skipped: [],
+            failedAt: { filePath: absPath, error: "path outside scanned roots" },
+          };
+        }
+        const originalContent = knownFiles.get(absPath);
+        if (originalContent === undefined) {
+          return {
+            ok: false,
+            applied: [],
+            skipped: [],
+            failedAt: { filePath: absPath, error: "file not in scan result" },
+          };
+        }
+        const proposedId = entry.proposedId;
+        if (!RULE_ACK_ID_REGEX.test(proposedId)) {
+          return {
+            ok: false,
+            applied: [],
+            skipped: [],
+            failedAt: { filePath: absPath, error: `invalid canary id: ${proposedId}` },
+          };
+        }
+        // Reconstruct nextContent in main from trusted inputs only.
+        const nextContent = `<!-- canary:CANARY-${proposedId} -->\n${originalContent}`;
+        safeEntries.push({
+          filePath: absPath,
+          proposedId,
+          willInsert: entry.willInsert,
+          reasonSkipped: entry.reasonSkipped,
+          originalContent,
+          nextContent,
+          diff: entry.diff,
+        });
+      }
+
+      const plan: InsertPlan = { entries: safeEntries, duplicateIds: new Map() };
+      const result = await applyPlan(plan);
+      if (result.ok && result.applied.length > 0) {
+        await writeLastApply(app.getPath("userData"), result);
+      }
+      return result;
+    },
+  );
+
+  ipcMain.handle("rule-ack-onboarding:rollback", async () => {
+    const last = await readLastApply(app.getPath("userData"));
+    if (!last) return { ok: false, restored: 0, failed: 0 };
+    const result = await rollbackApply(last);
+    await clearLastApply(app.getPath("userData"));
+    return {
+      ok: result.failed.length === 0,
+      restored: result.restored.length,
+      failed: result.failed.length,
+    };
+  });
+
+  ipcMain.handle("rule-ack-onboarding:has-last-apply", async () => {
+    const last = await readLastApply(app.getPath("userData"));
+    return last !== null && last.applied.length > 0;
   });
 };
 

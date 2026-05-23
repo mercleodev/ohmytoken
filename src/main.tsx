@@ -567,6 +567,52 @@ if (!window.api) {
       return () => {};
     },
     getDisplays: async () => [],
+    ruleAckOnboarding: {
+      scan: async () => ({
+        entries: [
+          {
+            filePath: '/mock/project/.claude/rules/tailwind.md',
+            proposedId: 'tailwind',
+            willInsert: true,
+            reasonSkipped: null,
+            originalContent: '# tailwind\nuse cnx',
+            nextContent: '<!-- canary:CANARY-tailwind -->\n# tailwind\nuse cnx',
+            diff: '+<!-- canary:CANARY-tailwind -->\n # tailwind',
+          },
+          {
+            filePath: '/mock/project/.claude/rules/fsd.md',
+            proposedId: 'fsd',
+            willInsert: true,
+            reasonSkipped: null,
+            originalContent: '# fsd',
+            nextContent: '<!-- canary:CANARY-fsd -->\n# fsd',
+            diff: '+<!-- canary:CANARY-fsd -->\n # fsd',
+          },
+          {
+            filePath: '/mock/global/.claude/rules/typescript.md',
+            proposedId: 'typescript',
+            willInsert: false,
+            reasonSkipped: 'already-has-marker',
+            originalContent: '<!-- canary:CANARY-typescript -->\nbody',
+            nextContent: '<!-- canary:CANARY-typescript -->\nbody',
+            diff: '',
+          },
+        ],
+        duplicateIds: {},
+      }),
+      apply: async (entries) => ({
+        ok: true,
+        applied: entries.map((e) => ({
+          filePath: e.filePath,
+          backupPath: `${e.filePath}.bak`,
+          proposedId: e.proposedId,
+        })),
+        skipped: [],
+        failedAt: null,
+      }),
+      rollback: async () => ({ ok: true, restored: 0, failed: 0 }),
+      hasLastApply: async () => false,
+    },
   };
   console.log('🔧 Mock API loaded for browser testing');
 }

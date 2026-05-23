@@ -1,27 +1,21 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-23T16:00:59Z
-fingerprint=feba9d718899cde344fe7fee35a5fdec126851606d874d34f30e4410c8d61d6f
+# updated_at_utc: 2026-05-23T16:40:26Z
+fingerprint=714f749f3177f5f5752f17c2ac3fbce3493d88dfd4e2392d07e59ee7fb2c1306
 source=docs/sdd/style-checklist.md
-note=PR 5 (#359): raw thresholds + direct tool ref override + decision-gate-ack signal. Unifies #354/#356/#358. code-reviewer verdict OK (0 critical/0 major/4 minor); minors filed in PR Tech Debt.
+note=code-reviewer ran (OK with fixes, 0c/1m/5min); major 'apply path validation' FIXED inline; minors filed in Tech Debt. Re-validated after fixture path rename.
 
-electron/db/__tests__/reader-evidence.spec.ts
-electron/db/__tests__/writer-evidence.spec.ts
-electron/db/reader.ts
-electron/db/writer.ts
-electron/evidence/__tests__/emitScoredScan.spec.ts
-electron/evidence/__tests__/engine.spec.ts
-electron/evidence/__tests__/validateConfig.spec.ts
-electron/evidence/config.ts
-electron/evidence/engine.ts
-electron/evidence/registry.ts
-electron/evidence/signals/categoryPrior.ts
-electron/evidence/signals/decisionGateAck.ts
-electron/evidence/signals/instructionCompliance.ts
-electron/evidence/signals/positionEffect.ts
-electron/evidence/signals/sessionHistory.ts
-electron/evidence/signals/textOverlap.ts
-electron/evidence/signals/tokenProportion.ts
-electron/evidence/signals/toolReference.ts
-electron/evidence/signals/types.ts
-electron/evidence/types.ts
-electron/evidence/validateConfig.ts
+docs/qa/runs/2026-05-24/report.txt
+docs/qa/runs/2026-05-24/rule-ack-modal-open.png
+electron/main.ts
+electron/onboarding/__tests__/lastApplyStore.spec.ts
+electron/onboarding/__tests__/ruleAckInsert.spec.ts
+electron/onboarding/lastApplyStore.ts
+electron/onboarding/ruleAckInsert.ts
+electron/preload.ts
+src/App.tsx
+src/components/onboarding/ruleAckOnboarding.css
+src/components/onboarding/RuleAckOnboardingModal.tsx
+src/components/onboarding/RuleAckSection.tsx
+src/components/SettingsSection.tsx
+src/main.tsx
+src/types/electron.d.ts

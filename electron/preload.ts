@@ -334,6 +334,46 @@ const api = {
       ipcRenderer.removeListener('backfill:complete', handler);
     };
   },
+
+  ruleAckOnboarding: {
+    scan: (
+      rootPaths?: string[],
+    ): Promise<{
+      entries: Array<{
+        filePath: string;
+        proposedId: string;
+        willInsert: boolean;
+        reasonSkipped: 'already-has-marker' | null;
+        originalContent: string;
+        nextContent: string;
+        diff: string;
+      }>;
+      duplicateIds: Record<string, Array<{ filePath: string; proposedId: string }>>;
+    }> => ipcRenderer.invoke('rule-ack-onboarding:scan', rootPaths),
+
+    apply: (
+      selectedEntries: Array<{
+        filePath: string;
+        proposedId: string;
+        willInsert: boolean;
+        reasonSkipped: 'already-has-marker' | null;
+        originalContent: string;
+        nextContent: string;
+        diff: string;
+      }>,
+    ): Promise<{
+      ok: boolean;
+      applied: Array<{ filePath: string; backupPath: string; proposedId: string }>;
+      skipped: Array<{ filePath: string; reason: 'already-has-marker' }>;
+      failedAt: { filePath: string; error: string } | null;
+    }> => ipcRenderer.invoke('rule-ack-onboarding:apply', selectedEntries),
+
+    rollback: (): Promise<{ ok: boolean; restored: number; failed: number }> =>
+      ipcRenderer.invoke('rule-ack-onboarding:rollback'),
+
+    hasLastApply: (): Promise<boolean> =>
+      ipcRenderer.invoke('rule-ack-onboarding:has-last-apply'),
+  },
 };
 
 contextBridge.exposeInMainWorld("api", api);
