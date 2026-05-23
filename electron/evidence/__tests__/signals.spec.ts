@@ -141,6 +141,74 @@ describe('instructionComplianceSignal', () => {
     const result = instructionComplianceSignal.compute(input, defaultParams(instructionComplianceSignal));
     expect(result.score).toBe(0);
   });
+
+  // #357 — tool-only turn: assistant_response empty, tool inputs carry compliance signal
+  it('uses tool-call inputs as response corpus when assistant_response is empty', () => {
+    const input = makeInput({
+      file: {
+        path: '/project/.claude/rules/style.md',
+        category: 'rules',
+        estimated_tokens: 200,
+        content: 'You must use the cnx helper utility for combining classes everywhere.',
+      },
+      scan: {
+        request_id: 'r-tool-only', session_id: 's1',
+        user_prompt: 'apply class merging',
+        assistant_response: '',
+        injected_files: [{ path: '/project/.claude/rules/style.md', category: 'rules', estimated_tokens: 200 }],
+        total_injected_tokens: 200,
+        tool_calls: [
+          { index: 0, name: 'Edit', input_summary: 'use cnx helper utility for combining button classes everywhere' },
+        ],
+        context_estimate: { system_tokens: 200, total_tokens: 400 },
+      },
+    });
+    const result = instructionComplianceSignal.compute(input, defaultParams(instructionComplianceSignal));
+    expect(result.score).toBeGreaterThan(0);
+  });
+
+  // #357 — basename citation bonus: file name appears in effective text
+  it('awards citation bonus when file basename is cited in the effective text', () => {
+    const input = makeInput({
+      file: {
+        path: '/project/.claude/rules/tailwind.md',
+        category: 'rules',
+        estimated_tokens: 200,
+        content: 'You must use the cnx helper.\nNever inline Tailwind class strings.',
+      },
+      scan: {
+        request_id: 'r-citation', session_id: 's1',
+        user_prompt: 'check styling',
+        assistant_response: 'Reading tailwind.md before touching this component.',
+        injected_files: [{ path: '/project/.claude/rules/tailwind.md', category: 'rules', estimated_tokens: 200 }],
+        total_injected_tokens: 200,
+        tool_calls: [],
+        context_estimate: { system_tokens: 200, total_tokens: 400 },
+      },
+    });
+
+    const noCitationInput = makeInput({
+      file: {
+        path: '/project/.claude/rules/tailwind.md',
+        category: 'rules',
+        estimated_tokens: 200,
+        content: 'You must use the cnx helper.\nNever inline Tailwind class strings.',
+      },
+      scan: {
+        request_id: 'r-nocitation', session_id: 's1',
+        user_prompt: 'check styling',
+        assistant_response: 'Looking at the component structure.',
+        injected_files: [{ path: '/project/.claude/rules/tailwind.md', category: 'rules', estimated_tokens: 200 }],
+        total_injected_tokens: 200,
+        tool_calls: [],
+        context_estimate: { system_tokens: 200, total_tokens: 400 },
+      },
+    });
+
+    const withCitation = instructionComplianceSignal.compute(input, defaultParams(instructionComplianceSignal));
+    const withoutCitation = instructionComplianceSignal.compute(noCitationInput, defaultParams(instructionComplianceSignal));
+    expect(withCitation.score).toBeGreaterThan(withoutCitation.score);
+  });
 });
 
 // --- Signal 4: Tool Reference ---
