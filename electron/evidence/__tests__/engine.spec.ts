@@ -39,14 +39,14 @@ describe('EvidenceEngine', () => {
     expect(report.engine_version).toBe('1.0.0');
     expect(report.fusion_method).toBe('weighted_sum');
     expect(report.files).toHaveLength(4);
-    expect(report.thresholds.confirmed_min).toBe(0.45);
-    expect(report.thresholds.likely_min).toBe(0.2);
+    expect(report.thresholds.confirmed_min_raw).toBe(45);
+    expect(report.thresholds.likely_min_raw).toBe(25);
   });
 
   it('classifies files into C/L/U based on thresholds', () => {
     // With lower thresholds, tool-referenced files should score as confirmed/likely
     const engine = new EvidenceEngine({
-      thresholds: { confirmed_min: 0.25, likely_min: 0.15 },
+      thresholds: { confirmed_min_raw: 18, likely_min_raw: 10 },
     });
     const scan = makeScan();
     const report = engine.score(scan);
@@ -160,6 +160,106 @@ describe('EvidenceEngine', () => {
   });
 });
 
+describe('EvidenceEngine — raw-score thresholds + ack protocol (#359)', () => {
+  const rulesFile = (path: string, content: string) => ({
+    path,
+    category: 'rules' as const,
+    estimated_tokens: Math.ceil(content.length / 4),
+  });
+
+  const TAILWIND_CONTENT = `<!-- canary:CANARY-tailwind -->
+You must use the cnx helper from @utils/tailwind/cnx for class merging.`;
+  const FSD_CONTENT = `<!-- canary:CANARY-fsd -->
+You must respect the FSD layer boundaries.`;
+  const NOISE_CONTENT = 'You must commit with WC-XXXXX format.';
+
+  const baseScan = (assistantResponse: string) => ({
+    request_id: 'req-359',
+    session_id: 'sess-359',
+    user_prompt: 'merge tailwind classes',
+    assistant_response: assistantResponse,
+    injected_files: [
+      rulesFile('/project/.claude/rules/tailwind.md', TAILWIND_CONTENT),
+      rulesFile('/project/.claude/rules/fsd.md', FSD_CONTENT),
+      rulesFile('/project/.claude/rules/commit-pr.md', NOISE_CONTENT),
+    ],
+    total_injected_tokens: 600,
+    tool_calls: [
+      { index: 0, name: 'Read', input_summary: '/project/.claude/rules/tailwind.md' },
+    ],
+    context_estimate: { system_tokens: 1000, total_tokens: 2000 },
+  });
+
+  const fileContents = {
+    '/project/.claude/rules/tailwind.md': TAILWIND_CONTENT,
+    '/project/.claude/rules/fsd.md': FSD_CONTENT,
+    '/project/.claude/rules/commit-pr.md': NOISE_CONTENT,
+  };
+
+  it('direct tool reference (Read on the exact file path) forces confirmed', () => {
+    const engine = new EvidenceEngine();
+    const scan = baseScan('I read tailwind.md and applied cnx.');
+    const report = engine.score(scan, { fileContents });
+
+    const tailwind = report.files.find((f) => f.filePath.endsWith('tailwind.md'));
+    expect(tailwind).toBeDefined();
+    expect(tailwind!.classification).toBe('confirmed');
+  });
+
+  it('USED ack token forces confirmed', () => {
+    const engine = new EvidenceEngine();
+    const scan = baseScan(
+      'Applied cnx helper.\n[RULE-ACK:CANARY-tailwind=USED:applied cnx]',
+    );
+    const report = engine.score(scan, { fileContents });
+
+    const tailwind = report.files.find((f) => f.filePath.endsWith('tailwind.md'));
+    expect(tailwind).toBeDefined();
+    expect(tailwind!.classification).toBe('confirmed');
+  });
+
+  it('NOT_APPLICABLE ack token caps classification at likely', () => {
+    const engine = new EvidenceEngine();
+    const scan = baseScan(
+      '[RULE-ACK:CANARY-fsd=NOT_APPLICABLE:no FSD layer changes in this task]',
+    );
+    // Remove the Read tool call so fsd has no direct ref either
+    scan.tool_calls = [];
+    const report = engine.score(scan, { fileContents });
+
+    const fsd = report.files.find((f) => f.filePath.endsWith('fsd.md'));
+    expect(fsd).toBeDefined();
+    expect(fsd!.classification).toBe('likely');
+  });
+
+  it('files with neither direct ref nor ack token follow raw-score thresholds', () => {
+    const engine = new EvidenceEngine();
+    const scan = baseScan('plain response with no ack tokens');
+    scan.tool_calls = [];
+    const report = engine.score(scan, { fileContents });
+
+    for (const f of report.files) {
+      expect(f.classification).toBe('unverified');
+    }
+  });
+
+  it('matches ack canary id from <!-- canary:CANARY-... --> marker in file content', () => {
+    const engine = new EvidenceEngine();
+    const scan = baseScan(
+      'work done.\n[RULE-ACK:CANARY-tailwind=USED:applied cnx]',
+    );
+    scan.tool_calls = [];
+    const report = engine.score(scan, { fileContents });
+
+    const tailwind = report.files.find((f) => f.filePath.endsWith('tailwind.md'));
+    expect(tailwind!.classification).toBe('confirmed');
+
+    // commit-pr.md has no canary marker and no matching ack — stays unverified
+    const commit = report.files.find((f) => f.filePath.endsWith('commit-pr.md'));
+    expect(commit!.classification).toBe('unverified');
+  });
+});
+
 describe('Config', () => {
   it('DEFAULT_ENGINE_CONFIG is valid', () => {
     const result = validateConfig(DEFAULT_ENGINE_CONFIG);
@@ -170,7 +270,7 @@ describe('Config', () => {
   it('mergeConfig preserves defaults for missing fields', () => {
     const merged = mergeConfig({ fusion_method: 'dempster_shafer' });
     expect(merged.fusion_method).toBe('dempster_shafer');
-    expect(merged.thresholds.confirmed_min).toBe(0.45);
+    expect(merged.thresholds.confirmed_min_raw).toBe(45);
     expect(Object.keys(merged.signals)).toHaveLength(
       Object.keys(DEFAULT_ENGINE_CONFIG.signals).length,
     );
@@ -195,7 +295,7 @@ describe('Config', () => {
 
   it('validateConfig detects invalid thresholds', () => {
     const bad = mergeConfig({
-      thresholds: { confirmed_min: 0.3, likely_min: 0.5 },
+      thresholds: { confirmed_min_raw: 20, likely_min_raw: 30 },
     });
     const result = validateConfig(bad);
     expect(result.valid).toBe(false);

@@ -61,13 +61,22 @@ export const DEFAULT_ENGINE_CONFIG: EvidenceEngineConfig = {
       decay_factor: 0.8,
       max_bonus: 10,
     }),
+    'decision-gate-ack': defaultSignal('decision-gate-ack', 1.0, {
+      used_score: 30,
+      not_applicable_score: 12,
+      max_score: 30,
+    }),
   },
 
   fusion_method: 'weighted_sum',
 
+  // Raw-score thresholds. Total possible raw across the 8 signals ≈ 140.
+  // Prior-only ceiling ≈ 40 (cat 30 + token 5 + pos 5); #353's evidence
+  // guard forces priors-only to unverified anyway. Direct tool reference
+  // and USED ack tokens override threshold math entirely (see engine.ts).
   thresholds: {
-    confirmed_min: 0.45,
-    likely_min: 0.2,
+    confirmed_min_raw: 45,
+    likely_min_raw: 25,
   },
 };
 
@@ -94,12 +103,12 @@ export const mergeConfig = (
     enabled: userConfig.enabled ?? DEFAULT_ENGINE_CONFIG.enabled,
     fusion_method: userConfig.fusion_method ?? DEFAULT_ENGINE_CONFIG.fusion_method,
     thresholds: {
-      confirmed_min:
-        userConfig.thresholds?.confirmed_min ??
-        DEFAULT_ENGINE_CONFIG.thresholds.confirmed_min,
-      likely_min:
-        userConfig.thresholds?.likely_min ??
-        DEFAULT_ENGINE_CONFIG.thresholds.likely_min,
+      confirmed_min_raw:
+        userConfig.thresholds?.confirmed_min_raw ??
+        DEFAULT_ENGINE_CONFIG.thresholds.confirmed_min_raw,
+      likely_min_raw:
+        userConfig.thresholds?.likely_min_raw ??
+        DEFAULT_ENGINE_CONFIG.thresholds.likely_min_raw,
     },
     signals: { ...DEFAULT_ENGINE_CONFIG.signals },
   };
@@ -126,23 +135,24 @@ export const mergeConfig = (
 };
 
 /**
- * Validate thresholds: confirmed_min must be > likely_min, both in [0, 1].
+ * Validate raw-score thresholds: confirmed_min_raw must be > likely_min_raw,
+ * both non-negative.
  */
 export const validateConfig = (
   config: EvidenceEngineConfig,
 ): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
-  const { confirmed_min, likely_min } = config.thresholds;
-  if (confirmed_min < 0 || confirmed_min > 1) {
-    errors.push(`confirmed_min must be in [0, 1], got ${confirmed_min}`);
+  const { confirmed_min_raw, likely_min_raw } = config.thresholds;
+  if (confirmed_min_raw < 0) {
+    errors.push(`confirmed_min_raw must be >= 0, got ${confirmed_min_raw}`);
   }
-  if (likely_min < 0 || likely_min > 1) {
-    errors.push(`likely_min must be in [0, 1], got ${likely_min}`);
+  if (likely_min_raw < 0) {
+    errors.push(`likely_min_raw must be >= 0, got ${likely_min_raw}`);
   }
-  if (confirmed_min <= likely_min) {
+  if (confirmed_min_raw <= likely_min_raw) {
     errors.push(
-      `confirmed_min (${confirmed_min}) must be > likely_min (${likely_min})`,
+      `confirmed_min_raw (${confirmed_min_raw}) must be > likely_min_raw (${likely_min_raw})`,
     );
   }
 

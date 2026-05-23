@@ -15,6 +15,7 @@ export const sessionHistorySignal: SignalPlugin = {
   id: 'session-history',
   name: 'Session History',
   version: '1.0.0',
+  kind: 'evidence',
   papers: [
     {
       authors: 'Xu et al.',

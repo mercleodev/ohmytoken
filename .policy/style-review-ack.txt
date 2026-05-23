@@ -1,11 +1,27 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T22:08:29Z
-fingerprint=8030b0735cb26810870ab72b6d35c0ff7f89356d0ba55b7a7321fedc2d95d650
+# updated_at_utc: 2026-05-23T16:00:59Z
+fingerprint=feba9d718899cde344fe7fee35a5fdec126851606d874d34f30e4410c8d61d6f
 source=docs/sdd/style-checklist.md
-note=Stop-hook race fix (#349): server-side settle detection with stable-for window (intervalMs/stableForMs/maxWaitMs); handler + route async; existing 6 handler cases ported to await; new 4 settle cases + 1 race-reproduction case (intermediate→FINAL request_id transition + project nested_memory pickup). No new any/deps/assertions. Settle is non-blocking for claude (bin/stop-hook.mjs silent-fail + maxWaitMs cap).
+note=PR 5 (#359): raw thresholds + direct tool ref override + decision-gate-ack signal. Unifies #354/#356/#358. code-reviewer verdict OK (0 critical/0 major/4 minor); minors filed in PR Tech Debt.
 
-electron/hooks/__tests__/scanFromTranscriptHandler.spec.ts
-electron/hooks/__tests__/transcriptSettle.spec.ts
-electron/hooks/scanFromTranscriptHandler.ts
-electron/hooks/transcriptReader.ts
-electron/proxy/server.ts
+electron/db/__tests__/reader-evidence.spec.ts
+electron/db/__tests__/writer-evidence.spec.ts
+electron/db/reader.ts
+electron/db/writer.ts
+electron/evidence/__tests__/emitScoredScan.spec.ts
+electron/evidence/__tests__/engine.spec.ts
+electron/evidence/__tests__/validateConfig.spec.ts
+electron/evidence/config.ts
+electron/evidence/engine.ts
+electron/evidence/registry.ts
+electron/evidence/signals/categoryPrior.ts
+electron/evidence/signals/decisionGateAck.ts
+electron/evidence/signals/instructionCompliance.ts
+electron/evidence/signals/positionEffect.ts
+electron/evidence/signals/sessionHistory.ts
+electron/evidence/signals/textOverlap.ts
+electron/evidence/signals/tokenProportion.ts
+electron/evidence/signals/toolReference.ts
+electron/evidence/signals/types.ts
+electron/evidence/types.ts
+electron/evidence/validateConfig.ts

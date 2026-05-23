@@ -13,6 +13,7 @@ import { toolReferenceSignal } from './signals/toolReference';
 import { textOverlapSignal } from './signals/textOverlap';
 import { instructionComplianceSignal } from './signals/instructionCompliance';
 import { sessionHistorySignal } from './signals/sessionHistory';
+import { decisionGateAckSignal } from './signals/decisionGateAck';
 
 /**
  * All built-in signal plugins, ordered by computational cost (cheap first).
@@ -25,6 +26,7 @@ export const builtinSignals: SignalPlugin[] = [
   textOverlapSignal,
   instructionComplianceSignal,
   sessionHistorySignal,
+  decisionGateAckSignal,
 ];
 
 /**

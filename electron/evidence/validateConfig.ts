@@ -14,12 +14,12 @@ export function validateEvidenceConfig(config: Partial<EvidenceEngineConfig>): V
   }
 
   if (config.thresholds) {
-    const { confirmed_min, likely_min } = config.thresholds;
-    if (typeof confirmed_min === 'number' && typeof likely_min === 'number') {
-      if (confirmed_min < likely_min) {
+    const { confirmed_min_raw, likely_min_raw } = config.thresholds;
+    if (typeof confirmed_min_raw === 'number' && typeof likely_min_raw === 'number') {
+      if (confirmed_min_raw < likely_min_raw) {
         return {
           ok: false,
-          error: `confirmed_min (${confirmed_min}) must be >= likely_min (${likely_min})`,
+          error: `confirmed_min_raw (${confirmed_min_raw}) must be >= likely_min_raw (${likely_min_raw})`,
         };
       }
     }
