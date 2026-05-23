@@ -110,6 +110,32 @@ describe('textOverlapSignal', () => {
     const result = textOverlapSignal.compute(input, defaultParams(textOverlapSignal));
     expect(result.score).toBe(0);
   });
+
+  // #355 — tool-only turn: assistant_response is empty but tool inputs reference file content
+  it('uses tool-call inputs as proxy-for-assistant-text when assistant_response is empty', () => {
+    const input = makeInput({
+      file: {
+        path: '/project/CLAUDE.md',
+        category: 'project',
+        estimated_tokens: 200,
+        content: 'Use proxyProvisioning helper. Always call fetchProvisioning before initializeProvisionStore.',
+      },
+      scan: {
+        request_id: 'r-tool-only', session_id: 's1',
+        user_prompt: 'trace proxyProvisioning call flow in this repo',
+        assistant_response: '',
+        injected_files: [{ path: '/project/CLAUDE.md', category: 'project', estimated_tokens: 200 }],
+        total_injected_tokens: 200,
+        tool_calls: [
+          { index: 0, name: 'Bash', input_summary: 'grep -rn "proxyProvisioning" /repo --include="*.ts" -l' },
+          { index: 1, name: 'Grep', input_summary: 'fetchProvisioning initializeProvisionStore' },
+        ],
+        context_estimate: { system_tokens: 200, total_tokens: 400 },
+      },
+    });
+    const result = textOverlapSignal.compute(input, defaultParams(textOverlapSignal));
+    expect(result.score).toBeGreaterThan(0);
+  });
 });
 
 // --- Signal 3: Instruction Compliance ---

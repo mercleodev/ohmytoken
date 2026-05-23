@@ -1,11 +1,21 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T22:08:29Z
-fingerprint=8030b0735cb26810870ab72b6d35c0ff7f89356d0ba55b7a7321fedc2d95d650
+# updated_at_utc: 2026-05-23T15:08:29Z
+fingerprint=483639fec123688e5080b48728c7ca2ca2302bb33f69969fce4aa637f3da4c01
 source=docs/sdd/style-checklist.md
-note=Stop-hook race fix (#349): server-side settle detection with stable-for window (intervalMs/stableForMs/maxWaitMs); handler + route async; existing 6 handler cases ported to await; new 4 settle cases + 1 race-reproduction case (intermediate→FINAL request_id transition + project nested_memory pickup). No new any/deps/assertions. Settle is non-blocking for claude (bin/stop-hook.mjs silent-fail + maxWaitMs cap).
+note=Step 3 (#355): textOverlap consumes tool-call input_summary via effectiveAssistantText helper when assistant_response is empty. Reviewed code-reviewer report — verdict OK; 2 minors (type duplication of ToolCallSummary, test could lock parity vs baseline) tracked in PR Tech Debt. Backend-only; React/Styling Addendum N/A.
 
-electron/hooks/__tests__/scanFromTranscriptHandler.spec.ts
-electron/hooks/__tests__/transcriptSettle.spec.ts
-electron/hooks/scanFromTranscriptHandler.ts
-electron/hooks/transcriptReader.ts
-electron/proxy/server.ts
+docs/idea/landing-mockup.html
+docs/idea/logo-assets/favicon.svg
+docs/idea/logo-assets/logo-lockup.svg
+docs/idea/logo-assets/logo-mark-mono.svg
+docs/idea/logo-assets/logo-mark.svg
+docs/idea/logo-assets/preview.html
+docs/idea/logo-mockup.html
+docs/idea/quota-share-ux-mockup.html
+docs/idea/readme-mockup.html
+electron/evidence/__tests__/signals.spec.ts
+electron/evidence/signals/textOverlap.ts
+electron/evidence/utils/__tests__/effectiveAssistantText.spec.ts
+electron/evidence/utils/effectiveAssistantText.ts
+landing_preview.html
+readme_preview.html
