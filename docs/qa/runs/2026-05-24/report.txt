@@ -1,0 +1,17 @@
+# QA Run — 2026-05-24
+
+Build SHA: feat/361-rule-ack-onboarding (pre-push)
+Mode: renderer-only (mock window.api)
+Tester: Claude
+
+## Domain 09 — Rule-Ack Onboarding (issue #361)
+
+- TC-09-001: First-run modal auto-opens after boot when scan returns at least one `willInsert: true` entry. PASS — `document.querySelectorAll('.rule-ack-modal').length === 1` after page load; localStorage flag flipped to `"1"`. Screenshot: `rule-ack-modal-open.png`.
+- TC-09-002: Modal lists each scanned file as a row with the proposed canary id and a per-file checkbox. PASS — three rows present (`tailwind.md`, `fsd.md` selectable; `typescript.md` shown as "already has marker").
+- TC-09-003: Apply primary button triggers IPC and transitions to `done` phase. PASS — clicking `.rule-ack-modal__primary` resolves the mock apply and the status message becomes "Applied to 2 file(s). Backups saved as *.md.bak."
+- TC-09-004: Close transitions modal out of the DOM. PASS — second click on primary (now the close-confirm CTA) yields `document.querySelector('.rule-ack-modal') === null`.
+
+## Notes / Open
+
+- Settings ▸ Rule Ack Onboarding entry was not headed-verified because the renderer-only mock cannot drive `onNavigateTo('settings')`. The section is covered by typecheck + lint + unit reachability and will be verified in the next full-stack Electron pass.
+- No regressions observed in the dashboard snapshot baseline (Cost / PromptHeatmap refs unchanged).

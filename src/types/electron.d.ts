@@ -546,6 +546,48 @@ export type ElectronApi = {
   backfillStatus: () => Promise<{ completed: boolean; lastScanTimestamp: number | null }>;
   onBackfillProgress: (callback: (progress: BackfillProgress) => void) => () => void;
   onBackfillComplete: (callback: (result: BackfillResult) => void) => () => void;
+
+  // Rule-Ack Onboarding API
+  ruleAckOnboarding: RuleAckOnboardingApi;
+};
+
+export type RuleAckPlanEntry = {
+  filePath: string;
+  proposedId: string;
+  willInsert: boolean;
+  reasonSkipped: 'already-has-marker' | null;
+  originalContent: string;
+  nextContent: string;
+  diff: string;
+};
+
+export type RuleAckProposedItem = { filePath: string; proposedId: string };
+
+export type RuleAckScanResult = {
+  entries: RuleAckPlanEntry[];
+  duplicateIds: Record<string, RuleAckProposedItem[]>;
+};
+
+export type RuleAckAppliedFile = {
+  filePath: string;
+  backupPath: string;
+  proposedId: string;
+};
+
+export type RuleAckApplyResult = {
+  ok: boolean;
+  applied: RuleAckAppliedFile[];
+  skipped: { filePath: string; reason: 'already-has-marker' }[];
+  failedAt: { filePath: string; error: string } | null;
+};
+
+export type RuleAckRollbackResult = { ok: boolean; restored: number; failed: number };
+
+export type RuleAckOnboardingApi = {
+  scan: (rootPaths?: string[]) => Promise<RuleAckScanResult>;
+  apply: (selectedEntries: RuleAckPlanEntry[]) => Promise<RuleAckApplyResult>;
+  rollback: () => Promise<RuleAckRollbackResult>;
+  hasLastApply: () => Promise<boolean>;
 };
 
 declare global {

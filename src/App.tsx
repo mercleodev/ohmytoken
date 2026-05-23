@@ -3,12 +3,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { UsageDashboard } from "./components/dashboard/UsageDashboard";
 import { SettingsSection } from "./components/SettingsSection";
 import { FirstRunOnboarding } from "./components/dashboard/FirstRunOnboarding";
+import { RuleAckOnboardingModal } from "./components/onboarding/RuleAckOnboardingModal";
+import "./components/onboarding/ruleAckOnboarding.css";
 import { AppSettings } from "./types";
 import type { PromptScan, UsageLogEntry } from "./types/electron";
 import type { ProviderConnectionStatus } from "./types";
 import "./App.css";
 
 type View = "first-run" | "dashboard" | "settings";
+
+const RULE_ACK_FIRST_RUN_KEY = "omt.rule-ack-onboarding.first-run-seen";
 
 type PendingPromptNav = {
   scan: PromptScan;
@@ -21,6 +25,7 @@ const App = () => {
   const [pendingPromptNav, setPendingPromptNav] = useState<PendingPromptNav | null>(null);
   const [firstRunStatuses, setFirstRunStatuses] = useState<ProviderConnectionStatus[]>([]);
   const [bootChecked, setBootChecked] = useState(false);
+  const [ruleAckModalOpen, setRuleAckModalOpen] = useState(false);
 
   const handleBackToDashboard = useCallback(() => setView("dashboard"), []);
 
@@ -84,6 +89,38 @@ const App = () => {
   const handleFirstRunComplete = useCallback(() => setView("dashboard"), []);
   const handleFirstRunSkip = useCallback(() => setView("dashboard"), []);
 
+  // Rule-ack first-run check — runs once per install (per renderer localStorage).
+  useEffect(() => {
+    if (!bootChecked) return;
+    if (typeof window === "undefined") return;
+    try {
+      if (window.localStorage.getItem(RULE_ACK_FIRST_RUN_KEY) === "1") return;
+    } catch {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!window.api.ruleAckOnboarding) return;
+        const result = await window.api.ruleAckOnboarding.scan();
+        if (cancelled) return;
+        const candidates = result.entries.filter((e) => e.willInsert);
+        if (candidates.length > 0) setRuleAckModalOpen(true);
+      } catch (err) {
+        console.error("[App] Rule-ack first-run scan failed:", err);
+      } finally {
+        try {
+          window.localStorage.setItem(RULE_ACK_FIRST_RUN_KEY, "1");
+        } catch {
+          // ignore quota errors
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bootChecked]);
+
   if (!bootChecked) {
     return <div className="app-root" />;
   }
@@ -141,6 +178,10 @@ const App = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <RuleAckOnboardingModal
+        open={ruleAckModalOpen}
+        onClose={() => setRuleAckModalOpen(false)}
+      />
     </div>
   );
 };
