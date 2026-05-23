@@ -16,6 +16,7 @@ export const instructionComplianceSignal: SignalPlugin = {
   id: 'instruction-compliance',
   name: 'Instruction Compliance',
   version: '1.0.0',
+  kind: 'evidence',
   papers: [
     {
       authors: 'Zhou et al.',

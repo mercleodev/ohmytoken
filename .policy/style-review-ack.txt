@@ -1,11 +1,27 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-10T22:08:29Z
-fingerprint=8030b0735cb26810870ab72b6d35c0ff7f89356d0ba55b7a7321fedc2d95d650
+# updated_at_utc: 2026-05-23T15:02:29Z
+fingerprint=eb7a7feb872df522c94fe8ff93d02db1e0bebb955d1781e449e781d1d1cfac28
 source=docs/sdd/style-checklist.md
-note=Stop-hook race fix (#349): server-side settle detection with stable-for window (intervalMs/stableForMs/maxWaitMs); handler + route async; existing 6 handler cases ported to await; new 4 settle cases + 1 race-reproduction case (intermediate→FINAL request_id transition + project nested_memory pickup). No new any/deps/assertions. Settle is non-blocking for claude (bin/stop-hook.mjs silent-fail + maxWaitMs cap).
+note=Step 4 (#353): tag SignalPlugin with kind=prior|evidence; engine.classify() forces unverified when no evidence-kind signal fires. Reviewed code-reviewer report — major (helper duplication) resolved by extracting hasEvidenceSignal method on engine. Minor follow-ups noted (test could derive from builtinSignals.kind filter) for PR Tech Debt. Backend-only change; React/Styling Addendum N/A.
 
-electron/hooks/__tests__/scanFromTranscriptHandler.spec.ts
-electron/hooks/__tests__/transcriptSettle.spec.ts
-electron/hooks/scanFromTranscriptHandler.ts
-electron/hooks/transcriptReader.ts
-electron/proxy/server.ts
+docs/idea/landing-mockup.html
+docs/idea/logo-assets/favicon.svg
+docs/idea/logo-assets/logo-lockup.svg
+docs/idea/logo-assets/logo-mark-mono.svg
+docs/idea/logo-assets/logo-mark.svg
+docs/idea/logo-assets/preview.html
+docs/idea/logo-mockup.html
+docs/idea/quota-share-ux-mockup.html
+docs/idea/readme-mockup.html
+electron/evidence/__tests__/engine.spec.ts
+electron/evidence/engine.ts
+electron/evidence/signals/categoryPrior.ts
+electron/evidence/signals/instructionCompliance.ts
+electron/evidence/signals/positionEffect.ts
+electron/evidence/signals/sessionHistory.ts
+electron/evidence/signals/textOverlap.ts
+electron/evidence/signals/tokenProportion.ts
+electron/evidence/signals/toolReference.ts
+electron/evidence/signals/types.ts
+landing_preview.html
+readme_preview.html

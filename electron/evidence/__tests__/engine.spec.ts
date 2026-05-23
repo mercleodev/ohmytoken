@@ -160,6 +160,51 @@ describe('EvidenceEngine', () => {
   });
 });
 
+describe('EvidenceEngine — evidence-required classification (#353)', () => {
+  const priorOnlyScan = () => ({
+    request_id: 'req-prior-only',
+    session_id: 'sess-prior-only',
+    user_prompt: 'do something unrelated to any delivered file',
+    assistant_response: '',
+    injected_files: [
+      { path: '/project/CLAUDE.md', category: 'project', estimated_tokens: 5000 },
+      { path: '/project/.claude/rules/typescript.md', category: 'rules', estimated_tokens: 2000 },
+    ],
+    total_injected_tokens: 7000,
+    tool_calls: [
+      { index: 0, name: 'Bash', input_summary: 'ls -la /tmp' },
+    ],
+    context_estimate: { system_tokens: 8000, total_tokens: 50000 },
+  });
+
+  it('classifies prior-only files as unverified even when normalized score >= likely_min', () => {
+    const engine = new EvidenceEngine();
+    const report = engine.score(priorOnlyScan());
+
+    for (const f of report.files) {
+      const evidenceScores = f.signals.filter((s) =>
+        ['tool-reference', 'text-overlap', 'instruction-compliance', 'session-history'].includes(s.signalId),
+      );
+      const evidenceTotal = evidenceScores.reduce((sum, s) => sum + s.score, 0);
+      expect(evidenceTotal).toBe(0);
+      expect(f.classification).toBe('unverified');
+    }
+  });
+
+  it('still classifies as likely/confirmed when at least one evidence signal fires', () => {
+    const engine = new EvidenceEngine();
+    const scan = makeScan();
+    const report = engine.score(scan);
+
+    const projectFile = report.files.find((f) => f.filePath === 'project/CLAUDE.md');
+    expect(projectFile).toBeDefined();
+    const toolRef = projectFile!.signals.find((s) => s.signalId === 'tool-reference');
+    expect(toolRef).toBeDefined();
+    expect(toolRef!.score).toBeGreaterThan(0);
+    expect(projectFile!.classification).not.toBe('unverified');
+  });
+});
+
 describe('Config', () => {
   it('DEFAULT_ENGINE_CONFIG is valid', () => {
     const result = validateConfig(DEFAULT_ENGINE_CONFIG);

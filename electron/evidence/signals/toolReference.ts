@@ -18,6 +18,7 @@ export const toolReferenceSignal: SignalPlugin = {
   id: 'tool-reference',
   name: 'Tool Reference',
   version: '1.0.0',
+  kind: 'evidence',
   papers: [
     {
       authors: 'Schick et al.',

@@ -19,6 +19,7 @@ export const textOverlapSignal: SignalPlugin = {
   id: 'text-overlap',
   name: 'Text Overlap',
   version: '1.0.0',
+  kind: 'evidence',
   papers: [
     {
       authors: 'Broder',

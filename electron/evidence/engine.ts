@@ -16,7 +16,7 @@ import type { FusionStrategy } from './fusion/types';
 import { builtinSignals } from './registry';
 import { weightedSumFusion } from './fusion/weightedSum';
 import { dempsterShaferFusion } from './fusion/dempsterShafer';
-import { DEFAULT_ENGINE_CONFIG, mergeConfig } from './config';
+import { mergeConfig } from './config';
 
 const ENGINE_VERSION = '1.0.0';
 
@@ -46,11 +46,18 @@ const getFusionStrategy = (method: string): FusionStrategy => {
 
 /**
  * Classify a normalized score into C/L/U.
+ *
+ * Files lit only by prior-kind signals (category, position, token-proportion)
+ * cannot reach `likely` or `confirmed` — they fall to `unverified`. This
+ * prevents the "every file is likely" failure mode observed when system-injected
+ * files (CLAUDE.md, rules) receive no LLM-side proof of use. See #353.
  */
 const classify = (
   normalizedScore: number,
+  hasEvidenceSignal: boolean,
   thresholds: { confirmed_min: number; likely_min: number },
 ): EvidenceClassification => {
+  if (!hasEvidenceSignal) return 'unverified';
   if (normalizedScore >= thresholds.confirmed_min) return 'confirmed';
   if (normalizedScore >= thresholds.likely_min) return 'likely';
   return 'unverified';
@@ -65,6 +72,12 @@ export class EvidenceEngine {
     this.config = mergeConfig(userConfig);
     this.signals = this.resolveSignals();
     this.fusion = getFusionStrategy(this.config.fusion_method);
+  }
+
+  private hasEvidenceSignal(signals: SignalResult[]): boolean {
+    return this.signals.some(
+      (plugin, i) => plugin.kind === 'evidence' && signals[i].score > 0,
+    );
   }
 
   /**
@@ -140,7 +153,11 @@ export class EvidenceEngine {
         signals,
         rawScore: fused.rawScore,
         normalizedScore: fused.normalizedScore,
-        classification: classify(fused.normalizedScore, this.config.thresholds),
+        classification: classify(
+          fused.normalizedScore,
+          this.hasEvidenceSignal(signals),
+          this.config.thresholds,
+        ),
       };
     });
 
@@ -191,7 +208,11 @@ export class EvidenceEngine {
       signals,
       rawScore: fused.rawScore,
       normalizedScore: fused.normalizedScore,
-      classification: classify(fused.normalizedScore, this.config.thresholds),
+      classification: classify(
+        fused.normalizedScore,
+        this.hasEvidenceSignal(signals),
+        this.config.thresholds,
+      ),
     };
   }
 }
