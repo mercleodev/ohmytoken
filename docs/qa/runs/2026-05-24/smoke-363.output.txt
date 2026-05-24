@@ -1,0 +1,34 @@
+transcript: <homedir>/.claude/projects/<encoded-project>/<session-uuid>.jsonl
+session_id: <session-uuid>
+project_path (cwd): <projectRoot>
+model: claude-opus-4-7
+total_injected_tokens: 357
+
+injected_files (27):
+  [global  ]    357 tok  <homedir>/.claude/CLAUDE.md
+  [rules   ]   1523 tok  <projectRoot>/.claude/rules/agent-browser-qa.md
+  [rules   ]    386 tok  <projectRoot>/.claude/rules/commit-checklist.md
+  [rules   ]    757 tok  <projectRoot>/.claude/rules/e2e-test.md
+  [rules   ]   4292 tok  <projectRoot>/.claude/rules/frontend-design-guideline.md
+  [rules   ]    823 tok  <projectRoot>/.claude/rules/sdd-workflow.md
+  [skill   ]    268 tok  <projectRoot>/.claude/skills/README.md
+  [skill   ]    257 tok  <projectRoot>/.claude/skills/default-ops.md
+  [skill   ]    200 tok  <projectRoot>/.claude/skills/e2e-loop.md
+  [skill   ]    251 tok  <projectRoot>/.claude/skills/frontend.md
+  [skill   ]    375 tok  <projectRoot>/.claude/skills/release-pr.md
+  [skill   ]    391 tok  <homedir>/.claude/skills/build-fix/SKILL.md
+  [skill   ]    365 tok  <homedir>/.claude/skills/commit-push-pr/SKILL.md
+  [skill   ]    435 tok  <homedir>/.claude/skills/compact-guide/SKILL.md
+  [skill   ]   4088 tok  <homedir>/.claude/skills/e2e-agent-browser/SKILL.md
+  [skill   ]    512 tok  <homedir>/.claude/skills/handoff/SKILL.md
+  [skill   ]    417 tok  <homedir>/.claude/skills/plan/SKILL.md
+  [skill   ]   7458 tok  <homedir>/.claude/skills/react-patterns/SKILL.md
+  [skill   ]   3926 tok  <homedir>/.claude/skills/react-patterns/learn.md
+  [skill   ]   3392 tok  <homedir>/.claude/skills/react-patterns/reference.md
+  [skill   ]    363 tok  <homedir>/.claude/skills/review/SKILL.md
+  [skill   ]    310 tok  <homedir>/.claude/skills/simplify/SKILL.md
+  [skill   ]    984 tok  <homedir>/.claude/skills/spec/SKILL.md
+  [skill   ]    833 tok  <homedir>/.claude/skills/spec-verify/SKILL.md
+  [skill   ]    508 tok  <homedir>/.claude/skills/tdd/SKILL.md
+  [skill   ]   3668 tok  <homedir>/.claude/skills/ui-ux-pro-max/SKILL.md
+  [skill   ]    281 tok  <homedir>/.claude/skills/verify/SKILL.md
