@@ -5,9 +5,9 @@
  * Users can override via Store (JSON config).
  */
 
-import type { EvidenceEngineConfig, SignalConfig } from './types';
+import type { EvidenceEngineConfig, SignalConfig, UserEvidenceConfig } from './types';
 
-const ENGINE_VERSION = '1.0.0';
+const ENGINE_VERSION = '1.1.0';
 
 const defaultSignal = (
   signalId: string,
@@ -72,11 +72,13 @@ export const DEFAULT_ENGINE_CONFIG: EvidenceEngineConfig = {
 
   // Raw-score thresholds. Total possible raw across the 8 signals ≈ 140.
   // Prior-only ceiling ≈ 40 (cat 30 + token 5 + pos 5); #353's evidence
-  // guard forces priors-only to unverified anyway. Direct tool reference
-  // and USED ack tokens override threshold math entirely (see engine.ts).
+  // guard forces priors-only to unverified anyway. Direct tool reference,
+  // USED ack tokens, and the high-compliance shortcut (#374) override
+  // threshold math entirely (see engine.ts classify priority chain).
   thresholds: {
     confirmed_min_raw: 45,
     likely_min_raw: 25,
+    high_compliance_confidence_min: 0.8,
   },
 };
 
@@ -94,7 +96,7 @@ export const clampNumber = (value: number, min?: number, max?: number): number =
  * Deep-merge user config over defaults, preserving unset fields.
  */
 export const mergeConfig = (
-  userConfig?: Partial<EvidenceEngineConfig>,
+  userConfig?: UserEvidenceConfig,
 ): EvidenceEngineConfig => {
   if (!userConfig) return { ...DEFAULT_ENGINE_CONFIG };
 
@@ -109,6 +111,9 @@ export const mergeConfig = (
       likely_min_raw:
         userConfig.thresholds?.likely_min_raw ??
         DEFAULT_ENGINE_CONFIG.thresholds.likely_min_raw,
+      high_compliance_confidence_min:
+        userConfig.thresholds?.high_compliance_confidence_min ??
+        DEFAULT_ENGINE_CONFIG.thresholds.high_compliance_confidence_min,
     },
     signals: { ...DEFAULT_ENGINE_CONFIG.signals },
   };

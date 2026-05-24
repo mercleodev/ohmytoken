@@ -1,16 +1,17 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-24T09:19:53Z
-fingerprint=4ef1689e11732aeb9b18c8ee94f52cb0542a80047e1a6fff66630e73a16e0ee5
+# updated_at_utc: 2026-05-24T14:33:24Z
+fingerprint=e56216bbfa97fb7ddb6c07a2dfa1d6c97a1d6f2cf8af8e55a1a9c135fc153988
 source=docs/sdd/style-checklist.md
-note=Manual style review per .claude/rules/frontend-design-guideline.md — verdict OK, 0 critical/0 major; 2 minor noted (token-driven chip colors, memory/confirmed green similarity) deferred to polish PR.
+note=Manual style review per .claude/rules/frontend-design-guideline.md — verdict OK, 0 critical/0 major, 1 minor (JSDoc step order) fixed in same commit.
 
 .policy/active-rules-ack.txt
-docs/qa/runs/2026-05-24-372/dashboard-after.png
-src/components/dashboard/dashboard.css
-src/components/dashboard/prompt-detail/__tests__/evidence.spec.ts
-src/components/dashboard/prompt-detail/__tests__/semanticCategory.spec.ts
-src/components/dashboard/prompt-detail/ContextFileList.tsx
-src/components/dashboard/prompt-detail/evidence.ts
-src/components/dashboard/prompt-detail/semanticCategory.ts
-src/components/dashboard/PromptDetailView.tsx
-src/components/notification/NotificationCard.tsx
+electron/db/__tests__/reader-evidence.spec.ts
+electron/db/__tests__/writer-evidence.spec.ts
+electron/db/reader.ts
+electron/evidence/__tests__/classify.spec.ts
+electron/evidence/__tests__/emitScoredScan.spec.ts
+electron/evidence/__tests__/engine.spec.ts
+electron/evidence/config.ts
+electron/evidence/engine.ts
+electron/evidence/types.ts
+electron/evidence/validateConfig.ts

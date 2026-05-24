@@ -36,7 +36,7 @@ describe('EvidenceEngine', () => {
     const report = engine.score(scan);
 
     expect(report.request_id).toBe('req-test-001');
-    expect(report.engine_version).toBe('1.0.0');
+    expect(report.engine_version).toBe('1.1.0');
     expect(report.fusion_method).toBe('weighted_sum');
     expect(report.files).toHaveLength(4);
     expect(report.thresholds.confirmed_min_raw).toBe(45);
@@ -257,6 +257,94 @@ You must respect the FSD layer boundaries.`;
     // commit-pr.md has no canary marker and no matching ack — stays unverified
     const commit = report.files.find((f) => f.filePath.endsWith('commit-pr.md'));
     expect(commit!.classification).toBe('unverified');
+  });
+});
+
+// Issue #374: high-compliance shortcut — instruction-compliance.confidence
+// >= threshold promotes a file to `confirmed` even without an ack token
+// or a direct tool reference. Catches cases where the LLM clearly followed
+// every rule directive but neither named the file in tools nor emitted
+// an ack token. Threshold default is 0.8, configurable.
+describe('EvidenceEngine — high-compliance shortcut (#374)', () => {
+  // A rule file with 3 simple directives — when the assistant complies
+  // with all of them, instruction-compliance returns confidence ≈ 1.0.
+  const RULE_CONTENT = `You must run typecheck before commit.
+You must run lint before commit.
+You must run vitest before commit.`;
+
+  const baseScan = (assistantResponse: string) => ({
+    request_id: 'req-374',
+    session_id: 'sess-374',
+    user_prompt: 'ready to commit',
+    assistant_response: assistantResponse,
+    injected_files: [
+      {
+        path: '/project/.claude/rules/commit-checklist.md',
+        category: 'rules' as const,
+        estimated_tokens: 80,
+      },
+    ],
+    total_injected_tokens: 80,
+    tool_calls: [], // no direct tool reference to the file
+    context_estimate: { system_tokens: 500, total_tokens: 800 },
+  });
+
+  const fileContents = {
+    '/project/.claude/rules/commit-checklist.md': RULE_CONTENT,
+  };
+
+  it('promotes to confirmed when assistant complies with all directives (no ack, no tool ref)', () => {
+    const engine = new EvidenceEngine();
+    const scan = baseScan(
+      'I will run typecheck and lint and vitest before committing.',
+    );
+    const report = engine.score(scan, { fileContents });
+
+    const rule = report.files[0];
+    expect(rule.classification).toBe('confirmed');
+  });
+
+  it('does not promote when compliance is below the configured threshold', () => {
+    // Raw thresholds also raised so the raw-score path doesn't independently
+    // grab confirmed — this test must isolate the shortcut's gating behavior.
+    const engine = new EvidenceEngine({
+      thresholds: {
+        confirmed_min_raw: 200,
+        likely_min_raw: 100,
+        high_compliance_confidence_min: 0.8,
+      },
+    });
+    // Response with no directive-related verbs/nouns -> compliance ~0.
+    const scan = baseScan('Pushed straight to main without checks.');
+    const report = engine.score(scan, { fileContents });
+
+    const rule = report.files[0];
+    expect(rule.classification).not.toBe('confirmed');
+  });
+
+  it('respects ack-USED priority over high-compliance shortcut', () => {
+    // Even with full compliance, an explicit USED ack should also produce
+    // confirmed (so the outcome is the same). Sanity: chain still passes.
+    const engine = new EvidenceEngine();
+    const scan = baseScan(
+      'typecheck lint vitest done.\n[RULE-ACK:CANARY-commit-checklist=USED:ran all gates]',
+    );
+    const report = engine.score(scan, { fileContents });
+
+    const rule = report.files[0];
+    expect(rule.classification).toBe('confirmed');
+  });
+
+  it('NOT_APPLICABLE ack still caps at likely even when compliance is high', () => {
+    const engine = new EvidenceEngine();
+    // Full directive compliance but explicit NOT_APPLICABLE downgrade.
+    const scan = baseScan(
+      'typecheck lint vitest done.\n[RULE-ACK:CANARY-commit-checklist=NOT_APPLICABLE:no code change this turn]',
+    );
+    const report = engine.score(scan, { fileContents });
+
+    const rule = report.files[0];
+    expect(rule.classification).toBe('likely');
   });
 });
 

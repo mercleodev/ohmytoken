@@ -10,6 +10,7 @@ import type {
   EvidenceClassification,
   SignalInput,
   SignalResult,
+  UserEvidenceConfig,
 } from './types';
 import type { SignalPlugin } from './signals/types';
 import type { FusionStrategy } from './fusion/types';
@@ -18,7 +19,7 @@ import { weightedSumFusion } from './fusion/weightedSum';
 import { dempsterShaferFusion } from './fusion/dempsterShafer';
 import { mergeConfig } from './config';
 
-const ENGINE_VERSION = '1.0.0';
+const ENGINE_VERSION = '1.1.0';
 
 type ScanData = SignalInput['scan'];
 
@@ -49,28 +50,40 @@ type AckVerdict = 'USED' | 'NOT_APPLICABLE' | null;
 /**
  * Classify a file based on its raw score and the strongest signal it carried.
  *
- * Priority:
- *   1. USED ack token        → confirmed (LLM self-declared engagement)
- *   2. NOT_APPLICABLE ack    → likely (LLM acknowledged + judged irrelevant)
- *   3. Direct tool reference → confirmed (Read/Edit/Write/Glob/Grep hit the file)
- *   4. No evidence signal    → unverified (priors-only — see #353)
- *   5. Raw-score thresholds  → confirmed/likely/unverified
+ * Priority (matches code order — `!hasEvidenceSignal` short-circuits BEFORE
+ * the high-compliance shortcut to preserve the #353 priors-only contract):
+ *   1. USED ack token              → confirmed (LLM self-declared engagement)
+ *   2. NOT_APPLICABLE ack          → likely (LLM acknowledged + judged irrelevant)
+ *   3. Direct tool reference       → confirmed (Read/Edit/Write/Glob/Grep hit the file)
+ *   4. No evidence signal          → unverified (priors-only — see #353)
+ *   5. High instruction compliance → confirmed (#374 — assistant followed every
+ *                                    rule directive even without an ack token
+ *                                    or a coincidental tool basename mention)
+ *   6. Raw-score thresholds        → confirmed/likely/unverified
  *
  * The raw score is used (not normalized) because the weighted-sum normalizer's
  * "active-signal-only denominator" perversely scored files with *more* evidence
  * lower than files with less. See #359.
+ *
+ * Exported for direct pure-function testing in classify.spec.ts.
  */
-const classify = (
+export const classify = (
   rawScore: number,
   hasEvidenceSignal: boolean,
   hasDirectToolReference: boolean,
   ackVerdict: AckVerdict,
-  thresholds: { confirmed_min_raw: number; likely_min_raw: number },
+  hasHighInstructionCompliance: boolean,
+  thresholds: {
+    confirmed_min_raw: number;
+    likely_min_raw: number;
+    high_compliance_confidence_min: number;
+  },
 ): EvidenceClassification => {
   if (ackVerdict === 'USED') return 'confirmed';
   if (ackVerdict === 'NOT_APPLICABLE') return 'likely';
   if (hasDirectToolReference) return 'confirmed';
   if (!hasEvidenceSignal) return 'unverified';
+  if (hasHighInstructionCompliance) return 'confirmed';
   if (rawScore >= thresholds.confirmed_min_raw) return 'confirmed';
   if (rawScore >= thresholds.likely_min_raw) return 'likely';
   return 'unverified';
@@ -81,7 +94,7 @@ export class EvidenceEngine {
   private signals: SignalPlugin[];
   private fusion: FusionStrategy;
 
-  constructor(userConfig?: Partial<EvidenceEngineConfig>) {
+  constructor(userConfig?: UserEvidenceConfig) {
     this.config = mergeConfig(userConfig);
     this.signals = this.resolveSignals();
     this.fusion = getFusionStrategy(this.config.fusion_method);
@@ -105,6 +118,24 @@ export class EvidenceEngine {
   }
 
   /**
+   * Issue #374: the assistant clearly followed every directive in the rule
+   * file. instruction-compliance.confidence >= threshold => confirmed,
+   * regardless of whether the LLM happened to name the file in tool input.
+   *
+   * Treats missing/NaN/undefined confidence as 0 (no promotion). The
+   * compliance signal scores > 0 only when the file has at least one
+   * extractable directive, so this never fires for non-rule files.
+   */
+  private hasHighInstructionCompliance(signals: SignalResult[]): boolean {
+    const sig = signals.find((s) => s.signalId === 'instruction-compliance');
+    if (!sig) return false;
+    const confidence = typeof sig.confidence === 'number' && Number.isFinite(sig.confidence)
+      ? sig.confidence
+      : 0;
+    return confidence >= this.config.thresholds.high_compliance_confidence_min;
+  }
+
+  /**
    * Filter builtin signals to only enabled ones.
    */
   private resolveSignals(): SignalPlugin[] {
@@ -117,7 +148,7 @@ export class EvidenceEngine {
   /**
    * Update configuration (e.g., after user changes settings).
    */
-  updateConfig(userConfig: Partial<EvidenceEngineConfig>): void {
+  updateConfig(userConfig: UserEvidenceConfig): void {
     this.config = mergeConfig(userConfig);
     this.signals = this.resolveSignals();
     this.fusion = getFusionStrategy(this.config.fusion_method);
@@ -182,6 +213,7 @@ export class EvidenceEngine {
           this.hasEvidenceSignal(signals),
           this.hasDirectToolReference(signals),
           this.ackVerdict(signals),
+          this.hasHighInstructionCompliance(signals),
           this.config.thresholds,
         ),
       };
@@ -239,6 +271,7 @@ export class EvidenceEngine {
         this.hasEvidenceSignal(signals),
         this.hasDirectToolReference(signals),
         this.ackVerdict(signals),
+        this.hasHighInstructionCompliance(signals),
         this.config.thresholds,
       ),
     };
