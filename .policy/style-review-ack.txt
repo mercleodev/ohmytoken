@@ -1,14 +1,16 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-24T08:49:04Z
-fingerprint=1a8f576b94b99a5fb4d739c8849f778a83922310e7cdb66a53049d6aa033bf51
+# updated_at_utc: 2026-05-24T09:19:53Z
+fingerprint=4ef1689e11732aeb9b18c8ee94f52cb0542a80047e1a6fff66630e73a16e0ee5
 source=docs/sdd/style-checklist.md
-note=Manual style review per .claude/rules/frontend-design-guideline.md (Toss + OhMyToken Addendum) — verdict OK, 0 critical/0 major; two minor notes deferred (TS-02 attachment widening, DOC-02 helper docstring edge case).
+note=Manual style review per .claude/rules/frontend-design-guideline.md — verdict OK, 0 critical/0 major; 2 minor noted (token-driven chip colors, memory/confirmed green similarity) deferred to polish PR.
 
 .policy/active-rules-ack.txt
-electron/capture/__tests__/applyDiskScanCandidates.spec.ts
-electron/capture/__tests__/deriveExtraRoots.spec.ts
-electron/capture/applyDiskScanCandidates.ts
-electron/capture/deriveExtraRoots.ts
-electron/hooks/__tests__/scanFromTranscript.spec.ts
-electron/hooks/scanFromTranscript.ts
-electron/importer/historyImporter.ts
+docs/qa/runs/2026-05-24-372/dashboard-after.png
+src/components/dashboard/dashboard.css
+src/components/dashboard/prompt-detail/__tests__/evidence.spec.ts
+src/components/dashboard/prompt-detail/__tests__/semanticCategory.spec.ts
+src/components/dashboard/prompt-detail/ContextFileList.tsx
+src/components/dashboard/prompt-detail/evidence.ts
+src/components/dashboard/prompt-detail/semanticCategory.ts
+src/components/dashboard/PromptDetailView.tsx
+src/components/notification/NotificationCard.tsx

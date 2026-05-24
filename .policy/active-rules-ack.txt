@@ -1,7 +1,7 @@
 # OhMyToken Active Rules Acknowledgement
-# task: 370
+# task: 372
 # mode: staged
-# updated_at_utc: 2026-05-24T08:50:32Z
+# updated_at_utc: 2026-05-24T09:20:17Z
 TEST-GATE-001
 MIGRATION-REUSE-001
 MIGRATION-REFACTOR-001

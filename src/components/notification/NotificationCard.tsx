@@ -186,10 +186,17 @@ const ContextFilesSection = ({ scan, createdAt }: {
               </span>
               <span
                 className="notif-evidence-count"
-                style={{ color: EVIDENCE_STATUS_COLORS.unverified }}
-                title="Files with only heuristic mentions or no trace. Expand for per-file detail."
+                style={{ color: EVIDENCE_STATUS_COLORS.likely }}
+                title="Files with heuristic mentions in tool input, response text, or prompt text."
               >
-                Not-confirmed {counts.notConfirmed}
+                Likely {counts.likely}
+              </span>
+              <span
+                className="notif-evidence-count"
+                style={{ color: EVIDENCE_STATUS_COLORS.unverified }}
+                title="Files with no detectable reference. Expand for per-file detail."
+              >
+                Unverified {counts.unverified}
               </span>
             </span>
           );

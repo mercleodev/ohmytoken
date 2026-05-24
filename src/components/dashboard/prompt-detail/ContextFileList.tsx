@@ -2,7 +2,16 @@ import { useState, useCallback, useMemo } from "react";
 import { formatTokens } from "../../scan/shared";
 import type { EvidenceStatus, InjectedEvidenceItem } from "./types";
 import { EVIDENCE_STATUS_COLORS } from "./constants";
+import { getSemanticCategory } from "./semanticCategory";
 import { SignalBreakdown } from "./SignalBreakdown";
+
+const CATEGORY_CHIP_LABEL: Record<InjectedEvidenceItem["category"], string> = {
+  global: "global",
+  project: "project",
+  rules: "rules",
+  memory: "memory",
+  skill: "skill",
+};
 
 const STATUS_ORDER: Record<EvidenceStatus, number> = {
   confirmed: 0,
@@ -83,6 +92,12 @@ export const ContextFileList = ({
                 </span>
                 <span className="context-file-info">
                   <span className="context-file-path">
+                    <span
+                      className={`context-file-category-chip category-${getSemanticCategory(item.path, item.category)}`}
+                      title={`Effective category derived from path (stored: ${item.category}).`}
+                    >
+                      {CATEGORY_CHIP_LABEL[getSemanticCategory(item.path, item.category)]}
+                    </span>
                     {item.path.split("/").slice(-2).join("/")}
                   </span>
                   <span className="context-file-reason">{item.reason}</span>

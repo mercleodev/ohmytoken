@@ -208,10 +208,16 @@ export const PromptDetailView = ({ scan, usage, onBack }: PromptDetailViewProps)
                       Confirmed {counts.confirmed}
                     </span>
                     <span
-                      className="injected-evidence-badge not-confirmed"
-                      title="Files with only heuristic mentions (Bash input, response text, prompt text) or no trace at all. Expand the list for per-file detail."
+                      className="injected-evidence-badge likely"
+                      title="Files with heuristic mentions in tool input, response text, or prompt text. Useful but not directly proven used this turn."
                     >
-                      Not-confirmed {counts.notConfirmed}
+                      Likely {counts.likely}
+                    </span>
+                    <span
+                      className="injected-evidence-badge unverified"
+                      title="Files with no detectable reference. Expand the list for per-file detail."
+                    >
+                      Unverified {counts.unverified}
                     </span>
                   </>
                 );

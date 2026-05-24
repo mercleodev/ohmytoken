@@ -24,11 +24,15 @@ const makeByStatus = (
   unverified,
 });
 
-describe('collapseEvidenceToCounts', () => {
+// Issue #372: the rollup must expose all three tiers so the header summary
+// is consistent with the per-row letter dots (C/L/U). The previous 2-way
+// `notConfirmed` collapse hid the likely tier from the header.
+describe('collapseEvidenceToCounts (3-tier)', () => {
   it('returns all zeros for empty input', () => {
     expect(collapseEvidenceToCounts(makeByStatus())).toEqual({
       confirmed: 0,
-      notConfirmed: 0,
+      likely: 0,
+      unverified: 0,
       total: 0,
     });
   });
@@ -37,30 +41,33 @@ describe('collapseEvidenceToCounts', () => {
     const items = [makeItem('confirmed'), makeItem('confirmed')];
     expect(collapseEvidenceToCounts(makeByStatus(items))).toEqual({
       confirmed: 2,
-      notConfirmed: 0,
+      likely: 0,
+      unverified: 0,
       total: 2,
     });
   });
 
-  it('treats likely as not-confirmed', () => {
+  it('counts likely-only buckets', () => {
     const items = [makeItem('likely'), makeItem('likely'), makeItem('likely')];
     expect(collapseEvidenceToCounts(makeByStatus([], items))).toEqual({
       confirmed: 0,
-      notConfirmed: 3,
+      likely: 3,
+      unverified: 0,
       total: 3,
     });
   });
 
-  it('treats unverified as not-confirmed', () => {
+  it('counts unverified-only buckets', () => {
     const items = [makeItem('unverified')];
     expect(collapseEvidenceToCounts(makeByStatus([], [], items))).toEqual({
       confirmed: 0,
-      notConfirmed: 1,
+      likely: 0,
+      unverified: 1,
       total: 1,
     });
   });
 
-  it('sums likely + unverified into not-confirmed for mixed input', () => {
+  it('keeps the three tiers independent for mixed input', () => {
     const byStatus = makeByStatus(
       [makeItem('confirmed')],
       [makeItem('likely'), makeItem('likely')],
@@ -68,12 +75,13 @@ describe('collapseEvidenceToCounts', () => {
     );
     expect(collapseEvidenceToCounts(byStatus)).toEqual({
       confirmed: 1,
-      notConfirmed: 5,
+      likely: 2,
+      unverified: 3,
       total: 6,
     });
   });
 
-  it('preserves the invariant total = confirmed + notConfirmed across cases', () => {
+  it('preserves the invariant total = confirmed + likely + unverified', () => {
     const cases: Array<Record<EvidenceStatus, InjectedEvidenceItem[]>> = [
       makeByStatus(),
       makeByStatus([makeItem('confirmed')]),
@@ -87,7 +95,9 @@ describe('collapseEvidenceToCounts', () => {
     ];
     for (const byStatus of cases) {
       const counts = collapseEvidenceToCounts(byStatus);
-      expect(counts.total).toBe(counts.confirmed + counts.notConfirmed);
+      expect(counts.total).toBe(
+        counts.confirmed + counts.likely + counts.unverified,
+      );
     }
   });
 });

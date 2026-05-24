@@ -1463,11 +1463,6 @@
   background: rgba(107, 114, 128, 0.16);
 }
 
-.injected-evidence-badge.not-confirmed {
-  color: #6b7280;
-  background: rgba(107, 114, 128, 0.16);
-}
-
 .injected-evidence-group {
   margin-top: 8px;
 }
@@ -2007,6 +2002,47 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.context-file-category-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.context-file-category-chip.category-rules {
+  color: #5b3aa3;
+  background: rgba(91, 58, 163, 0.12);
+}
+
+.context-file-category-chip.category-memory {
+  color: #1f7a57;
+  background: rgba(31, 122, 87, 0.12);
+}
+
+.context-file-category-chip.category-skill {
+  color: #b45309;
+  background: rgba(180, 83, 9, 0.12);
+}
+
+.context-file-category-chip.category-project {
+  color: #475569;
+  background: rgba(71, 85, 105, 0.12);
+}
+
+.context-file-category-chip.category-global {
+  color: #1d4ed8;
+  background: rgba(29, 78, 216, 0.12);
 }
 
 .context-file-reason {
