@@ -1,12 +1,10 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-24T15:14:49Z
-fingerprint=610ebabde1a74558985dac0214aab6c4899b5cd5a94e198e544f387533eb4d52
+# updated_at_utc: 2026-05-24T16:12:41Z
+fingerprint=43276a9fb6a755548b1dc3f82aa86490dee02e5f3ee533ff358e6311b50c76a6
 source=docs/sdd/style-checklist.md
-note=Reviewed touched lines against guideline addendum: helper is pure with no any, IPC handler delegates to shared parity helper, historyAdapter forwards project_path, tests cover both recovery and honest-failure paths.
+note=Issue #378 history importer assistant_response: range-based aggregation helper + 2 call sites; reviewed against frontend-design-guideline (Toss + OhMyToken Addendum), verdict OK; no UI surface affected.
 
 .policy/active-rules-ack.txt
-electron/db/__tests__/db.spec.ts
-electron/db/historyAdapter.ts
-electron/importer/__tests__/buildHistoryDetailFiles.spec.ts
-electron/importer/buildHistoryDetailFiles.ts
-electron/main.ts
+electron/importer/__tests__/extractAssistantTextRange.spec.ts
+electron/importer/extractAssistantTextRange.ts
+electron/importer/historyImporter.ts
