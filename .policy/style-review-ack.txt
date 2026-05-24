@@ -1,17 +1,12 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-24T14:33:24Z
-fingerprint=e56216bbfa97fb7ddb6c07a2dfa1d6c97a1d6f2cf8af8e55a1a9c135fc153988
+# updated_at_utc: 2026-05-24T15:14:49Z
+fingerprint=610ebabde1a74558985dac0214aab6c4899b5cd5a94e198e544f387533eb4d52
 source=docs/sdd/style-checklist.md
-note=Manual style review per .claude/rules/frontend-design-guideline.md — verdict OK, 0 critical/0 major, 1 minor (JSDoc step order) fixed in same commit.
+note=Reviewed touched lines against guideline addendum: helper is pure with no any, IPC handler delegates to shared parity helper, historyAdapter forwards project_path, tests cover both recovery and honest-failure paths.
 
 .policy/active-rules-ack.txt
-electron/db/__tests__/reader-evidence.spec.ts
-electron/db/__tests__/writer-evidence.spec.ts
-electron/db/reader.ts
-electron/evidence/__tests__/classify.spec.ts
-electron/evidence/__tests__/emitScoredScan.spec.ts
-electron/evidence/__tests__/engine.spec.ts
-electron/evidence/config.ts
-electron/evidence/engine.ts
-electron/evidence/types.ts
-electron/evidence/validateConfig.ts
+electron/db/__tests__/db.spec.ts
+electron/db/historyAdapter.ts
+electron/importer/__tests__/buildHistoryDetailFiles.spec.ts
+electron/importer/buildHistoryDetailFiles.ts
+electron/main.ts

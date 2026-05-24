@@ -744,6 +744,27 @@ describe("historyAdapter", () => {
     expect(detail!.usage.response.input_tokens).toBe(0);
     expect(detail!.usage.cost_usd).toBe(0);
   });
+
+  // Issue #376: the IPC handler now feeds project_path into the scan it
+  // hands the adapter. The adapter must forward that value to the DB so a
+  // history re-ingest no longer writes the empty-string regression seen
+  // in DB rows 4204/4273.
+  it("forwards project_path from scan to DB column", () => {
+    const reqId = `req-ha-projpath-${Date.now()}`;
+    const scan = makeScan({
+      request_id: reqId,
+      project_path: "/var/folders/fake-tving-web",
+    });
+
+    const id = onHistoryPromptParsed(scan, null);
+    expect(id).not.toBeNull();
+
+    const db = getDatabase();
+    const row = db
+      .prepare("SELECT project_path FROM prompts WHERE request_id = @rid")
+      .get({ rid: reqId }) as { project_path: string | null };
+    expect(row.project_path).toBe("/var/folders/fake-tving-web");
+  });
 });
 
 // ============================================

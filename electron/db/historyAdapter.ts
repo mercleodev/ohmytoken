@@ -55,6 +55,9 @@ export const onHistoryPromptParsed = (
       req_messages_count: usage?.request.messages_count ?? 0,
       req_tools_count: usage?.request.tools_count ?? 0,
       req_has_system: usage?.request.has_system ?? true,
+      // Issue #376: forward decoded cwd so history re-ingests stop writing
+      // empty-string project_path (the regression behind DB rows 4204/4273).
+      project_path: scan.project_path,
     },
     injected_files: scan.injected_files.map((f) => ({
       path: f.path,

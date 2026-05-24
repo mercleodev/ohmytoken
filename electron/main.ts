@@ -37,6 +37,7 @@ import {
   importSinglePrompt,
   readInjectedFiles,
 } from "./importer/historyImporter";
+import { buildHistoryDetailFiles } from "./importer/buildHistoryDetailFiles";
 import { EvidenceEngine } from "./evidence/engine";
 import { makeEmitScoredScan } from "./evidence/emitScoredScan";
 import type { EmitScoredScan } from "./evidence/emitScoredScan";
@@ -1495,84 +1496,32 @@ const setupIPC = (): void => {
           injectedFiles = injectedCacheData[cacheKey].files;
           totalInjectedTokens = injectedCacheData[cacheKey].total;
         } else {
-          // Priority 3: read from current disk -> save to cache
-          injectedFiles = [];
-          totalInjectedTokens = 0;
-
-          const addInjectedFile = (fp: string, category: string) => {
-            try {
-              if (fs.existsSync(fp)) {
-                const content = fs.readFileSync(fp, "utf-8");
-                const tokens = countTokens(content);
-                injectedFiles.push({
-                  path: fp,
-                  category,
-                  estimated_tokens: tokens,
-                });
-                totalInjectedTokens += tokens;
-              }
-            } catch {
-              /* skip */
-            }
-          };
-
-          addInjectedFile(
-            path.join(homedir(), ".claude", "CLAUDE.md"),
-            "global",
-          );
-
-          const globalRulesDir = path.join(homedir(), ".claude", "rules");
-          if (fs.existsSync(globalRulesDir)) {
-            try {
-              for (const rf of fs
-                .readdirSync(globalRulesDir)
-                .filter((f) => f.endsWith(".md"))) {
-                addInjectedFile(path.join(globalRulesDir, rf), "rules");
-              }
-            } catch {
-              /* skip */
+          // Priority 3: disk fallback via the shared parity helper.
+          // Issue #376: route through `buildHistoryDetailFiles` so an
+          // external-cwd re-ingest gets the same `.claude/{rules,memory,
+          // skills}` recovery the hook path already enjoys via
+          // `applyDiskScanCandidates` + `deriveExtraRoots`.
+          const nestedMemoryPaths: string[] = [];
+          for (const e of rawEntries) {
+            if (
+              e?.type === "attachment" &&
+              e.attachment?.type === "nested_memory"
+            ) {
+              const p = e.attachment?.content?.path ?? e.attachment?.path;
+              if (typeof p === "string" && p) nestedMemoryPaths.push(p);
             }
           }
 
-          if (projectPath && fs.existsSync(projectPath)) {
-            addInjectedFile(path.join(projectPath, "CLAUDE.md"), "project");
-
-            const projRulesDir = path.join(projectPath, ".claude", "rules");
-            if (fs.existsSync(projRulesDir)) {
-              try {
-                for (const rf of fs
-                  .readdirSync(projRulesDir)
-                  .filter((f) => f.endsWith(".md"))) {
-                  addInjectedFile(path.join(projRulesDir, rf), "rules");
-                }
-              } catch {
-                /* skip */
-              }
-            }
-
-            const projMemoryDir = path.join(projectPath, ".claude", "memory");
-            if (fs.existsSync(projMemoryDir)) {
-              try {
-                for (const mf of fs
-                  .readdirSync(projMemoryDir)
-                  .filter((f) => f.endsWith(".md"))) {
-                  addInjectedFile(path.join(projMemoryDir, mf), "memory");
-                }
-              } catch {
-                /* skip */
-              }
-            }
-          }
-
-          const userMemoryFile = path.join(
-            homedir(),
-            ".claude",
-            "projects",
+          injectedFiles = buildHistoryDetailFiles({
+            projectPath: projectPath || undefined,
+            homeDir: homedir(),
             projectDirName,
-            "memory",
-            "MEMORY.md",
+            nestedMemoryPaths,
+          });
+          totalInjectedTokens = injectedFiles.reduce(
+            (sum, f) => sum + f.estimated_tokens,
+            0,
           );
-          addInjectedFile(userMemoryFile, "memory");
 
           // Persist to file cache
           injectedCacheData[cacheKey] = {
@@ -1677,6 +1626,9 @@ const setupIPC = (): void => {
           user_messages_count: userCount,
           assistant_messages_count: assistantCount,
           tool_result_count: toolResultCount,
+          // Issue #376: thread the decoded cwd through so the history
+          // adapter persists it instead of writing an empty string.
+          project_path: projectPath || undefined,
         };
 
         // Construct UsageLogEntry
