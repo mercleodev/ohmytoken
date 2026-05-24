@@ -290,6 +290,19 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    // Issue #367: when the hook path stopped using the wire-level Anthropic
+    // request_id as the prompt key, the value was being discarded entirely.
+    // Preserve it as provenance so future analytics (Anthropic invoice
+    // reconciliation, proxy log correlation) can still join to the prompt.
+    version: 10,
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE prompts ADD COLUMN wire_request_id TEXT;
+        CREATE INDEX idx_prompts_wire_request_id ON prompts(wire_request_id);
+      `);
+    },
+  },
 ];
 
 export const runMigrations = (db: Database.Database): void => {

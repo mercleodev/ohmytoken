@@ -100,6 +100,16 @@ export type TranscriptTurn = {
 
   assistant_uuid: string;
   assistant_timestamp: string;
+
+  /**
+   * UUID of the user message that produced the latest assistant turn.
+   * Issue #367: this is the canonical turn identifier shared with the
+   * history-import path (`importSinglePrompt` already keys on this same
+   * value via `userEntry.uuid`). Aligning `scanFromTranscript` on this id
+   * lets `prompts.request_id UNIQUE` + INSERT OR IGNORE dedup naturally.
+   * `undefined` when the ancestry walk could not find a user message.
+   */
+  user_uuid: string | undefined;
 };
 
 type JsonlLine = {
@@ -191,10 +201,14 @@ export const readLatestTurn = (transcriptPath: string): TranscriptTurn | null =>
   }
 
   let userMessageText = "";
+  let userUuid: string | undefined;
   for (const node of ancestry) {
     if (node.type === "user" && node.message) {
       userMessageText = extractText(node.message.content);
-      if (userMessageText) break;
+      if (userMessageText) {
+        userUuid = node.uuid;
+        break;
+      }
     }
   }
 
@@ -239,5 +253,7 @@ export const readLatestTurn = (transcriptPath: string): TranscriptTurn | null =>
 
     assistant_uuid: assistant.uuid,
     assistant_timestamp: assistant.timestamp ?? "",
+
+    user_uuid: userUuid,
   };
 };

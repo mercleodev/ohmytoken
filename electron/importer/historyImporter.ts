@@ -17,6 +17,8 @@ import { insertPrompt, upsertDailyStats, upsertSession } from "../db/writer";
 import { calculateCost } from "../utils/costCalculator";
 import { countTokens } from "../analyzer/tokenCounter";
 import type { InsertPromptData } from "../db/writer";
+import type { InjectedFile } from "../proxy/types";
+import { applyDiskScanCandidates } from "../capture/applyDiskScanCandidates";
 
 export type ImportResult = {
   imported: number;
@@ -384,7 +386,11 @@ const buildPromptData = (
       req_has_system: true,
       project_path: projectPath || undefined,
     },
-    injected_files: projectPath ? readInjectedFiles(projectPath) : [],
+    injected_files: applyDiskScanCandidates(
+      projectPath ? readInjectedFiles(projectPath) : [],
+      projectPath || undefined,
+      homedir(),
+    ),
     tool_calls: toolCalls.map((t) => ({
       call_index: t.index,
       name: t.name,
@@ -402,7 +408,7 @@ const buildPromptData = (
 /**
  * Category classification for injected files (matches systemParser logic).
  */
-const classifyCategory = (filePath: string): string => {
+const classifyCategory = (filePath: string): InjectedFile["category"] => {
   const lower = filePath.toLowerCase();
   if (lower.includes("/rules/")) return "rules";
   if (lower.includes("/memory/")) return "memory";
@@ -414,7 +420,7 @@ const classifyCategory = (filePath: string): string => {
   return "project";
 };
 
-type InjectedFileInfo = { path: string; category: string; estimated_tokens: number };
+type InjectedFileInfo = InjectedFile;
 
 /**
  * Read injected files from disk for a given project path and return file details.
@@ -807,7 +813,13 @@ export const importSinglePrompt = (
           .run({ resp: assistantText.slice(0, 2000), id: existing.id });
       }
       if (needsFilesPatch) {
-        const files = readInjectedFiles(projectPath);
+        // Issue #367: use the shared parity helper so the patched row gets
+        // the same disk-scan candidate pool as a fresh insert would.
+        const files = applyDiskScanCandidates(
+          readInjectedFiles(projectPath),
+          projectPath,
+          homedir(),
+        );
         const insertFile = db.prepare(
           "INSERT INTO injected_files (prompt_id, path, category, estimated_tokens) VALUES (@pid, @path, @category, @tokens)",
         );

@@ -1,13 +1,7 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-24T00:40:31Z
-fingerprint=43b7cca8c316acb9100b3ad5c62650488e22c5f92d55dd001b6d7aa6a45a2875
+# updated_at_utc: 2026-05-24T01:16:11Z
+fingerprint=627d8a7cebfe3c975c82c35212d0650ec0f3464145e23a70d4685441bb234f70
 source=docs/sdd/style-checklist.md
-note=issue #365 hook-scoring: Major (sync disk read in HTTP handler) documented as PR Tech Debt — preexisting pattern just more exercised; Minor items addressed in code or accepted
+note=issue #367 fixup: replace require() with FIXTURE const in spec
 
-.policy/active-rules-ack.txt
-electron/evidence/emitScoredScan.ts
-electron/main.ts
-electron/proxy/__tests__/buildProxyOptions.spec.ts
-electron/proxy/__tests__/serverHookRoute.integration.spec.ts
-electron/proxy/buildProxyOptions.ts
-electron/proxy/server.ts
+electron/hooks/__tests__/transcriptReader.spec.ts

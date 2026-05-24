@@ -36,6 +36,13 @@ export type PromptRow = {
   req_has_system?: boolean;
   git_branch?: string;
   project_path?: string;
+  /**
+   * Wire-level Anthropic request id (`req_<id>`) preserved as provenance.
+   * Issue #367: when `request_id` was switched to the user-message UUID for
+   * cross-path dedup, this field was added to keep the Anthropic-side
+   * identifier available for invoice reconciliation / proxy-log join.
+   */
+  wire_request_id?: string;
 };
 
 export type InjectedFileRow = {
@@ -90,7 +97,7 @@ const getStatements = () => {
         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
         cost_usd, duration_ms,
         req_messages_count, req_tools_count, req_has_system,
-        git_branch, project_path
+        git_branch, project_path, wire_request_id
       ) VALUES (
         @request_id, @session_id, @timestamp, @source, @provider,
         @user_prompt, @user_prompt_tokens, @assistant_response,
@@ -102,7 +109,7 @@ const getStatements = () => {
         @input_tokens, @output_tokens, @cache_creation_input_tokens, @cache_read_input_tokens,
         @cost_usd, @duration_ms,
         @req_messages_count, @req_tools_count, @req_has_system,
-        @git_branch, @project_path
+        @git_branch, @project_path, @wire_request_id
       )
     `);
 
@@ -187,6 +194,7 @@ export const insertPrompt = (
       req_has_system: p.req_has_system ? 1 : 0,
       git_branch: p.git_branch ?? null,
       project_path: p.project_path ?? null,
+      wire_request_id: p.wire_request_id ?? null,
     });
 
     // INSERT OR IGNORE returns changes=0 if duplicate request_id

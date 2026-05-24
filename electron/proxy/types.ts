@@ -97,6 +97,13 @@ export type AgentCall = {
 
 export type PromptScan = {
   request_id: string;
+  /**
+   * Wire-level Anthropic request id (`req_<id>`) — preserved as provenance
+   * after issue #367 switched `request_id` to the user-message UUID for
+   * cross-path dedup. Absent for paths that never had it (history/file-scan
+   * read from JSONL only).
+   */
+  wire_request_id?: string;
   session_id: string;
   timestamp: string;
 

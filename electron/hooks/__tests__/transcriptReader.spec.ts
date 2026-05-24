@@ -34,4 +34,16 @@ describe("readLatestTurn", () => {
     expect(t!.assistant_timestamp).toBe("2030-01-01T00:00:00.030Z");
     expect(t!.request_id).toBe("req-1");
   });
+
+  // Issue #367: capture parity — the user message UUID from the JSONL is the
+  // canonical turn identifier shared by the history-import path
+  // (`importSinglePrompt`) and the hook path. Exposing it on TranscriptTurn lets
+  // `scanFromTranscript` align its request_id with the import path so the same
+  // turn produces a single `prompts` row regardless of which capture path
+  // detects it first.
+  it("exposes the user message uuid from the ancestry as user_uuid", () => {
+    const t = readLatestTurn(FIXTURE);
+    expect(t).not.toBeNull();
+    expect(t!.user_uuid).toBe("u-1");
+  });
 });

@@ -92,6 +92,22 @@ describe("scanFromTranscript", () => {
     expect(usage.output_tokens).toBe(5);
   });
 
+  // Issue #367: capture parity — both hook and history-import paths must
+  // derive the prompt-row key from the same source. The history importer uses
+  // userEntry.uuid; scanFromTranscript was using `turn.request_id` (the wire-
+  // level Anthropic `req_<id>`). Aligning on user_uuid lets the existing
+  // `prompts.request_id UNIQUE` + INSERT OR IGNORE dedup kick in naturally.
+  it("derives scan.request_id from the user message uuid (capture parity)", () => {
+    const result = scanFromTranscript({
+      transcriptPath: TRANSCRIPT,
+      globalClaudeMdPath: GLOBAL_CLAUDE_MD,
+      homeDir: EMPTY_HOME,
+    });
+    expect(result).not.toBeNull();
+    // minimal-session.jsonl's user entry has uuid "u-1".
+    expect(result!.scan.request_id).toBe("u-1");
+  });
+
   it("omits the global injected entry when globalClaudeMdPath does not exist", () => {
     const result = scanFromTranscript({
       transcriptPath: TRANSCRIPT,

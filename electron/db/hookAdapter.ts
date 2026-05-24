@@ -17,6 +17,7 @@ export const onHookScanComplete = (
   const data: InsertPromptData = {
     prompt: {
       request_id: scan.request_id,
+      wire_request_id: scan.wire_request_id,
       session_id: scan.session_id,
       timestamp: scan.timestamp,
       source: "hook",
