@@ -1,20 +1,7 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-24T01:14:14Z
-fingerprint=0fd35db6e7d746040723c34ca81ccce8644d9b129650c222b7181169060539b3
+# updated_at_utc: 2026-05-24T01:16:11Z
+fingerprint=627d8a7cebfe3c975c82c35212d0650ec0f3464145e23a70d4685441bb234f70
 source=docs/sdd/style-checklist.md
-note=issue #367 capture parity: Major #2 (wire_request_id) fixed inline via migration v10; Major #1 (orphan row cleanup) deferred to follow-up; Minor items addressed/safe
+note=issue #367 fixup: replace require() with FIXTURE const in spec
 
-.policy/active-rules-ack.txt
-electron/capture/__tests__/applyDiskScanCandidates.spec.ts
-electron/capture/applyDiskScanCandidates.ts
-electron/db/__tests__/db.spec.ts
-electron/db/hookAdapter.ts
-electron/db/schema.ts
-electron/db/writer.ts
-electron/hooks/__tests__/scanFromTranscript.spec.ts
-electron/hooks/__tests__/scanFromTranscriptHandler.spec.ts
 electron/hooks/__tests__/transcriptReader.spec.ts
-electron/hooks/scanFromTranscript.ts
-electron/hooks/transcriptReader.ts
-electron/importer/historyImporter.ts
-electron/proxy/types.ts

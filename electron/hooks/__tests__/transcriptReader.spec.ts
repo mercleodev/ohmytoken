@@ -42,8 +42,7 @@ describe("readLatestTurn", () => {
   // turn produces a single `prompts` row regardless of which capture path
   // detects it first.
   it("exposes the user message uuid from the ancestry as user_uuid", () => {
-    const path = require("node:path");
-    const t = readLatestTurn(path.join(__dirname, "fixtures", "minimal-session.jsonl"));
+    const t = readLatestTurn(FIXTURE);
     expect(t).not.toBeNull();
     expect(t!.user_uuid).toBe("u-1");
   });
