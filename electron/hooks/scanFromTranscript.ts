@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import { countTokens } from "../analyzer/tokenCounter";
+import { applyDiskScanCandidates } from "../capture/applyDiskScanCandidates";
 import type { InjectedFile, PromptScan } from "../proxy/types";
-import { collectDotClaudeFiles } from "./dotClaudeScanner";
 import { readLatestTurn } from "./transcriptReader";
 import type { TranscriptUsage } from "./transcriptReader";
 
@@ -55,22 +55,19 @@ export const scanFromTranscript = (
   const turn = readLatestTurn(params.transcriptPath);
   if (!turn) return null;
 
-  const injectedFiles: InjectedFile[] = [];
-  const seenPaths = new Set<string>();
-  const push = (entry: InjectedFile): void => {
-    if (seenPaths.has(entry.path)) return;
-    seenPaths.add(entry.path);
-    injectedFiles.push(entry);
-  };
-
   // Transcript-confirmed entries (nested_memories + explicit global CLAUDE.md path):
   // these are the only files we can prove the LLM saw this turn, so they alone
   // feed `total_injected_tokens` — the dashboard's user-facing budget number.
+  // Disk-scan candidates from `applyDiskScanCandidates` (issue #363) are added
+  // afterward but excluded from the budget calculation.
+  const confirmed: InjectedFile[] = [];
   let totalInjectedTokens = 0;
+  const confirmedSeen = new Set<string>();
   const pushConfirmed = (entry: InjectedFile): void => {
-    if (seenPaths.has(entry.path)) return;
+    if (confirmedSeen.has(entry.path)) return;
+    confirmedSeen.add(entry.path);
     totalInjectedTokens += entry.estimated_tokens;
-    push(entry);
+    confirmed.push(entry);
   };
 
   for (const m of turn.nested_memories) {
@@ -84,25 +81,25 @@ export const scanFromTranscript = (
   const globalEntry = readGlobalClaudeMd(params.globalClaudeMdPath);
   if (globalEntry) pushConfirmed(globalEntry);
 
-  // Disk-scan candidates (issue #363): CC 2.x does not persist the
-  // <system-reminder> rule injections to the local JSONL, so we reconstruct
-  // the candidate pool from `<cwd>/.claude/{rules,memory,skills}` and the
-  // user's home equivalent. These entries appear in `injected_files` so the
-  // evidence engine can bind ack tokens to them, but they are deliberately
-  // excluded from `total_injected_tokens` — we cannot prove every disk file
-  // was actually injected by CC for this specific turn.
+  // Disk-scan candidates: shared with the history-import path so both
+  // transports produce identical candidate pools — see #367 capture parity.
   const homeDir = params.homeDir ?? os.homedir();
-  for (const entry of collectDotClaudeFiles(turn.cwd)) push(entry);
-  for (const entry of collectDotClaudeFiles(homeDir)) push(entry);
+  const injectedFiles = applyDiskScanCandidates(confirmed, turn.cwd, homeDir);
 
   const userPromptTokens = countTokens(turn.user_message_text);
   const assistantTokens = countTokens(turn.assistant_message_text);
   const messagesTokens = userPromptTokens + assistantTokens;
 
-  const requestId = turn.request_id ?? `hook-${turn.assistant_uuid}`;
+  // Issue #367: align prompt-row key with the history-import path
+  // (`importSinglePrompt` keys on `userEntry.uuid`). Fall back to the
+  // Anthropic wire-level `req_<id>` only when the ancestry walk found no
+  // user message (defensive — every real CC turn has one).
+  const requestId =
+    turn.user_uuid ?? turn.request_id ?? `hook-${turn.assistant_uuid}`;
 
   const scan: PromptScan = {
     request_id: requestId,
+    wire_request_id: turn.request_id,
     session_id: turn.session_id ?? "unknown",
     timestamp: turn.assistant_timestamp || new Date().toISOString(),
 

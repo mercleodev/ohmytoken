@@ -232,8 +232,11 @@ describe("handleScanFromTranscriptRequest", () => {
         expect(writeHookScan).toHaveBeenCalledTimes(1);
         const [scan] = writeHookScan.mock.calls[0];
 
-        // The final flushed assistant's request_id, not the intermediate.
-        expect(scan.request_id).toBe("req-FINAL");
+        // After #367 the canonical key is the user-message uuid (`u-2`
+        // here), not the wire-level Anthropic `req_<id>`. The assertion
+        // still proves the latter-arriving assistant turn won: a stale
+        // settle would have keyed on `u-1` instead.
+        expect(scan.request_id).toBe("u-2");
         expect(scan.assistant_response).toBe("Two rules apply.");
         // Project nested_memory must be captured (only visible after the append).
         const project = scan.injected_files.find(
