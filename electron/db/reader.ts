@@ -815,8 +815,12 @@ import type {
   FileEvidenceScore,
   SignalResult,
 } from '../evidence/types';
+import { DEFAULT_ENGINE_CONFIG } from '../evidence/config';
 
 import { isMcpTool } from '../utils/mcpTools';
+
+const DEFAULT_HIGH_COMPLIANCE_CONFIDENCE_MIN =
+  DEFAULT_ENGINE_CONFIG.thresholds.high_compliance_confidence_min;
 
 type EvidenceReportRow = {
   id: number;
@@ -871,6 +875,11 @@ export const getEvidenceReport = (requestId: string): EvidenceReport | null => {
     thresholds: {
       confirmed_min_raw: reportRow.confirmed_min,
       likely_min_raw: reportRow.likely_min,
+      // Issue #374: the high-compliance threshold is not persisted to the
+      // schema; it gates classification at scoring time only. Historical
+      // reports read here use the current default to satisfy the type —
+      // the per-file classifications were already frozen at scoring time.
+      high_compliance_confidence_min: DEFAULT_HIGH_COMPLIANCE_CONFIDENCE_MIN,
     },
   };
 };

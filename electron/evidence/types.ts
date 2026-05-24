@@ -98,6 +98,8 @@ export type EvidenceReport = {
   thresholds: {
     confirmed_min_raw: number;
     likely_min_raw: number;
+    /** Issue #374: instruction-compliance.confidence >= this -> confirmed. */
+    high_compliance_confidence_min: number;
   };
 };
 
@@ -118,5 +120,16 @@ export type EvidenceEngineConfig = {
   thresholds: {
     confirmed_min_raw: number;
     likely_min_raw: number;
+    /** Issue #374: instruction-compliance.confidence >= this -> confirmed. */
+    high_compliance_confidence_min: number;
   };
+};
+
+/**
+ * Nested-partial config accepted by `EvidenceEngine` and `mergeConfig`.
+ * Users may supply just the thresholds they want to override; the merge
+ * helper backfills the rest from `DEFAULT_ENGINE_CONFIG`.
+ */
+export type UserEvidenceConfig = Omit<Partial<EvidenceEngineConfig>, 'thresholds'> & {
+  thresholds?: Partial<EvidenceEngineConfig['thresholds']>;
 };

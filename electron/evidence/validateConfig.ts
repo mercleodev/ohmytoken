@@ -2,7 +2,14 @@ import type { EvidenceEngineConfig } from './types';
 
 type ValidationResult = { ok: true } | { ok: false; error: string };
 
-export function validateEvidenceConfig(config: Partial<EvidenceEngineConfig>): ValidationResult {
+// Nested-partial so callers can validate just a subset of thresholds without
+// having to supply every field. Future threshold additions stay non-breaking
+// for partial validators (e.g. settings UI previewing a single edit).
+type ValidatableConfig = Omit<Partial<EvidenceEngineConfig>, 'thresholds'> & {
+  thresholds?: Partial<EvidenceEngineConfig['thresholds']>;
+};
+
+export function validateEvidenceConfig(config: ValidatableConfig): ValidationResult {
   if (config.signals) {
     for (const [id, signal] of Object.entries(config.signals)) {
       if (typeof signal.weight === 'number') {
