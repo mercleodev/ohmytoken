@@ -1,10 +1,8 @@
 # OhMyToken Active Rules Acknowledgement
-# task: 376
+# task: 378
 # mode: staged
-# updated_at_utc: 2026-05-24T15:15:02Z
-DB-SCHEMA-001
+# updated_at_utc: 2026-05-24T16:12:56Z
 TEST-GATE-001
 MIGRATION-REUSE-001
 MIGRATION-REFACTOR-001
 DOC-SYNC-001
-PROXY-ARCH-001

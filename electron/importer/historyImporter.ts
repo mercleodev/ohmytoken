@@ -20,6 +20,7 @@ import type { InsertPromptData } from "../db/writer";
 import type { InjectedFile } from "../proxy/types";
 import { applyDiskScanCandidates } from "../capture/applyDiskScanCandidates";
 import { deriveExtraRoots } from "../capture/deriveExtraRoots";
+import { extractAssistantTextRange } from "./extractAssistantTextRange";
 
 export type ImportResult = {
   imported: number;
@@ -133,25 +134,6 @@ const extractUserText = (entry: RawEntry): string => {
         .map((b: any) => b.text || "")
         .join("\n"),
     );
-  }
-  return "";
-};
-
-/**
- * Extract assistant response text from an assistant entry's content blocks.
- * Mirrors the proxy path's extractAssistantText in messagesAnalyzer.ts.
- * Needed for evidence scoring signals (text-overlap, instruction-compliance).
- */
-const extractAssistantText = (entry: RawEntry): string => {
-  const content = entry.message?.content;
-  if (!content) return "";
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .filter((b: any) => b.type === "text" && typeof b.text === "string")
-      .map((b: any) => b.text)
-      .join("\n")
-      .trim();
   }
   return "";
 };
@@ -350,7 +332,10 @@ const buildPromptData = (
   projectPath?: string,
 ): InsertPromptData => {
   const userText = extractUserText(userEntry);
-  const assistantText = extractAssistantText(assistantEntry);
+  // Issue #378: aggregate text from every assistant entry in the turn range,
+  // not just the first `usage`-bearing entry — a thinking-only first entry
+  // otherwise leaves `assistant_response` empty and drains evidence signals.
+  const assistantText = extractAssistantTextRange(entries, userIdx + 1, endIdx);
   const usage = assistantEntry.message!.usage!;
   const model = assistantEntry.message!.model || "unknown";
   const inputTokens = usage.input_tokens || 0;
@@ -829,7 +814,14 @@ export const importSinglePrompt = (
 
     // If prompt already exists, patch missing assistant_response and injected_files
     if (existing) {
-      const assistantText = extractAssistantText(assistantEntry);
+      // Issue #378: same range-based aggregation as buildPromptData so the
+      // patch branch can recover responses for rows where the usage-bearing
+      // entry was thinking-only.
+      const assistantText = extractAssistantTextRange(
+        entries,
+        bestUserIdx + 1,
+        nextUserIdx,
+      );
       const needsResponsePatch = !existing.assistant_response && assistantText;
       const existingFileCount = (db
         .prepare("SELECT COUNT(*) as n FROM injected_files WHERE prompt_id = @pid")
