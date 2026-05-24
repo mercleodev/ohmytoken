@@ -7,6 +7,7 @@ const makeDeps = () => ({
   sendToNotification: vi.fn(),
   onProxyScanComplete: vi.fn(),
   onHookScanComplete: vi.fn(),
+  onHookScanScored: vi.fn(),
   parseSystemContents: vi.fn(() => ({})),
   getPreviousScores: vi.fn(() => ({})),
   persistEvidence: vi.fn(),
@@ -100,6 +101,39 @@ describe("buildProxyOptions", () => {
     expect(deps.persistEvidence).not.toHaveBeenCalled();
     expect(deps.sendToMain).not.toHaveBeenCalled();
     expect(deps.sendToNotification).not.toHaveBeenCalled();
+  });
+
+  it("onHookScanComplete wrapper rethrows so the route returns 500 instead of falsely firing onHookScanScored (issue #365)", () => {
+    const deps = makeDeps();
+    deps.onHookScanComplete = vi.fn(() => {
+      throw new Error("simulated db write failure");
+    });
+    const opts = buildProxyOptions({
+      port: 1,
+      upstream: "x",
+      ...deps,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scan = { request_id: "r1" } as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const usage = { cost_usd: 0 } as any;
+
+    expect(() => opts.onHookScanComplete!(scan, usage)).toThrow("simulated db write failure");
+    expect(deps.onHookScanComplete).toHaveBeenCalled();
+    // The wrapper logs and rethrows; the rethrow is what `handleScanFromTranscriptRequest`
+    // catches to short-circuit before scoring fires.
+  });
+
+  it("onHookScanScored is exposed verbatim from deps so the proxy server can fire it after a successful write (issue #365)", () => {
+    const deps = makeDeps();
+    const opts = buildProxyOptions({
+      port: 1,
+      upstream: "x",
+      ...deps,
+    });
+    expect(opts.onHookScanScored).toBe(deps.onHookScanScored);
+    opts.onHookScanScored!("r-xyz");
+    expect(deps.onHookScanScored).toHaveBeenCalledWith("r-xyz");
   });
 
   it("getSystemContents delegates to parseSystemContents", () => {

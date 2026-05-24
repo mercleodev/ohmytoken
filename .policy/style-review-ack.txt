@@ -1,14 +1,13 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-24T00:10:02Z
-fingerprint=952fa66173240e1726d439f57982113ce992ecfe084ab7ba391edd2987255680
+# updated_at_utc: 2026-05-24T00:40:31Z
+fingerprint=43b7cca8c316acb9100b3ad5c62650488e22c5f92d55dd001b6d7aa6a45a2875
 source=docs/sdd/style-checklist.md
-note=issue #363 disk-scan: Major (token inflation) fixed inline; Minor doc/comment items addressed; deferred items recorded in PR Tech Debt
+note=issue #365 hook-scoring: Major (sync disk read in HTTP handler) documented as PR Tech Debt — preexisting pattern just more exercised; Minor items addressed in code or accepted
 
 .policy/active-rules-ack.txt
-docs/qa/runs/2026-05-24/smoke-363.mjs
-docs/qa/runs/2026-05-24/smoke-363.output.txt
-electron/hooks/__tests__/dotClaudeScanner.spec.ts
-electron/hooks/__tests__/fixtures/cc2x-dotclaude-session.jsonl
-electron/hooks/__tests__/scanFromTranscript.spec.ts
-electron/hooks/dotClaudeScanner.ts
-electron/hooks/scanFromTranscript.ts
+electron/evidence/emitScoredScan.ts
+electron/main.ts
+electron/proxy/__tests__/buildProxyOptions.spec.ts
+electron/proxy/__tests__/serverHookRoute.integration.spec.ts
+electron/proxy/buildProxyOptions.ts
+electron/proxy/server.ts

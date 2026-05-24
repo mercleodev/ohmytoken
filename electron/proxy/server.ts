@@ -38,6 +38,13 @@ export type ProxyOptions = {
    * `onScanComplete` so DB adapters can stay symmetric across transports.
    */
   onHookScanComplete?: (scan: PromptScan, usage: UsageLogEntry) => void;
+  /**
+   * Fired after a successful `onHookScanComplete` so the host can trigger
+   * evidence scoring for the inserted prompt. Skipped when the write callback
+   * throws — see issue #365 (hook-path scoring trigger was missing entirely,
+   * leaving 0 confirmed/likely/unverified rows for every hook-source prompt).
+   */
+  onHookScanScored?: (requestId: string) => void;
   /** Override the user-global CLAUDE.md path resolution (test seam). */
   globalClaudeMdPath?: string;
 };
@@ -140,6 +147,11 @@ const handleHookScanRoute = async (
     writeHookScan: (scan, usage) => {
       writeScanLog(scan);
       options.onHookScanComplete?.(scan, usage);
+      // Issue #365: scoring trigger sits AFTER the DB write so a failing
+      // write (propagated as throw) short-circuits before scoring is asked
+      // to operate on a partially-persisted prompt. The handler's outer
+      // try/catch turns the throw into HTTP 500 without firing this.
+      options.onHookScanScored?.(scan.request_id);
     },
   });
   res.writeHead(result.status, { "Content-Type": "application/json" });

@@ -87,14 +87,17 @@ describe("proxy server: POST /api/scan/from-transcript", () => {
   let server: http.Server | null = null;
   let port = 0;
   const onHookScanComplete = vi.fn();
+  const onHookScanScored = vi.fn();
 
   beforeEach(async () => {
     onHookScanComplete.mockReset();
+    onHookScanScored.mockReset();
     server = startProxyServer({
       port: 0,
       upstream: "127.0.0.1:1", // unreachable; route never forwards anyway
       globalClaudeMdPath: GLOBAL_CLAUDE_MD,
       onHookScanComplete,
+      onHookScanScored,
     });
     await new Promise<void>((resolve) => {
       server!.once("listening", () => {
@@ -126,10 +129,41 @@ describe("proxy server: POST /api/scan/from-transcript", () => {
     expect(usage.response.output_tokens).toBe(5);
   });
 
-  it("returns 400 for invalid JSON without invoking the callback", async () => {
+  // Issue #365: hook path must trigger evidence scoring like the SessionFile
+  // and History watcher paths do — otherwise hook-source prompts land in the
+  // dashboard with 0 confirmed/likely/unverified rows.
+  it("fires onHookScanScored with the scan's request_id after a successful write", async () => {
+    const res = await post(
+      port,
+      JSON.stringify({ session_id: "sess-x", transcript_path: TRANSCRIPT }),
+    );
+    expect(res.status).toBe(200);
+    expect(onHookScanScored).toHaveBeenCalledTimes(1);
+    const [scoredRequestId] = onHookScanScored.mock.calls[0];
+    // The fixture sets request_id via the assistant entry's requestId field.
+    const [scan] = onHookScanComplete.mock.calls[0];
+    expect(scoredRequestId).toBe(scan.request_id);
+  });
+
+  it("does not fire onHookScanScored when the scan write throws", async () => {
+    onHookScanComplete.mockImplementationOnce(() => {
+      throw new Error("simulated db write failure");
+    });
+    const res = await post(
+      port,
+      JSON.stringify({ session_id: "sess-x", transcript_path: TRANSCRIPT }),
+    );
+    // The handler still returns 500 for write errors but must not trigger
+    // scoring on a half-written prompt.
+    expect(res.status).toBe(500);
+    expect(onHookScanScored).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for invalid JSON without invoking either callback", async () => {
     const res = await post(port, "not-json");
     expect(res.status).toBe(400);
     expect(onHookScanComplete).not.toHaveBeenCalled();
+    expect(onHookScanScored).not.toHaveBeenCalled();
   });
 
   it("returns 404 when the transcript file is missing", async () => {
@@ -139,6 +173,7 @@ describe("proxy server: POST /api/scan/from-transcript", () => {
     );
     expect(res.status).toBe(404);
     expect(onHookScanComplete).not.toHaveBeenCalled();
+    expect(onHookScanScored).not.toHaveBeenCalled();
   });
 
   it("does not intercept GET requests to the same path (falls through to forwarding)", async () => {
@@ -157,5 +192,6 @@ describe("proxy server: POST /api/scan/from-transcript", () => {
     });
     expect(res.status).toBe(502);
     expect(onHookScanComplete).not.toHaveBeenCalled();
+    expect(onHookScanScored).not.toHaveBeenCalled();
   });
 });
