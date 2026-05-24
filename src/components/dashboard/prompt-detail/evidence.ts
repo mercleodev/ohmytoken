@@ -4,21 +4,21 @@ import { DIRECT_FILE_ACTIONS, INDIRECT_FILE_TOOLS, normalizeText, getFileName } 
 
 export type EvidenceCounts = {
   confirmed: number;
-  notConfirmed: number;
+  likely: number;
+  unverified: number;
   total: number;
 };
 
-// Single source of truth for the 2-way presentation collapse. `confirmed`
-// signals real usage (direct file actions or scoring-engine confirmation);
-// everything else (heuristic `likely`, `unverified`) folds into not-confirmed
-// because neither bucket carries actionable signal at the summary level.
-// If EvidenceStatus gains a new value, the exhaustive switch below fails to
-// compile — preventing a silent miscount.
+// Single source of truth for the header rollup. Issue #372: the previous
+// 2-way collapse folded `likely` into `notConfirmed`, hiding the middle tier
+// from the header even though the per-row letter dots already exposed it.
+// The exhaustive switch fails to compile if EvidenceStatus gains a new value.
 export const collapseEvidenceToCounts = (
   byStatus: Record<EvidenceStatus, InjectedEvidenceItem[]>,
 ): EvidenceCounts => {
   let confirmed = 0;
-  let notConfirmed = 0;
+  let likely = 0;
+  let unverified = 0;
   for (const status of Object.keys(byStatus) as EvidenceStatus[]) {
     const count = byStatus[status].length;
     switch (status) {
@@ -26,8 +26,10 @@ export const collapseEvidenceToCounts = (
         confirmed += count;
         break;
       case "likely":
+        likely += count;
+        break;
       case "unverified":
-        notConfirmed += count;
+        unverified += count;
         break;
       default: {
         const _exhaustive: never = status;
@@ -35,7 +37,7 @@ export const collapseEvidenceToCounts = (
       }
     }
   }
-  return { confirmed, notConfirmed, total: confirmed + notConfirmed };
+  return { confirmed, likely, unverified, total: confirmed + likely + unverified };
 };
 
 const getFileStem = (filePath: string): string => {
