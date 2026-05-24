@@ -345,19 +345,13 @@ export const startSessionFileWatcher = (
     }
   };
 
-  const startWatching = (filePath: string, sessionId: string, catchUp = false) => {
-    // Set initial size — optionally rewind to catch recent entries on session switch
+  const startWatching = (filePath: string, sessionId: string) => {
+    // Seek to end of file — only entries appended after this point will be
+    // emitted. Rewinding was removed (#297): it replayed past HumanTurn /
+    // AssistantTurn lines on every session switch, which in turn rebroadcast
+    // stale `new-prompt-scan` events and produced a dashboard re-render storm.
     try {
-      const fileSize = fs.statSync(filePath).size;
-      if (catchUp && fileSize > 0) {
-        // Rewind up to 8KB to catch the most recent user message
-        const REWIND_BYTES = 8192;
-        lastSize = Math.max(0, fileSize - REWIND_BYTES);
-        // Process the rewound chunk immediately
-        processNewData(filePath, sessionId);
-      } else {
-        lastSize = fileSize;
-      }
+      lastSize = fs.statSync(filePath).size;
     } catch {
       lastSize = 0;
     }
@@ -406,7 +400,7 @@ export const startSessionFileWatcher = (
     stopWatching();
     currentSessionId = sessionId;
     currentFilePath = filePath;
-    startWatching(filePath, sessionId, true);
+    startWatching(filePath, sessionId);
   };
 
   // Auto-detect: find the most recently modified session file

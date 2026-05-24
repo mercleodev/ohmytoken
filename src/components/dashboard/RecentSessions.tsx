@@ -344,11 +344,16 @@ export const RecentSessions = ({
       entriesRef.current = [entry, ...entriesRef.current].slice(0, 500);
       refresh();
 
-      // For non-Claude tabs (All, Codex, etc.): scansRef isn't updated by
-      // onNewHistoryEntry, but importSinglePrompt has already written to DB
-      // before this IPC event arrives. Reload from DB immediately.
+      // Non-Claude tabs used to call loadData() here to pick up the DB row
+      // that importSinglePrompt wrote before this IPC fired (introduced in
+      // 222f4f8). That path ran uncoalesced and, under active CLI traffic,
+      // fired get-prompt-scans on every history append — amplifying the
+      // dashboard re-render storm (#297). The main process emits
+      // `new-prompt-scan` via emitScoredScan right after onNewEntry, which
+      // already bumps UsageDashboard.scanRevision through the 200 ms
+      // coalescer and triggers loadData via the scanRevision effect below.
+      // So skipping the direct reload here is a pure deduplication.
       if (provider !== 'claude') {
-        loadData();
         return;
       }
 

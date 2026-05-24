@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Component, ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, Component, ReactNode } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { UsageProviderType, ProviderUsageSnapshot, ProviderConnectionStatus } from '../../types';
 import type { PromptScan, UsageLogEntry } from '../../types';
@@ -75,22 +75,51 @@ export const UsageDashboard = ({ pendingPromptNav, onPromptNavConsumed }: Dashbo
     checkBackfill();
   }, []);
 
-  // Listen for new scan events (always active — no data loss regardless of tab)
+  // Listen for new scan events (always active — no data loss regardless of tab).
+  // Bursts of `new-prompt-scan` IPC (e.g. a watcher replay or rapid back-to-back
+  // turns) used to bump scanRevision N times, which fanned out into N×6 parallel
+  // `get-prompt-scans` IPC calls across the six revision-dep'd cards. Coalesce
+  // to a leading bump + one trailing bump per window so the dashboard refreshes
+  // at most ~5 Hz regardless of source volume (#297).
   const [scanRevision, setScanRevision] = useState(0);
-  useEffect(() => {
-    const cleanup = window.api.onNewPromptScan(() => {
-      setScanRevision((r) => r + 1);
-    });
-    return cleanup;
+  const SCAN_REVISION_COALESCE_MS = 200;
+  const scanBumpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanBumpPendingRef = useRef(false);
+
+  const bumpScanRevision = useCallback(() => {
+    if (scanBumpTimerRef.current !== null) {
+      scanBumpPendingRef.current = true;
+      return;
+    }
+    setScanRevision((r) => r + 1);
+    scanBumpTimerRef.current = setTimeout(() => {
+      scanBumpTimerRef.current = null;
+      if (scanBumpPendingRef.current) {
+        scanBumpPendingRef.current = false;
+        setScanRevision((r) => r + 1);
+      }
+    }, SCAN_REVISION_COALESCE_MS);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (scanBumpTimerRef.current !== null) {
+        clearTimeout(scanBumpTimerRef.current);
+        scanBumpTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = window.api.onNewPromptScan(bumpScanRevision);
+    return cleanup;
+  }, [bumpScanRevision]);
 
   // Listen for periodic backfill completions → refresh dashboard
   useEffect(() => {
-    const cleanup = window.api.onBackfillComplete(() => {
-      setScanRevision((r) => r + 1);
-    });
+    const cleanup = window.api.onBackfillComplete(bumpScanRevision);
     return cleanup;
-  }, []);
+  }, [bumpScanRevision]);
 
   // Navigation
   const [nav, setNav] = useState<NavState>({ screen: 'main' });
