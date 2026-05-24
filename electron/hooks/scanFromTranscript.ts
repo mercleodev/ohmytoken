@@ -1,12 +1,19 @@
 import fs from "node:fs";
+import os from "node:os";
 import { countTokens } from "../analyzer/tokenCounter";
 import type { InjectedFile, PromptScan } from "../proxy/types";
+import { collectDotClaudeFiles } from "./dotClaudeScanner";
 import { readLatestTurn } from "./transcriptReader";
 import type { TranscriptUsage } from "./transcriptReader";
 
 export type ScanFromTranscriptParams = {
   transcriptPath: string;
   globalClaudeMdPath?: string;
+  /**
+   * Override for the user's home directory. Defaults to `os.homedir()`.
+   * Tests inject a tmp dir so disk-scan fixtures stay hermetic.
+   */
+  homeDir?: string;
 };
 
 export type ScanFromTranscriptResult = {
@@ -49,9 +56,25 @@ export const scanFromTranscript = (
   if (!turn) return null;
 
   const injectedFiles: InjectedFile[] = [];
+  const seenPaths = new Set<string>();
+  const push = (entry: InjectedFile): void => {
+    if (seenPaths.has(entry.path)) return;
+    seenPaths.add(entry.path);
+    injectedFiles.push(entry);
+  };
+
+  // Transcript-confirmed entries (nested_memories + explicit global CLAUDE.md path):
+  // these are the only files we can prove the LLM saw this turn, so they alone
+  // feed `total_injected_tokens` — the dashboard's user-facing budget number.
+  let totalInjectedTokens = 0;
+  const pushConfirmed = (entry: InjectedFile): void => {
+    if (seenPaths.has(entry.path)) return;
+    totalInjectedTokens += entry.estimated_tokens;
+    push(entry);
+  };
 
   for (const m of turn.nested_memories) {
-    injectedFiles.push({
+    pushConfirmed({
       path: m.path,
       category: classifyNestedMemoryType(m.type),
       estimated_tokens: countTokens(m.content),
@@ -59,14 +82,18 @@ export const scanFromTranscript = (
   }
 
   const globalEntry = readGlobalClaudeMd(params.globalClaudeMdPath);
-  if (globalEntry && !injectedFiles.some((f) => f.path === globalEntry.path)) {
-    injectedFiles.push(globalEntry);
-  }
+  if (globalEntry) pushConfirmed(globalEntry);
 
-  const totalInjectedTokens = injectedFiles.reduce(
-    (sum, f) => sum + f.estimated_tokens,
-    0,
-  );
+  // Disk-scan candidates (issue #363): CC 2.x does not persist the
+  // <system-reminder> rule injections to the local JSONL, so we reconstruct
+  // the candidate pool from `<cwd>/.claude/{rules,memory,skills}` and the
+  // user's home equivalent. These entries appear in `injected_files` so the
+  // evidence engine can bind ack tokens to them, but they are deliberately
+  // excluded from `total_injected_tokens` — we cannot prove every disk file
+  // was actually injected by CC for this specific turn.
+  const homeDir = params.homeDir ?? os.homedir();
+  for (const entry of collectDotClaudeFiles(turn.cwd)) push(entry);
+  for (const entry of collectDotClaudeFiles(homeDir)) push(entry);
 
   const userPromptTokens = countTokens(turn.user_message_text);
   const assistantTokens = countTokens(turn.assistant_message_text);

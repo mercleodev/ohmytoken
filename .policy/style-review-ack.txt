@@ -1,21 +1,14 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-23T16:40:26Z
-fingerprint=714f749f3177f5f5752f17c2ac3fbce3493d88dfd4e2392d07e59ee7fb2c1306
+# updated_at_utc: 2026-05-24T00:10:02Z
+fingerprint=952fa66173240e1726d439f57982113ce992ecfe084ab7ba391edd2987255680
 source=docs/sdd/style-checklist.md
-note=code-reviewer ran (OK with fixes, 0c/1m/5min); major 'apply path validation' FIXED inline; minors filed in Tech Debt. Re-validated after fixture path rename.
+note=issue #363 disk-scan: Major (token inflation) fixed inline; Minor doc/comment items addressed; deferred items recorded in PR Tech Debt
 
-docs/qa/runs/2026-05-24/report.txt
-docs/qa/runs/2026-05-24/rule-ack-modal-open.png
-electron/main.ts
-electron/onboarding/__tests__/lastApplyStore.spec.ts
-electron/onboarding/__tests__/ruleAckInsert.spec.ts
-electron/onboarding/lastApplyStore.ts
-electron/onboarding/ruleAckInsert.ts
-electron/preload.ts
-src/App.tsx
-src/components/onboarding/ruleAckOnboarding.css
-src/components/onboarding/RuleAckOnboardingModal.tsx
-src/components/onboarding/RuleAckSection.tsx
-src/components/SettingsSection.tsx
-src/main.tsx
-src/types/electron.d.ts
+.policy/active-rules-ack.txt
+docs/qa/runs/2026-05-24/smoke-363.mjs
+docs/qa/runs/2026-05-24/smoke-363.output.txt
+electron/hooks/__tests__/dotClaudeScanner.spec.ts
+electron/hooks/__tests__/fixtures/cc2x-dotclaude-session.jsonl
+electron/hooks/__tests__/scanFromTranscript.spec.ts
+electron/hooks/dotClaudeScanner.ts
+electron/hooks/scanFromTranscript.ts
