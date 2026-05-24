@@ -18,7 +18,7 @@
 import type { EvidenceReport } from "./types";
 import type { PromptScan, UsageLogEntry } from "../proxy/types";
 
-export type EmitReason = "session" | "codex" | "history";
+export type EmitReason = "session" | "codex" | "history" | "hook";
 
 export type EmitScoredScanDeps = {
   reader: {

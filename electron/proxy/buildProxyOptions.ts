@@ -26,6 +26,10 @@ export type BuildProxyOptionsArgs = {
   // DB writes
   onProxyScanComplete: (scan: PromptScan, usage: UsageLogEntry) => void;
   onHookScanComplete: (scan: PromptScan, usage: UsageLogEntry) => void;
+  /** Issue #365: trigger evidence scoring after the hook-path DB write so
+   *  hook-source prompts get the same confirmed/likely/unverified breakdown
+   *  the SessionFile/History/Codex watcher paths already produce. */
+  onHookScanScored: (requestId: string) => void;
   persistEvidence: (requestId: string, report: EvidenceReport) => void;
 
   // Evidence hooks
@@ -54,8 +58,10 @@ export const buildProxyOptions = (args: BuildProxyOptionsArgs): ProxyOptions => 
       args.onHookScanComplete(scan, usage);
     } catch (e) {
       console.error("[DB] hook write error:", e);
+      throw e;
     }
   },
+  onHookScanScored: args.onHookScanScored,
   evidenceEngine: args.evidenceEngine ?? undefined,
   getSystemContents: (body: string) => args.parseSystemContents(body),
   getPreviousScores: args.getPreviousScores,

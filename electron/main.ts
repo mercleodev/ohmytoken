@@ -885,6 +885,7 @@ const initApp = async (): Promise<void> => {
         sendToNotification: sendToNotificationWindow,
         onProxyScanComplete,
         onHookScanComplete,
+        onHookScanScored: (requestId) => emitScoredScan(requestId, "hook"),
         parseSystemContents: (body: string) => {
           try {
             const parsed = JSON.parse(body);
@@ -995,6 +996,7 @@ const setupIPC = (): void => {
             sendToNotification: sendToNotificationWindow,
             onProxyScanComplete,
             onHookScanComplete,
+            onHookScanScored: (requestId) => emitScoredScan(requestId, "hook"),
             parseSystemContents: (body: string) => {
               try {
                 const parsed = JSON.parse(body);
