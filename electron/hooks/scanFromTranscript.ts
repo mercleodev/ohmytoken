@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import { countTokens } from "../analyzer/tokenCounter";
 import { applyDiskScanCandidates } from "../capture/applyDiskScanCandidates";
+import { deriveExtraRoots } from "../capture/deriveExtraRoots";
 import type { InjectedFile, PromptScan } from "../proxy/types";
 import { readLatestTurn } from "./transcriptReader";
 import type { TranscriptUsage } from "./transcriptReader";
@@ -83,8 +84,16 @@ export const scanFromTranscript = (
 
   // Disk-scan candidates: shared with the history-import path so both
   // transports produce identical candidate pools — see #367 capture parity.
+  // Issue #370: also disk-scan roots inferred from nested_memory paths so
+  // the LLM's effective project is covered even when JSONL `cwd` is unrelated.
   const homeDir = params.homeDir ?? os.homedir();
-  const injectedFiles = applyDiskScanCandidates(confirmed, turn.cwd, homeDir);
+  const extraRoots = deriveExtraRoots(turn.nested_memories.map((m) => m.path));
+  const injectedFiles = applyDiskScanCandidates(
+    confirmed,
+    turn.cwd,
+    homeDir,
+    extraRoots,
+  );
 
   const userPromptTokens = countTokens(turn.user_message_text);
   const assistantTokens = countTokens(turn.assistant_message_text);

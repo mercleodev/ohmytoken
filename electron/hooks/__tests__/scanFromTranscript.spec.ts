@@ -326,3 +326,156 @@ describe("scanFromTranscript with .claude disk scan (issue #363)", () => {
     expect(rules).toHaveLength(2);
   });
 });
+
+// Issue #370: JSONL `cwd` is the session-start dir, NOT necessarily the
+// project the LLM ended up working on. When the user starts CC from `~`
+// but the LLM explores a different project, nested_memories paths under
+// that project must seed disk-scan extra roots so the project's rule files
+// are recovered even when CC did not inject all of them.
+describe("scanFromTranscript with extra-root disk-scan (issue #370)", () => {
+  let sessionCwd: string; // mimics `~` (no .claude/rules content)
+  let effectiveProject: string; // the project the LLM actually worked on
+  let tmpHomeRoot: string;
+  let transcriptPath: string;
+
+  beforeEach(() => {
+    sessionCwd = fs.mkdtempSync(path.join(os.tmpdir(), "oht-370-cwd-"));
+    effectiveProject = fs.mkdtempSync(
+      path.join(os.tmpdir(), "oht-370-proj-"),
+    );
+    tmpHomeRoot = fs.mkdtempSync(path.join(os.tmpdir(), "oht-370-home-"));
+
+    // The "effective project" has 3 rule files. CC will only inject one of
+    // them via nested_memory (mimicking the 17/21 partial-injection case).
+    fs.mkdirSync(path.join(effectiveProject, ".claude/rules"), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      path.join(effectiveProject, ".claude/rules/auth-retry.md"),
+      "# auth retry rule",
+    );
+    fs.writeFileSync(
+      path.join(effectiveProject, ".claude/rules/tailwind.md"),
+      "# tailwind rule",
+    );
+    fs.writeFileSync(
+      path.join(effectiveProject, ".claude/rules/fsd.md"),
+      "# fsd rule",
+    );
+
+    // Build a transcript whose cwd is `sessionCwd` (the wrong root for
+    // disk-scan) but whose nested_memory points at one rule under
+    // `effectiveProject`.
+    const injectedRulePath = path.join(
+      effectiveProject,
+      ".claude/rules/auth-retry.md",
+    );
+    const lines = [
+      JSON.stringify({
+        parentUuid: null,
+        isSidechain: false,
+        promptId: "p-370-1",
+        type: "user",
+        message: {
+          role: "user",
+          content: [{ type: "text", text: "how does tailwind work in this project?" }],
+        },
+        uuid: "u-370-1",
+        timestamp: "2030-02-01T00:00:00.010Z",
+        cwd: sessionCwd,
+        sessionId: "session-370",
+        version: "2.1.139",
+        gitBranch: "main",
+      }),
+      JSON.stringify({
+        parentUuid: "u-370-1",
+        isSidechain: false,
+        attachment: {
+          type: "nested_memory",
+          path: injectedRulePath,
+          content: {
+            path: injectedRulePath,
+            type: "Project",
+            content: "# auth retry rule",
+          },
+        },
+        type: "attachment",
+        uuid: "a-370-1",
+        timestamp: "2030-02-01T00:00:00.020Z",
+        cwd: sessionCwd,
+        sessionId: "session-370",
+        version: "2.1.139",
+        gitBranch: "main",
+      }),
+      JSON.stringify({
+        parentUuid: "a-370-1",
+        isSidechain: false,
+        message: {
+          model: "claude-test-model",
+          id: "msg-370-1",
+          type: "message",
+          role: "assistant",
+          content: [{ type: "text", text: "ok" }],
+          stop_reason: "end_turn",
+          stop_sequence: null,
+          usage: {
+            input_tokens: 5,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 0,
+            output_tokens: 2,
+            service_tier: "standard",
+          },
+        },
+        requestId: "req_011CbM5kdB6WD6Pr9SCEZTVE",
+        type: "assistant",
+        uuid: "as-370-1",
+        timestamp: "2030-02-01T00:00:00.030Z",
+        cwd: sessionCwd,
+        sessionId: "session-370",
+        version: "2.1.139",
+        gitBranch: "main",
+      }),
+    ];
+    transcriptPath = path.join(sessionCwd, "session.jsonl");
+    fs.writeFileSync(transcriptPath, lines.join("\n") + "\n");
+  });
+
+  afterEach(() => {
+    fs.rmSync(sessionCwd, { recursive: true, force: true });
+    fs.rmSync(effectiveProject, { recursive: true, force: true });
+    fs.rmSync(tmpHomeRoot, { recursive: true, force: true });
+  });
+
+  it("recovers project rule files via nested_memory paths even when cwd is unrelated", () => {
+    const result = scanFromTranscript({
+      transcriptPath,
+      homeDir: tmpHomeRoot,
+    });
+    expect(result).not.toBeNull();
+    const { scan } = result!;
+
+    const paths = scan.injected_files.map((f) => f.path);
+    // The CC-injected file is present (nested_memory seed).
+    expect(paths).toContain(
+      path.join(effectiveProject, ".claude/rules/auth-retry.md"),
+    );
+    // The two files CC did NOT inject must still be recovered via extraRoots.
+    expect(paths).toContain(
+      path.join(effectiveProject, ".claude/rules/tailwind.md"),
+    );
+    expect(paths).toContain(
+      path.join(effectiveProject, ".claude/rules/fsd.md"),
+    );
+
+    // Files discovered through extraRoots get the dotClaudeScanner category
+    // (`rules`), not the nested_memory fallback (`project`).
+    const tailwind = scan.injected_files.find((f) =>
+      f.path.endsWith(".claude/rules/tailwind.md"),
+    );
+    const fsd = scan.injected_files.find((f) =>
+      f.path.endsWith(".claude/rules/fsd.md"),
+    );
+    expect(tailwind?.category).toBe("rules");
+    expect(fsd?.category).toBe("rules");
+  });
+});
