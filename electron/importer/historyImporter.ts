@@ -19,6 +19,7 @@ import { countTokens } from "../analyzer/tokenCounter";
 import type { InsertPromptData } from "../db/writer";
 import type { InjectedFile } from "../proxy/types";
 import { applyDiskScanCandidates } from "../capture/applyDiskScanCandidates";
+import { deriveExtraRoots } from "../capture/deriveExtraRoots";
 
 export type ImportResult = {
   imported: number;
@@ -42,6 +43,32 @@ type RawEntry = {
       cache_read_input_tokens?: number;
     };
   };
+  attachment?: {
+    type?: string;
+    path?: string;
+    content?: { path?: string; type?: string; content?: string } | unknown;
+  };
+};
+
+/**
+ * Issue #370: history-import resolves projectPath from the JSONL directory
+ * name (encoded session-start cwd). That is the same root that bites the
+ * Stop-hook path. Extracting nested_memory paths from the entries lets
+ * `applyDiskScanCandidates` recover the LLM's effective project even when
+ * `projectPath` points elsewhere, mirroring the hook-side fix.
+ */
+const collectNestedMemoryPaths = (entries: RawEntry[]): string[] => {
+  const paths: string[] = [];
+  for (const e of entries) {
+    if (e.type !== "attachment" || !e.attachment) continue;
+    if (e.attachment.type !== "nested_memory") continue;
+    const inner = e.attachment.content as
+      | { path?: string }
+      | undefined;
+    const p = inner?.path ?? e.attachment.path;
+    if (p) paths.push(p);
+  }
+  return paths;
 };
 
 const UUID_PATTERN =
@@ -390,6 +417,7 @@ const buildPromptData = (
       projectPath ? readInjectedFiles(projectPath) : [],
       projectPath || undefined,
       homedir(),
+      deriveExtraRoots(collectNestedMemoryPaths(entries)),
     ),
     tool_calls: toolCalls.map((t) => ({
       call_index: t.index,
@@ -815,10 +843,13 @@ export const importSinglePrompt = (
       if (needsFilesPatch) {
         // Issue #367: use the shared parity helper so the patched row gets
         // the same disk-scan candidate pool as a fresh insert would.
+        // Issue #370: include extra roots from nested_memory paths so the
+        // LLM's effective project is recovered when JSONL cwd is unrelated.
         const files = applyDiskScanCandidates(
           readInjectedFiles(projectPath),
           projectPath,
           homedir(),
+          deriveExtraRoots(collectNestedMemoryPaths(entries)),
         );
         const insertFile = db.prepare(
           "INSERT INTO injected_files (prompt_id, path, category, estimated_tokens) VALUES (@pid, @path, @category, @tokens)",

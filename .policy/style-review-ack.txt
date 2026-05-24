@@ -1,7 +1,14 @@
 # OhMyToken Style Review Acknowledgement
-# updated_at_utc: 2026-05-24T01:16:11Z
-fingerprint=627d8a7cebfe3c975c82c35212d0650ec0f3464145e23a70d4685441bb234f70
+# updated_at_utc: 2026-05-24T08:49:04Z
+fingerprint=1a8f576b94b99a5fb4d739c8849f778a83922310e7cdb66a53049d6aa033bf51
 source=docs/sdd/style-checklist.md
-note=issue #367 fixup: replace require() with FIXTURE const in spec
+note=Manual style review per .claude/rules/frontend-design-guideline.md (Toss + OhMyToken Addendum) — verdict OK, 0 critical/0 major; two minor notes deferred (TS-02 attachment widening, DOC-02 helper docstring edge case).
 
-electron/hooks/__tests__/transcriptReader.spec.ts
+.policy/active-rules-ack.txt
+electron/capture/__tests__/applyDiskScanCandidates.spec.ts
+electron/capture/__tests__/deriveExtraRoots.spec.ts
+electron/capture/applyDiskScanCandidates.ts
+electron/capture/deriveExtraRoots.ts
+electron/hooks/__tests__/scanFromTranscript.spec.ts
+electron/hooks/scanFromTranscript.ts
+electron/importer/historyImporter.ts

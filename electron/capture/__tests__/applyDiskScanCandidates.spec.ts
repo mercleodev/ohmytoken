@@ -88,4 +88,53 @@ describe("applyDiskScanCandidates", () => {
     const out = applyDiskScanCandidates([], cwd, homeDir);
     expect(out.length).toBe(3); // fsd + datadog SKILL + global-style
   });
+
+  it("scans extraRoots in addition to cwd and homeDir (#370)", () => {
+    // Mirrors the production case: cwd is a non-project directory (e.g. home),
+    // but the LLM actually worked on a separate project; nested_memories paths
+    // reveal it. The extraRoots arg routes disk-scan there too.
+    const extraProject = mkRoot();
+    try {
+      writeFile(
+        path.join(extraProject, ".claude/rules/tailwind.md"),
+        "# tailwind rule",
+      );
+      writeFile(
+        path.join(extraProject, ".claude/skills/icon/SKILL.md"),
+        "# icon skill",
+      );
+      const out = applyDiskScanCandidates([], cwd, homeDir, [extraProject]);
+      const paths = out.map((f) => f.path);
+      expect(paths).toContain(
+        path.join(extraProject, ".claude/rules/tailwind.md"),
+      );
+      expect(paths).toContain(
+        path.join(extraProject, ".claude/skills/icon/SKILL.md"),
+      );
+      const tailwind = out.find((f) =>
+        f.path.endsWith(".claude/rules/tailwind.md"),
+      );
+      expect(tailwind?.category).toBe("rules");
+    } finally {
+      fs.rmSync(extraProject, { recursive: true, force: true });
+    }
+  });
+
+  it("dedupes paths that appear under cwd, homeDir, and extraRoots", () => {
+    // Same root path provided as both cwd and extraRoots — files should not
+    // appear twice. Existing `seen` Set in applyDiskScanCandidates handles it.
+    writeFile(path.join(cwd, ".claude/rules/dupe.md"), "x");
+    const out = applyDiskScanCandidates([], cwd, homeDir, [cwd]);
+    const dupePaths = out.filter((f) =>
+      f.path.endsWith(".claude/rules/dupe.md"),
+    );
+    expect(dupePaths).toHaveLength(1);
+  });
+
+  it("treats undefined or empty extraRoots as a no-op", () => {
+    const out1 = applyDiskScanCandidates([], cwd, homeDir, undefined);
+    const out2 = applyDiskScanCandidates([], cwd, homeDir, []);
+    expect(out1.length).toBe(3);
+    expect(out2.length).toBe(3);
+  });
 });
